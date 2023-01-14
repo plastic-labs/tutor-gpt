@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# OS X
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Visual Studio Code
+.vscode/
+
+#project specific settings
+.settings/
+*.code-workspace

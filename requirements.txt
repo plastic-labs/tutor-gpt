@@ -1,0 +1,4 @@
+langchain 
+openai 
+transformers 
+gradio
