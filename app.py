@@ -2,13 +2,11 @@ import os
 from typing import Optional, Tuple
 
 import gradio as gr
+import pandas as pd
 from langchain import LLMChain
 from langchain.chains.conversation.memory import ConversationalBufferWindowMemory
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
-
-from dotenv import load_dotenv
-load_dotenv()
 
 template_str = """You are a Socratic Tutor. 
 You don't have all the answers. Questioning should not be adversarial but rather tentative and playful. 
@@ -27,34 +25,61 @@ PROMPT_TEMPLATE = PromptTemplate(
 
 def load_chain():
     """Logic for loading the chain you want to use should go here."""
-    llm = OpenAI(temperature=0)
-    # history_str = "\n".join([f"{x[0]}: {x[1]}" for x in history])
-    chain = LLMChain(llm=llm, memory=ConversationalBufferWindowMemory(k=15, memory_key="history", input_key="input"), prompt=PROMPT_TEMPLATE, verbose=True)
+    llm = OpenAI(temperature=0)   # defaults to text-davinci-003 i think
+    chain = LLMChain(
+        llm=llm, 
+        memory=ConversationalBufferWindowMemory(
+            k=15, 
+            memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
+            input_key="input"
+        ), 
+        prompt=PROMPT_TEMPLATE, 
+        verbose=True
+    )
     return chain
 
+def set_openai_api_key(api_key: str):
+    """Set the api key and return chain.
+    If no api_key, then None is returned.
+    """
+    if api_key:
+        os.environ["OPENAI_API_KEY"] = api_key
+        chain = load_chain()
+        os.environ["OPENAI_API_KEY"] = ""
+        return chain
+
+
 def chat(
-    context: str, inp: str, history: Optional[Tuple[str, str]], chain: Optional[LLMChain]
+    context: str, inp: str, history: Optional[Tuple[str, str]], chain: Optional[LLMChain] 
 ):
     """Execute the chat functionality."""
     history = history or []
-    chain = load_chain()
     
     # If chain is None, that is because no API key was provided.
     if chain is None:
         history.append((inp, "Please set your OpenAI key to use"))
         return history, history
+
     # Run chain and append input.
     output = chain.predict(input=inp, context=context)
-    print(output)
     history.append((inp, output))
+
     return history, history
 
 
-block = gr.Blocks(css=".gradio-container {background-color: lightgray}")
+demo = gr.Blocks(css=".gradio-container {background-color: lightgray}")
 
-with block:
+#callback = gr.CSVLogger()
+
+with demo:
     with gr.Row():
         gr.Markdown("<h3><center>Tutor GPT v1 Demo</center></h3>")
+        openai_api_key_textbox = gr.Textbox(
+            placeholder="Paste your OpenAI API key (sk-...)",
+            show_label=False,
+            lines=1,
+            type="password",
+        )
 
     with gr.Row():
         with gr.Column(scale=0.70):
@@ -94,5 +119,12 @@ with block:
     submit.click(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])
     message.submit(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])
 
+    openai_api_key_textbox.change(
+        set_openai_api_key,
+        inputs=[openai_api_key_textbox],
+        outputs=[agent_state],
+    )
 
-block.launch(debug=True)
+
+if __name__ == '__main__':
+    demo.launch(debug=True, share=True)
