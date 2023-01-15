@@ -57,13 +57,13 @@ with block:
         gr.Markdown("<h3><center>Tutor GPT v1 Demo</center></h3>")
 
     with gr.Row():
-        with gr.Column(scale=0.75):
+        with gr.Column(scale=0.70):
             context = gr.Textbox(
                 label="Context",
                 placeholder="Paste your excerpt/article/document here...",
                 lines=15,
             )
-        with gr.Column(scale=0.25):
+        with gr.Column(scale=0.30):
             chatbot = gr.Chatbot()
 
     with gr.Row():
