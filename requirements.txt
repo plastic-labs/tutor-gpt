@@ -2,3 +2,5 @@ langchain
 openai 
 transformers 
 gradio
+python-dotenv
+tiktoken
