@@ -52,7 +52,7 @@ def chat(
 
     # Run chain and append input.
     try:
-        output = chain.predict(input=inp, context=context)
+        output = chain.predict(context=context, input=inp)
     except Exception as e:
         output = str(e)
     history.append((inp, output))
@@ -60,11 +60,9 @@ def chat(
     return history, history
 
 
-demo = gr.Blocks(css=".gradio-container {background-color: lightgray}")
+callback = gr.CSVLogger()
 
-#callback = gr.CSVLogger()
-
-with demo:
+with gr.Blocks() as demo:
     with gr.Row():
         gr.Markdown("<h3><center>Tutor GPT v1 Demo</center></h3>")
         openai_api_key_textbox = gr.Textbox(
@@ -109,7 +107,11 @@ with demo:
     state = gr.State()
     agent_state = gr.State()
 
+    # This needs to be called at some point prior to the first call to callback.flag()
+    callback.setup([context, message, chatbot], "data/flagged_data_points")
+
     submit.click(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])
+    submit.click(lambda *args: callback.flag(args), [context, message, chatbot], None, preprocess=False)
     message.submit(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])
 
     openai_api_key_textbox.change(
@@ -119,6 +121,6 @@ with demo:
     )
 
 
-if __name__ == '__main__':
-    demo.launch(debug=True)
-    #demo.launch(debug=True, share=True)
+
+demo.launch(debug=True)
+#demo.launch(debug=True, share=True)
