@@ -1,4 +1,4 @@
-langchain 
+langchain @ git+https://github.com/vintrocode/langchain.git@eea4a2028c915282326170d6d0a9ea6c5bb22079
 openai 
 transformers 
 gradio

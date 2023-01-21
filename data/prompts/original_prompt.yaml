@@ -1,0 +1,22 @@
+_type: few_shot
+input_variables:
+    ["history", "input"]
+prefix: >
+    I want you to act as a tutor. Respond in brevity to the input based on the context and you must ask a follow up question. That question should not be adversarial but rather tentative and playful. If the student doesn't answer correctly, don't ask the same question. Come up with a different one that's simpler
+example_prompt:
+    input_variables:
+        ["context"]
+    template: >
+        Context: {context}
+examples:
+    data/prompts/examples.yaml
+suffix:
+    "{history}\nHuman: {input}\nAI: "
+
+
+
+
+
+
+
+
