@@ -17,5 +17,5 @@ __pycache__/
 *.code-workspace
 
 # langchain generated folders
-flagged/
+data/flagged_data_points/
 
