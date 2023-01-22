@@ -127,5 +127,5 @@ with gr.Blocks() as demo:
 
 
 
-demo.launch(debug=True)
+demo.launch(debug=True, server_name="0.0.0.0")
 #demo.launch(debug=True, share=True)
