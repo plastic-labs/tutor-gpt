@@ -110,9 +110,14 @@ with gr.Blocks() as demo:
     # This needs to be called at some point prior to the first call to callback.flag()
     callback.setup([context, message, chatbot], "data/flagged_data_points")
 
+    
     submit.click(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])
+    message.submit(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])  # same thing, but for hitting <enter>
+
+    # collects data
     submit.click(lambda *args: callback.flag(args), [context, message, chatbot], None, preprocess=False)
-    message.submit(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])
+    message.submit(lambda *args: callback.flag(args), [context, message, chatbot], None, preprocess=False)
+
 
     openai_api_key_textbox.change(
         set_openai_api_key,
