@@ -21,7 +21,9 @@ def load_chain():
         memory=ConversationalBufferWindowMemory(
             k=15, 
             memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
-            input_key="input"
+            input_key="input",
+            ai_prefix="Tutor",
+            human_prefix="Student"
         ), 
         prompt=PROMPT_TEMPLATE, 
         verbose=True
