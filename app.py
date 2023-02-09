@@ -83,6 +83,7 @@ with gr.Blocks() as demo:
             )
         with gr.Column(scale=0.30):
             chatbot = gr.Chatbot()
+            btn = gr.Button("💎 GEM 💎").style(full_width=False)
 
     with gr.Row():
         message = gr.Textbox(
@@ -116,9 +117,8 @@ with gr.Blocks() as demo:
     submit.click(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])
     message.submit(chat, inputs=[context, message, state, agent_state], outputs=[chatbot, state])  # same thing, but for hitting <enter>
 
-    # collects data
-    submit.click(lambda *args: callback.flag(args), [context, message, chatbot], None, preprocess=False)
-    message.submit(lambda *args: callback.flag(args), [context, message, chatbot], None, preprocess=False)
+    # collects gems
+    btn.click(lambda *args: callback.flag(args), [context, message, chatbot], None, preprocess=False)
 
 
     openai_api_key_textbox.change(
