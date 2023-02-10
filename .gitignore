@@ -19,3 +19,6 @@ __pycache__/
 # langchain generated folders
 data/flagged_data_points/
 
+
+# Virtual Environment
+venv/
