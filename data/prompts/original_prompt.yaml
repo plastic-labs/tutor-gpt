@@ -20,7 +20,7 @@ example_prompt:
 examples:
     data/prompts/examples.yaml
 suffix:
-    "Context: {context}\n {history}\nStudent: {input}\nTutor: "
+    "Context: {context}\n {history}\nRemember to ask a relevant follow up question to keep the discussion going! \nStudent: {input}\nThought: "
 
 
 
