@@ -20,7 +20,7 @@ example_prompt:
 examples:
     data/prompts/examples.yaml
 suffix:
-    "Context: {context}\n {history}\nRemember to ask a relevant follow up question to keep the discussion going! \nStudent: {input}\nThought: "
+    "Context: {context}\n {history}\nRemember - do NOT spoon-feed students and do the work for them. You MUST ask questions to get them to do the work for themselves. \nStudent: {input}\nThought: "
 
 
 
