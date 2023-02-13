@@ -53,36 +53,9 @@ async def on_message(message):
     if str(bot.user.id) in message.content:
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
-        #response = await chat(CONTEXT, message.content[10:], history, chain)
+            return
+        response = await chat(CONTEXT, message.content[10:], history, chain)
         await message.channel.send(response)
 
-
-# @bot.event
-# async def on_message(ctx, message: Optional[discord.Message] = None):
-#     if message.author == ctx.user:
-#         return
-
-#     print("We're listening...")
-    
-#     history.append(message.content)
-
-#     if message.content.startswith('@tutor-gpt'):
-#         if CONTEXT is None:
-#             await message.channel.send('Please set a context using `/context`')
-#         response = await chat(CONTEXT, message.content[10:], history, chain)
-#         await message.channel.send(response)
-
-#     print(f'Message from {ctx.author}: {message.content}')
-#     await bot.process_commands(message)
-
-# @bot.command(description="Chat with the tutor")
-# async def chat(ctx, message: discord.Message):
-#     if CONTEXT is None:
-#         await ctx.respond("Please set a context using `/context`.")
-#         return
-
-#     history.append(message.content)
-#     response = await chat(CONTEXT, message.content[10:], history, chain)
-#     await ctx.respond(response)
 
 bot.run(token)
