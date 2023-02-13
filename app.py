@@ -26,7 +26,7 @@ bot = discord.Bot(intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"We have logged in as {bot.user}")
+    print(f"We have logged in as {bot.user}: ID = {bot.user.id}")
 
 
 @bot.command(description="Set the context for the tutor")
@@ -43,24 +43,37 @@ async def context(ctx, text: Optional[str] = None):
     print(f"Context set to: {CONTEXT}")
     await ctx.respond("The context has been successfully set!")
 
-
-@bot.event
-async def on_message(ctx, message: Optional[discord.Message] = None):
-    if message.author == ctx.user:
+@bot.listen()
+async def on_message(message):
+    if message.author == bot.user:
         return
 
-    print("We're listening...")
-    
     history.append(message.content)
 
-    if message.content.startswith('@tutor-gpt'):
+    if str(bot.user.id) in message.content:
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
-        response = await chat(CONTEXT, message.content[10:], history, chain)
+        #response = await chat(CONTEXT, message.content[10:], history, chain)
         await message.channel.send(response)
 
-    print(f'Message from {ctx.author}: {message.content}')
-    await bot.process_commands(message)
+
+# @bot.event
+# async def on_message(ctx, message: Optional[discord.Message] = None):
+#     if message.author == ctx.user:
+#         return
+
+#     print("We're listening...")
+    
+#     history.append(message.content)
+
+#     if message.content.startswith('@tutor-gpt'):
+#         if CONTEXT is None:
+#             await message.channel.send('Please set a context using `/context`')
+#         response = await chat(CONTEXT, message.content[10:], history, chain)
+#         await message.channel.send(response)
+
+#     print(f'Message from {ctx.author}: {message.content}')
+#     await bot.process_commands(message)
 
 # @bot.command(description="Chat with the tutor")
 # async def chat(ctx, message: discord.Message):
