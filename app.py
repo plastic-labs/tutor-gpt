@@ -54,7 +54,7 @@ async def on_message(message):
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
             return
-        response = await chat(CONTEXT, message.content[10:], history, chain)
+        response = await chat(CONTEXT, message.content, history, chain)
         await message.channel.send(response)
 
 
