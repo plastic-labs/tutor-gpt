@@ -55,12 +55,12 @@ async def on_message(message):
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
             return
-        response = await chat(CONTEXT, message.content, history, chain)
+        response, thought = await chat(CONTEXT, message.content, history, chain)
         print("============================================")
-        print(response)
+        print(f'Thought: {thought}\nResponse: {response}')
         print("============================================")
         # await message.channel.send(response)
-        await message.reply(response)
+        await message.reply(f'Thought: {thought}\nResponse: {response}')
 
 
 bot.run(token)

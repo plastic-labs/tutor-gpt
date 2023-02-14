@@ -1,4 +1,4 @@
-import os
+import os, re
 from typing import Optional, Tuple, Deque
 
 # import pandas as pd
@@ -49,8 +49,13 @@ async def chat(
         output = chain.predict(context=context, input=inp)
     except Exception as e:
         output = str(e)
-    history.append((inp, output))
 
-    return output
+    # parse output for just the response, thought
+    resp = re.search(r'Tutor:(.*?)Student:', output, re.DOTALL)
+    thot = output.split("Tutor:")[0].strip()
+
+    history.append((inp, resp))
+
+    return resp, thot
 
 
