@@ -3,7 +3,7 @@ import os
 from typing import Optional
 
 import discord
-from discord.ext import commands
+# from discord.ext import commands
 
 from dotenv import load_dotenv
 from chain import load_chain, chat
@@ -48,6 +48,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    # print(message.content)
     history.append(message.content)
 
     if str(bot.user.id) in message.content:
@@ -55,7 +56,11 @@ async def on_message(message):
             await message.channel.send('Please set a context using `/context`')
             return
         response = await chat(CONTEXT, message.content, history, chain)
-        await message.channel.send(response)
+        print("============================================")
+        print(response)
+        print("============================================")
+        # await message.channel.send(response)
+        await message.reply(response)
 
 
 bot.run(token)

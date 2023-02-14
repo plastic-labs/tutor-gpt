@@ -1,7 +1,7 @@
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Deque
 
-import pandas as pd
+# import pandas as pd
 from langchain import LLMChain
 from langchain.chains.conversation.memory import ConversationalBufferWindowMemory
 from langchain.prompts import PromptTemplate
@@ -33,11 +33,11 @@ def load_chain():
     return chain
 
 
-def chat(
-    context: str, inp: str, history: Optional[Tuple[str, str]], chain: Optional[LLMChain] 
+async def chat(
+    context: str, inp: str, history: Deque[Tuple[str, str]], chain: Optional[LLMChain] 
 ):
     """Execute the chat functionality."""
-    history = history or []
+    # history = history or []
     
     # If chain is None, that is because no API key was provided.
     if chain is None:
@@ -51,6 +51,6 @@ def chat(
         output = str(e)
     history.append((inp, output))
 
-    return history, history
+    return output
 
 
