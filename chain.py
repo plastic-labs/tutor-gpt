@@ -51,11 +51,20 @@ async def chat(
         output = str(e)
 
     # parse output for just the response, thought
-    resp = re.search(r'Tutor:(.*?)Student:', output, re.DOTALL)
-    thot = output.split("Tutor:")[0].strip()
+    thought = ''
+    tutor_text = ''
+    student_text = ''
+    if 'Tutor:' in output:
+        thought = output.split('Tutor:')[0].strip()
+        tutor_text = output.split('Tutor:')[1]
+        if 'Student:' in tutor_text:
+            student_text = tutor_text.split('Student:')[1].strip()
+            tutor_text = tutor_text.split('Student:')[0].strip()
+        else:
+            tutor_text = tutor_text.strip()
 
-    history.append((inp, resp))
+    history.append((inp, tutor_text))
 
-    return resp, thot
+    return output, tutor_text, thought
 
 
