@@ -15,7 +15,6 @@ token = os.environ['BOT_TOKEN']
 K=15  # create a constants file so we can ref this in chain.py too
 chain = load_chain()
 history = collections.deque(maxlen=K)
-
 CONTEXT = None
 
 intents = discord.Intents.default()
@@ -42,6 +41,16 @@ async def context(ctx, text: Optional[str] = None):
     CONTEXT = text
     print(f"Context set to: {CONTEXT}")
     await ctx.respond("The context has been successfully set!")
+
+
+@bot.command(description="Refresh the conversation with the tutor")
+async def refresh(ctx):
+    global CONTEXT, chain, history, K
+    CONTEXT = None
+    chain = load_chain()
+    history = collections.deque(maxlen=K)
+    await ctx.respond("The conversation has been reset!")
+
 
 @bot.listen()
 async def on_message(message):
