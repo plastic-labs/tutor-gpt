@@ -24,12 +24,12 @@ def load_chains():
     thought_chain = LLMChain(
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
-            max_token_limit=100,
+            max_token_limit=250,
             llm=llm,
             memory_key="history",
             input_key="input",
             ai_prefix="Thought",
-            human_prefix="Student"
+            human_prefix="Student",
         ), 
         prompt=THOUGHT_PROMPT_TEMPLATE, 
         verbose=True
@@ -38,12 +38,12 @@ def load_chains():
     response_chain = LLMChain(
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
-            max_token_limit=100, 
+            max_token_limit=250, 
             llm=llm,
             memory_key="history",
             input_key="thought",
             ai_prefix="Tutor",
-            human_prefix="Student"
+            human_prefix="Student",
         ), 
         prompt=RESPONSE_PROMPT_TEMPLATE, 
         verbose=True
@@ -54,40 +54,52 @@ def load_chains():
 
 
 async def chat(
-    context: str, inp: str, history: Deque[Tuple[str, str, str]], thought_chain: Optional[LLMChain], response_chain: Optional[LLMChain]
+    context: str, 
+    inp: str, 
+    thought_history: Deque[Tuple[str, str, str]], 
+    response_history: Deque[Tuple[str, str, str]], 
+    thought_chain: Optional[LLMChain], 
+    response_chain: Optional[LLMChain]
 ):
     """Execute the chat functionality."""
     # history = history or []
     
     # If chain is None, that is because no API key was provided.
     if thought_chain is None:
-        history.append((inp, "Please set your OpenAI key to use"))
-        return history, history
+        thought_history.append((str("Student: " + inp), "Please set your OpenAI key to use"))
+        return thought_history, thought_history
     if response_chain is None:
-        history.append((inp, "Please set your OpenAI key to use"))
-        return history, history
+        response_history.append((str("Student: " + inp), "Please set your OpenAI key to use"))
+        return response_history, response_history
 
     # Run chains and append input.
     try:
-        thought = thought_chain.predict(context=context, history=history, input=inp)
+        thought = thought_chain.predict(
+            context=context, 
+            history=response_history, 
+            input=inp
+        )
         if 'Tutor:' in thought:
             thought = thought.split('Tutor:')[0].strip()
+        print(f"Thought: {thought}")
     except Exception as e:
         thought = str(e)
 
     try:
         response = response_chain.predict(
             context=context,
-            history=history,
+            history=response_history,
             input=inp,
             thought=thought
         )
         if 'Student:' in response:
             response = response.split('Student:')[0].strip()
+        print(f"Response: {response}")
     except Exception as e:
         response = str(e)
 
-    history.append((inp, thought, response))
+    #thought_history.append((inp, thought))
+    response_history.append((inp, thought, response))
 
     return response, thought
 

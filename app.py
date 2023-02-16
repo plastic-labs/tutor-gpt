@@ -14,7 +14,8 @@ token = os.environ['BOT_TOKEN']
 
 K=15  # create a constants file so we can ref this in chain.py too
 thought_chain, response_chain = load_chains()
-history = collections.deque(maxlen=K)
+response_history = collections.deque(maxlen=K)
+thought_history = collections.deque(maxlen=K)
 CONTEXT = None
 
 intents = discord.Intents.default()
@@ -61,7 +62,9 @@ async def refresh(ctx):
     global CONTEXT, chain, history, K
     CONTEXT = None
     thought_chain, response_chain = load_chains()
-    history = collections.deque(maxlen=K)
+    response_history = collections.deque(maxlen=K)
+    thought_history = collections.deque(maxlen=K)
+    
     await ctx.respond("The conversation has been reset!")
 
 
@@ -71,7 +74,8 @@ async def on_message(message):
         return
 
     # print(message.content)
-    history.append(message.content)
+    thought_history.append(message.content)
+    response_history.append(message.content)
 
     if str(bot.user.id) in message.content:
         if CONTEXT is None:
@@ -80,7 +84,8 @@ async def on_message(message):
         response, thought = await chat(
             CONTEXT, 
             message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-            history, 
+            thought_history, 
+            response_history,
             thought_chain,
             response_chain
         )
