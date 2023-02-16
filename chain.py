@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Deque
 
 # import pandas as pd
 from langchain import LLMChain
-from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
+from langchain.chains.conversation.memory import ConversationSummaryMemory
 from langchain.chains import SimpleSequentialChain
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
@@ -16,6 +16,8 @@ load_dotenv()
 
 THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/thought_prompt.yaml")
 RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/response_prompt.yaml")
+THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/thought_summary_prompt.yaml")
+RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.yaml")
 
 
 def load_chains():
@@ -23,8 +25,8 @@ def load_chains():
     llm = OpenAI(temperature=0.9)   # defaults to text-davinci-003
     thought_chain = LLMChain(
         llm=llm, 
-        memory=ConversationSummaryBufferMemory(
-            max_token_limit=250,
+        memory=ConversationSummaryMemory(
+            prompt=THOUGHT_SUMMARY_TEMPLATE,
             llm=llm,
             memory_key="history",
             input_key="input",
@@ -37,8 +39,8 @@ def load_chains():
 
     response_chain = LLMChain(
         llm=llm, 
-        memory=ConversationSummaryBufferMemory(
-            max_token_limit=250, 
+        memory=ConversationSummaryMemory(
+            prompt=RESPONSE_SUMMARY_TEMPLATE,
             llm=llm,
             memory_key="history",
             input_key="thought",
@@ -66,10 +68,10 @@ async def chat(
     
     # If chain is None, that is because no API key was provided.
     if thought_chain is None:
-        thought_history.append((str("Student: " + inp), "Please set your OpenAI key to use"))
+        thought_history.append(inp, "Please set your OpenAI key to use")
         return thought_history, thought_history
     if response_chain is None:
-        response_history.append((str("Student: " + inp), "Please set your OpenAI key to use"))
+        response_history.append(inp, "Please set your OpenAI key to use")
         return response_history, response_history
 
     # Run chains and append input.
@@ -98,7 +100,7 @@ async def chat(
     except Exception as e:
         response = str(e)
 
-    #thought_history.append((inp, thought))
+    thought_history.append((inp, thought, response))
     response_history.append((inp, thought, response))
 
     return response, thought

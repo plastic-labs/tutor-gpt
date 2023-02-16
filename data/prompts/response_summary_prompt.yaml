@@ -1,0 +1,24 @@
+input_variables:
+  ["summary", "new_lines"]
+template: >
+  You are a tutor working with a student who's studying a passage. Progressively summarize the lines of conversation between you and the student provided, adding onto the previous summary and returning a new summary.
+
+  EXAMPLE
+  Current summary:
+  The student asks the tutor for help with understanding a difficult passage. The tutor first assesses the student's obstacles to understanding and then responds to the student to clarify elements of the passage as necessary and prompt the student's thinking toward better understanding.
+  
+  New lines of conversation:
+  Student: I don't understand this. Can you help?
+  Tutor: That's totally normal. This passage is complex. Let's break it down into smaller pieces. What might be the overall message of the passage?
+
+  New summary:
+  The student asks the tutor for help with understanding a difficult passage. The tutor first assesses the student's obstacles to understanding and then responds to the student to clarify elements of the passage as necessary and prompt the student's thinking toward better understanding. The tutor starts with a broad question to establish the main idea of the passage.
+  END OF EXAMPLE
+
+  Current summary:
+  {summary}
+
+  New lines of conversation:
+  {new_lines}
+
+  New summary:
