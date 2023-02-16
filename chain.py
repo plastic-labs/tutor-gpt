@@ -3,7 +3,8 @@ from typing import Optional, Tuple, Deque
 
 # import pandas as pd
 from langchain import LLMChain
-from langchain.chains.conversation.memory import ConversationalBufferWindowMemory
+from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
+from langchain.chains import SimpleSequentialChain
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 from langchain.prompts import load_prompt
@@ -13,58 +14,81 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-PROMPT_TEMPLATE = load_prompt("data/prompts/original_prompt.yaml")
+THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/thought_prompt.yaml")
+RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/response_prompt.yaml")
 
-def load_chain():
+
+def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = OpenAI(temperature=0.9)   # defaults to text-davinci-003 i think
-    chain = LLMChain(
+    llm = OpenAI(temperature=0.9)   # defaults to text-davinci-003
+    thought_chain = LLMChain(
         llm=llm, 
-        memory=ConversationalBufferWindowMemory(
-            k=15, 
-            memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
+        memory=ConversationSummaryBufferMemory(
+            max_token_limit=100,
+            llm=llm,
+            memory_key="history",
             input_key="input",
+            ai_prefix="Thought",
+            human_prefix="Student"
+        ), 
+        prompt=THOUGHT_PROMPT_TEMPLATE, 
+        verbose=True
+    )
+
+    response_chain = LLMChain(
+        llm=llm, 
+        memory=ConversationSummaryBufferMemory(
+            max_token_limit=100, 
+            llm=llm,
+            memory_key="history",
+            input_key="thought",
             ai_prefix="Tutor",
             human_prefix="Student"
         ), 
-        prompt=PROMPT_TEMPLATE, 
+        prompt=RESPONSE_PROMPT_TEMPLATE, 
         verbose=True
     )
-    return chain
+
+
+    return thought_chain, response_chain
 
 
 async def chat(
-    context: str, inp: str, history: Deque[Tuple[str, str]], chain: Optional[LLMChain] 
+    context: str, inp: str, history: Deque[Tuple[str, str, str]], thought_chain: Optional[LLMChain], response_chain: Optional[LLMChain]
 ):
     """Execute the chat functionality."""
     # history = history or []
     
     # If chain is None, that is because no API key was provided.
-    if chain is None:
+    if thought_chain is None:
+        history.append((inp, "Please set your OpenAI key to use"))
+        return history, history
+    if response_chain is None:
         history.append((inp, "Please set your OpenAI key to use"))
         return history, history
 
-    # Run chain and append input.
+    # Run chains and append input.
     try:
-        output = chain.predict(context=context, input=inp)
+        thought = thought_chain.predict(context=context, history=history, input=inp)
+        if 'Tutor:' in thought:
+            thought = thought.split('Tutor:')[0].strip()
     except Exception as e:
-        output = str(e)
+        thought = str(e)
 
-    # parse output for just the response, thought
-    thought = ''
-    tutor_text = ''
-    student_text = ''
-    if 'Tutor:' in output:
-        thought = output.split('Tutor:')[0].strip()
-        tutor_text = output.split('Tutor:')[1]
-        if 'Student:' in tutor_text:
-            student_text = tutor_text.split('Student:')[1].strip()
-            tutor_text = tutor_text.split('Student:')[0].strip()
-        else:
-            tutor_text = tutor_text.strip()
+    try:
+        response = response_chain.predict(
+            context=context,
+            history=history,
+            input=inp,
+            thought=thought
+        )
+        if 'Student:' in response:
+            response = response.split('Student:')[0].strip()
+    except Exception as e:
+        response = str(e)
 
-    history.append((inp, tutor_text))
+    history.append((inp, thought, response))
 
-    return output, tutor_text, thought
+    return response, thought
 
 

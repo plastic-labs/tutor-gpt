@@ -6,14 +6,14 @@ import discord
 # from discord.ext import commands
 
 from dotenv import load_dotenv
-from chain import load_chain, chat
+from chain import load_chains, chat
 
 
 load_dotenv()
 token = os.environ['BOT_TOKEN']
 
 K=15  # create a constants file so we can ref this in chain.py too
-chain = load_chain()
+thought_chain, response_chain = load_chains()
 history = collections.deque(maxlen=K)
 CONTEXT = None
 
@@ -30,6 +30,13 @@ async def on_ready():
 
 @bot.command(description="Set the context for the tutor")
 async def context(ctx, text: Optional[str] = None):
+    """
+    This function sets the context global var for the tutor to engage in discussion on.
+    
+    Args:
+        ctx: context, necessary for bot commands
+        text: the passage (we're also calling it "CONTEXT") to be injected into the prompt
+    """
     global CONTEXT
     if text is None:
         if CONTEXT is not None:
@@ -45,9 +52,15 @@ async def context(ctx, text: Optional[str] = None):
 
 @bot.command(description="Refresh the conversation with the tutor")
 async def refresh(ctx):
+    """
+    Clears the conversation history, context, and reloads the chains
+
+    Args:
+        ctx: context, necessary for bot commands
+    """
     global CONTEXT, chain, history, K
     CONTEXT = None
-    chain = load_chain()
+    thought_chain, response_chain = load_chains()
     history = collections.deque(maxlen=K)
     await ctx.respond("The conversation has been reset!")
 
@@ -64,9 +77,15 @@ async def on_message(message):
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
             return
-        raw, response, thought = await chat(CONTEXT, message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), history, chain)
+        response, thought = await chat(
+            CONTEXT, 
+            message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
+            history, 
+            thought_chain,
+            response_chain
+        )
         print("============================================")
-        print(f'Raw output: {raw}')
+        print(f'Thought: {thought}\nResponse: {response}')
         print("============================================")
         # await message.channel.send(response)
         await message.reply(f'Thought: {thought}\nResponse: {response}')
