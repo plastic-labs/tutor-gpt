@@ -64,7 +64,7 @@ async def refresh(ctx):
     thought_chain, response_chain = load_chains()
     response_history = collections.deque(maxlen=K)
     thought_history = collections.deque(maxlen=K)
-    
+
     await ctx.respond("The conversation has been reset!")
 
 
@@ -81,14 +81,15 @@ async def on_message(message):
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
             return
-        response, thought = await chat(
-            CONTEXT, 
-            message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-            thought_history, 
-            response_history,
-            thought_chain,
-            response_chain
-        )
+        async with message.channel.typing():
+            response, thought = await chat(
+                CONTEXT, 
+                message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
+                thought_history, 
+                response_history,
+                thought_chain,
+                response_chain
+            )
         print("============================================")
         print(f'Thought: {thought}\nResponse: {response}')
         print("============================================")
