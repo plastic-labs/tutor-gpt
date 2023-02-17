@@ -22,12 +22,14 @@ RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.ya
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = OpenAI(temperature=0.9)   # defaults to text-davinci-003
+    llm = OpenAI(temperature=0.9)
+    llm_summary = OpenAI(max_tokens=100)  # how long we want our summary to be
     thought_chain = LLMChain(
         llm=llm, 
         memory=ConversationSummaryMemory(
             prompt=THOUGHT_SUMMARY_TEMPLATE,
-            llm=llm,
+            max_token_limit=250,  # window size of the history we're trying to summarize
+            llm=llm_summary,
             memory_key="history",
             input_key="input",
             ai_prefix="Thought",
@@ -41,7 +43,8 @@ def load_chains():
         llm=llm, 
         memory=ConversationSummaryMemory(
             prompt=RESPONSE_SUMMARY_TEMPLATE,
-            llm=llm,
+            max_token_limit=250,  # window size of the history we're trying to summarize
+            llm=llm_summary,
             memory_key="history",
             input_key="thought",
             ai_prefix="Tutor",

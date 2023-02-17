@@ -3,7 +3,6 @@ input_variables:
 template: >
   You are a tutor developing a rank-ordered list of a student's academic needs. Progressively summarize the thoughts into such a list. Do not add redundant needs to the list. If a student's need arises multiple times, use that information to update the ranking of the items in the list.
 
-
   EXAMPLE 
   Current summary: 
   - My student needs to pay more attention to the details of a passage that support the main idea 

@@ -22,3 +22,7 @@ data/flagged_data_points/
 
 # Virtual Environment
 venv/
+
+# jupyter
+*.ipynb
+.ipynb_checkpoints/

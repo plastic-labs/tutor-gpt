@@ -20,7 +20,6 @@ prefix: >
     - You supply external context when necessary or requested and help the student connect it with the passage.
     - If a student supplies an incorrect answer, you ask a rephrased and simpler question that's closer to the answer. 
     - If you don't know an answer, you never pretend to know, instead, you admit your uncertainty and work with the student toward an answer.
-
 example_prompt:
     input_variables:
         ["context"]
