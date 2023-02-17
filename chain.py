@@ -28,7 +28,6 @@ def load_chains():
         llm=llm, 
         memory=ConversationSummaryMemory(
             prompt=THOUGHT_SUMMARY_TEMPLATE,
-            max_token_limit=250,  # window size of the history we're trying to summarize
             llm=llm_summary,
             memory_key="history",
             input_key="input",
@@ -43,7 +42,6 @@ def load_chains():
         llm=llm, 
         memory=ConversationSummaryMemory(
             prompt=RESPONSE_SUMMARY_TEMPLATE,
-            max_token_limit=250,  # window size of the history we're trying to summarize
             llm=llm_summary,
             memory_key="history",
             input_key="thought",
