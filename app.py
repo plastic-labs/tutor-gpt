@@ -29,7 +29,7 @@ async def on_ready():
     print(f"We have logged in as {bot.user}: ID = {bot.user.id}")
 
 
-@bot.command(description="Set the context for the tutor")
+@bot.command(description="Set the context for the tutor or show it")
 async def context(ctx, text: Optional[str] = None):
     """
     This function sets the context global var for the tutor to engage in discussion on.
