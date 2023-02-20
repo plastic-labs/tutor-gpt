@@ -41,7 +41,7 @@ async def context(ctx, text: Optional[str] = None):
     global CONTEXT
     if text is None:
         if CONTEXT is not None:
-            await ctx.respond(f"Current context: {CONTEXT}")
+            await ctx.respond(f"Current context: {CONTEXT}", ephemeral=True)
             return
         else:
             await ctx.respond(f"You never set a context! Add some text after the `/context` command :) ")
@@ -51,8 +51,8 @@ async def context(ctx, text: Optional[str] = None):
     await ctx.respond("The context has been successfully set!")
 
 
-@bot.command(description="Refresh the conversation with the tutor")
-async def refresh(ctx):
+@bot.command(description="Restart the conversation with the tutor")
+async def restart(ctx):
     """
     Clears the conversation history, context, and reloads the chains
 
