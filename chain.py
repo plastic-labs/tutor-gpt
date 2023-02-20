@@ -4,8 +4,6 @@ from typing import Optional, Tuple, Deque
 # import pandas as pd
 from langchain import LLMChain
 from langchain.chains.conversation.memory import ConversationSummaryMemory
-from langchain.chains import SimpleSequentialChain
-from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 from langchain.prompts import load_prompt
 
