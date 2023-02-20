@@ -73,10 +73,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # print(message.content)
-    thought_history.append(message.content)
-    response_history.append(message.content)
-
+    # if the user mentioned the bot...
     if str(bot.user.id) in message.content:
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
@@ -96,5 +93,27 @@ async def on_message(message):
         # await message.channel.send(response)
         await message.reply(f'Thought: {thought}\nResponse: {response}')
 
+    # if the message is a reply...
+    if message.reference is not None:
+        # and if the referenced message is from the bot...
+        reply_msg = await bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
+        if reply_msg.author == bot.user:
+            async with message.channel.typing():
+                response, thought = await chat(
+                    CONTEXT, 
+                    message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
+                    thought_history, 
+                    response_history,
+                    thought_chain,
+                    response_chain
+                )
+        print("============================================")
+        print(f'Thought: {thought}\nResponse: {response}')
+        print("============================================")
+        # await message.channel.send(response)
+        await message.reply(f'Thought: {thought}\nResponse: {response}')
+
+
+    
 
 bot.run(token)
