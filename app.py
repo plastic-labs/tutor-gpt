@@ -107,11 +107,11 @@ async def on_message(message):
                     thought_chain,
                     response_chain
                 )
-        print("============================================")
-        print(f'Thought: {thought}\nResponse: {response}')
-        print("============================================")
-        # await message.channel.send(response)
-        await message.reply(f'Thought: {thought}\nResponse: {response}')
+            print("============================================")
+            print(f'Thought: {thought}\nResponse: {response}')
+            print("============================================")
+            # await message.channel.send(response)
+            await message.reply(f'Thought: {thought}\nResponse: {response}')
 
 
     
