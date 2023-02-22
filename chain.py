@@ -1,5 +1,6 @@
-import os, re
+import os
 from typing import Optional, Tuple, Deque
+import rollbar
 
 # import pandas as pd
 from langchain import LLMChain
@@ -11,6 +12,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+rollbar_token = os.environ['ROLLBAR_TOKEN']
+rollbar_env = os.environ['ROLLBAR_ENV']
+
+rollbar.init(
+    access_token=rollbar_token,
+    environment=rollbar_env,
+    code_version='1.0'
+    )
 
 THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/thought_prompt.yaml")
 RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/response_prompt.yaml")
@@ -84,6 +93,7 @@ async def chat(
             thought = thought.split('Tutor:')[0].strip()
         print(f"Thought: {thought}")
     except Exception as e:
+        rollbar.report_exc_info()
         thought = str(e)
 
     try:
@@ -97,6 +107,7 @@ async def chat(
             response = response.split('Student:')[0].strip()
         print(f"Response: {response}")
     except Exception as e:
+        rollbar.report_exc_info()
         response = str(e)
 
     thought_history.append((inp, thought, response))
