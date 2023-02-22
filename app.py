@@ -59,7 +59,7 @@ async def restart(ctx):
     Args:
         ctx: context, necessary for bot commands
     """
-    global CONTEXT, chain, history, K
+    global CONTEXT, thought_chain, response_chain, thought_history, response_history, K
     CONTEXT = None
     thought_chain, response_chain = load_chains()
     response_history = collections.deque(maxlen=K)
