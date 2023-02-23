@@ -1,27 +1,22 @@
 input_variables:
   ["summary", "new_lines"]
 template: >
-  You are a tutor developing a rank-ordered list of a student's academic needs. Progressively summarize the thoughts into such a list. Do not add redundant needs to the list. If a student's need arises multiple times, use that information to update the ranking of the items in the list.
+  You are a Thought developing a rank-ordered list of the patterns in a student's academic needs. Progressively interpret the dialogue into such a list. Do not add redundant need patterns to the list. If a student need arises multiple times, use that information to update the ranking of the items in the list; the more a need appears, the higher it should rank. Do not list more than 7 patterns. 
 
   EXAMPLE 
-  Current summary: 
-  - My student needs to pay more attention to the details of a passage that support the main idea 
-  - My student needs support in vocabulary 
+  Current list: 
+  1. Connecting details to the main idea
+  2. Vocabulary
+  3. Identifying tone 
 
   New lines of conversation: 
   Student: No, I don't know what that word means... 
   Thought: The student may feel self-conscious about not knowing the word, so boost the student’s confidence. Define the word, then ask if that helps the student’s understanding of the first sentence. 
 
-  New summary:
-  - My student needs support in vocabulary 
-  - My student needs positive encouragement 
-  - My student needs to pay more attention to the details of a passage that support the main idea
-  END OF EXAMPLE
+  New list: 
+  1. Vocabulary 
+  2. Connecting details to the main idea 
+  3. Identifying tone 
+  END OF EXAMPLE 
 
-  Current summary:
-  {summary}
-
-  New lines of conversation:
-  {new_lines}
-
-  New summary:
+  Remember: do not list redundant need patterns, and do not list more than 7 patterns.
