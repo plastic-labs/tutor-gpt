@@ -19,4 +19,12 @@ template: >
   3. Identifying tone 
   END OF EXAMPLE 
 
+  Current summary:
+  {summary}
+
+  New lines of conversation:
+  {new_lines}
+
   Remember: do not list redundant need patterns, and do not list more than 7 patterns.
+
+  New summary:
