@@ -24,6 +24,7 @@ intents.message_content = True
 
 bot = discord.Bot(intents=intents)
 
+
 @bot.event
 async def on_ready():
     print(f"We have logged in as {bot.user}: ID = {bot.user.id}")
@@ -38,21 +39,32 @@ async def context(ctx, text: Optional[str] = None):
         ctx: context, necessary for bot commands
         text: the passage (we're also calling it "CONTEXT") to be injected into the prompt
     """
-    global CONTEXT
+    global CONTEXT, thought_chain, response_chain
     if text is None:
+        # no text given, show current text to user or let them know nothing's been set
         if CONTEXT is not None:
             await ctx.respond(f"Current context: {CONTEXT}", ephemeral=True)
             return
         else:
             await ctx.respond(f"You never set a context! Add some text after the `/context` command :) ")
             return
-    CONTEXT = text
-    print(f"Context set to: {CONTEXT}")
-    await ctx.respond("The context has been successfully set!")
+    else:
+        # text given, assign or update the context
+        if CONTEXT is not None:
+            # updating the context, so restart conversation
+            await ctx.invoke(bot.get_command('restart'), respond=False)
+            CONTEXT = text
+            await ctx.respond(f"New context: {CONTEXT}", ephemeral=True)
+            return
+        else:
+            # setting context for the first time
+            CONTEXT = text
+            print(f"Context set to: {CONTEXT}")
+            await ctx.respond("The context has been successfully set!")
 
 
 @bot.command(description="Restart the conversation with the tutor")
-async def restart(ctx):
+async def restart(ctx, respond: Optional[bool] = True):
     """
     Clears the conversation history, context, and reloads the chains
 
@@ -65,7 +77,10 @@ async def restart(ctx):
     response_history = collections.deque(maxlen=K)
     thought_history = collections.deque(maxlen=K)
 
-    await ctx.respond("The conversation has been reset!")
+    if respond:
+        await ctx.respond("The conversation has been reset!")
+    else:
+        return
 
 
 @bot.listen()
