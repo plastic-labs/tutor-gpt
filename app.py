@@ -54,7 +54,8 @@ async def context(ctx, text: Optional[str] = None):
             # updating the context, so restart conversation
             await ctx.invoke(bot.get_command('restart'), respond=False)
             CONTEXT = text
-            await ctx.respond(f"New context: {CONTEXT}", ephemeral=True)
+            print(f"Context updated to: {CONTEXT}")
+            await ctx.respond("The context has been successfully updated and conversation restarted!")
             return
         else:
             # setting context for the first time
@@ -106,7 +107,7 @@ async def on_message(message):
         print(f'Thought: {thought}\nResponse: {response}')
         print("============================================")
         # await message.channel.send(response)
-        await message.reply(f'Thought: {thought}\nResponse: {response}')
+        await message.reply(response)
 
     # if the message is a reply...
     if message.reference is not None:
