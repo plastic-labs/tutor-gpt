@@ -26,6 +26,6 @@ example_prompt:
     template: >
         Context: {context}
 examples:
-    data/prompts/examples.yaml
+    data/prompts/thought_examples.yaml
 suffix:
     "Context: {context}\n {history}\nProvide your thoughts about the student's response as if you were a tutor. ONLY generate a thought.\nStudent: {input}\nThought:"
