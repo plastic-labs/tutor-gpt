@@ -129,7 +129,7 @@ async def on_message(message):
             print(f'Thought: {thought}\nResponse: {response}')
             print("============================================")
             # await message.channel.send(response)
-            await message.reply(f'Thought: {thought}\nResponse: {response}')
+            await message.reply(response)
 
 
     
