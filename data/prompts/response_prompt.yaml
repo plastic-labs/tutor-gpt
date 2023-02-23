@@ -26,6 +26,6 @@ example_prompt:
     template: >
         Context: {context}
 examples:
-    data/prompts/examples.yaml
+    data/prompts/response_examples.yaml
 suffix:
     "Context: {context}\n {history}\nRemember: do NOT spoon-feed the student. You MUST ask questions based on the thought to get the student to do as much work as you. \nStudent: {input}\nThought: {thought}\nTutor:"
