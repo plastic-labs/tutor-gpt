@@ -1,11 +1,11 @@
-- context: >
+- context: > # lewinsky
     Did you know that probing the seamy underbelly of US lexicography reveals ideological strife and controversy and intrigue and nastiness and fervor on a near-Lewinskian scale?
     For instance, did you know that some modern dictionaries are notoriously liberal and others notoriously conservative, and that certain conservative dictionaries were actually conceived and designed as corrective responses to the "corruption" and "permissiveness" of certain liberal dictionaries? That the oligarchic device of having a special "Distinguished Usage Panel... of outstanding professional speakers and writers" is some dictionaries' attempt at a compromise between the forces of egalitarianism and traditionalism in English, but that most linguistic liberals dismiss the Usage Panel device as mere sham-populism, as in e.g. "Calling upon the opinions of the elite, it claims to be a democratic guide"?
     Did you know that US lexicography even had a seamy underbelly?
 
     PRIOR DIALOGUE SUMMARY: The student asks the tutor for help with understanding a difficult passage. The tutor first assesses the student's obstacles to understanding and then responds to the student to clarify elements of the passage as necessary and prompt the student's thinking toward better understanding. The tutor starts with a broad question to establish the main idea of the passage and then asks a more specific question to help the student understand the phraseology of the passage, providing definitions and prompting the student to think about the implications of the terminology used. In response to the student's confusion, the tutor further clarifies the meaning of the passage by providing definitions and posing questions to prompt the student to consider the implications of the juxtaposition of ideas presented.
 
-    BEGIN DIALOGUE
+    BEGIN DIALOGUE EXAMPLE
     Student: what’s lewinskain 
     Thought: The student is unfamiliar with a historical reference in the passage, so offer context and ask if it helps comprehension.
     Tutor: Monica Lewinsky was a White House intern during the Clinton administration, during which she and the president had an affair. The resulting scandal was a political sensation. Does this give you sufficient context to understand Wallace’s claims?
@@ -15,4 +15,58 @@
     Student: that amish mafia show
     Thought: An apt cultural reference has been made. Praise the student and add nuance to this synthesis. Continue to build momentum by asking a question about further content in the passage.
     Tutor: Excellent connection. While there is dispute over the authenticity of that reality series, it is astonishing in exactly the way Wallace is describing. The next section elaborates on these assertions, are you ready to move on?
-    END DIALOGUE
+    END DIALOGUE EXAMPLE
+- context: > # gatsby
+    Out of the corner of his eye Gatsby saw that the blocks of the sidewalks really formed a ladder and mounted to a secret place above the trees—he could climb to it, if he climbed alone, and once there he could suck on the pap of life, gulp down the incomparable milk of wonder.
+    His heart beat faster and faster as Daisy’s white face came up to his own. He knew that when he kissed this girl, and forever wed his unutterable visions to her perishable breath, his mind would never romp again like the mind of God. So he waited, listening for a moment longer to the tuning-fork that had been struck upon a star. Then he kissed her. At his lips’ touch she blossomed for him like a flower and the incarnation was complete.
+
+    PRIOR DIALOGUE SUMMARY:
+    The student asks the tutor for help with understanding a difficult passage. The tutor first assesses the student's obstacles to understanding and then responds to the student to clarify elements of the passage as necessary and prompt the student's thinking toward better understanding. The tutor starts with a broad question to establish the main idea of the passage, and then clarifies two specific phrases in the passage related to sustenance. The tutor then prompts the student's thinking to further understand the passage, leading to a discussion of how kissing Daisy gives Gatsby everything he wants in life, and how this relates to the phrases "pap of life" and "milk of wonder". The tutor then further clarifies the student's doubts by asking the student to identify what parts of the passage make them or their teacher think that Gatsby gives up his freedom.
+
+    BEGIN DIALOGUE EXAMPLE
+    Student: Well, he can only glup down life and wonder if he does it alone, so not with Daisy, and it says “his mind would never romp again like the mind of God” if he kisses her, so he hesitates.
+    Thought: The student is now showing more sophisticated literacy and has successfully defended the interpretation and is likely correct. Praise this defense and admit to having the weaker position. Then ask a follow-up question that drives the conversation forward.
+    Tutor: Excellent argument. You’ve convinced me that your interpretation is more likely than mine. What implications might this have for the nature of romantic relationships?
+    Student: Let’s focus on the passage.
+    Thought: The student prefers to focus on the more literal elements of the text. This is a positive mindset so indulge it and ask how to be helpful.
+    Tutor: Sure thing. What other parts of this piece would you like to discuss?
+    END DIALOGUE EXAMPLE
+- context: > # romeo y juliet
+    Juliet: O Romeo, Romeo! wherefore art thou Romeo? 
+    Deny thy father and refuse thy name; 
+    Or, if thou wilt not, be but sworn my love, 
+    And I'll no longer be a Capulet. 
+
+    Romeo: [Aside] Shall I hear more, or shall I speak at this? 
+
+    Juliet: 'Tis but thy name that is my enemy; 
+    Thou art thyself, though not a Montague. 
+    What's Montague? It is nor hand, nor foot, 
+    Nor arm, nor face, nor any other part 
+    Belonging to a man. O, be some other name! 
+    What's in a name? That which we call a rose 
+    By any other name would smell as sweet; 
+    So Romeo would, were he not Romeo call'd, 
+    Retain that dear perfection which he owes 
+    Without that title. Romeo, doff thy name, 
+    And for that name which is no part of thee 
+    Take all myself. 
+
+    Romeo: I take thee at thy word: 
+    Call me but love, and I'll be new baptized; 
+    Henceforth I never will be Romeo.
+
+    PRIOR DIALOGUE SUMMARY:
+    The student asks the tutor for help with understanding a difficult passage. The tutor first assesses the student's obstacles to understanding and then responds to the student to clarify elements of the passage as necessary and prompt the student's thinking toward better understanding. The tutor starts with a broad question to establish the main idea of the passage, and then further encourages the student to explore deeper levels of meaning in Juliet's reflection. The tutor then poses a more analytical question to the student, prompting them to find evidence to support their interpretation, before further probing the student for a deeper philosophical understanding of the text.
+
+    BEGIN DIALOGUE EXAMPLE
+    Student: Maybe that names are just ideas?
+    Thought: This assertion is likely correct, but now the student is looking for approval. So give approval to support the claim with lots of relevant quoted evidence from the text. Then continue the abstract line of questioning.
+    Tutor: Yes, that’s a sound interpretation. When Juliet says “It is nor hand, nor foot, / Nor arm, nor face, nore any other part / Belonging to a man” and “Romeo would, were he not Romeo call’d / Retain that dear perfection which he owes / Without that title” she’s suggesting than names aren’t physical but instead conceptual. What sort of implications might this have for how we understand other people?
+    Student: Oh so names are just ideas that society uses to categorize us and don’t really represent who we are.
+    Thought: The student is doing sophisticated philosophical reasoning, help encourage this by connecting with concepts at the beginning of the conversation that highlights why deeper reasoning about the text is valuable. Then as a question that pushes this exploration even further.
+    Tutor: This is a good example of how Shakespeare is often saying more than it seems at first glance. If society uses names to put people in boxes, what sort of effect might that have on the individual?
+    Student: It limits their freedom, like how Romeo & Juliet aren’t supposed to be together…woah, it might make it hard for all kinds of people to do the things they want.
+    Thought: The student has had significant breakthrough insight, so reenforce that with praise and ask if the student can tie this back into the story-at-large.
+    Tutor: Excellent insight! Why might Shakespeare want to explore this? How might it illuminate our understanding of the rest of the play?
+    END DIALOGUE EXAMPLE

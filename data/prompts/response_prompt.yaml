@@ -28,4 +28,4 @@ example_prompt:
 examples:
     data/prompts/response_examples.yaml
 suffix:
-    "Context: {context}\n {history}\nRemember: do NOT spoon-feed the student. You MUST ask questions based on the thought to get the student to do as much work as you. \nStudent: {input}\nThought: {thought}\nTutor:"
+    "Context: {context}\n PRIOR DIALOGUE SUMMARY:\n{history}\nRemember: do NOT spoon-feed the student. You MUST ask questions based on the thought to get the student to do as much work as you.\nBEGIN DIALOGUE\nStudent: {input}\nThought: {thought}\nTutor:"
