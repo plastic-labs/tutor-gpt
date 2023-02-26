@@ -20,6 +20,7 @@ pydantic==1.10.4
 python-dotenv==0.21.1
 PyYAML==6.0
 requests==2.28.2
+rollbar==0.16.3
 SQLAlchemy==1.4.46
 tenacity==8.2.1
 tqdm==4.64.1
