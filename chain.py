@@ -2,7 +2,7 @@ from typing import Optional, Tuple, Deque
 
 # import pandas as pd
 from langchain import LLMChain
-from langchain.chains.conversation.memory import ConversationSummaryMemory
+from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
 from langchain.llms import OpenAI
 from langchain.prompts import load_prompt
 
@@ -23,13 +23,14 @@ def load_chains():
     llm_summary = OpenAI(max_tokens=100)  # how long we want our summary to be
     thought_chain = LLMChain(
         llm=llm, 
-        memory=ConversationSummaryMemory(
+        memory=ConversationSummaryBufferMemory(
             prompt=THOUGHT_SUMMARY_TEMPLATE,
+            max_token_limit=200,  # how much of the history we're trying to summarize
             llm=llm_summary,
-            memory_key="history",
+            memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
             input_key="input",
             ai_prefix="Thought",
-            human_prefix="Student",
+            human_prefix="Student"
         ), 
         prompt=THOUGHT_PROMPT_TEMPLATE, 
         verbose=True
@@ -37,13 +38,14 @@ def load_chains():
 
     response_chain = LLMChain(
         llm=llm, 
-        memory=ConversationSummaryMemory(
+        memory=ConversationSummaryBufferMemory(
             prompt=RESPONSE_SUMMARY_TEMPLATE,
+            max_token_limit=200, 
             llm=llm_summary,
-            memory_key="history",
+            memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
             input_key="thought",
             ai_prefix="Tutor",
-            human_prefix="Student",
+            human_prefix="Thought"
         ), 
         prompt=RESPONSE_PROMPT_TEMPLATE, 
         verbose=True
