@@ -43,9 +43,9 @@ def load_chains():
             max_token_limit=100, 
             llm=llm_summary,
             memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
-            input_key="thought",
+            input_key="input",
             ai_prefix="Tutor",
-            human_prefix="Thought"
+            human_prefix="Student"
         ), 
         prompt=RESPONSE_PROMPT_TEMPLATE, 
         verbose=True
