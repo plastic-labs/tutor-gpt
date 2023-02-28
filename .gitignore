@@ -26,3 +26,6 @@ venv/
 # jupyter
 *.ipynb
 .ipynb_checkpoints/
+
+# Github Actions and nektos/act
+act.env

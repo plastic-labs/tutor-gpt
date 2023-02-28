@@ -1,0 +1,65 @@
+name: Deploy to ECR
+
+on:
+  push:
+    branches: [ main, canary, containerization ]
+
+env: 
+  AWS_REGION: us-east-1                   # set this to your preferred AWS region, e.g. us-west-1
+  ECR_REPOSITORY: tutor-gpt           # set this to your Amazon ECR repository name
+  ECS_SERVICE: MY_ECS_SERVICE                 # set this to your Amazon ECS service name
+  ECS_CLUSTER: MY_ECS_CLUSTER                 # set this to your Amazon ECS cluster name
+  ECS_TASK_DEFINITION: ecr.json # set this to the path to your Amazon ECS task definition
+                                               # file, e.g. .aws/task-definition.json
+  CONTAINER_NAME: tutor-gpt           # set this to the name of the container in the
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and Push Image
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: 'Create env file'
+      run: |
+        touch .env
+        echo OPEN_API_KEY=${{secrets.OPEN_API_KEY}} >> .env
+        echo BOT_TOKEN=${{secrets.BOT_TOKEN}} >> .env
+        echo ROLLBAR_TOKEN=${{secrets.ROLLBAR_TOKEN}} >> .env
+        echo ROLLBAR_ENV=${{secrets.ROLLBAR_ENV}} >> .env
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: tutor-gpt
+        IMAGE_TAG: canary
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        #     - name: Fill in the new image ID in the Amazon ECS task definition
+        #       id: task-def
+        #       uses: aws-actions/amazon-ecs-render-task-definition@v1
+        #       with:
+        #         task-definition: ${{ env.ECS_TASK_DEFINITION }}
+        #         container-name: ${{ env.CONTAINER_NAME }}
+        #         image: ${{ steps.build-image.outputs.image }}
+        # 
+        #     - name: Deploy Amazon ECS task definition
+        #       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        #       with:
+        #         task-definition: ${{ steps.task-def.outputs.task-definition }}
+        #         service: ${{ env.ECS_SERVICE }}
+        #         cluster: ${{ env.ECS_CLUSTER }}
+        #         wait-for-service-stability: true
