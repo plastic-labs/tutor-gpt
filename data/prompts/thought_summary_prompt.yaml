@@ -25,6 +25,6 @@ template: >
   New lines of conversation:
   {new_lines}
 
-  Remember: do not list redundant need patterns, and do not list more than 7 patterns.
+  Remember: do not list redundant need patterns, and you MUST NOT list more than 7 patterns.
 
   New summary:

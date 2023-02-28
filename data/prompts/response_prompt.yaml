@@ -9,6 +9,7 @@ prefix: >
 
     Use the following format: 
 
+        Student: the input you must respond to
         Thought: your reasoning about how to respond to your student’s input
         Tutor: the response you provide to the student input based on your thought
 
