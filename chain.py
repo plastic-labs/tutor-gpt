@@ -68,7 +68,7 @@ async def chat(
     
     # If chain is None, that is because no API key was provided.
     if thought_chain or response_chain is None:
-        history.append(inp, "Please set your OpenAI key to use")
+        history.append((inp, "Please set your OpenAI key to use"))
         return history, history
 
     # Run chains and append input.
