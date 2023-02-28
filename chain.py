@@ -96,7 +96,6 @@ async def chat(
         )
         if 'Student:' in response:
             response = response.split('Student:')[0].strip()
-        print(f"Response: {response}")
         if 'Studen:' in response:  # this happened once: https://discord.com/channels/1016845111637839922/1073429619639853066/1080233497073025065
             response = response.split('Studen:')[0].strip()
         print(f"Response: {response}")
