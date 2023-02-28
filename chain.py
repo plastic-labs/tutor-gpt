@@ -20,13 +20,14 @@ RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.ya
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
     llm = OpenAI(temperature=0.9)
-    llm_summary = OpenAI(max_tokens=100)  # how long we want our summary to be
+    llm_thought_summary = OpenAI(max_tokens=75)  # how long we want our academic needs list to be
+    llm_response_summary = OpenAI(max_tokens=150) # how long we want our dialogue summary to be
     thought_chain = LLMChain(
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
             prompt=THOUGHT_SUMMARY_TEMPLATE,
             max_token_limit=100,  # how much of the history we're trying to summarize
-            llm=llm_summary,
+            llm=llm_thought_summary,
             memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
             input_key="input",
             ai_prefix="Thought",
@@ -41,7 +42,7 @@ def load_chains():
         memory=ConversationSummaryBufferMemory(
             prompt=RESPONSE_SUMMARY_TEMPLATE,
             max_token_limit=100, 
-            llm=llm_summary,
+            llm=llm_response_summary,
             memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
             input_key="input",
             ai_prefix="Tutor",
@@ -58,8 +59,7 @@ def load_chains():
 async def chat(
     context: str, 
     inp: str, 
-    thought_history: Deque[Tuple[str, str, str]], 
-    response_history: Deque[Tuple[str, str, str]], 
+    history: Deque[Tuple[str, str, str]], 
     thought_chain: Optional[LLMChain], 
     response_chain: Optional[LLMChain]
 ):
@@ -67,18 +67,15 @@ async def chat(
     # history = history or []
     
     # If chain is None, that is because no API key was provided.
-    if thought_chain is None:
-        thought_history.append(inp, "Please set your OpenAI key to use")
-        return thought_history, thought_history
-    if response_chain is None:
-        response_history.append(inp, "Please set your OpenAI key to use")
-        return response_history, response_history
+    if thought_chain or response_chain is None:
+        history.append(inp, "Please set your OpenAI key to use")
+        return history, history
 
     # Run chains and append input.
     try:
         thought = thought_chain.predict(
             context=context, 
-            history=response_history, 
+            history=history, 
             input=inp
         )
         if 'Tutor:' in thought:
@@ -90,18 +87,20 @@ async def chat(
     try:
         response = response_chain.predict(
             context=context,
-            history=response_history,
+            history=history,
             input=inp,
             thought=thought
         )
         if 'Student:' in response:
             response = response.split('Student:')[0].strip()
         print(f"Response: {response}")
+        if 'Studen:' in response:  # this happened once: https://discord.com/channels/1016845111637839922/1073429619639853066/1080233497073025065
+            response = response.split('Studen:')[0].strip()
+        print(f"Response: {response}")
     except Exception as e:
         response = str(e)
 
-    thought_history.append((inp, thought, response))
-    response_history.append((inp, thought, response))
+    history.append((inp, thought, response))
 
     return response, thought
 
