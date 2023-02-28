@@ -26,7 +26,6 @@ USER app
 COPY app.py .
 COPY chain.py .
 COPY data/ data/
-COPY .env .
 
 # https://stackoverflow.com/questions/29663459/python-app-does-not-print-anything-when-running-detached-in-docker
 CMD ["python", "-u", "app.py"]

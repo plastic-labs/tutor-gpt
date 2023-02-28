@@ -2,3 +2,7 @@ __pycache__
 .DS_STORE
 README.md
 venv/
+act.env
+.github/
+ecs.json
+fly.toml
