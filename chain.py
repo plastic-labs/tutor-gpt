@@ -25,7 +25,7 @@ def load_chains():
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
             prompt=THOUGHT_SUMMARY_TEMPLATE,
-            max_token_limit=200,  # how much of the history we're trying to summarize
+            max_token_limit=100,  # how much of the history we're trying to summarize
             llm=llm_summary,
             memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
             input_key="input",
@@ -40,7 +40,7 @@ def load_chains():
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
             prompt=RESPONSE_SUMMARY_TEMPLATE,
-            max_token_limit=200, 
+            max_token_limit=100, 
             llm=llm_summary,
             memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
             input_key="thought",
