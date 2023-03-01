@@ -93,7 +93,6 @@ async def chat(
         )
         if 'Tutor:' in thought:
             thought = thought.split('Tutor:')[0].strip()
-        print(f"Thought: {thought}")
     except Exception as e:
         rollbar.report_exc_info()
         thought = str(e)
@@ -109,7 +108,6 @@ async def chat(
             response = response.split('Student:')[0].strip()
         if 'Studen:' in response:  # this happened once: https://discord.com/channels/1016845111637839922/1073429619639853066/1080233497073025065
             response = response.split('Studen:')[0].strip()
-        print(f"Response: {response}")
     except Exception as e:
         rollbar.report_exc_info()
         response = str(e)
