@@ -6,7 +6,7 @@ on:
       - staging
 jobs:
   prod-deploy:
-    if: github.ref == 'refs/head/main'
+    if: github.ref == 'refs/heads/main'
     name: Deploy Production App
     runs-on: ubuntu-latest
     steps:
@@ -16,7 +16,7 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
   staging-deploy:
-    if: github.ref == 'refs/head/staging'
+    if: github.ref == 'refs/heads/staging'
     name: Deploy Staging App
     runs-on: ubuntu-latest
     steps:
