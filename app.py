@@ -111,7 +111,7 @@ async def on_message(message):
         # and if the referenced message is from the bot...
         reply_msg = await bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
         if reply_msg.author == bot.user:
-            if message.content.startswith("!no"):
+            if message.content.startswith("!no") or message.content.startswith("!No"):
                 return
             async with message.channel.typing():
                 response, thought = await chat(
