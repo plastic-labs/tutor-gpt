@@ -3,16 +3,25 @@ on:
   push:
     branches:
       - main
-      - canary
-      - containerization
+      - staging
 jobs:
-  deploy:
-    name: Deploy app
+  prod-deploy:
+    if: github.ref == 'refs/head/main'
+    name: Deploy Production App
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only
+      - run: flyctl deploy -c fly.production.toml --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
+  staging-deploy:
+    if: github.ref == 'refs/head/staging'
+    name: Deploy Staging App
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy -c fly.staging.toml --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
