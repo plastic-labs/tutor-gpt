@@ -28,3 +28,4 @@ examples:
     data/prompts/thought_examples.yaml
 suffix:
     "Context: {context}\nPRIOR ACADEMIC NEEDS:\n{history}\nRemember: there are many probable interpretations of the passage, so your reasoning with the student is a Socratic dialogue with the goal of assessing the probability that an interpretation is correct.\nBEGIN DIALOGUE\nStudent: {input}\nThought:"
+

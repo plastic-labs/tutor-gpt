@@ -26,3 +26,4 @@ examples:
     data/prompts/response_examples.yaml
 suffix:
     "Context: {context}\n PRIOR DIALOGUE SUMMARY:\n{history}\nRemember: do NOT spoon-feed or do all the work of comprehension for your student.\nBEGIN DIALOGUE\nStudent: {input}\nThought: {thought}\nTutor:"
+
