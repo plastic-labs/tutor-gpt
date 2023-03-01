@@ -1,5 +1,6 @@
 from typing import Optional, Tuple, Deque
 import rollbar
+import os
 
 # import pandas as pd
 from langchain import LLMChain
