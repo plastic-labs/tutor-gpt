@@ -100,11 +100,11 @@ async def on_message(message):
                 thought_chain,
                 response_chain
             )
+            await message.reply(response)
         print("============================================")
         print(f'Thought: {thought}\nResponse: {response}')
         print("============================================")
-        # await message.channel.send(response)
-        await message.reply(response)
+        
 
     # if the message is a reply...
     if message.reference is not None:
@@ -121,13 +121,10 @@ async def on_message(message):
                     thought_chain,
                     response_chain
                 )
+                await message.reply(response)
             print("============================================")
             print(f'Thought: {thought}\nResponse: {response}')
             print("============================================")
-            # await message.channel.send(response)
-            await message.reply(response)
-
-
-    
+            
 
 bot.run(token)
