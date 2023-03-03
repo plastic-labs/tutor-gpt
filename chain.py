@@ -3,7 +3,7 @@ import rollbar
 import os
 
 # import pandas as pd
-from langchain import LLMChain
+from langchain.chains import ConversationChain
 from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
 from langchain.llms import OpenAI
 from langchain.prompts import load_prompt
@@ -32,7 +32,7 @@ def load_chains():
     llm = OpenAI(temperature=0.9)
     llm_thought_summary = OpenAI(max_tokens=75)  # how long we want our academic needs list to be
     llm_response_summary = OpenAI(max_tokens=150) # how long we want our dialogue summary to be
-    thought_chain = LLMChain(
+    thought_chain = ConversationChain(
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
             prompt=THOUGHT_SUMMARY_TEMPLATE,
@@ -47,7 +47,7 @@ def load_chains():
         verbose=True
     )
 
-    response_chain = LLMChain(
+    response_chain = ConversationChain(
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
             prompt=RESPONSE_SUMMARY_TEMPLATE,
@@ -69,8 +69,8 @@ def load_chains():
 async def chat(
     context: str, 
     inp: str, 
-    thought_chain: Optional[LLMChain], 
-    response_chain: Optional[LLMChain]
+    thought_chain: Optional[ConversationChain], 
+    response_chain: Optional[ConversationChain]
 ):
     """Execute the chat functionality."""
     # history = history or []
