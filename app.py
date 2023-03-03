@@ -96,7 +96,6 @@ async def on_message(message):
             response, thought = await chat(
                 CONTEXT, 
                 message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-                history, 
                 thought_chain,
                 response_chain
             )
@@ -117,7 +116,6 @@ async def on_message(message):
                 response, thought = await chat(
                     CONTEXT, 
                     message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-                    history,
                     thought_chain,
                     response_chain
                 )
