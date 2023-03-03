@@ -1,4 +1,3 @@
-import collections
 import os
 from typing import Optional
 
@@ -14,7 +13,6 @@ token = os.environ['BOT_TOKEN']
 
 K=15  # create a constants file so we can ref this in chain.py too
 thought_chain, response_chain = load_chains()
-history = collections.deque(maxlen=K)
 CONTEXT = None
 
 intents = discord.Intents.default()
