@@ -69,10 +69,9 @@ async def restart(ctx, respond: Optional[bool] = True):
     Args:
         ctx: context, necessary for bot commands
     """
-    global CONTEXT, thought_chain, response_chain, history, K
+    global CONTEXT, thought_chain, response_chain, K
     CONTEXT = None
     thought_chain, response_chain = load_chains()
-    history = collections.deque(maxlen=K)
 
     if respond:
         await ctx.respond("The conversation has been reset!")
