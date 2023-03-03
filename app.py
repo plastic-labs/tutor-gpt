@@ -1,4 +1,3 @@
-import collections
 import os
 from typing import Optional
 
@@ -14,7 +13,6 @@ token = os.environ['BOT_TOKEN']
 
 K=15  # create a constants file so we can ref this in chain.py too
 thought_chain, response_chain = load_chains()
-history = collections.deque(maxlen=K)
 CONTEXT = None
 
 intents = discord.Intents.default()
@@ -71,10 +69,9 @@ async def restart(ctx, respond: Optional[bool] = True):
     Args:
         ctx: context, necessary for bot commands
     """
-    global CONTEXT, thought_chain, response_chain, history, K
+    global CONTEXT, thought_chain, response_chain, K
     CONTEXT = None
     thought_chain, response_chain = load_chains()
-    history = collections.deque(maxlen=K)
 
     if respond:
         await ctx.respond("The conversation has been reset!")
@@ -96,7 +93,6 @@ async def on_message(message):
             response, thought = await chat(
                 CONTEXT, 
                 message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-                history, 
                 thought_chain,
                 response_chain
             )
@@ -117,7 +113,6 @@ async def on_message(message):
                 response, thought = await chat(
                     CONTEXT, 
                     message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-                    history,
                     thought_chain,
                     response_chain
                 )
