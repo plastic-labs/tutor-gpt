@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Deque
+from typing import Optional
 import rollbar
 import os
 
@@ -69,7 +69,6 @@ def load_chains():
 async def chat(
     context: str, 
     inp: str, 
-    history: Deque[Tuple[str, str, str]], 
     thought_chain: Optional[LLMChain], 
     response_chain: Optional[LLMChain]
 ):
@@ -78,17 +77,16 @@ async def chat(
     
     # If chain is None, that is because no API key was provided.
     if thought_chain is None:
-        history.append(inp, "Please set your OpenAI key to use")
-        return history, history
+        print("Please set your OpenAI key to use")
+        return
     if response_chain is None:
-        history.append(inp, "Please set your OpenAI key to use")
-        return history, history
+        print("Please set your OpenAI key to use")
+        return
 
     # Run chains and append input.
     try:
         thought = thought_chain.predict(
             context=context, 
-            history=history, 
             input=inp
         )
         if 'Tutor:' in thought:
@@ -100,7 +98,6 @@ async def chat(
     try:
         response = response_chain.predict(
             context=context,
-            history=history,
             input=inp,
             thought=thought
         )
@@ -112,7 +109,8 @@ async def chat(
         rollbar.report_exc_info()
         response = str(e)
 
-    history.append((inp, thought, response))
+    # log these things
+    # history.append((inp, thought, response))
 
     return response, thought
 
