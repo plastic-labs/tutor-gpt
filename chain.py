@@ -1,11 +1,14 @@
-from typing import Optional
 import rollbar
 import os
 
-# import pandas as pd
+from langchain.chat_models import ChatOpenAI
+from langchain.llms import OpenAI
 from langchain import LLMChain
 from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
-from langchain.llms import OpenAI
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+)
 from langchain.prompts import load_prompt
 
 from dotenv import load_dotenv
@@ -30,18 +33,30 @@ RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.ya
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = OpenAI(temperature=0.9)
+    llm = ChatOpenAI(temperature=0.9)
     llm_thought_summary = OpenAI(max_tokens=75)  # how long we want our academic needs list to be
     llm_response_summary = OpenAI(max_tokens=150) # how long we want our dialogue summary to be
 
+    # chatGPT prompt formatting
+    starter_message_prompt = HumanMessagePromptTemplate(prompt=STARTER_PROMPT_TEMPLATE)
+    starter_chat_prompt = ChatPromptTemplate.from_messages([starter_message_prompt])
+
+    thought_message_prompt = HumanMessagePromptTemplate(prompt=THOUGHT_PROMPT_TEMPLATE)
+    thought_chat_prompt = ChatPromptTemplate.from_messages([thought_message_prompt])
+
+    response_message_prompt = HumanMessagePromptTemplate(prompt=RESPONSE_PROMPT_TEMPLATE)
+    response_chat_prompt = ChatPromptTemplate.from_messages([response_message_prompt])
+
+    # define chains
     starter_chain = LLMChain(
         llm=llm,
-        prompt=STARTER_PROMPT_TEMPLATE,
+        prompt=starter_chat_prompt,
         verbose=True
     )
 
     thought_chain = LLMChain(
-        llm=llm, 
+        llm=llm,
+        prompt=thought_chat_prompt,
         memory=ConversationSummaryBufferMemory(
             prompt=THOUGHT_SUMMARY_TEMPLATE,
             max_token_limit=100,  # how much of the history we're trying to summarize
@@ -50,13 +65,13 @@ def load_chains():
             input_key="input",
             ai_prefix="Thought",
             human_prefix="Student"
-        ), 
-        prompt=THOUGHT_PROMPT_TEMPLATE, 
+        ),
         verbose=True
     )
 
     response_chain = LLMChain(
         llm=llm, 
+        prompt=response_chat_prompt,
         memory=ConversationSummaryBufferMemory(
             prompt=RESPONSE_SUMMARY_TEMPLATE,
             max_token_limit=100, 
@@ -66,7 +81,6 @@ def load_chains():
             ai_prefix="Tutor",
             human_prefix="Student"
         ), 
-        prompt=RESPONSE_PROMPT_TEMPLATE, 
         verbose=True
     )
 
@@ -80,7 +94,7 @@ async def chat(**kwargs):
         assert kwargs.get('starter_chain'), "Please pass the starter chain."
         starter_chain = kwargs.get('starter_chain')
         context = kwargs.get('context')
-        
+
         response = starter_chain.predict(
             context=context
         )
