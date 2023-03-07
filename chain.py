@@ -21,6 +21,7 @@ rollbar.init(
     code_version='1.0'
     )
 
+STARTER_PROMPT_TEMPLATE = load_prompt("data/prompts/starter_prompt.yaml")
 THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/thought_prompt.yaml")
 RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/response_prompt.yaml")
 THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/thought_summary_prompt.yaml")
@@ -32,6 +33,11 @@ def load_chains():
     llm = OpenAI(temperature=0.9)
     llm_thought_summary = OpenAI(max_tokens=75)  # how long we want our academic needs list to be
     llm_response_summary = OpenAI(max_tokens=150) # how long we want our dialogue summary to be
+    starter_chain = LLMChain(
+        llm=llm,
+        prompt=STARTER_PROMPT_TEMPLATE,
+        verbose=True
+    )
     thought_chain = LLMChain(
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
@@ -63,55 +69,48 @@ def load_chains():
     )
 
 
-    return thought_chain, response_chain
+    return starter_chain, thought_chain, response_chain
 
 
-async def chat(
-    context: str, 
-    inp: str, 
-    thought_chain: Optional[LLMChain], 
-    response_chain: Optional[LLMChain]
-):
-    """Execute the chat functionality."""
-    # history = history or []
-    
-    # If chain is None, that is because no API key was provided.
-    if thought_chain is None:
-        print("Please set your OpenAI key to use")
-        return
-    if response_chain is None:
-        print("Please set your OpenAI key to use")
-        return
-
-    # Run chains and append input.
-    try:
-        thought = thought_chain.predict(
-            context=context, 
-            input=inp
+async def chat(**kwargs):
+    # if there's no input, generate a starter
+    if kwargs.get('inp') is None:
+        assert kwargs.get('starter_chain'), "Please pass the starter chain."
+        response = kwargs.get('starter_chain').predict(
+            context=kwargs.get('context')
         )
-        if 'Tutor:' in thought:
-            thought = thought.split('Tutor:')[0].strip()
-    except Exception as e:
-        rollbar.report_exc_info()
-        thought = str(e)
-
-    try:
-        response = response_chain.predict(
-            context=context,
-            input=inp,
-            thought=thought
+        
+        return response
+    # if we sent a thought across, generate a response
+    if kwargs.get('thought'):
+        assert kwargs.get('response_chain'), "Please pass the response chain."
+        response = kwargs.get('response_chain').predict(
+            context=kwargs.get('context'),
+            input=kwargs.get('inp'),
+            thought=kwargs.get('thought')
         )
         if 'Student:' in response:
             response = response.split('Student:')[0].strip()
-        if 'Studen:' in response:  # this happened once: https://discord.com/channels/1016845111637839922/1073429619639853066/1080233497073025065
+        if 'Studen:' in response:
             response = response.split('Studen:')[0].strip()
-    except Exception as e:
-        rollbar.report_exc_info()
-        response = str(e)
-
-    # log these things
-    # history.append((inp, thought, response))
-
-    return response, thought
+        
+        return response
+    # otherwise, we're generating a thought
+    else:
+        assert kwargs.get('thought_chain'), "Please pass the thought chain."
+        if kwargs.get('inp').isspace() or kwargs.get('inp') == '':
+            response = "Yes? How can I help?"
+            return response
+        
+        response = kwargs.get('thought_chain').predict(
+            context=kwargs.get('context'),
+            input=kwargs.get('inp')
+        )
+        
+        if 'Tutor:' in response:
+            response = response.split('Tutor:')[0].strip()
+        
+        
+        return response
 
 
