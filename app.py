@@ -11,8 +11,7 @@ from chain import load_chains, chat
 load_dotenv()
 token = os.environ['BOT_TOKEN']
 
-K=15  # create a constants file so we can ref this in chain.py too
-thought_chain, response_chain = load_chains()
+STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains()
 CONTEXT = None
 
 intents = discord.Intents.default()
@@ -36,15 +35,13 @@ async def context(ctx, text: Optional[str] = None):
         ctx: context, necessary for bot commands
         text: the passage (we're also calling it "CONTEXT") to be injected into the prompt
     """
-    global CONTEXT, thought_chain, response_chain
+    global CONTEXT, STARTER_CHAIN
     if text is None:
         # no text given, show current text to user or let them know nothing's been set
         if CONTEXT is not None:
             await ctx.respond(f"Current context: {CONTEXT}", ephemeral=True)
-            return
         else:
             await ctx.respond(f"You never set a context! Add some text after the `/context` command :) ")
-            return
     else:
         # text given, assign or update the context
         if CONTEXT is not None:
@@ -52,26 +49,35 @@ async def context(ctx, text: Optional[str] = None):
             await ctx.invoke(bot.get_command('restart'), respond=False)
             CONTEXT = text
             print(f"Context updated to: {CONTEXT}")
-            await ctx.respond("The context has been successfully updated and conversation restarted!")
-            return
+            response = await chat(
+                context=CONTEXT,
+                starter_chain=STARTER_CHAIN
+            )
+            await ctx.respond(response)
+
         else:
             # setting context for the first time
             CONTEXT = text
             print(f"Context set to: {CONTEXT}")
-            await ctx.respond("The context has been successfully set!")
+            response = await chat(
+                context=CONTEXT,
+                starter_chain=STARTER_CHAIN
+            )
+            await ctx.respond(response)
+
+    return
 
 
 @bot.command(description="Restart the conversation with the tutor")
 async def restart(ctx, respond: Optional[bool] = True):
     """
-    Clears the conversation history, context, and reloads the chains
+    Clears the conversation history and reloads the chains
 
     Args:
         ctx: context, necessary for bot commands
     """
-    global CONTEXT, thought_chain, response_chain, K
-    CONTEXT = None
-    thought_chain, response_chain = load_chains()
+    global STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN
+    STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains()
 
     if respond:
         await ctx.respond("The conversation has been reset!")
@@ -90,11 +96,16 @@ async def on_message(message):
             await message.channel.send('Please set a context using `/context`')
             return
         async with message.channel.typing():
-            response, thought = await chat(
-                CONTEXT, 
-                message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-                thought_chain,
-                response_chain
+            thought = await chat(
+                context=CONTEXT,
+                inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                thought_chain=THOUGHT_CHAIN
+            )
+            response = await chat(
+                context=CONTEXT,
+                inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                thought=thought,
+                response_chain=RESPONSE_CHAIN
             )
             await message.reply(response)
         print("============================================")
@@ -110,11 +121,16 @@ async def on_message(message):
             if message.content.startswith("!no") or message.content.startswith("!No"):
                 return
             async with message.channel.typing():
-                response, thought = await chat(
-                    CONTEXT, 
-                    message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
-                    thought_chain,
-                    response_chain
+                thought = await chat(
+                    context=CONTEXT,
+                    inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                    thought_chain=THOUGHT_CHAIN
+                )
+                response = await chat(
+                    context=CONTEXT,
+                    inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                    thought=thought,
+                    response_chain=RESPONSE_CHAIN
                 )
                 await message.reply(response)
             print("============================================")
