@@ -19,7 +19,7 @@ rollbar.init(
     access_token=rollbar_token,
     environment=rollbar_env,
     code_version='1.0'
-    )
+)
 
 STARTER_PROMPT_TEMPLATE = load_prompt("data/prompts/starter_prompt.yaml")
 THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/thought_prompt.yaml")
@@ -33,11 +33,13 @@ def load_chains():
     llm = OpenAI(temperature=0.9)
     llm_thought_summary = OpenAI(max_tokens=75)  # how long we want our academic needs list to be
     llm_response_summary = OpenAI(max_tokens=150) # how long we want our dialogue summary to be
+
     starter_chain = LLMChain(
         llm=llm,
         prompt=STARTER_PROMPT_TEMPLATE,
         verbose=True
     )
+
     thought_chain = LLMChain(
         llm=llm, 
         memory=ConversationSummaryBufferMemory(
