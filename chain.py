@@ -78,18 +78,26 @@ async def chat(**kwargs):
     # if there's no input, generate a starter
     if kwargs.get('inp') is None:
         assert kwargs.get('starter_chain'), "Please pass the starter chain."
-        response = kwargs.get('starter_chain').predict(
-            context=kwargs.get('context')
+        starter_chain = kwargs.get('starter_chain')
+        context = kwargs.get('context')
+        
+        response = starter_chain.predict(
+            context=context
         )
         
         return response
     # if we sent a thought across, generate a response
     if kwargs.get('thought'):
         assert kwargs.get('response_chain'), "Please pass the response chain."
-        response = kwargs.get('response_chain').predict(
-            context=kwargs.get('context'),
-            input=kwargs.get('inp'),
-            thought=kwargs.get('thought')
+        response_chain = kwargs.get('response_chain')
+        context = kwargs.get('context')
+        inp = kwargs.get('inp')
+        thought = kwargs.get('thought')
+
+        response = response_chain.predict(
+            context=context,
+            input=inp,
+            thought=thought
         )
         if 'Student:' in response:
             response = response.split('Student:')[0].strip()
@@ -100,13 +108,17 @@ async def chat(**kwargs):
     # otherwise, we're generating a thought
     else:
         assert kwargs.get('thought_chain'), "Please pass the thought chain."
-        if kwargs.get('inp').isspace() or kwargs.get('inp') == '':
+        inp = kwargs.get('inp')
+        thought_chain = kwargs.get('thought_chain')
+        context = kwargs.get('context')
+
+        if inp.isspace() or inp == '':
             response = "Yes? How can I help?"
             return response
         
-        response = kwargs.get('thought_chain').predict(
-            context=kwargs.get('context'),
-            input=kwargs.get('inp')
+        response = thought_chain.predict(
+            context=context,
+            input=inp
         )
         
         if 'Tutor:' in response:
