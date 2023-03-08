@@ -36,7 +36,6 @@ def load_memories():
     
     # memory definitions
     thought_memory = ConversationSummaryBufferMemory(
-        return_messages=True,
         llm=llm,
         memory_key="history",
         input_key="input",
@@ -45,7 +44,6 @@ def load_memories():
     )
 
     response_memory = ConversationSummaryBufferMemory(
-        return_messages=True,
         llm=llm,
         memory_key="history",
         input_key="input",
@@ -114,7 +112,7 @@ async def chat(**kwargs):
         thought = kwargs.get('thought')
 
         # concatenate the history into a string
-        history = '\n'.join([msg.content for msg in response_memory.load_memory_variables({})['history']])
+        history = response_memory.load_memory_variables({})['history']
 
         response = response_chain.predict(
             context=context,
@@ -138,7 +136,7 @@ async def chat(**kwargs):
         context = kwargs.get('context')
 
         # concatenate the history into a string
-        history = '\n'.join([msg.content for msg in thought_memory.load_memory_variables({})['history']])
+        history = thought_memory.load_memory_variables({})['history']
         
         response = thought_chain.predict(
             context=context,
