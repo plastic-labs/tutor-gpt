@@ -93,8 +93,10 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    
     # if the user mentioned the bot...
     if str(bot.user.id) in message.content:
+        global THOUGHT_MEMORY, RESPONSE_MEMORY, CONTEXT
         i = message.content.replace(str('<@' + str(bot.user.id) + '>'), '')
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
@@ -131,6 +133,7 @@ async def on_message(message):
         # and if the referenced message is from the bot...
         reply_msg = await bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
         if reply_msg.author == bot.user:
+            global THOUGHT_MEMORY, RESPONSE_MEMORY, CONTEXT
             i = message.content.replace(str('<@' + str(bot.user.id) + '>'), '')
             if message.content.startswith("!no") or message.content.startswith("!No"):
                 return

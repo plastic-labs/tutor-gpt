@@ -111,7 +111,7 @@ async def chat(**kwargs):
         inp = kwargs.get('inp')
         thought = kwargs.get('thought')
 
-        # concatenate the history into a string
+        # get the history into a string
         history = response_memory.load_memory_variables({})['history']
 
         response = response_chain.predict(
@@ -135,7 +135,7 @@ async def chat(**kwargs):
         thought_memory = kwargs.get('thought_memory')
         context = kwargs.get('context')
 
-        # concatenate the history into a string
+        # get the history into a string
         history = thought_memory.load_memory_variables({})['history']
         
         response = thought_chain.predict(
