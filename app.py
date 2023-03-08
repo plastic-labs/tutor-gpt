@@ -5,13 +5,14 @@ import discord
 # from discord.ext import commands
 
 from dotenv import load_dotenv
-from chain import load_chains, chat
+from chain import load_chains, load_memories, chat
 
 
 load_dotenv()
 token = os.environ['BOT_TOKEN']
 
 STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains()
+THOUGHT_MEMORY, RESPONSE_MEMORY = load_memories()
 CONTEXT = None
 
 intents = discord.Intents.default()
@@ -35,7 +36,7 @@ async def context(ctx, text: Optional[str] = None):
         ctx: context, necessary for bot commands
         text: the passage (we're also calling it "CONTEXT") to be injected into the prompt
     """
-    global CONTEXT, STARTER_CHAIN
+    global CONTEXT, STARTER_CHAIN, RESPONSE_MEMORY
     if text is None:
         # no text given, show current text to user or let them know nothing's been set
         if CONTEXT is not None:
@@ -53,8 +54,8 @@ async def context(ctx, text: Optional[str] = None):
                 context=CONTEXT,
                 starter_chain=STARTER_CHAIN
             )
+            RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
             await ctx.respond(response)
-
         else:
             # setting context for the first time
             CONTEXT = text
@@ -64,7 +65,7 @@ async def context(ctx, text: Optional[str] = None):
                 starter_chain=STARTER_CHAIN
             )
             await ctx.respond(response)
-
+            RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
     return
 
 
@@ -76,11 +77,13 @@ async def restart(ctx, respond: Optional[bool] = True):
     Args:
         ctx: context, necessary for bot commands
     """
-    global STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN
-    STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains()
+    global THOUGHT_MEMORY, RESPONSE_MEMORY
+    THOUGHT_MEMORY, RESPONSE_MEMORY = load_memories()
 
     if respond:
-        await ctx.respond("The conversation has been reset!")
+        msg = "Great! The conversation has been restarted. What would you like to talk about?"
+        RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + msg))
+        await ctx.respond(msg)
     else:
         return
 
@@ -99,15 +102,22 @@ async def on_message(message):
             thought = await chat(
                 context=CONTEXT,
                 inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
-                thought_chain=THOUGHT_CHAIN
+                thought_chain=THOUGHT_CHAIN,
+                thought_memory=THOUGHT_MEMORY
             )
+            THOUGHT_MEMORY.chat_memory.add_ai_message(str("Thought: " + thought))
+
             response = await chat(
                 context=CONTEXT,
                 inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
                 thought=thought,
-                response_chain=RESPONSE_CHAIN
+                response_chain=RESPONSE_CHAIN,
+                response_memory=RESPONSE_MEMORY
             )
+            RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
+
             await message.reply(response)
+
         print("============================================")
         print(f'Thought: {thought}\nResponse: {response}')
         print("============================================")
@@ -124,15 +134,21 @@ async def on_message(message):
                 thought = await chat(
                     context=CONTEXT,
                     inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
-                    thought_chain=THOUGHT_CHAIN
+                    thought_chain=THOUGHT_CHAIN,
+                    thought_memory=THOUGHT_MEMORY
                 )
+                THOUGHT_MEMORY.chat_memory.add_ai_message(str("Thought: " + thought))
+
                 response = await chat(
                     context=CONTEXT,
                     inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
                     thought=thought,
                     response_chain=RESPONSE_CHAIN
                 )
+                RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
+
                 await message.reply(response)
+                
             print("============================================")
             print(f'Thought: {thought}\nResponse: {response}')
             print("============================================")
