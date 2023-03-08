@@ -140,15 +140,15 @@ async def chat(**kwargs):
         # concatenate the history into a string
         history = '\n'.join([msg.content for msg in thought_memory.load_memory_variables({})['history']])
         
-        thought = thought_chain.predict(
+        response = thought_chain.predict(
             context=context,
             input=inp,
             history=history
         )
         
-        if 'Tutor:' in thought:
-            thought = thought.split('Tutor:')[0].strip()
+        if 'Tutor:' in response:
+            response = response.split('Tutor:')[0].strip()
         
-        return thought
+        return response
 
 
