@@ -54,7 +54,7 @@ async def context(ctx, text: Optional[str] = None):
                 context=CONTEXT,
                 starter_chain=STARTER_CHAIN
             )
-            RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
+            RESPONSE_MEMORY.chat_memory.add_ai_message(response)
             await ctx.respond(response)
         else:
             # setting context for the first time
@@ -64,7 +64,7 @@ async def context(ctx, text: Optional[str] = None):
                 context=CONTEXT,
                 starter_chain=STARTER_CHAIN
             )
-            #RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
+            RESPONSE_MEMORY.chat_memory.add_ai_message(response)
             await ctx.respond(response)
     return
 
@@ -82,7 +82,7 @@ async def restart(ctx, respond: Optional[bool] = True):
 
     if respond:
         msg = "Great! The conversation has been restarted. What would you like to talk about?"
-        RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + msg))
+        RESPONSE_MEMORY.chat_memory.add_ai_message(msg)
         await ctx.respond(msg)
     else:
         return
@@ -95,26 +95,29 @@ async def on_message(message):
 
     # if the user mentioned the bot...
     if str(bot.user.id) in message.content:
+        i = message.content.replace(str('<@' + str(bot.user.id) + '>'), '')
         if CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
             return
         async with message.channel.typing():
             thought = await chat(
                 context=CONTEXT,
-                inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                inp=i,
                 thought_chain=THOUGHT_CHAIN,
                 thought_memory=THOUGHT_MEMORY
             )
-            THOUGHT_MEMORY.chat_memory.add_ai_message(str("Thought: " + thought))
+            THOUGHT_MEMORY.chat_memory.add_user_message(i)
+            THOUGHT_MEMORY.chat_memory.add_ai_message(thought)
 
             response = await chat(
                 context=CONTEXT,
-                inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                inp=i,
                 thought=thought,
                 response_chain=RESPONSE_CHAIN,
                 response_memory=RESPONSE_MEMORY
             )
-            RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
+            RESPONSE_MEMORY.chat_memory.add_user_message(i)
+            RESPONSE_MEMORY.chat_memory.add_ai_message(response)
 
             await message.reply(response)
 
@@ -128,24 +131,27 @@ async def on_message(message):
         # and if the referenced message is from the bot...
         reply_msg = await bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
         if reply_msg.author == bot.user:
+            i = message.content.replace(str('<@' + str(bot.user.id) + '>'), '')
             if message.content.startswith("!no") or message.content.startswith("!No"):
                 return
             async with message.channel.typing():
                 thought = await chat(
                     context=CONTEXT,
-                    inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                    inp=i,
                     thought_chain=THOUGHT_CHAIN,
                     thought_memory=THOUGHT_MEMORY
                 )
-                THOUGHT_MEMORY.chat_memory.add_ai_message(str("Thought: " + thought))
+                THOUGHT_MEMORY.chat_memory.add_user_message(i)
+                THOUGHT_MEMORY.chat_memory.add_ai_message(thought)
 
                 response = await chat(
                     context=CONTEXT,
-                    inp=message.content.replace(str('<@' + str(bot.user.id) + '>'), ''),
+                    inp=i,
                     thought=thought,
                     response_chain=RESPONSE_CHAIN
                 )
-                RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
+                RESPONSE_MEMORY.chat_memory.add_user_message(i)
+                RESPONSE_MEMORY.chat_memory.add_ai_message(response)
 
                 await message.reply(response)
                 
