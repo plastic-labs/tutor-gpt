@@ -98,11 +98,11 @@ async def chat(**kwargs):
         starter_chain = kwargs.get('starter_chain')
         context = kwargs.get('context')
 
-        starter = starter_chain.predict(
+        response = starter_chain.predict(
             context=context
         )
         
-        return starter
+        return response
     
     # if we sent a thought across, generate a response
     if kwargs.get('thought'):
