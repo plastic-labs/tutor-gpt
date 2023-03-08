@@ -64,8 +64,8 @@ async def context(ctx, text: Optional[str] = None):
                 context=CONTEXT,
                 starter_chain=STARTER_CHAIN
             )
-            await ctx.respond(response)
             RESPONSE_MEMORY.chat_memory.add_ai_message(str("Tutor: " + response))
+            await ctx.respond(response)
     return
 
 
