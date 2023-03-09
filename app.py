@@ -115,6 +115,7 @@ async def context(ctx, text: Optional[str] = None):
     else:
         # text given, assign or update the context
         if CONTEXT is not None:
+            await ctx.response.defer()
             # updating the context, so restart conversation
             await ctx.invoke(bot.get_command('restart'), respond=False)
             CONTEXT = text
@@ -124,9 +125,10 @@ async def context(ctx, text: Optional[str] = None):
                 starter_chain=STARTER_CHAIN
             )
             RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-            await ctx.respond(response)
+            await ctx.followup.send(response)
         else:
             # setting context for the first time
+            await ctx.response.defer()
             CONTEXT = text
             print(f"Context set to: {CONTEXT}")
             response = await chat(
@@ -134,7 +136,7 @@ async def context(ctx, text: Optional[str] = None):
                 starter_chain=STARTER_CHAIN
             )
             RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-            await ctx.respond(response)
+            await ctx.followup.send(response)
     return
 
 
