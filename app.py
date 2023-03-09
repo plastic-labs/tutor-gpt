@@ -26,6 +26,75 @@ bot = discord.Bot(intents=intents)
 async def on_ready():
     print(f"We have logged in as {bot.user}: ID = {bot.user.id}")
 
+@bot.event
+async def on_message_edit(before, after):
+    # check that the edit actually changed things first
+    if before.content != after.content:
+        # check that the edit contains a *mention* of the bot
+        if str(bot.user.id) in after.content:
+            i = after.content.replace(str('<@' + str(bot.user.id) + '>'), '')
+            if CONTEXT is None:
+                await after.channel.send('Please set a context using `/context`')
+                return
+            async with after.channel.typing():
+                thought = await chat(
+                    context=CONTEXT,
+                    inp=i,
+                    thought_chain=THOUGHT_CHAIN,
+                    thought_memory=THOUGHT_MEMORY
+                )
+                THOUGHT_MEMORY.chat_memory.add_user_message(i)
+                THOUGHT_MEMORY.chat_memory.add_ai_message(thought)
+
+                response = await chat(
+                    context=CONTEXT,
+                    inp=i,
+                    thought=thought,
+                    response_chain=RESPONSE_CHAIN,
+                    response_memory=RESPONSE_MEMORY
+                )
+                RESPONSE_MEMORY.chat_memory.add_user_message(i)
+                RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+
+                await after.reply(response)
+
+            print("============================================")
+            print(f'Thought: {thought}\nResponse: {response}')
+            print("============================================")
+
+        # check if the edit became a reply...
+        if after.reference is not None:
+            # and if the referenced message is from the bot...
+            reply_msg = await bot.get_channel(after.channel.id).fetch_message(after.reference.message_id)
+            if reply_msg.author == bot.user:
+                i = after.content.replace(str('<@' + str(bot.user.id) + '>'), '')
+                if after.content.startswith("!no") or after.content.startswith("!No"):
+                    return
+                async with after.channel.typing():
+                    thought = await chat(
+                        context=CONTEXT,
+                        inp=i,
+                        thought_chain=THOUGHT_CHAIN,
+                        thought_memory=THOUGHT_MEMORY
+                    )
+                    THOUGHT_MEMORY.chat_memory.add_user_message(i)
+                    THOUGHT_MEMORY.chat_memory.add_ai_message(thought)
+
+                    response = await chat(
+                        context=CONTEXT,
+                        inp=i,
+                        thought=thought,
+                        response_chain=RESPONSE_CHAIN,
+                        response_memory=RESPONSE_MEMORY
+                    )
+                    RESPONSE_MEMORY.chat_memory.add_user_message(i)
+                    RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+
+                    await after.reply(response)
+                    
+                print("============================================")
+                print(f'Thought: {thought}\nResponse: {response}')
+                print("============================================")
 
 @bot.command(description="Set the context for the tutor or show it")
 async def context(ctx, text: Optional[str] = None):
@@ -160,6 +229,7 @@ async def on_message(message):
             print("============================================")
             print(f'Thought: {thought}\nResponse: {response}')
             print("============================================")
-            
+
+
 
 bot.run(token)
