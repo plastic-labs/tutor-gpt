@@ -6,6 +6,7 @@ import discord
 
 from dotenv import load_dotenv
 from chain import load_chains, load_memories, chat
+from data.examples import GATSBY, FRANKENSTEIN
 
 
 load_dotenv()
@@ -125,6 +126,41 @@ async def restart(ctx, respond: Optional[bool] = True):
         await ctx.respond(msg)
     else:
         return
+
+
+### EXAMPLE SLASH COMMANDS ###
+
+
+@bot.command(description="Discuss a passage from \'Frankenstein\'!")
+async def frankenstein(ctx):
+    """
+    This function starts the conversation with an example passage from Frankenstein
+    """
+    global FRANKENSTEIN, STARTER_CHAIN, RESPONSE_MEMORY
+    await ctx.response.defer()
+    print(f"Context updated to: {FRANKENSTEIN}")
+    response = await chat(
+        context=FRANKENSTEIN,
+        starter_chain=STARTER_CHAIN
+    )
+    RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+    await ctx.followup.send(f"*You used the* `/frankenstein` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+
+
+@bot.command(description="Discuss a passage from \'The Great Gatsby\'!")
+async def gatsby(ctx):
+    """
+    This function starts the conversation with an example passage from The Great Gatsby
+    """
+    global GATSBY, STARTER_CHAIN, RESPONSE_MEMORY
+    await ctx.response.defer()
+    print(f"Context updated to: {GATSBY}")
+    response = await chat(
+        context=GATSBY,
+        starter_chain=STARTER_CHAIN
+    )
+    RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+    await ctx.followup.send(f"*You used the* `/gatsby` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
 
 
 @bot.listen()
