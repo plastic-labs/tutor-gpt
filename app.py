@@ -137,30 +137,62 @@ async def frankenstein(ctx):
     This function starts the conversation with an example passage from Frankenstein
     """
     global FRANKENSTEIN, STARTER_CHAIN, RESPONSE_MEMORY
-    await ctx.response.defer()
-    print(f"Context updated to: {FRANKENSTEIN}")
-    response = await chat(
-        context=FRANKENSTEIN,
-        starter_chain=STARTER_CHAIN
-    )
-    RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-    await ctx.followup.send(f"*You used the* `/frankenstein` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+    # context already set, update the context
+    if CONTEXT is not None:
+        await ctx.response.defer()
+        # updating the context, so restart conversation
+        await ctx.invoke(bot.get_command('restart'), respond=False)
+        CONTEXT = FRANKENSTEIN
+        print(f"Context updated to: {CONTEXT}")
+        response = await chat(
+            context=CONTEXT,
+            starter_chain=STARTER_CHAIN
+        )
+        RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+        await ctx.followup.send(f"*You used the* `/frankenstein` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+    else:
+        # setting context for the first time
+        await ctx.response.defer()
+        CONTEXT = FRANKENSTEIN
+        print(f"Context set to: {CONTEXT}")
+        response = await chat(
+            context=CONTEXT,
+            starter_chain=STARTER_CHAIN
+        )
+        RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+        await ctx.followup.send(f"*You used the* `/frankenstein` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
 
 
 @bot.command(description="Discuss a passage from \'The Great Gatsby\'!")
 async def gatsby(ctx):
     """
-    This function starts the conversation with an example passage from The Great Gatsby
+    This function starts the conversation with an example passage from Frankenstein
     """
     global GATSBY, STARTER_CHAIN, RESPONSE_MEMORY
-    await ctx.response.defer()
-    print(f"Context updated to: {GATSBY}")
-    response = await chat(
-        context=GATSBY,
-        starter_chain=STARTER_CHAIN
-    )
-    RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-    await ctx.followup.send(f"*You used the* `/gatsby` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+    # context already set, update the context
+    if CONTEXT is not None:
+        await ctx.response.defer()
+        # updating the context, so restart conversation
+        await ctx.invoke(bot.get_command('restart'), respond=False)
+        CONTEXT = GATSBY
+        print(f"Context updated to: {CONTEXT}")
+        response = await chat(
+            context=CONTEXT,
+            starter_chain=STARTER_CHAIN
+        )
+        RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+        await ctx.followup.send(f"*You used the* `/gatsby` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+    else:
+        # setting context for the first time
+        await ctx.response.defer()
+        CONTEXT = GATSBY
+        print(f"Context set to: {CONTEXT}")
+        response = await chat(
+            context=CONTEXT,
+            starter_chain=STARTER_CHAIN
+        )
+        RESPONSE_MEMORY.chat_memory.add_ai_message(response)
+        await ctx.followup.send(f"*You used the* `/gatsby` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
 
 
 @bot.listen()
