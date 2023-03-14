@@ -149,7 +149,7 @@ async def frankenstein(ctx):
             starter_chain=STARTER_CHAIN
         )
         RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-        await ctx.followup.send(f"*You used the* `/frankenstein` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+        await ctx.followup.send(f"*You used the* `/frankenstein` *command! I will start the conversation about that passage just below here. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
     else:
         # setting context for the first time
         await ctx.response.defer()
@@ -160,7 +160,7 @@ async def frankenstein(ctx):
             starter_chain=STARTER_CHAIN
         )
         RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-        await ctx.followup.send(f"*You used the* `/frankenstein` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+        await ctx.followup.send(f"*You used the* `/frankenstein` *command! I will start the conversation about that passage just below here. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
 
 
 @bot.command(description="Discuss a passage from \'The Great Gatsby\'!")
@@ -181,7 +181,7 @@ async def gatsby(ctx):
             starter_chain=STARTER_CHAIN
         )
         RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-        await ctx.followup.send(f"*You used the* `/gatsby` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+        await ctx.followup.send(f"*You used the* `/gatsby` *command! I will start the conversation about that passage just below here. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
     else:
         # setting context for the first time
         await ctx.response.defer()
@@ -192,7 +192,7 @@ async def gatsby(ctx):
             starter_chain=STARTER_CHAIN
         )
         RESPONSE_MEMORY.chat_memory.add_ai_message(response)
-        await ctx.followup.send(f"*You used the* `/gatsby` *command! That means I will start the conversation about the passage below. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
+        await ctx.followup.send(f"*You used the* `/gatsby` *command! I will start the conversation about that passage just below here. If you want to read the text I'm talking about, enter* `/context`!\n\n{response}")
 
 
 @bot.listen()
