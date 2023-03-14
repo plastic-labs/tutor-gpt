@@ -136,7 +136,7 @@ async def frankenstein(ctx):
     """
     This function starts the conversation with an example passage from Frankenstein
     """
-    global FRANKENSTEIN, STARTER_CHAIN, RESPONSE_MEMORY
+    global CONTEXT, FRANKENSTEIN, STARTER_CHAIN, RESPONSE_MEMORY
     # context already set, update the context
     if CONTEXT is not None:
         await ctx.response.defer()
@@ -168,7 +168,7 @@ async def gatsby(ctx):
     """
     This function starts the conversation with an example passage from Frankenstein
     """
-    global GATSBY, STARTER_CHAIN, RESPONSE_MEMORY
+    global CONTEXT, GATSBY, STARTER_CHAIN, RESPONSE_MEMORY
     # context already set, update the context
     if CONTEXT is not None:
         await ctx.response.defer()
