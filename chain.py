@@ -40,7 +40,8 @@ def load_memories():
         memory_key="history",
         input_key="input",
         ai_prefix="Thought",
-        human_prefix="Student"
+        human_prefix="Student",
+        max_token_limit=1000
     )
 
     response_memory = ConversationSummaryBufferMemory(
@@ -48,7 +49,8 @@ def load_memories():
         memory_key="history",
         input_key="input",
         ai_prefix="Tutor",
-        human_prefix="Student"
+        human_prefix="Student",
+        max_token_limit=1000
     )
 
     return thought_memory, response_memory
