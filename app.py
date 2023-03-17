@@ -19,8 +19,8 @@ from data.examples import (
 load_dotenv()
 token = os.environ['BOT_TOKEN']
 
-STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains()
 THOUGHT_MEMORY, RESPONSE_MEMORY = load_memories()
+STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains(THOUGHT_MEMORY, RESPONSE_MEMORY)
 CONTEXT = None
 
 intents = discord.Intents.default()
