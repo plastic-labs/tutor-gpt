@@ -79,14 +79,12 @@ def load_chains(thought_memory, response_memory):
     thought_chain = LLMChain(
         llm=llm,
         prompt=thought_chat_prompt,
-        memory=thought_memory,
         verbose=True
     )
 
     response_chain = LLMChain(
         llm=llm, 
         prompt=response_chat_prompt, 
-        memory=response_memory,
         verbose=True
     )
 
