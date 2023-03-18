@@ -26,6 +26,7 @@ RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/response_prompt.yaml")
 THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/thought_summary_prompt.yaml")
 RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.yaml")
 
+session_cache = {}
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
@@ -44,7 +45,8 @@ def load_chains():
             human_prefix="Student"
         ), 
         prompt=THOUGHT_PROMPT_TEMPLATE, 
-        verbose=True
+        verbose=False
+        # TODO change back to True
     )
 
     response_chain = LLMChain(
@@ -59,7 +61,8 @@ def load_chains():
             human_prefix="Student"
         ), 
         prompt=RESPONSE_PROMPT_TEMPLATE, 
-        verbose=True
+        verbose=False
+        # TODO change back to True
     )
 
 

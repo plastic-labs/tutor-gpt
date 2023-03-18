@@ -6,6 +6,7 @@ import discord
 
 from dotenv import load_dotenv
 from chain import load_chains, chat
+from cache import LRUCache
 
 
 load_dotenv()
@@ -20,6 +21,8 @@ intents.messages = True
 intents.message_content = True
 
 bot = discord.Bot(intents=intents)
+
+cache = LRUCache(2)
 
 
 @bot.event
@@ -36,29 +39,40 @@ async def context(ctx, text: Optional[str] = None):
         ctx: context, necessary for bot commands
         text: the passage (we're also calling it "CONTEXT") to be injected into the prompt
     """
-    global CONTEXT, thought_chain, response_chain
+    global cache, thought_chain, response_chain
+    CHANNEL_CONTEXT = cache.get(ctx.channel.id)
     if text is None:
         # no text given, show current text to user or let them know nothing's been set
-        if CONTEXT is not None:
-            await ctx.respond(f"Current context: {CONTEXT}", ephemeral=True)
+        if CHANNEL_CONTEXT is not None:
+            await ctx.respond(f"Current context: {CHANNEL_CONTEXT}", ephemeral=True)
             return
         else:
             await ctx.respond(f"You never set a context! Add some text after the `/context` command :) ")
             return
     else:
         # text given, assign or update the context
-        if CONTEXT is not None:
+        if CHANNEL_CONTEXT is not None:
             # updating the context, so restart conversation
             await ctx.invoke(bot.get_command('restart'), respond=False)
-            CONTEXT = text
-            print(f"Context updated to: {CONTEXT}")
+            cache.put(ctx.channel.id, text) 
+            print(f"Context updated to: {text}")
             await ctx.respond("The context has been successfully updated and conversation restarted!")
             return
         else:
             # setting context for the first time
-            CONTEXT = text
-            print(f"Context set to: {CONTEXT}")
+            cache.put(ctx.channel.id, text) 
+            print(f"Context set to: {text}")
             await ctx.respond("The context has been successfully set!")
+
+
+@bot.command(description="Debug info")
+async def debug(ctx, respond: Optional[bool] = True):
+    global CONTEXT, thought_chain, response_chain
+    if CONTEXT == None and respond: 
+        await ctx.respond("Context is empty")
+    else:
+        await ctx.respond(CONTEXT)
+    print(ctx.channel.id)
 
 
 @bot.command(description="Restart the conversation with the tutor")
@@ -84,22 +98,26 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    global cache
+    CHANNEL_CONTEXT = cache.get(message.channel.id)
     # if the user mentioned the bot...
     if str(bot.user.id) in message.content:
-        if CONTEXT is None:
+        print(message.channel.id)
+        if CHANNEL_CONTEXT is None:
             await message.channel.send('Please set a context using `/context`')
             return
         async with message.channel.typing():
             response, thought = await chat(
-                CONTEXT, 
+                CHANNEL_CONTEXT, 
                 message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
                 thought_chain,
                 response_chain
             )
             await message.reply(response)
-        print("============================================")
-        print(f'Thought: {thought}\nResponse: {response}')
-        print("============================================")
+        # print("============================================")
+        # print(f'Thought: {thought}\nResponse: {response}')
+        # print("============================================")
+        # TODO uncomment
         
 
     # if the message is a reply...
@@ -111,15 +129,16 @@ async def on_message(message):
                 return
             async with message.channel.typing():
                 response, thought = await chat(
-                    CONTEXT, 
+                    CHANNEL_CONTEXT, 
                     message.content.replace(str('<@' + str(bot.user.id) + '>'), ''), 
                     thought_chain,
                     response_chain
                 )
                 await message.reply(response)
-            print("============================================")
-            print(f'Thought: {thought}\nResponse: {response}')
-            print("============================================")
+            # print("============================================")
+            # print(f'Thought: {thought}\nResponse: {response}')
+            # print("============================================")
+            # TODO uncomment
             
 
 bot.run(token)
