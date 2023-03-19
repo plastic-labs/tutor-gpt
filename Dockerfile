@@ -25,6 +25,8 @@ USER app
 
 COPY app.py .
 COPY chain.py .
+COPY globals.py .
+COPY bot/ bot/
 COPY data/ data/
 
 # https://stackoverflow.com/questions/29663459/python-app-does-not-print-anything-when-running-detached-in-docker
