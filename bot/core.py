@@ -4,7 +4,7 @@ import discord
 import globals
 from discord.ext import commands
 from typing import Optional
-from chain import chat, ChannelCache
+from chain import chat, ConversationCache
 
 
 class Core(commands.Cog):
@@ -23,9 +23,9 @@ class Core(commands.Cog):
             if str(self.bot.user.id) in after.content:
                 LOCAL_CHAIN = globals.CACHE.get(after.channel.id)
                 if LOCAL_CHAIN is None:
-                    LOCAL_CHAIN = ChannelCache()
+                    LOCAL_CHAIN = ConversationCache()
                     globals.CACHE.put(after.channel.id, LOCAL_CHAIN)
-                
+
                 i = after.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
                 if LOCAL_CHAIN.context is None:
                     await after.channel.send('Please set a context using `/context`')
@@ -60,7 +60,7 @@ class Core(commands.Cog):
     async def context(self, ctx: discord.ApplicationContext, text: Optional[str] = None):
         """
         This function sets the context global var for the tutor to engage in discussion on.
-        
+
         Args:
             ctx: context, necessary for bot commands
             text: the passage (we're also calling it "CONTEXT") to be injected into the prompt
@@ -91,7 +91,7 @@ class Core(commands.Cog):
                 # setting context for the first time
                 await ctx.response.defer()
                 # Create new cache entry
-                LOCAL_CHAIN = ChannelCache(text)
+                LOCAL_CHAIN = ConversationCache(text)
                 globals.CACHE.put(ctx.channel_id, LOCAL_CHAIN)
                 # globals.CONTEXT = text
                 print(f"Context set to: {LOCAL_CHAIN.context}")
@@ -104,7 +104,7 @@ class Core(commands.Cog):
                 await ctx.followup.send(response)
 
         return
-    
+
     @commands.slash_command(description="Restart the conversation with the tutor")
     async def restart(self, ctx: discord.ApplicationContext, respond: Optional[bool] = True):
         """
@@ -117,7 +117,7 @@ class Core(commands.Cog):
         if LOCAL_CHAIN:
             LOCAL_CHAIN.restart()
         else:
-            LOCAL_CHAIN = ChannelCache()
+            LOCAL_CHAIN = ConversationCache()
             globals.CACHE.put(ctx.channel_id, LOCAL_CHAIN )
         # globals.restart()
 
@@ -127,20 +127,20 @@ class Core(commands.Cog):
             await ctx.respond(msg)
         else:
             return
-        
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
 
-        
+
         # if the user mentioned the bot...
         if str(self.bot.user.id) in message.content:
             LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
             if LOCAL_CHAIN is None:
-                LOCAL_CHAIN = ChannelCache()
+                LOCAL_CHAIN = ConversationCache()
                 globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
-                
+
             i = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
             if LOCAL_CHAIN.context is None:
                 await message.channel.send('Please set a context using `/context`')
@@ -170,13 +170,13 @@ class Core(commands.Cog):
             print("============================================")
             print(f'Thought: {thought}\nResponse: {response}')
             print("============================================")
-            
+
 
         # if the message is a reply...
         if message.reference is not None:
             LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
             if LOCAL_CHAIN is None:
-                LOCAL_CHAIN = ChannelCache()
+                LOCAL_CHAIN = ConversationCache()
                 globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
             # and if the referenced message is from the bot...
             reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
@@ -208,7 +208,7 @@ class Core(commands.Cog):
                     LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                     await message.reply(response)
-                    
+
                 print("============================================")
                 print(f'Thought: {thought}\nResponse: {response}')
                 print("============================================")

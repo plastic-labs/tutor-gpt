@@ -32,8 +32,8 @@ RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.ya
 
 def load_memories():
     """Load the memory objects"""
-    llm = ChatOpenAI() 
-    
+    llm = ChatOpenAI()
+
     # memory definitions
     thought_memory = ConversationSummaryBufferMemory(
         llm=llm,
@@ -83,8 +83,8 @@ def load_chains():
     )
 
     response_chain = LLMChain(
-        llm=llm, 
-        prompt=response_chat_prompt, 
+        llm=llm,
+        prompt=response_chat_prompt,
         verbose=True
     )
 
@@ -101,9 +101,9 @@ async def chat(**kwargs):
         response = starter_chain.predict(
             context=context
         )
-        
+
         return response
-    
+
     # if we sent a thought across, generate a response
     if kwargs.get('thought'):
         assert kwargs.get('response_chain'), "Please pass the response chain."
@@ -126,9 +126,9 @@ async def chat(**kwargs):
             response = response.split('Student:')[0].strip()
         if 'Studen:' in response:
             response = response.split('Studen:')[0].strip()
-        
+
         return response
-    
+
     # otherwise, we're generating a thought
     else:
         assert kwargs.get('thought_chain'), "Please pass the thought chain."
@@ -139,20 +139,20 @@ async def chat(**kwargs):
 
         # get the history into a string
         history = thought_memory.load_memory_variables({})['history']
-        
+
         response = thought_chain.predict(
             context=context,
             input=inp,
             history=history
         )
-        
+
         if 'Tutor:' in response:
             response = response.split('Tutor:')[0].strip()
-        
+
         return response
 
 
-class ChannelCache:
+class ConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
     def __init__(self, context=None):
         self.thought_memory, self.response_memory = load_memories()
@@ -162,4 +162,3 @@ class ChannelCache:
        self.thought_memory.clear()
        self.response_memory.clear()
        self.context = None
-

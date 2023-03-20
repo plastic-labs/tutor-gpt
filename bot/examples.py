@@ -3,9 +3,9 @@
 import discord
 import globals
 from discord.ext import commands
-from chain import ChannelCache, chat
+from chain import ConversationCache, chat
 from data.examples import (
-    GATSBY, 
+    GATSBY,
     FRANKENSTEIN,
     BROOKS,
     DIDION,
@@ -25,7 +25,7 @@ class Examples(commands.Cog):
         """
         LOCAL_CHAIN = globals.CACHE.get(ctx.channel_id)
         if LOCAL_CHAIN is None:
-            LOCAL_CHAIN = ChannelCache()
+            LOCAL_CHAIN = ConversationCache()
             globals.CACHE.put(ctx.channel_id, LOCAL_CHAIN)
         if LOCAL_CHAIN.context is not None:
             await ctx.response.defer()
@@ -54,7 +54,7 @@ class Examples(commands.Cog):
     @commands.slash_command(name="frankenstein", description="Discuss a passage from \'Frankenstein\'!")
     async def frankenstein(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "frankenstein", FRANKENSTEIN)
-        
+
     @commands.slash_command(name="gatsby", description="Discuss a passage from \'The Great Gatsby\'!")
     async def gatsby(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "gatsby", GATSBY)
