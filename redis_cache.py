@@ -1,4 +1,5 @@
 import redis
+from collections import OrderedDict
 
 class LRUCache:
     def __init__(self, capacity):
@@ -45,3 +46,80 @@ with default settings. If you are using a remote Redis server or need to
 configure the Redis connection settings, you can pass the appropriate
 parameters to the redis.Redis constructor.
 """
+
+class LayeredCache:
+    def __init__(self, max_memory_cache_size, redis_config):
+        self.max_memory_cache_size = max_memory_cache_size
+        self.memory_cache = {}
+        self.redis_cache = redis.Redis(**redis_config)
+
+    def get(self, key):
+        # First, try to get the value from the memory cache
+        value = self.memory_cache.get(key)
+        if value is not None:
+            return value
+
+        # If the value is not in the memory cache, try to get it from the Redis cache
+        value = self.redis_cache.get(key)
+        if value is not None:
+            # Add the value to the memory cache
+            if len(self.memory_cache) >= self.max_memory_cache_size:
+                # Remove the least recently used item from the memory cache
+                self.memory_cache.pop(next(iter(self.memory_cache)))
+            self.memory_cache[key] = value
+
+        return value
+
+    def set(self, key, value):
+        # Set the value in the Redis cache
+        self.redis_cache.set(key, value)
+
+        # Add the value to the memory cache
+        if len(self.memory_cache) >= self.max_memory_cache_size:
+            # Remove the least recently used item from the memory cache
+            self.memory_cache.pop(next(iter(self.memory_cache)))
+        self.memory_cache[key] = value
+
+
+class LayeredLRUCache:
+    def __init__(self, max_memory_cache_size, max_redis_cache_size, redis_config):
+        self.max_memory_cache_size = max_memory_cache_size
+        self.max_redis_cache_size = max_redis_cache_size
+        self.memory_cache = OrderedDict()
+        self.redis_cache = redis.Redis(**redis_config)
+
+    def get(self, key):
+        # First, try to get the value from the memory cache
+        value = self.memory_cache.get(key)
+        if value is not None:
+            # Move the key to the end of the ordered dict to mark it as the most recently used
+            self.memory_cache.move_to_end(key)
+            return value
+
+        # If the value is not in the memory cache, try to get it from the Redis cache
+        value = self.redis_cache.get(key)
+        if value is not None:
+            # Add the value to the memory cache
+            if len(self.memory_cache) >= self.max_memory_cache_size:
+                # Remove the least recently used item from the memory cache
+                self.memory_cache.popitem(last=False)
+            self.memory_cache[key] = value
+
+        return value
+
+    def set(self, key, value):
+        # Set the value in the Redis cache
+        self.redis_cache.set(key, value)
+
+        # Add the value to the memory cache
+        if len(self.memory_cache) >= self.max_memory_cache_size:
+            # Remove the least recently used item from the memory cache
+            self.memory_cache.popitem(last=False)
+        self.memory_cache[key] = value
+
+        # Check if the Redis cache is full and evict the least recently used item if needed
+        if self.redis_cache.dbsize() >= self.max_redis_cache_size:
+            # Get the least recently used key from the memory cache and remove it
+            key_to_remove, _ = self.memory_cache.popitem(last=False)
+            # Remove the corresponding key-value pair from the Redis cache
+            self.redis_cache.delete(key_to_remove)
