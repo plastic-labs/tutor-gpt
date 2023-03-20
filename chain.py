@@ -1,5 +1,6 @@
 import rollbar
 import os
+import asyncio
 
 from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
@@ -98,7 +99,7 @@ async def chat(**kwargs):
         starter_chain = kwargs.get('starter_chain')
         context = kwargs.get('context')
 
-        response = starter_chain.predict(
+        response = await starter_chain.apredict(
             context=context
         )
         
@@ -116,7 +117,7 @@ async def chat(**kwargs):
         # get the history into a string
         history = response_memory.load_memory_variables({})['history']
 
-        response = response_chain.predict(
+        response = await response_chain.apredict(
             context=context,
             input=inp,
             thought=thought,
@@ -140,7 +141,7 @@ async def chat(**kwargs):
         # get the history into a string
         history = thought_memory.load_memory_variables({})['history']
         
-        response = thought_chain.predict(
+        response = await thought_chain.apredict(
             context=context,
             input=inp,
             history=history
