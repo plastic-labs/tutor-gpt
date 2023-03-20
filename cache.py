@@ -1,3 +1,9 @@
+"""
+In this implementation, the _move_to_front method is used to move a key to the front of 
+the linked list when it is accessed. The _add_to_front method is used to add a new key to the
+front of the linked list. The _remove_least_recently_used method is used to remove the least recently
+used key from the cache when the capacity is exceeded. The _remove_node method is a helper method that removes
+"""
 class LRUCache:
     def __init__(self, capacity):
         self.capacity = capacity
@@ -12,7 +18,7 @@ class LRUCache:
         # Move the accessed key to the front of the linked list
         self._move_to_front(key)
 
-        print(self.cache[key])
+        # print(self.cache[key])
 
         return self.cache[key]['value']
 
@@ -20,7 +26,7 @@ class LRUCache:
         if key in self.cache:
             # If the key already exists in the cache, move it to the front of the linked list and update the value
             self._move_to_front(key)
-            print(self.cache[key])
+            # print(self.cache[key])
             self.cache[key]['value'] = value
         else:
             # If the key is not in the cache, add it to the front of the linked list
@@ -87,10 +93,3 @@ class LRUCache:
         else:
             node['next']['prev'] = node['prev']
 
-
-"""
-In this implementation, the _move_to_front method is used to move a key to the front of 
-the linked list when it is accessed. The _add_to_front method is used to add a new key to the
-front of the linked list. The _remove_least_recently_used method is used to remove the least recently
-used key from the cache when the capacity is exceeded. The _remove_node method is a helper method that removes
-"""

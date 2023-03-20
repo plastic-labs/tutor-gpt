@@ -56,7 +56,7 @@ def load_memories():
     return thought_memory, response_memory
 
 
-def load_chains(thought_memory, response_memory):
+def load_chains():
     """Logic for loading the chain you want to use should go here."""
     llm = ChatOpenAI(temperature=0.9)
 
