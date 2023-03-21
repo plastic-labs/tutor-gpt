@@ -26,6 +26,7 @@ USER app
 COPY app.py .
 COPY chain.py .
 COPY globals.py .
+COPY cache.py .
 COPY bot/ bot/
 COPY data/ data/
 
