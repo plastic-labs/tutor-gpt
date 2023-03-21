@@ -24,6 +24,7 @@ prefix: >
     - If your student understands an element of the passage, the best question for moving to a new topic.
     - If your student takes the conversation in a tangential direction, how you can indulge this student interest in an educational way.
 example_prompt:
+    _type: prompt
     input_variables:
         ["context"]
     template: >
@@ -32,4 +33,5 @@ examples:
     data/prompts/thought_examples.yaml
 suffix:
     "Context: {context}\nPRIOR ACADEMIC NEEDS:\n{history}\nRemember: there are many probable interpretations of the passage, so your reasoning with the student is a Socratic dialogue with the goal of assessing the probability that an interpretation is correct.\nBEGIN DIALOGUE\nStudent: {input}\nThought:"
-
+_type:
+    few_shot

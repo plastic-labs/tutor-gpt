@@ -1,3 +1,4 @@
+_type: prompt
 input_variables:
   ["summary", "new_lines"]
 template: >
