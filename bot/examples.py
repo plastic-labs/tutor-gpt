@@ -2,6 +2,7 @@
 
 import discord
 import globals
+from discord.commands import SlashCommandGroup
 from discord.ext import commands
 from chain import ConversationCache, chat
 from data.examples import (
@@ -18,6 +19,8 @@ from data.examples import (
 class Examples(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
+
+    examples = SlashCommandGroup("examples", "Various example passages to discuss with Bloom!")
 
     async def example_factory(self, ctx: discord.ApplicationContext, title: str, passage: str):
         """
@@ -51,30 +54,30 @@ class Examples(commands.Cog):
             LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
             await ctx.followup.send(f"*You used the* `/{title}` *command!\n\nI'll start the conversation below. If you want to read the passage I'm talking about, just enter* `/context`!\n\n{response}")
 
-    @commands.slash_command(name="frankenstein", description="Discuss a passage from \'Frankenstein\'!")
+    @examples.command(name="frankenstein", description="Discuss a passage from \'Frankenstein\'!")
     async def frankenstein(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "frankenstein", FRANKENSTEIN)
 
-    @commands.slash_command(name="gatsby", description="Discuss a passage from \'The Great Gatsby\'!")
+    @examples.command(name="gatsby", description="Discuss a passage from \'The Great Gatsby\'!")
     async def gatsby(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "gatsby", GATSBY)
 
 
-    @commands.slash_command(name="we-real-cool", description="Discuss a poem from Gwendolyn Brooks called \'We Real Cool\'!")
+    @examples.command(name="we-real-cool", description="Discuss a poem from Gwendolyn Brooks called \'We Real Cool\'!")
     async def we_real_cool(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "we-real-cool", BROOKS)
 
-    @commands.slash_command(name="self-respect", description="Discuss a passage from Joan Didion called \'Self Respect\'!")
+    @examples.command(name="self-respect", description="Discuss a passage from Joan Didion called \'Self Respect\'!")
     async def self_respect(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "self-respect", DIDION)
 
 
-    @commands.slash_command(name="nature", description="Discuss a passage from Ralph Waldo Emerson's essay called \'Nature\'!")
+    @examples.command(name="nature", description="Discuss a passage from Ralph Waldo Emerson's essay called \'Nature\'!")
     async def nature(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "nature", EMERSON)
 
 
-    @commands.slash_command(name="romeo-juliet", description="Discuss a passage from William Shakespeare's play, \'Romeo and Juliet\'!")
+    @examples.command(name="romeo-juliet", description="Discuss a passage from William Shakespeare's play, \'Romeo and Juliet\'!")
     async def romeo_juliet(self, ctx: discord.ApplicationContext):
         await self.example_factory(ctx, "romeo-juliet", SHAKESPEARE)
 
