@@ -59,7 +59,7 @@ def load_memories():
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = ChatOpenAI(temperature=0.9)
+    llm = ChatOpenAI()
 
     # chatGPT prompt formatting
     starter_message_prompt = HumanMessagePromptTemplate(prompt=STARTER_PROMPT_TEMPLATE)
