@@ -43,7 +43,7 @@ def load_memories():
         input_key="input",
         ai_prefix="Thought",
         human_prefix="Student",
-        max_token_limit=1000
+        max_token_limit=900
     )
 
     response_memory = ConversationSummaryBufferMemory(
@@ -52,7 +52,7 @@ def load_memories():
         input_key="input",
         ai_prefix="Tutor",
         human_prefix="Student",
-        max_token_limit=1000
+        max_token_limit=900
     )
 
     return thought_memory, response_memory
@@ -60,7 +60,7 @@ def load_memories():
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(max_tokens=170)
 
     # chatGPT prompt formatting
     starter_message_prompt = HumanMessagePromptTemplate(prompt=STARTER_PROMPT_TEMPLATE)
@@ -106,10 +106,10 @@ async def chat(**kwargs):
                 context=context
             )
         )
-        starter_context_window_size = 4097  # hard coding for now, see obsmd 2023-03-22 for errors
 
-        # provided context can't take up more than a quarter of the context window
-        assert starter_tokens < starter_context_window_size * 0.25, "Sorry, I can't handle a context of that length yet, but I can work through it with you if you break it into smaller pieces!\n\n If you feel ready to move on at any time, just give me the next piece by using the `/context` command."
+        # provided context can't take up more than 386 tokens (see notes on 2023-03-22)
+        if starter_tokens < 386:
+            return "Sorry, I can't handle a context of that length yet, but I can work through it with you if you break it into smaller pieces!\n\n If you feel ready to move on at any time, just give me the next piece by using the `/context` command."
         # check it's not a URL either
         if validators.url(context):
             return "Sorry, I can't scrape content from URLs yet. Please copy + paste a few paragraphs of text after the `/context` command!"
