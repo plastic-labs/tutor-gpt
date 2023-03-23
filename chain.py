@@ -101,11 +101,7 @@ async def chat(**kwargs):
         context = kwargs.get('context')
 
         # get number of tokens contained in given context
-        starter_tokens = starter_chain.llm.get_num_tokens(
-            STARTER_PROMPT_TEMPLATE.format(
-                context=context
-            )
-        )
+        starter_tokens = starter_chain.llm.get_num_tokens(context)
 
         # provided context can't take up more than 386 tokens (see notes on 2023-03-22)
         if starter_tokens > 386:
