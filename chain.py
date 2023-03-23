@@ -108,7 +108,7 @@ async def chat(**kwargs):
         )
 
         # provided context can't take up more than 386 tokens (see notes on 2023-03-22)
-        if starter_tokens < 386:
+        if starter_tokens > 386:
             return "Sorry, I can't handle a context of that length yet, but I can work through it with you if you break it into smaller pieces!\n\n If you feel ready to move on at any time, just give me the next piece by using the `/context` command."
         # check it's not a URL either
         if validators.url(context):
