@@ -1,7 +1,8 @@
 import rollbar
 import os
-import asyncio
+import validators
 
+from langchain.llms.openai import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
 from langchain.memory import ConversationSummaryBufferMemory
@@ -98,6 +99,21 @@ async def chat(**kwargs):
         assert kwargs.get('starter_chain'), "Please pass the starter chain."
         starter_chain = kwargs.get('starter_chain')
         context = kwargs.get('context')
+
+        # get number of tokens contained in given context
+        starter_tokens = starter_chain.llm.get_num_tokens(
+            STARTER_PROMPT_TEMPLATE.format(
+                context=context
+            )
+        )
+        starter_context_window_size = 4097  # hard coding for now, see obsmd 2023-03-22 for errors
+
+        # provided context can't take up more than a quarter of the context window
+        assert starter_tokens < starter_context_window_size * 0.25, "Sorry, I can't handle a context of that length yet, but I can work through it with you if you break it into smaller pieces!\n\n If you feel ready to move on at any time, just give me the next piece by using the `/context` command."
+        # check it's not a URL either
+        if validators.url(context):
+            return "Sorry, I can't scrape content from URLs yet. Please copy + paste a few paragraphs of text after the `/context` command!"
+            
 
         response = await starter_chain.apredict(
             context=context
