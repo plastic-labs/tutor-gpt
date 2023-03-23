@@ -1,7 +1,8 @@
 import rollbar
 import os
-import asyncio
+import validators
 
+from langchain.llms.openai import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
 from langchain.memory import ConversationSummaryBufferMemory
@@ -42,7 +43,7 @@ def load_memories():
         input_key="input",
         ai_prefix="Thought",
         human_prefix="Student",
-        max_token_limit=1000
+        max_token_limit=900
     )
 
     response_memory = ConversationSummaryBufferMemory(
@@ -51,7 +52,7 @@ def load_memories():
         input_key="input",
         ai_prefix="Tutor",
         human_prefix="Student",
-        max_token_limit=1000
+        max_token_limit=900
     )
 
     return thought_memory, response_memory
@@ -59,7 +60,7 @@ def load_memories():
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(max_tokens=170)
 
     # chatGPT prompt formatting
     starter_message_prompt = HumanMessagePromptTemplate(prompt=STARTER_PROMPT_TEMPLATE)
@@ -98,6 +99,21 @@ async def chat(**kwargs):
         assert kwargs.get('starter_chain'), "Please pass the starter chain."
         starter_chain = kwargs.get('starter_chain')
         context = kwargs.get('context')
+
+        # get number of tokens contained in given context
+        starter_tokens = starter_chain.llm.get_num_tokens(
+            STARTER_PROMPT_TEMPLATE.format(
+                context=context
+            )
+        )
+
+        # provided context can't take up more than 386 tokens (see notes on 2023-03-22)
+        if starter_tokens < 386:
+            return "Sorry, I can't handle a context of that length yet, but I can work through it with you if you break it into smaller pieces!\n\n If you feel ready to move on at any time, just give me the next piece by using the `/context` command."
+        # check it's not a URL either
+        if validators.url(context):
+            return "Sorry, I can't scrape content from URLs yet. Please copy + paste a few paragraphs of text after the `/context` command!"
+            
 
         response = await starter_chain.apredict(
             context=context
