@@ -51,13 +51,16 @@ class Core(commands.Cog):
                     LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                     thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                    await thought_channel.send(f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}\n```\nThought: {thought}\n```")
+                    link = f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}"
+                    await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
 
                     await after.reply(response)
 
-                print("============================================")
-                print(f'Thought: {thought}\nResponse: {response}')
-                print("============================================")
+                print(f"Link: {link}")
+                print(f"Input: {i}")
+                print(f"Thought: {thought}")
+                print(f"Response: {response}")
+                print("=========================================")
 
     @commands.slash_command(description="Set the context for the tutor or show it")
     async def context(self, ctx: discord.ApplicationContext, text: Optional[str] = None):
@@ -169,13 +172,17 @@ class Core(commands.Cog):
                 LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                 thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\nThought: {thought}\n```")
+                link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
 
                 await message.reply(response)
 
-            print("============================================")
-            print(f'Thought: {thought}\nResponse: {response}')
-            print("============================================")
+            print(f"Link: {link}")
+            print(f"Input: {i}")
+            print(f"Thought: {thought}")
+            print(f"Response: {response}")
+            print("=========================================")
+
 
 
         # if the message is a reply...
@@ -217,14 +224,16 @@ class Core(commands.Cog):
                     LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                     thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                    await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\nThought: {thought}\n```")
-
+                    link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                    await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
 
                     await message.reply(response)
 
-                print("============================================")
-                print(f'Thought: {thought}\nResponse: {response}')
-                print("============================================")
+                print(f"Link: {link}")
+                print(f"Input: {i}")
+                print(f"Thought: {thought}")
+                print(f"Response: {response}")
+                print("=========================================")
 
 
 def setup(bot):
