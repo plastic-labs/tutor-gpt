@@ -1,6 +1,7 @@
 # core functionality
 
 import discord
+import time
 import globals
 from discord.ext import commands
 from typing import Optional
@@ -30,6 +31,7 @@ class Core(commands.Cog):
                 if LOCAL_CHAIN.context is None:
                     await after.channel.send('Please set a context using `/context`')
                     return
+                start = time.time()
                 async with after.channel.typing():
                     thought = await chat(
                         context=LOCAL_CHAIN.context,
@@ -51,13 +53,18 @@ class Core(commands.Cog):
                     LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                     thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                    await thought_channel.send(f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}\n```\nThought: {thought}\n```")
+                    link = f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}"
+                    await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
 
                     await after.reply(response)
 
-                print("============================================")
-                print(f'Thought: {thought}\nResponse: {response}')
-                print("============================================")
+                end = time.time()
+                print(f"Link: {link}")
+                print(f"Input: {i}")
+                print(f"Thought: {thought}")
+                print(f"Response: {response}")
+                print(f"Elapsed: {end - start}")
+                print("=========================================")
 
     @commands.slash_command(description="Set the context for the tutor or show it")
     async def context(self, ctx: discord.ApplicationContext, text: Optional[str] = None):
@@ -78,6 +85,7 @@ class Core(commands.Cog):
         else:
             # text given, assign or update the context
             if LOCAL_CHAIN is not None and LOCAL_CHAIN.context is not None:
+                start = time.time()
                 await ctx.response.defer()
                 # updating the context, so restart conversation
                 await ctx.invoke(self.bot.get_command('restart'), respond=False)
@@ -90,8 +98,11 @@ class Core(commands.Cog):
                 )
                 LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
+                end = time.time()
+                print(f"Elapsed: {end - start}")
             else:
                 # setting context for the first time
+                start = time.time()
                 await ctx.response.defer()
                 # Create new cache entry
                 LOCAL_CHAIN = ConversationCache(text)
@@ -105,6 +116,8 @@ class Core(commands.Cog):
                 # globals.RESPONSE_MEMORY.chat_memory.add_ai_message(response)
                 LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
+                end = time.time()
+                print(f"Elapsed: {end - start}")
 
         return
 
@@ -148,6 +161,7 @@ class Core(commands.Cog):
             if LOCAL_CHAIN.context is None:
                 await message.channel.send('Please set a context using `/context`')
                 return
+            start = time.time()
             async with message.channel.typing():
                 thought = await chat(
                     context=LOCAL_CHAIN.context,
@@ -169,13 +183,19 @@ class Core(commands.Cog):
                 LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                 thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\nThought: {thought}\n```")
+                link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
 
                 await message.reply(response)
 
-            print("============================================")
-            print(f'Thought: {thought}\nResponse: {response}')
-            print("============================================")
+            end = time.time()
+            print(f"Link: {link}")
+            print(f"Input: {i}")
+            print(f"Thought: {thought}")
+            print(f"Response: {response}")
+            print(f"Elapsed: {end - start}")
+            print("=========================================")
+
 
 
         # if the message is a reply...
@@ -196,6 +216,7 @@ class Core(commands.Cog):
                     return
                 if message.content.startswith("!no") or message.content.startswith("!No"):
                     return
+                start = time.time()
                 async with message.channel.typing():
                     thought = await chat(
                         context=LOCAL_CHAIN.context,
@@ -217,14 +238,18 @@ class Core(commands.Cog):
                     LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                     thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                    await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\nThought: {thought}\n```")
-
+                    link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                    await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
 
                     await message.reply(response)
 
-                print("============================================")
-                print(f'Thought: {thought}\nResponse: {response}')
-                print("============================================")
+                end = time.time()
+                print(f"Link: {link}")
+                print(f"Input: {i}")
+                print(f"Thought: {thought}")
+                print(f"Response: {response}")
+                print(f"Elapsed: {end - start}")
+                print("=========================================")
 
 
 def setup(bot):
