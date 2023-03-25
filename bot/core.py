@@ -169,7 +169,7 @@ class Core(commands.Cog):
                 LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                 thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\n{thought}\n```")
+                await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\nThought: {thought}\n```")
 
                 await message.reply(response)
 
@@ -214,7 +214,7 @@ class Core(commands.Cog):
                     LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
 
                     thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-                    await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\n{thought}\n```")
+                    await thought_channel.send(f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}\n```\nThought: {thought}\n```")
 
 
                     await message.reply(response)
