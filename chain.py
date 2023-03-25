@@ -2,7 +2,6 @@ import rollbar
 import os
 import validators
 
-from langchain.llms.openai import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
 from langchain.memory import ConversationSummaryBufferMemory
@@ -74,20 +73,17 @@ def load_chains():
     # define chains
     starter_chain = LLMChain(
         llm=llm,
-        prompt=starter_chat_prompt,
-        verbose=True
+        prompt=starter_chat_prompt
     )
 
     thought_chain = LLMChain(
         llm=llm,
-        prompt=thought_chat_prompt,
-        verbose=True
+        prompt=thought_chat_prompt
     )
 
     response_chain = LLMChain(
         llm=llm,
-        prompt=response_chat_prompt,
-        verbose=True
+        prompt=response_chat_prompt
     )
 
     return starter_chain, thought_chain, response_chain
