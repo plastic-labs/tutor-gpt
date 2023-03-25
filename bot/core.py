@@ -188,6 +188,9 @@ class Core(commands.Cog):
             reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
             if reply_msg.author == self.bot.user:
                 i = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
+                # check that the reply isn't to one of the bot's thought messages
+                if reply_msg.content.startswith("https://discord.com"):
+                    return
                 if LOCAL_CHAIN.context is None:
                     await message.channel.send('Please set a context using `/context`')
                     return
