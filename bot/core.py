@@ -1,6 +1,7 @@
 # core functionality
 
 import discord
+import time
 import globals
 from discord.ext import commands
 from typing import Optional
@@ -30,6 +31,7 @@ class Core(commands.Cog):
                 if LOCAL_CHAIN.context is None:
                     await after.channel.send('Please set a context using `/context`')
                     return
+                start = time.time()
                 async with after.channel.typing():
                     thought = await chat(
                         context=LOCAL_CHAIN.context,
@@ -56,10 +58,12 @@ class Core(commands.Cog):
 
                     await after.reply(response)
 
+                end = time.time()
                 print(f"Link: {link}")
                 print(f"Input: {i}")
                 print(f"Thought: {thought}")
                 print(f"Response: {response}")
+                print(f"Elapsed: {end - start}")
                 print("=========================================")
 
     @commands.slash_command(description="Set the context for the tutor or show it")
@@ -81,6 +85,7 @@ class Core(commands.Cog):
         else:
             # text given, assign or update the context
             if LOCAL_CHAIN is not None and LOCAL_CHAIN.context is not None:
+                start = time.time()
                 await ctx.response.defer()
                 # updating the context, so restart conversation
                 await ctx.invoke(self.bot.get_command('restart'), respond=False)
@@ -93,8 +98,11 @@ class Core(commands.Cog):
                 )
                 LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
+                end = time.time()
+                print(f"Elapsed: {end - start}")
             else:
                 # setting context for the first time
+                start = time.time()
                 await ctx.response.defer()
                 # Create new cache entry
                 LOCAL_CHAIN = ConversationCache(text)
@@ -108,6 +116,8 @@ class Core(commands.Cog):
                 # globals.RESPONSE_MEMORY.chat_memory.add_ai_message(response)
                 LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
+                end = time.time()
+                print(f"Elapsed: {end - start}")
 
         return
 
@@ -151,6 +161,7 @@ class Core(commands.Cog):
             if LOCAL_CHAIN.context is None:
                 await message.channel.send('Please set a context using `/context`')
                 return
+            start = time.time()
             async with message.channel.typing():
                 thought = await chat(
                     context=LOCAL_CHAIN.context,
@@ -177,10 +188,12 @@ class Core(commands.Cog):
 
                 await message.reply(response)
 
+            end = time.time()
             print(f"Link: {link}")
             print(f"Input: {i}")
             print(f"Thought: {thought}")
             print(f"Response: {response}")
+            print(f"Elapsed: {end - start}")
             print("=========================================")
 
 
@@ -203,6 +216,7 @@ class Core(commands.Cog):
                     return
                 if message.content.startswith("!no") or message.content.startswith("!No"):
                     return
+                start = time.time()
                 async with message.channel.typing():
                     thought = await chat(
                         context=LOCAL_CHAIN.context,
@@ -229,10 +243,12 @@ class Core(commands.Cog):
 
                     await message.reply(response)
 
+                end = time.time()
                 print(f"Link: {link}")
                 print(f"Input: {i}")
                 print(f"Thought: {thought}")
                 print(f"Response: {response}")
+                print(f"Elapsed: {end - start}")
                 print("=========================================")
 
 
