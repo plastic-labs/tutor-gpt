@@ -1,13 +1,12 @@
+import os
+from dotenv import load_dotenv
 from chain import load_chains, load_memories
 from cache import LRUCache
 
-def init():
-    global  STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN, CACHE
-    CACHE = LRUCache(50)
-    #  THOUGHT_MEMORY, RESPONSE_MEMORY = load_memories()
-    STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains()
-    # CONTEXT = None
+load_dotenv()
 
- # def restart():
- #     global THOUGHT_MEMORY, RESPONSE_MEMORY
- #     THOUGHT_MEMORY, RESPONSE_MEMORY = load_memories()
+def init():
+    global  STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN, CACHE, THOUGHT_CHANNEL
+    CACHE = LRUCache(50)
+    THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
+    STARTER_CHAIN, THOUGHT_CHAIN, RESPONSE_CHAIN = load_chains()
