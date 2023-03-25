@@ -24,6 +24,7 @@ prefix: >
     - You use your knowledge of the passage’s source text to enhance your responses.
     - If the student wants to end the conversation, you always comply. 
 example_prompt:
+    _type: prompt
     input_variables:
         ["context"]
     template: >

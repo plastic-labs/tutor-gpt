@@ -1,11 +1,14 @@
-from typing import Optional
 import rollbar
 import os
+import validators
 
-# import pandas as pd
+from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
-from langchain.chains.conversation.memory import ConversationSummaryBufferMemory
-from langchain.llms import OpenAI
+from langchain.memory import ConversationSummaryBufferMemory
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+)
 from langchain.prompts import load_prompt
 
 from dotenv import load_dotenv
@@ -19,99 +22,152 @@ rollbar.init(
     access_token=rollbar_token,
     environment=rollbar_env,
     code_version='1.0'
-    )
+)
 
+STARTER_PROMPT_TEMPLATE = load_prompt("data/prompts/starter_prompt.yaml")
 THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/thought_prompt.yaml")
 RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/response_prompt.yaml")
 THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/thought_summary_prompt.yaml")
 RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.yaml")
 
 
+def load_memories():
+    """Load the memory objects"""
+    llm = ChatOpenAI()
+
+    # memory definitions
+    thought_memory = ConversationSummaryBufferMemory(
+        llm=llm,
+        memory_key="history",
+        input_key="input",
+        ai_prefix="Thought",
+        human_prefix="Student",
+        max_token_limit=900
+    )
+
+    response_memory = ConversationSummaryBufferMemory(
+        llm=llm,
+        memory_key="history",
+        input_key="input",
+        ai_prefix="Tutor",
+        human_prefix="Student",
+        max_token_limit=900
+    )
+
+    return thought_memory, response_memory
+
+
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = OpenAI(temperature=0.9)
-    llm_thought_summary = OpenAI(max_tokens=75)  # how long we want our academic needs list to be
-    llm_response_summary = OpenAI(max_tokens=150) # how long we want our dialogue summary to be
+    llm = ChatOpenAI(max_tokens=170)
+
+    # chatGPT prompt formatting
+    starter_message_prompt = HumanMessagePromptTemplate(prompt=STARTER_PROMPT_TEMPLATE)
+    thought_message_prompt = HumanMessagePromptTemplate(prompt=THOUGHT_PROMPT_TEMPLATE)
+    response_message_prompt = HumanMessagePromptTemplate(prompt=RESPONSE_PROMPT_TEMPLATE)
+
+    starter_chat_prompt = ChatPromptTemplate.from_messages([starter_message_prompt])
+    thought_chat_prompt = ChatPromptTemplate.from_messages([thought_message_prompt])
+    response_chat_prompt = ChatPromptTemplate.from_messages([response_message_prompt])
+
+    # define chains
+    starter_chain = LLMChain(
+        llm=llm,
+        prompt=starter_chat_prompt
+    )
+
     thought_chain = LLMChain(
-        llm=llm, 
-        memory=ConversationSummaryBufferMemory(
-            prompt=THOUGHT_SUMMARY_TEMPLATE,
-            max_token_limit=100,  # how much of the history we're trying to summarize
-            llm=llm_thought_summary,
-            memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
-            input_key="input",
-            ai_prefix="Thought",
-            human_prefix="Student"
-        ), 
-        prompt=THOUGHT_PROMPT_TEMPLATE, 
-        verbose=True
+        llm=llm,
+        prompt=thought_chat_prompt
     )
 
     response_chain = LLMChain(
-        llm=llm, 
-        memory=ConversationSummaryBufferMemory(
-            prompt=RESPONSE_SUMMARY_TEMPLATE,
-            max_token_limit=100, 
-            llm=llm_response_summary,
-            memory_key="history",   # when you have multiple inputs, you need to specify which inputs to record for history
-            input_key="input",
-            ai_prefix="Tutor",
-            human_prefix="Student"
-        ), 
-        prompt=RESPONSE_PROMPT_TEMPLATE, 
-        verbose=True
+        llm=llm,
+        prompt=response_chat_prompt
     )
 
+    return starter_chain, thought_chain, response_chain
 
-    return thought_chain, response_chain
 
+async def chat(**kwargs):
+    # if there's no input, generate a starter
+    if kwargs.get('inp') is None:
+        assert kwargs.get('starter_chain'), "Please pass the starter chain."
+        starter_chain = kwargs.get('starter_chain')
+        context = kwargs.get('context')
 
-async def chat(
-    context: str, 
-    inp: str, 
-    thought_chain: Optional[LLMChain], 
-    response_chain: Optional[LLMChain]
-):
-    """Execute the chat functionality."""
-    # history = history or []
-    
-    # If chain is None, that is because no API key was provided.
-    if thought_chain is None:
-        print("Please set your OpenAI key to use")
-        return
-    if response_chain is None:
-        print("Please set your OpenAI key to use")
-        return
+        # get number of tokens contained in given context
+        starter_tokens = starter_chain.llm.get_num_tokens(context)
 
-    # Run chains and append input.
-    try:
-        thought = thought_chain.predict(
-            context=context, 
-            input=inp
+        # provided context can't take up more than 386 tokens (see notes on 2023-03-22)
+        if starter_tokens > 386:
+            return "Sorry, I can't handle a context of that length yet, but I can work through it with you if you break it into smaller pieces!\n\n If you feel ready to move on at any time, just give me the next piece by using the `/context` command."
+        # check it's not a URL either
+        if validators.url(context):
+            return "Sorry, I can't scrape content from URLs yet. Please copy + paste a few paragraphs of text after the `/context` command!"
+            
+
+        response = await starter_chain.apredict(
+            context=context
         )
-        if 'Tutor:' in thought:
-            thought = thought.split('Tutor:')[0].strip()
-    except Exception as e:
-        rollbar.report_exc_info()
-        thought = str(e)
 
-    try:
-        response = response_chain.predict(
+        return response
+
+    # if we sent a thought across, generate a response
+    if kwargs.get('thought'):
+        assert kwargs.get('response_chain'), "Please pass the response chain."
+        response_chain = kwargs.get('response_chain')
+        response_memory = kwargs.get('response_memory')
+        context = kwargs.get('context')
+        inp = kwargs.get('inp')
+        thought = kwargs.get('thought')
+
+        # get the history into a string
+        history = response_memory.load_memory_variables({})['history']
+
+        response = await response_chain.apredict(
             context=context,
             input=inp,
-            thought=thought
+            thought=thought,
+            history=history
         )
         if 'Student:' in response:
             response = response.split('Student:')[0].strip()
-        if 'Studen:' in response:  # this happened once: https://discord.com/channels/1016845111637839922/1073429619639853066/1080233497073025065
+        if 'Studen:' in response:
             response = response.split('Studen:')[0].strip()
-    except Exception as e:
-        rollbar.report_exc_info()
-        response = str(e)
 
-    # log these things
-    # history.append((inp, thought, response))
+        return response
 
-    return response, thought
+    # otherwise, we're generating a thought
+    else:
+        assert kwargs.get('thought_chain'), "Please pass the thought chain."
+        inp = kwargs.get('inp')
+        thought_chain = kwargs.get('thought_chain')
+        thought_memory = kwargs.get('thought_memory')
+        context = kwargs.get('context')
+
+        # get the history into a string
+        history = thought_memory.load_memory_variables({})['history']
+        
+        response = await thought_chain.apredict(
+            context=context,
+            input=inp,
+            history=history
+        )
+
+        if 'Tutor:' in response:
+            response = response.split('Tutor:')[0].strip()
+
+        return response
 
 
+class ConversationCache:
+    "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
+    def __init__(self, context=None):
+        self.thought_memory, self.response_memory = load_memories()
+        self.context = context
+
+    def restart(self):
+       self.thought_memory.clear()
+       self.response_memory.clear()
+       self.context = None
