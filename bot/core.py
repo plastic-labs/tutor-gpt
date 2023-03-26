@@ -14,6 +14,7 @@ class Core(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        await self.bot.sync_commands()
         print(f"We have logged in as {self.bot.user}: ID = {self.bot.user.id}")
 
     @commands.Cog.listener()
