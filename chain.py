@@ -163,11 +163,13 @@ async def chat(**kwargs):
 
 class ConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
-    def __init__(self, context=None):
+    def __init__(self, context=None, convo_type=None):
         self.thought_memory, self.response_memory = load_memories()
         self.context = context
+        self.type = convo_type
 
     def restart(self):
        self.thought_memory.clear()
        self.response_memory.clear()
        self.context = None
+       self.convo_type = None
