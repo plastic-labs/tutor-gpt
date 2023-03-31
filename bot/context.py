@@ -34,22 +34,13 @@ class Context(commands.Cog):
                 await ctx.response.defer()
                 # updating the context, so restart conversation
                 await ctx.invoke(self.bot.get_command('restart'), respond=False)
-                LOCAL_CHAIN.context = text
-                # globals.CONTEXT = text
-                print(f"Context updated to: {LOCAL_CHAIN.context}")
-                response = await chat(
-                    context=LOCAL_CHAIN.context,
-                    starter_chain=globals.STARTER_CHAIN
-                )
-                LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
-                await ctx.followup.send(response)
+                await ctx.respond("What would you like to do with the text you provided?", view=ContextView(text))
                 end = time.time()
                 print(f"Elapsed: {end - start}")
             else:
                 # setting context for the first time
                 await ctx.response.defer()
                 start = time.time()
-                # respond with a message and show buttons
                 await ctx.respond("What would you like to do with the text you provided?", view=ContextView(text))
                 end = time.time()
                 print(f"Elapsed: {end - start}")
@@ -62,9 +53,13 @@ class ContextView(discord.ui.View):
     @discord.ui.button(label="Discuss", row = 0, style=discord.ButtonStyle.primary, emoji="💬")
     async def discuss_button_callback(self, button, interaction):
         await interaction.response.defer()
+
         self.discuss_button_callback.disabled = True
         self.workshop_button_callback.disabled = True
-        await interaction.followup.edit_message(interaction.message.id, view=self) # edit the message's view
+
+        # edit the message's view ASAP so people can't click multiple times before it responds
+        await interaction.followup.edit_message(interaction.message.id, view=self) 
+
         async with interaction.channel.typing():
             # Create new cache entry
             LOCAL_CHAIN = ConversationCache(self.text)
@@ -75,15 +70,19 @@ class ContextView(discord.ui.View):
                 starter_chain=globals.STARTER_CHAIN
             )
             LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
-        await interaction.followup.send(response)
+            await interaction.followup.send(response)
 
 
     @discord.ui.button(label="Workshop", row = 1, style=discord.ButtonStyle.primary, emoji="✍️")
     async def workshop_button_callback(self, button, interaction):
         await interaction.response.defer()
+
         self.discuss_button_callback.disabled = True
         self.workshop_button_callback.disabled = True
-        await interaction.followup.edit_message(interaction.message.id, view=self) # edit the message's view
+        
+        # edit the message's view ASAP so people can't click multiple times before it responds
+        await interaction.followup.edit_message(interaction.message.id, view=self)
+
         async with interaction.channel.typing():
             # Create new cache entry
             LOCAL_CHAIN = ConversationCache(self.text)
@@ -94,7 +93,7 @@ class ContextView(discord.ui.View):
                 starter_chain=globals.STARTER_CHAIN
             )
             LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
-        await interaction.followup.send(response)
+            await interaction.followup.send(response)
 
 
 def setup(bot):
