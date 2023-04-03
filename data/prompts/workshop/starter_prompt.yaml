@@ -11,5 +11,6 @@ template: >
     BEGIN CONTEXT:
     {context}
     END CONTEXT
-    Remember: the start of a conversation can make or break the student's desire to engage with the workshopping and revision process. Take heed of the advice above and most of all, have fun! BEGIN DIALOGUE: 
-    Bloom:
+    Remember: the start of a conversation can make or break the student's desire to engage with the workshopping and revision process. Take heed of the advice above and most of all, have fun! 
+    BEGIN DIALOGUE: 
+    Tutor:

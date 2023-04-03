@@ -24,11 +24,17 @@ rollbar.init(
     code_version='1.0'
 )
 
-STARTER_PROMPT_TEMPLATE = load_prompt("data/prompts/starter_prompt.yaml")
-THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/thought_prompt.yaml")
-RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/response_prompt.yaml")
-THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/thought_summary_prompt.yaml")
-RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/response_summary_prompt.yaml")
+DISCUSS_STARTER_PROMPT_TEMPLATE = load_prompt("data/prompts/discuss/starter_prompt.yaml")
+DISCUSS_THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/discuss/thought_prompt.yaml")
+DISCUSS_RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/discuss/response_prompt.yaml")
+DISCUSS_THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/discuss/thought_summary_prompt.yaml")
+DISCUSS_RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/discuss/response_summary_prompt.yaml")
+
+WORKSHOP_STARTER_PROMPT_TEMPLATE = load_prompt("data/prompts/workshop/starter_prompt.yaml")
+WORKSHOP_THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/workshop/thought_prompt.yaml")
+WORKSHOP_RESPONSE_PROMPT_TEMPLATE = load_prompt("data/prompts/workshop/response_prompt.yaml")
+WORKSHOP_THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/workshop/thought_summary_prompt.yaml")
+WORKSHOP_RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/workshop/response_summary_prompt.yaml")
 
 
 def load_memories():
@@ -36,25 +42,52 @@ def load_memories():
     llm = ChatOpenAI()
 
     # memory definitions
-    thought_memory = ConversationSummaryBufferMemory(
+    discuss_thought_memory = ConversationSummaryBufferMemory(
         llm=llm,
         memory_key="history",
         input_key="input",
         ai_prefix="Thought",
         human_prefix="Student",
-        max_token_limit=900
+        max_token_limit=900,
+        prompt=DISCUSS_THOUGHT_SUMMARY_TEMPLATE
     )
 
-    response_memory = ConversationSummaryBufferMemory(
+    discuss_response_memory = ConversationSummaryBufferMemory(
         llm=llm,
         memory_key="history",
         input_key="input",
         ai_prefix="Tutor",
         human_prefix="Student",
-        max_token_limit=900
+        max_token_limit=900,
+        prompt=DISCUSS_RESPONSE_SUMMARY_TEMPLATE
     )
 
-    return thought_memory, response_memory
+    workshop_thought_memory = ConversationSummaryBufferMemory(
+        llm=llm,
+        memory_key="history",
+        input_key="input",
+        ai_prefix="Thought",
+        human_prefix="Student",
+        max_token_limit=900,
+        prompt=WORKSHOP_THOUGHT_SUMMARY_TEMPLATE
+    )
+
+    workshop_response_memory = ConversationSummaryBufferMemory(
+        llm=llm,
+        memory_key="history",
+        input_key="input",
+        ai_prefix="Tutor",
+        human_prefix="Student",
+        max_token_limit=900,
+        prompt=WORKSHOP_RESPONSE_SUMMARY_TEMPLATE
+    )
+
+    return (
+        discuss_thought_memory,
+        discuss_response_memory,
+        workshop_thought_memory,
+        workshop_response_memory
+    )
 
 
 def load_chains():
@@ -62,31 +95,67 @@ def load_chains():
     llm = ChatOpenAI(max_tokens=170)
 
     # chatGPT prompt formatting
-    starter_message_prompt = HumanMessagePromptTemplate(prompt=STARTER_PROMPT_TEMPLATE)
-    thought_message_prompt = HumanMessagePromptTemplate(prompt=THOUGHT_PROMPT_TEMPLATE)
-    response_message_prompt = HumanMessagePromptTemplate(prompt=RESPONSE_PROMPT_TEMPLATE)
+    discuss_starter_message_prompt = HumanMessagePromptTemplate(prompt=DISCUSS_STARTER_PROMPT_TEMPLATE)
+    discuss_thought_message_prompt = HumanMessagePromptTemplate(prompt=DISCUSS_THOUGHT_PROMPT_TEMPLATE)
+    discuss_response_message_prompt = HumanMessagePromptTemplate(prompt=DISCUSS_RESPONSE_PROMPT_TEMPLATE)
 
-    starter_chat_prompt = ChatPromptTemplate.from_messages([starter_message_prompt])
-    thought_chat_prompt = ChatPromptTemplate.from_messages([thought_message_prompt])
-    response_chat_prompt = ChatPromptTemplate.from_messages([response_message_prompt])
+    workshop_starter_message_prompt = HumanMessagePromptTemplate(prompt=WORKSHOP_STARTER_PROMPT_TEMPLATE)
+    workshop_thought_message_prompt = HumanMessagePromptTemplate(prompt=WORKSHOP_THOUGHT_PROMPT_TEMPLATE)
+    workshop_response_message_prompt = HumanMessagePromptTemplate(prompt=WORKSHOP_RESPONSE_PROMPT_TEMPLATE)
+
+    discuss_starter_chat_prompt = ChatPromptTemplate.from_messages([discuss_starter_message_prompt])
+    discuss_thought_chat_prompt = ChatPromptTemplate.from_messages([discuss_thought_message_prompt])
+    discuss_response_chat_prompt = ChatPromptTemplate.from_messages([discuss_response_message_prompt])
+
+    workshop_starter_chat_prompt = ChatPromptTemplate.from_messages([workshop_starter_message_prompt])
+    workshop_thought_chat_prompt = ChatPromptTemplate.from_messages([workshop_thought_message_prompt])
+    workshop_response_chat_prompt = ChatPromptTemplate.from_messages([workshop_response_message_prompt])
 
     # define chains
-    starter_chain = LLMChain(
+    discuss_starter_chain = LLMChain(
         llm=llm,
-        prompt=starter_chat_prompt
+        prompt=discuss_starter_chat_prompt,
+        verbose=True
     )
 
-    thought_chain = LLMChain(
+    discuss_thought_chain = LLMChain(
         llm=llm,
-        prompt=thought_chat_prompt
+        prompt=discuss_thought_chat_prompt,
+        verbose=True
     )
 
-    response_chain = LLMChain(
+    discuss_response_chain = LLMChain(
         llm=llm,
-        prompt=response_chat_prompt
+        prompt=discuss_response_chat_prompt,
+        verbose=True
     )
 
-    return starter_chain, thought_chain, response_chain
+    workshop_starter_chain = LLMChain(
+        llm=llm,
+        prompt=workshop_starter_chat_prompt,
+        verbose=True
+    )
+
+    workshop_thought_chain = LLMChain(
+        llm=llm,
+        prompt=workshop_thought_chat_prompt,
+        verbose=True
+    )
+
+    workshop_response_chain = LLMChain(
+        llm=llm,
+        prompt=workshop_response_chat_prompt,
+        verbose=True
+    )
+
+    return (
+        discuss_starter_chain, 
+        discuss_thought_chain, 
+        discuss_response_chain,
+        workshop_starter_chain,
+        workshop_thought_chain,
+        workshop_response_chain
+    )
 
 
 async def chat(**kwargs):
@@ -164,12 +233,20 @@ async def chat(**kwargs):
 class ConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
     def __init__(self, context=None, convo_type=None):
-        self.thought_memory, self.response_memory = load_memories()
+        (
+            self.discuss_thought_memory, 
+            self.discuss_response_memory,
+            self.workshop_thought_memory,
+            self.workshop_response_memory
+        ) = load_memories()
         self.context = context
-        self.type = convo_type
+        self.convo_type = convo_type
+
 
     def restart(self):
-       self.thought_memory.clear()
-       self.response_memory.clear()
+       self.discuss_thought_memory.clear()
+       self.discuss_response_memory.clear()
+       self.workshop_thought_memory.clear()
+       self.workshop_response_memory.clear()
        self.context = None
        self.convo_type = None

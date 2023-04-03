@@ -62,9 +62,9 @@ class Context(commands.Cog):
                 print(f"*Discussion updated to:* {LOCAL_CHAIN.context}")
                 response = await chat(
                     context=LOCAL_CHAIN.context,
-                    starter_chain=globals.STARTER_CHAIN
+                    starter_chain=globals.DISCUSS_STARTER_CHAIN
                 )
-                LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+                LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
                 end = time.time()
                 print(f"Elapsed: {end - start}")
@@ -73,14 +73,14 @@ class Context(commands.Cog):
                 start = time.time()
                 await ctx.response.defer()
                 # Create new cache entry
-                LOCAL_CHAIN = ConversationCache(text)
+                LOCAL_CHAIN = ConversationCache(text, convo_type="discuss")
                 globals.CACHE.put(ctx.channel_id, LOCAL_CHAIN)
                 print(f"*Discussion set to:* {LOCAL_CHAIN.context}")
                 response = await chat(
                     context=text,
-                    starter_chain=globals.STARTER_CHAIN
+                    starter_chain=globals.DISCUSS_STARTER_CHAIN
                 )
-                LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+                LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
                 end = time.time()
                 print(f"Elapsed: {end - start}")
@@ -106,9 +106,9 @@ class Context(commands.Cog):
                 print(f"*Workshop text updated to:* {LOCAL_CHAIN.context}")
                 response = await chat(
                     context=LOCAL_CHAIN.context,
-                    starter_chain=globals.STARTER_CHAIN
+                    starter_chain=globals.WORKSHOP_STARTER_CHAIN
                 )
-                LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+                LOCAL_CHAIN.workshop_response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
                 end = time.time()
                 print(f"Elapsed: {end - start}")
@@ -117,14 +117,14 @@ class Context(commands.Cog):
                 start = time.time()
                 await ctx.response.defer()
                 # Create new cache entry
-                LOCAL_CHAIN = ConversationCache(text)
+                LOCAL_CHAIN = ConversationCache(text, convo_type="workshop")
                 globals.CACHE.put(ctx.channel_id, LOCAL_CHAIN)
                 print(f"*Workshop text set to:* {LOCAL_CHAIN.context}")
                 response = await chat(
                     context=text,
-                    starter_chain=globals.STARTER_CHAIN
+                    starter_chain=globals.WORKSHOP_STARTER_CHAIN
                 )
-                LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+                LOCAL_CHAIN.workshop_response_memory.chat_memory.add_ai_message(response)
                 await ctx.followup.send(response)
                 end = time.time()
                 print(f"Elapsed: {end - start}")
@@ -143,19 +143,19 @@ class ContextView(discord.ui.View):
         self.discuss_button_callback.disabled = True
         self.workshop_button_callback.disabled = True
 
-        # edit the message's view ASAP so people can't click multiple times before it responds
+        # update the message's view ASAP so people can't click multiple times before it responds
         await interaction.followup.edit_message(interaction.message.id, view=self) 
 
         async with interaction.channel.typing():
             # Create new cache entry
-            LOCAL_CHAIN = ConversationCache(self.text)
+            LOCAL_CHAIN = ConversationCache(self.text, convo_type="discuss")
             globals.CACHE.put(interaction.channel_id, LOCAL_CHAIN)
             print(f"Context set to: {LOCAL_CHAIN.context}")
             response = await chat(
                 context=self.text,
-                starter_chain=globals.STARTER_CHAIN
+                starter_chain=globals.DISCUSS_STARTER_CHAIN
             )
-            LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+            LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
             await interaction.followup.send(response)
         
         end = time.time()
@@ -170,19 +170,19 @@ class ContextView(discord.ui.View):
         self.discuss_button_callback.disabled = True
         self.workshop_button_callback.disabled = True
         
-        # edit the message's view ASAP so people can't click multiple times before it responds
+        # update the message's view ASAP so people can't click multiple times before it responds
         await interaction.followup.edit_message(interaction.message.id, view=self)
 
         async with interaction.channel.typing():
             # Create new cache entry
-            LOCAL_CHAIN = ConversationCache(self.text)
+            LOCAL_CHAIN = ConversationCache(self.text, convo_type="workshop")
             globals.CACHE.put(interaction.channel_id, LOCAL_CHAIN)
             print(f"Context set to: {LOCAL_CHAIN.context}")
             response = await chat(
                 context=self.text,
-                starter_chain=globals.STARTER_CHAIN
+                starter_chain=globals.WORKSHOP_STARTER_CHAIN
             )
-            LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+            LOCAL_CHAIN.workshop_response_memory.chat_memory.add_ai_message(response)
             await interaction.followup.send(response)
         
         end = time.time()
