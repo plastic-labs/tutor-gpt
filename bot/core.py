@@ -12,6 +12,28 @@ class Core(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
 
+    async def chat_and_save(self, local_chain: ConversationCache, input: str) -> tuple[str, str]:
+        thought_chain =  globals.DISCUSS_THOUGHT_CHAIN if local_chain.conversation_type == "discuss" else globals.WORKSHOP_THOUGHT_CHAIN
+        response_chain = globals.DISCUSS_RESPONSE_CHAIN if local_chain.conversation_type == "discuss" else globals.WORKSHOP_RESPONSE_CHAIN
+        # response_chain = local_chain.conversation_type == "discuss" ? globals.DISCUSS_RESPONSE_CHAIN : globals.WORKSHOP_RESPONSE_CHAIN
+        
+        thought = await chat(
+            context=local_chain.context,
+            inp=input,
+            thought_chain=thought_chain,
+            thought_memory=local_chain.thought_memory
+        )
+        response = await chat(
+            context=local_chain.context,
+            inp=input,
+            thought=thought,
+            response_chain=response_chain,
+            response_memory=local_chain.response_memory
+        )
+        local_chain.thought_memory.save_context({"input":input}, {"output": thought})
+        local_chain.response_memory.save_context({"input":input}, {"output": response})
+        return thought, response
+
     @commands.Cog.listener()
     async def on_ready(self):
         await self.bot.sync_commands()
@@ -33,49 +55,8 @@ class Core(commands.Cog):
                     await after.channel.send('Please set a context using `/context`')
                     return
                 start = time.time()
-                if LOCAL_CHAIN.convo_type == "discuss":
-                    async with after.channel.typing():
-                        thought = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought_chain=globals.DISCUSS_THOUGHT_CHAIN,
-                            thought_memory=LOCAL_CHAIN.discuss_thought_memory
-                        )
-                        response = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought=thought,
-                            response_chain=globals.DISCUSS_RESPONSE_CHAIN,
-                            response_memory=LOCAL_CHAIN.discuss_response_memory
-                        )
-                        LOCAL_CHAIN.discuss_thought_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.discuss_thought_memory.chat_memory.add_ai_message(thought)
-                        LOCAL_CHAIN.discuss_response_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
-
-                elif LOCAL_CHAIN.convo_type == "workshop":
-                    async with after.channel.typing():
-                        thought = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought_chain=globals.WORKSHOP_THOUGHT_CHAIN,
-                            thought_memory=LOCAL_CHAIN.workshop_thought_memory
-                        )
-                        response = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought=thought,
-                            response_chain=globals.WORKSHOP_RESPONSE_CHAIN,
-                            response_memory=LOCAL_CHAIN.workshop_response_memory
-                        )
-                        LOCAL_CHAIN.workshop_thought_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.workshop_thought_memory.chat_memory.add_ai_message(thought)
-                        LOCAL_CHAIN.workshop_response_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.workshop_response_memory.chat_memory.add_ai_message(response)
-                
-                else:
-                    await after.channel.send("Missing or invalid conversation type. Reach out to someone from Plastic Labs for help.")
-                    return
+                async with after.channel.typing():
+                    thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
 
                 thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
                 link = f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}"
@@ -132,51 +113,8 @@ class Core(commands.Cog):
                 return
             
             start = time.time()
-
-            if LOCAL_CHAIN.convo_type == "discuss":
-                async with message.channel.typing():
-                    thought = await chat(
-                        context=LOCAL_CHAIN.context,
-                        inp=i,
-                        thought_chain=globals.DISCUSS_THOUGHT_CHAIN,
-                        thought_memory=LOCAL_CHAIN.discuss_thought_memory
-                    )
-                    response = await chat(
-                        context=LOCAL_CHAIN.context,
-                        inp=i,
-                        thought=thought,
-                        response_chain=globals.DISCUSS_RESPONSE_CHAIN,
-                        response_memory=LOCAL_CHAIN.discuss_response_memory
-                    )
-                    LOCAL_CHAIN.discuss_thought_memory.chat_memory.add_user_message(i)
-                    LOCAL_CHAIN.discuss_thought_memory.chat_memory.add_ai_message(thought)
-                    LOCAL_CHAIN.discuss_response_memory.chat_memory.add_user_message(i)
-                    LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
-
-            elif LOCAL_CHAIN.convo_type == "workshop":
-                async with message.channel.typing():
-                    thought = await chat(
-                        context=LOCAL_CHAIN.context,
-                        inp=i,
-                        thought_chain=globals.WORKSHOP_THOUGHT_CHAIN,
-                        thought_memory=LOCAL_CHAIN.workshop_thought_memory
-                    )
-                    response = await chat(
-                        context=LOCAL_CHAIN.context,
-                        inp=i,
-                        thought=thought,
-                        response_chain=globals.WORKSHOP_RESPONSE_CHAIN,
-                        response_memory=LOCAL_CHAIN.workshop_response_memory
-                    )
-                    LOCAL_CHAIN.workshop_thought_memory.chat_memory.add_user_message(i)
-                    LOCAL_CHAIN.workshop_thought_memory.chat_memory.add_ai_message(thought)
-                    LOCAL_CHAIN.workshop_response_memory.chat_memory.add_user_message(i)
-                    LOCAL_CHAIN.workshop_response_memory.chat_memory.add_ai_message(response)
-            
-            else:
-                await message.channel.send("Missing or invalid conversation type. Reach out to someone from Plastic Labs for help.")
-                return
-                    
+            async with message.channel.typing():
+                thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
 
             thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
             link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
@@ -191,8 +129,6 @@ class Core(commands.Cog):
             print(f"Response: {response}")
             print(f"Elapsed: {end - start}")
             print("=========================================")
-
-
 
         # if the message is a reply...
         if message.reference is not None:
@@ -213,51 +149,8 @@ class Core(commands.Cog):
                 if message.content.startswith("!no") or message.content.startswith("!No"):
                     return
                 start = time.time()
-                convo_type = LOCAL_CHAIN.convo_type
-
-                if convo_type == "discuss":
-                    async with message.channel.typing():
-                        thought = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought_chain=globals.DISCUSS_THOUGHT_CHAIN,
-                            thought_memory=LOCAL_CHAIN.discuss_thought_memory
-                        )
-                        response = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought=thought,
-                            response_chain=globals.DISCUSS_RESPONSE_CHAIN,
-                            response_memory=LOCAL_CHAIN.discuss_response_memory
-                        )
-                        LOCAL_CHAIN.discuss_thought_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.discuss_thought_memory.chat_memory.add_ai_message(thought)
-                        LOCAL_CHAIN.discuss_response_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
-
-                elif convo_type == "workshop":
-                    async with message.channel.typing():
-                        thought = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought_chain=globals.WORKSHOP_THOUGHT_CHAIN,
-                            thought_memory=LOCAL_CHAIN.workshop_thought_memory
-                        )
-                        response = await chat(
-                            context=LOCAL_CHAIN.context,
-                            inp=i,
-                            thought=thought,
-                            response_chain=globals.WORKSHOP_RESPONSE_CHAIN,
-                            response_memory=LOCAL_CHAIN.workshop_response_memory
-                        )
-                        LOCAL_CHAIN.workshop_thought_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.workshop_thought_memory.chat_memory.add_ai_message(thought)
-                        LOCAL_CHAIN.workshop_response_memory.chat_memory.add_user_message(i)
-                        LOCAL_CHAIN.workshop_response_memory.chat_memory.add_ai_message(response)
-                
-                else:
-                    await message.channel.send("Missing or invalid conversation type. Reach out to someone from Plastic Labs for help.")
-                    return
+                async with message.channel.typing():
+                    thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
 
                 thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
                 link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"

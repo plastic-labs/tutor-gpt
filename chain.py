@@ -37,57 +37,42 @@ WORKSHOP_THOUGHT_SUMMARY_TEMPLATE = load_prompt("data/prompts/workshop/thought_s
 WORKSHOP_RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/workshop/response_summary_prompt.yaml")
 
 
-def load_memories():
+def load_memories(conversation_type: str = "discuss"):
     """Load the memory objects"""
-    llm = ChatOpenAI()
-
+    llm = ChatOpenAI() # type: ignore
+    defaults = {
+            "llm":llm,
+            "memory_key":"history",
+            "input_key":"input",
+            "ai_prefix":"Thought",
+            "human_prefix":"Student",
+            "max_token_limit":900
+    }
+    thought_memory: ConversationSummaryBufferMemory
+    response_memory: ConversationSummaryBufferMemory
     # memory definitions
-    discuss_thought_memory = ConversationSummaryBufferMemory(
-        llm=llm,
-        memory_key="history",
-        input_key="input",
-        ai_prefix="Thought",
-        human_prefix="Student",
-        max_token_limit=900,
-        prompt=DISCUSS_THOUGHT_SUMMARY_TEMPLATE
-    )
+    if conversation_type == "discuss":
+        thought_memory = ConversationSummaryBufferMemory(
+            prompt=DISCUSS_THOUGHT_SUMMARY_TEMPLATE,
+            **defaults
+        )
 
-    discuss_response_memory = ConversationSummaryBufferMemory(
-        llm=llm,
-        memory_key="history",
-        input_key="input",
-        ai_prefix="Tutor",
-        human_prefix="Student",
-        max_token_limit=900,
-        prompt=DISCUSS_RESPONSE_SUMMARY_TEMPLATE
-    )
+        response_memory = ConversationSummaryBufferMemory(
+            prompt=DISCUSS_RESPONSE_SUMMARY_TEMPLATE,
+            **defaults
+        )
+    else: # conversation_type == "workshop"
+        thought_memory = ConversationSummaryBufferMemory(
+            prompt=WORKSHOP_THOUGHT_SUMMARY_TEMPLATE,
+            **defaults
+        )
 
-    workshop_thought_memory = ConversationSummaryBufferMemory(
-        llm=llm,
-        memory_key="history",
-        input_key="input",
-        ai_prefix="Thought",
-        human_prefix="Student",
-        max_token_limit=900,
-        prompt=WORKSHOP_THOUGHT_SUMMARY_TEMPLATE
-    )
+        response_memory = ConversationSummaryBufferMemory(
+            prompt=WORKSHOP_RESPONSE_SUMMARY_TEMPLATE,
+            **defaults
+        )
 
-    workshop_response_memory = ConversationSummaryBufferMemory(
-        llm=llm,
-        memory_key="history",
-        input_key="input",
-        ai_prefix="Tutor",
-        human_prefix="Student",
-        max_token_limit=900,
-        prompt=WORKSHOP_RESPONSE_SUMMARY_TEMPLATE
-    )
-
-    return (
-        discuss_thought_memory,
-        discuss_response_memory,
-        workshop_thought_memory,
-        workshop_response_memory
-    )
+    return (thought_memory, response_memory)
 
 
 def load_chains():
@@ -232,21 +217,15 @@ async def chat(**kwargs):
 
 class ConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
-    def __init__(self, context=None, convo_type=None):
-        (
-            self.discuss_thought_memory, 
-            self.discuss_response_memory,
-            self.workshop_thought_memory,
-            self.workshop_response_memory
-        ) = load_memories()
+    def __init__(self, context=None, conversation_type="discuss"):
+        
+        self.thought_memory, self.response_memory = load_memories(conversation_type)
         self.context = context
-        self.convo_type = convo_type
+        self.conversation_type = conversation_type
 
 
     def restart(self):
-       self.discuss_thought_memory.clear()
-       self.discuss_response_memory.clear()
-       self.workshop_thought_memory.clear()
-       self.workshop_response_memory.clear()
+       self.thought_memory.clear()
+       self.response_memory.clear()
        self.context = None
        self.convo_type = None
