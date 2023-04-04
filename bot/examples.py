@@ -33,12 +33,13 @@ class Examples(commands.Cog):
         if LOCAL_CHAIN.context is not None:
             await ctx.response.defer()
             # updating the context, so restart conversation
-            await ctx.invoke(self.bot.get_command('restart'), respond=False)
+            # await ctx.invoke(self.bot.get_command('restart'), respond=False)
+            LOCAL_CHAIN.restart()
             LOCAL_CHAIN.context = passage
             print(f"Context updated to: {LOCAL_CHAIN.context}")
             response = await chat(
                 context=LOCAL_CHAIN.context,
-                starter_chain=globals.STARTER_CHAIN
+                starter_chain=globals.DISCUSS_STARTER_CHAIN
             )
             LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
             await ctx.followup.send(f"*You used the* `/{title}` *command!\n\nI'll start the conversation below. If you want to read the passage I'm talking about, just enter* `/context`!\n\n{response}")
@@ -49,7 +50,7 @@ class Examples(commands.Cog):
             print(f"Context updated to: {LOCAL_CHAIN.context}")
             response = await chat(
                 context=LOCAL_CHAIN.context,
-                starter_chain=globals.STARTER_CHAIN
+                starter_chain=globals.DISCUSS_STARTER_CHAIN
             )
             LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
             await ctx.followup.send(f"*You used the* `/{title}` *command!\n\nI'll start the conversation below. If you want to read the passage I'm talking about, just enter* `/context`!\n\n{response}")
