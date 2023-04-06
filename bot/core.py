@@ -100,8 +100,8 @@ class Core(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        # if the user mentioned the bot...
-        if str(self.bot.user.id) in message.content:
+        # if the message came from a DM channel...
+        if isinstance(message.channel, discord.channel.DMChannel):
             LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
             if LOCAL_CHAIN is None:
                 LOCAL_CHAIN = ConversationCache()
@@ -117,37 +117,31 @@ class Core(commands.Cog):
                 thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
 
             thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
-            link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
-            await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
+            link = f"DM: {message.author.mention}"
+            await thought_channel.send(f"{link}\n```\nInput: {i}\nThought: {thought}\n```")
 
-            await message.reply(response)
+            await message.channel.send(response)
 
             end = time.time()
             print(f"Link: {link}")
-            print(f"Input: {i}")
             print(f"Thought: {thought}")
             print(f"Response: {response}")
             print(f"Elapsed: {end - start}")
             print("=========================================")
 
-        # if the message is a reply...
-        if message.reference is not None:
-            LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
-            if LOCAL_CHAIN is None:
-                LOCAL_CHAIN = ConversationCache()
-                globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
-            # and if the referenced message is from the bot...
-            reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
-            if reply_msg.author == self.bot.user:
+        # if the user mentioned the bot outside of DMs...
+        if not isinstance(message.channel, discord.channel.DMChannel):
+            if str(self.bot.user.id) in message.content:
+                LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
+                if LOCAL_CHAIN is None:
+                    LOCAL_CHAIN = ConversationCache()
+                    globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
+
                 i = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
-                # check that the reply isn't to one of the bot's thought messages
-                if reply_msg.content.startswith("https://discord.com"):
-                    return
                 if LOCAL_CHAIN.context is None:
                     await message.channel.send('Please set a context using `/context`')
                     return
-                if message.content.startswith("!no") or message.content.startswith("!No"):
-                    return
+                
                 start = time.time()
                 async with message.channel.typing():
                     thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
@@ -165,6 +159,45 @@ class Core(commands.Cog):
                 print(f"Response: {response}")
                 print(f"Elapsed: {end - start}")
                 print("=========================================")
+
+        # if the user replied to the bot outside of DMs...
+        if not isinstance(message.channel, discord.channel.DMChannel):
+            if message.reference is not None:
+                LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
+                if LOCAL_CHAIN is None:
+                    LOCAL_CHAIN = ConversationCache()
+                    globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
+                # and if the referenced message is from the bot...
+                reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
+                if reply_msg.author == self.bot.user:
+                    i = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
+                    # check that the reply isn't to one of the bot's thought messages
+                    if reply_msg.content.startswith("https://discord.com"):
+                        return
+                    if LOCAL_CHAIN.context is None:
+                        await message.channel.send('Please set a context using `/context`')
+                        return
+                    if message.content.startswith("!no") or message.content.startswith("!No"):
+                        return
+                    start = time.time()
+                    async with message.channel.typing():
+                        thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+
+                    thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
+                    link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                    await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
+
+                    await message.reply(response)
+
+                    end = time.time()
+                    print(f"Link: {link}")
+                    print(f"Input: {i}")
+                    print(f"Thought: {thought}")
+                    print(f"Response: {response}")
+                    print(f"Elapsed: {end - start}")
+                    print("=========================================")
+
+        
 
 
 def setup(bot):

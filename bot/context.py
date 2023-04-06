@@ -116,19 +116,32 @@ class ContextView(discord.ui.View):
         self.workshop_button_callback.disabled = True
 
         # update the message's view ASAP so people can't click multiple times before it responds
-        await interaction.followup.edit_message(interaction.message.id, view=self) 
+        await interaction.followup.edit_message(interaction.message.id, view=self)
 
-        async with interaction.channel.typing():
-            # Create new cache entry
-            LOCAL_CHAIN = ConversationCache(self.text, conversation_type=config['type'])
-            globals.CACHE.put(interaction.channel_id, LOCAL_CHAIN)
-            print(f"Context set to: {LOCAL_CHAIN.context}")
-            response = await chat(
-                context=self.text,
-                starter_chain=config['starter_chain']
-            )
-            # LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
-            await interaction.followup.send(response)
+        if isinstance(interaction.channel, discord.PartialMessageable):
+            async with interaction.user.typing():
+                # Create new cache entry
+                LOCAL_CHAIN = ConversationCache(self.text, conversation_type=config['type'])
+                globals.CACHE.put(interaction.channel_id, LOCAL_CHAIN)
+                print(f"Context set to: {LOCAL_CHAIN.context}")
+                response = await chat(
+                    context=self.text,
+                    starter_chain=config['starter_chain']
+                )
+                # LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
+                await interaction.followup.send(response)
+        else:
+            async with interaction.channel.typing():
+                # Create new cache entry
+                LOCAL_CHAIN = ConversationCache(self.text, conversation_type=config['type'])
+                globals.CACHE.put(interaction.channel_id, LOCAL_CHAIN)
+                print(f"Context set to: {LOCAL_CHAIN.context}")
+                response = await chat(
+                    context=self.text,
+                    starter_chain=config['starter_chain']
+                )
+                # LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
+                await interaction.followup.send(response)
         
         end = time.time()
         print(f"Elapsed: {end - start}")
