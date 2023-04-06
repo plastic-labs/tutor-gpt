@@ -123,7 +123,8 @@ class Core(commands.Cog):
             await message.channel.send(response)
 
             end = time.time()
-            print(f"Link: {link}")
+            print(f"DM: {message.author.mention}")
+            print(f"Input: {i}")
             print(f"Thought: {thought}")
             print(f"Response: {response}")
             print(f"Elapsed: {end - start}")
