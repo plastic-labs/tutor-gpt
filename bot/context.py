@@ -68,14 +68,14 @@ class Context(commands.Cog):
                 starter_chain=globals.DISCUSS_STARTER_CHAIN
             )
             LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
-
-            await ctx.followup.send(response)
+            instructions = "*Bloom has your text now. Reply to this message to continue the conversation!*"
+            await ctx.followup.send(f"{response}\n\n{instructions}")
             end = time.time()
             print(f"Elapsed: {end - start}")
 
 
 
-    @commands.slash_command(name="workshop", description="Workshop your writing with Bloom")
+    @commands.slash_command(name="workshop", description="Workshop your thesis writing with Bloom")
     async def workshop(self, ctx: discord.ApplicationContext, text: Optional[str] = None):
         LOCAL_CHAIN = globals.CACHE.get(ctx.channel_id)
         if text is None:
@@ -98,7 +98,8 @@ class Context(commands.Cog):
                 starter_chain=globals.WORKSHOP_STARTER_CHAIN
             )
             LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
-            await ctx.followup.send(response)
+            instructions = "*Bloom has your text now. Reply to this message to continue the conversation!*"
+            await ctx.followup.send(f"{response}\n\n{instructions}")            
             end = time.time()
             print(f"Elapsed: {end - start}")
 
@@ -128,8 +129,9 @@ class ContextView(discord.ui.View):
                     context=self.text,
                     starter_chain=config['starter_chain']
                 )
-                # LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
-                await interaction.followup.send(response)
+                LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+                instructions = "*Bloom has your text now. Reply to this message to continue the conversation!*"
+                await interaction.followup.send(f"{response}\n\n{instructions}")
         else:
             async with interaction.channel.typing():
                 # Create new cache entry
@@ -140,8 +142,9 @@ class ContextView(discord.ui.View):
                     context=self.text,
                     starter_chain=config['starter_chain']
                 )
-                # LOCAL_CHAIN.discuss_response_memory.chat_memory.add_ai_message(response)
-                await interaction.followup.send(response)
+                LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(response)
+                instructions = "*Bloom has your text now. Reply to this message to continue the conversation!*"
+                await interaction.followup.send(f"{response}\n\n{instructions}")
         
         end = time.time()
         print(f"Elapsed: {end - start}")
@@ -156,7 +159,7 @@ class ContextView(discord.ui.View):
         await self.button_callback_factory(button, interaction, config)
         
 
-    @discord.ui.button(label="Workshop", style=discord.ButtonStyle.primary, emoji="✍️")
+    @discord.ui.button(label="Workshop [alpha]", style=discord.ButtonStyle.primary, emoji="✍️")
     async def workshop_button_callback(self, button, interaction):
         config = {
             "starter_chain": globals.WORKSHOP_STARTER_CHAIN, 
