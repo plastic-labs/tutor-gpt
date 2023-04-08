@@ -40,13 +40,21 @@ WORKSHOP_RESPONSE_SUMMARY_TEMPLATE = load_prompt("data/prompts/workshop/response
 def load_memories(conversation_type: str = "discuss"):
     """Load the memory objects"""
     llm = ChatOpenAI() # type: ignore
-    defaults = {
-            "llm":llm,
-            "memory_key":"history",
-            "input_key":"input",
-            "ai_prefix":"Thought",
-            "human_prefix":"Student",
-            "max_token_limit":900
+    thought_defaults = {
+        "llm":llm,
+        "memory_key":"history",
+        "input_key":"input",
+        "ai_prefix":"Thought",
+        "human_prefix":"Student",
+        "max_token_limit":900
+    }
+    response_defaults = {
+        "llm":llm,
+        "memory_key":"history",
+        "input_key":"input",
+        "ai_prefix":"Tutor",
+        "human_prefix":"Student",
+        "max_token_limit":900
     }
     thought_memory: ConversationSummaryBufferMemory
     response_memory: ConversationSummaryBufferMemory
@@ -54,22 +62,22 @@ def load_memories(conversation_type: str = "discuss"):
     if conversation_type == "discuss":
         thought_memory = ConversationSummaryBufferMemory(
             prompt=DISCUSS_THOUGHT_SUMMARY_TEMPLATE,
-            **defaults
+            **thought_defaults
         )
 
         response_memory = ConversationSummaryBufferMemory(
             prompt=DISCUSS_RESPONSE_SUMMARY_TEMPLATE,
-            **defaults
+            **response_defaults
         )
     else: # conversation_type == "workshop"
         thought_memory = ConversationSummaryBufferMemory(
             prompt=WORKSHOP_THOUGHT_SUMMARY_TEMPLATE,
-            **defaults
+            **thought_defaults
         )
 
         response_memory = ConversationSummaryBufferMemory(
             prompt=WORKSHOP_RESPONSE_SUMMARY_TEMPLATE,
-            **defaults
+            **response_defaults
         )
 
     return (thought_memory, response_memory)
@@ -178,6 +186,8 @@ async def chat(**kwargs):
 
         # get the history into a string
         history = response_memory.load_memory_variables({})['history']
+
+        print(f"HISTORY:\n{history}")
 
         response = await response_chain.apredict(
             context=context,
