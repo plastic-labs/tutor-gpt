@@ -187,8 +187,6 @@ async def chat(**kwargs):
         # get the history into a string
         history = response_memory.load_memory_variables({})['history']
 
-        print(f"HISTORY:\n{history}")
-
         response = await response_chain.apredict(
             context=context,
             input=inp,
