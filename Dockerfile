@@ -4,6 +4,7 @@ FROM python:3.10-slim-bullseye as builder
 
 WORKDIR /app
 
+# https://stackoverflow.com/questions/53835198/integrating-python-poetry-with-docker
 ENV PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONHASHSEED=random \
