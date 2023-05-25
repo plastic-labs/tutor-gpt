@@ -94,6 +94,24 @@ class Core(commands.Cog):
             await ctx.respond(msg)
         else:
             return
+        
+    @commands.slash_command(description="Help using the bot")
+    async def help(self, ctx: discord.ApplicationContext):
+        """
+        Displays help message
+        """
+        help_message = """
+Bloom is your reading and writing tutor. It needs context to start the conversation. That can be either
+            
+            1. a passage of reading you're struggling to understand
+            2. a snippet of writing you're working on
+        
+Paste either after the `/context` command and select what you'd like to do. Then just chat!
+If you'd like to restart the conversation, use the `/restart` command. Then you can use `/context` again with new context!
+If you're still having trouble, drop a message in https://discord.com/channels/1076192451997474938/1092832830159065128 and Bloom's builders will help you out!
+        """
+        await ctx.respond(help_message)
+
 
     @commands.Cog.listener()
     async def on_message(self, message):
