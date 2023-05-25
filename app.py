@@ -17,8 +17,6 @@ bot = discord.Bot(intents=intents)
 
 
 bot.load_extension("bot.core")
-bot.load_extension("bot.context")
-bot.load_extension("bot.examples")
 
 
 bot.run(token)
