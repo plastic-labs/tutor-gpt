@@ -1,11 +1,12 @@
-# fly.toml file generated for tutor-gpt on 2023-02-28T01:00:01-05:00
+# fly.toml app configuration file generated for tutor-gpt on 2023-05-26T22:17:48-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
 app = "tutor-gpt"
+primary_region = "bos"
 kill_signal = "SIGINT"
-kill_timeout = 5
-processes = []
-
-[env]
+kill_timeout = "5s"
 
 [experimental]
   auto_rollback = true
