@@ -1,7 +1,7 @@
 # tutor-gpt
 LangChain LLM application. Dynamic few-shot prompting for the task of tutoring. 
 
-![](bloombot langchain diagram.png)
+![](https://github.com/plastic-labs/tutor-gpt/blob/staging/bloombot%20langchain%20diagram.png)
 
 ## Installation
 
