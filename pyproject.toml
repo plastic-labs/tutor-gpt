@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 langchain = "^0.0.151"
-rollbar = "^0.16.3"
 py-cord = "^2.4.1"
 python-dotenv = "^1.0.0"
 validators = "^0.20.0"
