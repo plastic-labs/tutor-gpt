@@ -1,7 +1,10 @@
 # tutor-gpt
-LangChain LLM application. Dynamic few-shot prompting for the task of tutoring. 
 
-![](https://github.com/plastic-labs/tutor-gpt/blob/staging/bloombot%20langchain%20diagram.png)
+Tutor-GPT is a LangChain LLM application. It uses dynamic few-shot prompting for the task of tutoring.  
+
+What makes tutor-gpt compelling is its ability to *reason pedagogically* about the learner. That is, it uses dialogue to posit the most educationally-optimal tutoring behavior. Read more about how it works [here](https://www.notion.so/Open-Sourcing-Pedagogical-Reasoning-bc5aed29be95475690e9227a638cb0a6) or you can join our [Discord](https://discord.gg/udtxycbh) to try out our implementation for free (while our OpenAI spend lasts 😄).  
+
+Alternatively, you can run your own instance of the bot by following the instructions below.  
 
 ## Installation
 
