@@ -1,4 +1,3 @@
-import rollbar
 import os
 import validators
 
@@ -15,14 +14,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-rollbar_token = os.environ['ROLLBAR_TOKEN']
-rollbar_env = os.environ['ROLLBAR_ENV']
-
-rollbar.init(
-    access_token=rollbar_token,
-    environment=rollbar_env,
-    code_version='1.0'
-)
 
 DISCUSS_STARTER_PROMPT_TEMPLATE = load_prompt("data/prompts/discuss/starter_prompt.yaml")
 DISCUSS_THOUGHT_PROMPT_TEMPLATE = load_prompt("data/prompts/discuss/thought_prompt.yaml")

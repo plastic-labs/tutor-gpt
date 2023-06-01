@@ -40,6 +40,23 @@ class Core(commands.Cog):
         print(f"We have logged in as {self.bot.user}: ID = {self.bot.user.id}")
 
     @commands.Cog.listener()
+    async def on_member_join(self, member):
+        welcome_message = """
+Hello! Thanks for joining the Bloom server. 
+
+I’m your literacy tutor — bring me something you’re reading or writing and paste it in after the `/context` slash command. Then just click the button that lets me know what kind of context you gave me, and I’ll start the conversation. You can reply normally, and I’ll always respond!
+
+Wanna talk about something else? Paste in the new text using the same `/context` command.
+
+Need to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.
+
+If you have any further questions, feel free to post them in https://discord.com/channels/1076192451997474938/1092832830159065128 and someone from the Plastic Labs team will get back to you ASAP!
+
+Enjoy!
+        """
+        await member.send(welcome_message)
+
+    @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         # check that the edit actually changed things first
         if before.content != after.content:
@@ -94,6 +111,24 @@ class Core(commands.Cog):
             await ctx.respond(msg)
         else:
             return
+        
+    @commands.slash_command(description="Help using the bot")
+    async def help(self, ctx: discord.ApplicationContext):
+        """
+        Displays help message
+        """
+        help_message = """
+Bloom is your reading and writing tutor. It needs context to start the conversation. That can be either
+            
+            1. a passage of reading you're struggling to understand
+            2. a snippet of writing you're working on
+        
+Paste either after the `/context` command and select what you'd like to do. Then just chat!
+If you'd like to restart the conversation, use the `/restart` command. Then you can use `/context` again with new context!
+If you're still having trouble, drop a message in https://discord.com/channels/1076192451997474938/1092832830159065128 and Bloom's builders will help you out!
+        """
+        await ctx.respond(help_message)
+
 
     @commands.Cog.listener()
     async def on_message(self, message):
