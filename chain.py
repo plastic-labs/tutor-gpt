@@ -4,7 +4,7 @@ import validators
 
 from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
-from langchain.memory import ConversationSummaryBufferMemory
+from langchain.memory import ConversationBufferMemory
 from langchain.prompts import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
@@ -29,40 +29,33 @@ OBJECTIVE_SYSTEM_THOUGHT = load_prompt("data/prompts/objective/system/thought.ya
 OBJECTIVE_SYSTEM_RESPONSE = load_prompt("data/prompts/objective/system/response.yaml")
 OBJECTIVE_HUMAN_THOUGHT = load_prompt("data/prompts/objective/human/thought.yaml")
 OBJECTIVE_HUMAN_RESPONSE = load_prompt("data/prompts/objective/human/response.yaml")
-OBJECTIVE_SUMMARY_THOUGHT = load_prompt("data/prompts/objective/summaries/thought.yaml")
-OBJECTIVE_SUMMARY_RESPONSE = load_prompt("data/prompts/objective/summaries/response.yaml")
+# OBJECTIVE_SUMMARY_THOUGHT = load_prompt("data/prompts/objective/summaries/thought.yaml")
+# OBJECTIVE_SUMMARY_RESPONSE = load_prompt("data/prompts/objective/summaries/response.yaml")
 
 
 def load_memories(conversation_type: str = "objective"):
     """Load the memory objects"""
-    llm = ChatOpenAI() # type: ignore
     thought_defaults = {
-        "llm":llm,
         "memory_key":"history",
         "input_key":"input",
         "ai_prefix":"Thought",
-        "human_prefix":"Student",
-        "max_token_limit":900
+        "human_prefix":"User",
     }
     response_defaults = {
-        "llm":llm,
         "memory_key":"history",
         "input_key":"input",
-        "ai_prefix":"Tutor",
-        "human_prefix":"Student",
-        "max_token_limit":900
+        "ai_prefix":"Bloom",
+        "human_prefix":"User",
     }
-    thought_memory: ConversationSummaryBufferMemory
-    response_memory: ConversationSummaryBufferMemory
+    thought_memory: ConversationBufferMemory
+    response_memory: ConversationBufferMemory
     # memory definitions
     if conversation_type == "objective":
-        thought_memory = ConversationSummaryBufferMemory(
-            prompt=OBJECTIVE_SUMMARY_THOUGHT,
+        thought_memory = ConversationBufferMemory(
             **thought_defaults
         )
 
-        response_memory = ConversationSummaryBufferMemory(
-            prompt=OBJECTIVE_SUMMARY_RESPONSE,
+        response_memory = ConversationBufferMemory(
             **response_defaults
         )
     else:
@@ -74,7 +67,7 @@ def load_memories(conversation_type: str = "objective"):
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
-    llm = ChatOpenAI(max_tokens=170)
+    llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
 
     # chatGPT prompt formatting
     objective_system_thought = SystemMessagePromptTemplate(prompt=OBJECTIVE_SYSTEM_THOUGHT)

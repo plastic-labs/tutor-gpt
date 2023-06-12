@@ -2,4 +2,7 @@ _type: prompt
 input_variables:
   ["history", "input"]
 template: |
-  "PRIOR ACADEMIC NEEDS:\n{history}\nRemember: do NOT spoon-feed or do all the work for your student.\nBEGIN DIALOGUE\nStudent: {input}\nThought:"
+  "{history}
+  BEGIN DIALOGUE
+  User: {input}
+  Thought:"
