@@ -20,11 +20,11 @@ This app requires you to have a few different environment variables set. Create 
 
 ## Docker/Containerization
 
-The repository containers a `Dockerfile` for running the bot in a containerized workflow. Use the follow command to build and run the container
+The repository containers a `Dockerfile` for running the bot in a containerized workflow. Use the following command to build and run the container locally:
 
 ```bash
 docker build -t tutor-gpt:latest .
-docker run tutor-gpt:latest 
+docker run --env-file .env tutor-gpt
 ```
 
 The current behaviour will utilize the `.env` file in your local repository and run the bot.
