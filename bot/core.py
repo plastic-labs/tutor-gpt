@@ -16,14 +16,18 @@ class Core(commands.Cog):
         thought_chain =  globals.OBJECTIVE_THOUGHT_CHAIN 
         response_chain = globals.OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else globals.WORKSHOP_RESPONSE_CHAIN
         # response_chain = local_chain.conversation_type == "discuss" ? globals.DISCUSS_RESPONSE_CHAIN : globals.WORKSHOP_RESPONSE_CHAIN
-        
+        persona = globals.PERSONA
+
+
         thought = await chat(
             inp=input,
+            persona=persona,
             thought_chain=thought_chain,
             thought_memory=local_chain.thought_memory
         )
         response = await chat(
             inp=input,
+            persona=persona,
             thought=thought,
             response_chain=response_chain,
             response_memory=local_chain.response_memory
