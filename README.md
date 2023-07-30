@@ -28,3 +28,9 @@ docker run --env-file .env tutor-gpt
 ```
 
 The current behaviour will utilize the `.env` file in your local repository and run the bot.
+
+## Contributing
+
+This project uses [poetry](https://python-poetry.org/) to manage dependencies.
+To install dependencies locally run `poetry install`. Or alternatively run
+`poetry shell` to activate the virtual environment

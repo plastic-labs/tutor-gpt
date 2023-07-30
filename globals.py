@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
-from chain import load_chains
-from cache import LRUCache
+from agent.chain import load_chains
+from agent.cache import LRUCache
 
 load_dotenv()
 

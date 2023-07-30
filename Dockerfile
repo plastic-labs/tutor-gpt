@@ -27,11 +27,8 @@ RUN addgroup --system app && adduser --system --group app
 USER app
 
 COPY app.py .
-COPY chain.py .
-COPY globals.py .
-COPY cache.py .
+COPY agent/ agent/
 COPY bot/ bot/
-COPY data/ data/
 
 # https://stackoverflow.com/questions/29663459/python-app-does-not-print-anything-when-running-detached-in-docker
 CMD ["python", "-u", "app.py"]

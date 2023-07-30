@@ -15,11 +15,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+OBJECTIVE_SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/system/thought.yaml'))
+OBJECTIVE_SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/system/response.yaml'))
+OBJECTIVE_HUMAN_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/human/thought.yaml'))
+OBJECTIVE_HUMAN_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/human/response.yaml'))
 
-OBJECTIVE_SYSTEM_THOUGHT = load_prompt("data/prompts/objective/system/thought.yaml")
-OBJECTIVE_SYSTEM_RESPONSE = load_prompt("data/prompts/objective/system/response.yaml")
-OBJECTIVE_HUMAN_THOUGHT = load_prompt("data/prompts/objective/human/thought.yaml")
-OBJECTIVE_HUMAN_RESPONSE = load_prompt("data/prompts/objective/human/response.yaml")
+# OBJECTIVE_SYSTEM_THOUGHT = load_prompt("./data/prompts/objective/system/thought.yaml")
+# OBJECTIVE_SYSTEM_RESPONSE = load_prompt("./data/prompts/objective/system/response.yaml")
+# OBJECTIVE_HUMAN_THOUGHT = load_prompt("./data/prompts/objective/human/thought.yaml")
+# OBJECTIVE_HUMAN_RESPONSE = load_prompt("./data/prompts/objective/human/response.yaml")
 # OBJECTIVE_SUMMARY_THOUGHT = load_prompt("data/prompts/objective/summaries/thought.yaml")
 # OBJECTIVE_SUMMARY_RESPONSE = load_prompt("data/prompts/objective/summaries/response.yaml")
 

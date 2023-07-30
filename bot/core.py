@@ -5,7 +5,7 @@ import time
 import globals
 from discord.ext import commands
 from typing import Optional
-from chain import chat, ConversationCache
+from agent.chain import chat, ConversationCache
 
 
 class Core(commands.Cog):

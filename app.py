@@ -1,13 +1,28 @@
 import os
-import globals
+# import globals
 import discord
 from dotenv import load_dotenv
+from agent.chain import load_chains
+from agent.cache import LRUCache
 
-
+def init():
+    global OBJECTIVE_THOUGHT_CHAIN, \
+    OBJECTIVE_RESPONSE_CHAIN, \
+    CACHE, \
+    THOUGHT_CHANNEL
+    
+    CACHE = LRUCache(50)
+    THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
+    ( 
+        OBJECTIVE_THOUGHT_CHAIN, 
+        OBJECTIVE_RESPONSE_CHAIN, 
+    ) = load_chains()
+    
 load_dotenv()
 token = os.environ['BOT_TOKEN']
 
-globals.init()
+# globals.init()
+init()
 
 intents = discord.Intents.default()
 intents.messages = True
