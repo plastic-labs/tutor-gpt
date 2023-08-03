@@ -2,10 +2,15 @@
 
 import discord
 import time
-import globals
+from discord_gateway import (
+    OBJECTIVE_THOUGHT_CHAIN,
+    OBJECTIVE_RESPONSE_CHAIN,
+    CACHE,
+    THOUGHT_CHANNEL,
+)
 from discord.ext import commands
 from typing import Optional
-from chain import chat, ConversationCache
+from agent.chain import chat, ConversationCache
 
 
 class Core(commands.Cog):
@@ -13,9 +18,9 @@ class Core(commands.Cog):
         self.bot = bot
 
     async def chat_and_save(self, local_chain: ConversationCache, input: str) -> tuple[str, str]:
-        thought_chain =  globals.OBJECTIVE_THOUGHT_CHAIN 
-        response_chain = globals.OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else globals.WORKSHOP_RESPONSE_CHAIN
-        # response_chain = local_chain.conversation_type == "discuss" ? globals.DISCUSS_RESPONSE_CHAIN : globals.WORKSHOP_RESPONSE_CHAIN
+        thought_chain =  OBJECTIVE_THOUGHT_CHAIN 
+        response_chain = OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
+        # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
 
         thought = await chat(
             inp=input,
@@ -61,10 +66,10 @@ Enjoy!
 
         # if the message came from a DM channel...
         if isinstance(message.channel, discord.channel.DMChannel):
-            LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
+            LOCAL_CHAIN = CACHE.get(message.channel.id)
             if LOCAL_CHAIN is None:
                 LOCAL_CHAIN = ConversationCache()
-                globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
+                CACHE.put(message.channel.id, LOCAL_CHAIN)
 
             i = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
             
@@ -72,7 +77,7 @@ Enjoy!
             async with message.channel.typing():
                 thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
 
-            thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
+            thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
             link = f"DM: {message.author.mention}"
             n = 1800
             if len(thought) > n:
@@ -100,10 +105,10 @@ Enjoy!
         # if the user mentioned the bot outside of DMs...
         if not isinstance(message.channel, discord.channel.DMChannel):
             if str(self.bot.user.id) in message.content:
-                LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
+                LOCAL_CHAIN = CACHE.get(message.channel.id)
                 if LOCAL_CHAIN is None:
                     LOCAL_CHAIN = ConversationCache()
-                    globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
+                    CACHE.put(message.channel.id, LOCAL_CHAIN)
 
                 i = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
 
@@ -111,7 +116,7 @@ Enjoy!
                 async with message.channel.typing():
                     thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
 
-                thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
+                thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
                 link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
                 n = 1800
                 if len(thought) > n:
@@ -139,10 +144,10 @@ Enjoy!
         # if the user replied to the bot outside of DMs...
         if not isinstance(message.channel, discord.channel.DMChannel):
             if message.reference is not None:
-                LOCAL_CHAIN = globals.CACHE.get(message.channel.id)
+                LOCAL_CHAIN = CACHE.get(message.channel.id)
                 if LOCAL_CHAIN is None:
                     LOCAL_CHAIN = ConversationCache()
-                    globals.CACHE.put(message.channel.id, LOCAL_CHAIN)
+                    CACHE.put(message.channel.id, LOCAL_CHAIN)
                 # and if the referenced message is from the bot...
                 reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
                 if reply_msg.author == self.bot.user:
@@ -156,7 +161,7 @@ Enjoy!
                     async with message.channel.typing():
                         thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
 
-                    thought_channel = self.bot.get_channel(int(globals.THOUGHT_CHANNEL))
+                    thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
                     link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
                     n = 1800
                     if len(thought) > n:
@@ -220,13 +225,12 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
         Args:
             ctx: context, necessary for bot commands
         """
-        LOCAL_CHAIN = globals.CACHE.get(ctx.channel_id)
+        LOCAL_CHAIN = CACHE.get(ctx.channel_id)
         if LOCAL_CHAIN:
             LOCAL_CHAIN.restart()
         else:
             LOCAL_CHAIN = ConversationCache()
-            globals.CACHE.put(ctx.channel_id, LOCAL_CHAIN )
-        # globals.restart()
+            CACHE.put(ctx.channel_id, LOCAL_CHAIN )
 
         if respond:
             msg = "Great! The conversation has been restarted. What would you like to talk about?"
