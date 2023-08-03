@@ -28,6 +28,9 @@ data/flagged_data_points/
 venv/
 .venv/
 
+# Local Fly Testing
+fly.toml
+
 # jupyter
 *.ipynb
 .ipynb_checkpoints/
