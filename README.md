@@ -32,7 +32,7 @@ The current behaviour will utilize the `.env` file in your local repository and 
 ### Architecture
 
 Below is high level diagram of the architecture for the bot.
-[Tutor-GPT Discord Architecture]('./assets/bloombot_langchain_diagram.png')
+![Tutor-GPT Discord Architecture](assets/bloombot_langchain_diagram.png)
 
 ## Contributing
 
