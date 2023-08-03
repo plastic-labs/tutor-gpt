@@ -36,6 +36,24 @@ st.image("https://bloombot.ai/wp-content/uploads/2023/02/Bloom-Logo@2x-1.svg", w
 st.title("Bloom - Reading. Reimagined.")
 st.sidebar.header("See my thoughts below!")
 
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Nokora&family=Space+Grotesk&display=swap');
+    
+    p {
+        font-family: 'Space Grotesk', sans-serif !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Nokora', sans-serif;
+    }
+    
+    #bloom-reading-reimagined {
+        font-weight: 400;
+    }
+    
+</style>""", unsafe_allow_html=True)
+
 
 
 if 'messages' not in st.session_state:
