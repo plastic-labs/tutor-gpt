@@ -11,7 +11,7 @@ def init():
     CACHE, \
     THOUGHT_CHANNEL
     
-    CACHE = LRUCache(50)
+    CACHE = LRUCache(500)
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
     ( 
         OBJECTIVE_THOUGHT_CHAIN, 
