@@ -2,8 +2,7 @@
 
 import discord
 import time
-# import globals
-from app import (
+from discord_gateway import (
     OBJECTIVE_THOUGHT_CHAIN,
     OBJECTIVE_RESPONSE_CHAIN,
     CACHE,

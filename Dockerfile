@@ -26,10 +26,9 @@ RUN poetry config virtualenvs.create false \
 RUN addgroup --system app && adduser --system --group app
 USER app
 
-COPY discord-gateway.py .
-COPY globals.py .
+COPY discord_gateway.py .
 COPY agent/ agent/
 COPY bot/ bot/
 
 # https://stackoverflow.com/questions/29663459/python-app-does-not-print-anything-when-running-detached-in-docker
-CMD ["python", "-u", "discord-gateway.py"]
+CMD ["python", "-u", "discord_gateway.py"]
