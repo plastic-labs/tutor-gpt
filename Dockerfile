@@ -29,7 +29,9 @@ USER app
 COPY app.py .
 COPY agent/ agent/
 COPY bot/ bot/
+
 COPY www/ www/
+COPY .streamlit/ /app/.streamlit/
 
 # https://stackoverflow.com/questions/29663459/python-app-does-not-print-anything-when-running-detached-in-docker
 CMD ["python", "-u", "app.py"]
