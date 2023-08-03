@@ -1,9 +1,11 @@
 import os
-# import globals
 import discord
 from dotenv import load_dotenv
 from agent.chain import load_chains
 from agent.cache import LRUCache
+    
+load_dotenv()
+token = os.environ['BOT_TOKEN']
 
 def init():
     global OBJECTIVE_THOUGHT_CHAIN, \
@@ -17,11 +19,7 @@ def init():
         OBJECTIVE_THOUGHT_CHAIN, 
         OBJECTIVE_RESPONSE_CHAIN, 
     ) = load_chains()
-    
-load_dotenv()
-token = os.environ['BOT_TOKEN']
 
-# globals.init()
 init()
 
 intents = discord.Intents.default()
