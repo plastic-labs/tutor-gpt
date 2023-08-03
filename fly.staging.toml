@@ -12,7 +12,7 @@ kill_timeout = "5s"
   auto_rollback = true
 
 [processes]
-  discord = "python -u app.py"
+  discord = "python -u -m bot.app"
   web = "python -m streamlit run www/main.py"
 
 [http_service]
