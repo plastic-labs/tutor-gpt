@@ -10,3 +10,19 @@ kill_timeout = "5s"
 
 [experimental]
   auto_rollback = true
+
+[processes]
+  discord = "python -u -m bot.app"
+  web = "python -m streamlit run www/main.py"
+
+[http_service]
+  internal_port = 8501
+  processes = ["web"]
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
