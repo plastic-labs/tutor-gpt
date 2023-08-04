@@ -11,7 +11,7 @@ from __main__ import (
 )
 from discord.ext import commands
 from typing import Optional
-from agent.chain import chat, ConversationCache
+from agent.chain import think, respond , ConversationCache
 
 
 class Core(commands.Cog):
@@ -23,12 +23,12 @@ class Core(commands.Cog):
         response_chain = OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
         # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
 
-        thought = await chat(
+        thought = await think(
             inp=input,
             thought_chain=thought_chain,
             thought_memory=local_chain.thought_memory
         )
-        response = await chat(
+        response = await respond(
             inp=input,
             thought=thought,
             response_chain=response_chain,

@@ -93,49 +93,38 @@ def load_chains():
     )
 
 
-async def chat(**kwargs):
-    # if we sent a thought across, generate a response
-    if kwargs.get('thought'):
-        assert kwargs.get('response_chain'), "Please pass the response chain."
-        response_chain = kwargs.get('response_chain')
-        response_memory = kwargs.get('response_memory')
-        inp = kwargs.get('inp')
-        thought = kwargs.get('thought')
+async def think(inp: str, thought_chain: LLMChain, thought_memory: ConversationBufferMemory):
+    """Generate a thought"""
+    # get the history into a string
+    history = thought_memory.load_memory_variables({})['history']
+    
+    response = await thought_chain.apredict(
+        input=inp,
+        history=history
+    )
 
-        # get the history into a string
-        history = response_memory.load_memory_variables({})['history']
+    if 'Tutor:' in response:
+        response = response.split('Tutor:')[0].strip()
 
-        response = await response_chain.apredict(
-            input=inp,
-            thought=thought,
-            history=history
-        )
-        if 'Student:' in response:
-            response = response.split('Student:')[0].strip()
-        if 'Studen:' in response:
-            response = response.split('Studen:')[0].strip()
+    return response
 
-        return response
+async def respond(inp: str, thought: str, response_chain: LLMChain, response_memory: ConversationBufferMemory):
+    """Generate a response"""
+    # get the history into a string
+    history = response_memory.load_memory_variables({})['history']
 
-    # otherwise, we're generating a thought
-    else:
-        assert kwargs.get('thought_chain'), "Please pass the thought chain."
-        inp = kwargs.get('inp')
-        thought_chain = kwargs.get('thought_chain')
-        thought_memory = kwargs.get('thought_memory')
+    response = await response_chain.apredict(
+        input=inp,
+        thought=thought,
+        history=history
+    )
+    if 'Student:' in response:
+        response = response.split('Student:')[0].strip()
+    if 'Studen:' in response:
+        response = response.split('Studen:')[0].strip()
 
-        # get the history into a string
-        history = thought_memory.load_memory_variables({})['history']
-        
-        response = await thought_chain.apredict(
-            input=inp,
-            history=history
-        )
+    return response
 
-        if 'Tutor:' in response:
-            response = response.split('Tutor:')[0].strip()
-
-        return response
 
 
 class ConversationCache:
