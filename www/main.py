@@ -7,6 +7,8 @@ from agent.cache import LRUCache
 from agent.chain import think, respond, ConversationCache, load_chains
 import asyncio
 
+from agent.utils import chat_and_save
+
 
 def init():
     global OBJECTIVE_THOUGHT_CHAIN, \
@@ -23,6 +25,9 @@ def init():
     
 load_dotenv()
 token = os.environ['BOT_TOKEN']
+loop = asyncio.new_event_loop() 
+asyncio.set_event_loop(loop)
+
 
 init()
 
@@ -76,27 +81,7 @@ for message in st.session_state.messages:
         st.markdown(message['content'])
 
 
-thought, response = '', ''
-async def chat_and_save(local_chain: ConversationCache, input: str) -> tuple[str, str]:
-        global thought, response
-        thought_chain =  OBJECTIVE_THOUGHT_CHAIN 
-        response_chain = OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
-        # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
-
-        thought = await think(
-            inp=input,
-            thought_chain=thought_chain,
-            thought_memory=local_chain.thought_memory
-        )
-        response = await respond(
-            inp=input,
-            thought=thought,
-            response_chain=response_chain,
-            response_memory=local_chain.response_memory
-        )
-        local_chain.thought_memory.save_context({"input":input}, {"output": thought})
-        local_chain.response_memory.save_context({"input":input}, {"output": response})
-        return
+# thought, response = '', ''
         
 
 if prompt := st.chat_input("hello!"):
@@ -108,7 +93,8 @@ if prompt := st.chat_input("hello!"):
     })
     with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
         with st.spinner("Thinking..."):
-            asyncio.run(chat_and_save(st.session_state.local_chain, prompt))
+            task = loop.create_task(chat_and_save(prompt, st.session_state.local_chain, OBJECTIVE_THOUGHT_CHAIN, OBJECTIVE_RESPONSE_CHAIN))
+            thought, response = loop.run_until_complete(task)
         st.markdown(response)
 
     st.sidebar.write(thought)

@@ -12,31 +12,13 @@ from __main__ import (
 from discord.ext import commands
 from typing import Optional
 from agent.chain import think, respond , ConversationCache
+from agent.utils import chat_and_save
 
 
 class Core(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
 
-    async def chat_and_save(self, local_chain: ConversationCache, input: str) -> tuple[str, str]:
-        thought_chain =  OBJECTIVE_THOUGHT_CHAIN 
-        response_chain = OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
-        # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
-
-        thought = await think(
-            inp=input,
-            thought_chain=thought_chain,
-            thought_memory=local_chain.thought_memory
-        )
-        response = await respond(
-            inp=input,
-            thought=thought,
-            response_chain=response_chain,
-            response_memory=local_chain.response_memory
-        )
-        local_chain.thought_memory.save_context({"input":input}, {"output": thought})
-        local_chain.response_memory.save_context({"input":input}, {"output": response})
-        return thought, response
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -61,7 +43,7 @@ Enjoy!
         print(f"We have logged in as {self.bot.user}: ID = {self.bot.user.id}")
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if message.author == self.bot.user:
             return
 
@@ -76,7 +58,7 @@ Enjoy!
             
             start = time.time()
             async with message.channel.typing():
-                thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                thought, response = await chat_and_save(i, LOCAL_CHAIN, OBJECTIVE_THOUGHT_CHAIN, OBJECTIVE_RESPONSE_CHAIN)
 
             thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
             link = f"DM: {message.author.mention}"
@@ -115,7 +97,7 @@ Enjoy!
 
                 start = time.time()
                 async with message.channel.typing():
-                    thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                    thought, response = await chat_and_save(i, LOCAL_CHAIN, OBJECTIVE_THOUGHT_CHAIN, OBJECTIVE_RESPONSE_CHAIN)
 
                 thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
                 link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
