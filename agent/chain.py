@@ -31,21 +31,6 @@ OBJECTIVE_SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 
 
 def load_memories(conversation_type: str = "objective"):
     """Load the memory objects"""
-    thought_defaults = {
-        "memory_key":"history",
-        "input_key":"input",
-        "ai_prefix":"Thought",
-        "human_prefix":"User",
-    }
-    response_defaults = {
-        "memory_key":"history",
-        "input_key":"input",
-        "ai_prefix":"Bloom",
-        "human_prefix":"User",
-    }
-    # thought_memory: ConversationBufferMemory
-    # response_memory: ConversationBufferMemory
-
     thought_memory: ChatMessageHistory
     response_memory: ChatMessageHistory
 
