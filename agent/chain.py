@@ -18,8 +18,8 @@ load_dotenv()
 
 OBJECTIVE_SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/system/thought.yaml'))
 OBJECTIVE_SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/system/response.yaml'))
-OBJECTIVE_HUMAN_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/human/thought.yaml'))
-OBJECTIVE_HUMAN_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/human/response.yaml'))
+# OBJECTIVE_HUMAN_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/human/thought.yaml'))
+# OBJECTIVE_HUMAN_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/human/response.yaml'))
 
 # OBJECTIVE_SYSTEM_THOUGHT = load_prompt("./data/prompts/objective/system/thought.yaml")
 # OBJECTIVE_SYSTEM_RESPONSE = load_prompt("./data/prompts/objective/system/response.yaml")
@@ -123,40 +123,13 @@ def load_chains():
     """Logic for loading the chain you want to use should go here."""
     llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
 
-    # chatGPT prompt formatting
-    objective_system_thought = SystemMessagePromptTemplate(prompt=OBJECTIVE_SYSTEM_THOUGHT)
-    objective_system_response = SystemMessagePromptTemplate(prompt=OBJECTIVE_SYSTEM_RESPONSE)
-
-    objective_human_thought = HumanMessagePromptTemplate(prompt=OBJECTIVE_HUMAN_THOUGHT)
-    objective_human_response = HumanMessagePromptTemplate(prompt=OBJECTIVE_HUMAN_RESPONSE)
-
-    objective_thought_chat_prompt = ChatPromptTemplate.from_messages([objective_system_thought, objective_human_thought])
-    objective_response_chat_prompt = ChatPromptTemplate.from_messages([objective_system_response, objective_human_response])
-
-    # define chains
-    objective_thought_chain = LLMChain(
-        llm=llm,
-        prompt=objective_thought_chat_prompt,
+    # define chain
+    bloom_chain = BloomChain(
+        llm=llm, 
         verbose=True
     )
 
-    objective_response_chain = LLMChain(
-        llm=llm,
-        prompt=objective_response_chat_prompt,
-        verbose=True
-    )
-
-    bloom_chain = BloomChain(llm=llm, verbose=True)
-
-    # return ( 
-    #     objective_thought_chain, 
-    #     objective_response_chain,
-    # )
-
-    return (
-        bloom_chain,
-        bloom_chain,
-    )
+    return bloom_chain
 
 
 async def chat(**kwargs):

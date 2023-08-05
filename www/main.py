@@ -9,17 +9,13 @@ import asyncio
 
 
 def init():
-    global OBJECTIVE_THOUGHT_CHAIN, \
-    OBJECTIVE_RESPONSE_CHAIN, \
+    global OBJECTIVE_BLOOM_CHAIN, \
     CACHE, \
     THOUGHT_CHANNEL
     
     CACHE = LRUCache(50)
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
-    ( 
-        OBJECTIVE_THOUGHT_CHAIN, 
-        OBJECTIVE_RESPONSE_CHAIN, 
-    ) = load_chains()
+    OBJECTIVE_BLOOM_CHAIN = load_chains()
     
 load_dotenv()
 token = os.environ['BOT_TOKEN']
@@ -79,23 +75,21 @@ for message in st.session_state.messages:
 thought, response = '', ''
 async def chat_and_save(local_chain: ConversationCache, input: str) -> tuple[str, str]:
         global thought, response
-        thought_chain =  OBJECTIVE_THOUGHT_CHAIN 
-        response_chain = OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
+        bloom_chain =  OBJECTIVE_BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
         # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
 
         thought = await chat(
             inp=input,
-            thought_chain=thought_chain,
+            thought_chain=bloom_chain,
             thought_memory=local_chain.thought_memory
         )
         response = await chat(
             inp=input,
             thought=thought,
-            response_chain=response_chain,
+            response_chain=bloom_chain,
             response_memory=local_chain.response_memory
         )
-        # local_chain.thought_memory.save_context({"input":input}, {"output": thought})
-        # local_chain.response_memory.save_context({"input":input}, {"output": response})
+
         return
         
 

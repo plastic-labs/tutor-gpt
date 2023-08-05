@@ -4,8 +4,7 @@ import discord
 import time
 #from discord_gateway import (
 from __main__ import (
-    OBJECTIVE_THOUGHT_CHAIN,
-    OBJECTIVE_RESPONSE_CHAIN,
+    OBJECTIVE_BLOOM_CHAIN,
     CACHE,
     THOUGHT_CHANNEL,
 )
@@ -19,23 +18,21 @@ class Core(commands.Cog):
         self.bot = bot
 
     async def chat_and_save(self, local_chain: ConversationCache, input: str) -> tuple[str, str]:
-        thought_chain =  OBJECTIVE_THOUGHT_CHAIN 
-        response_chain = OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
+        bloom_chain =  OBJECTIVE_BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
         # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
 
         thought = await chat(
             inp=input,
-            thought_chain=thought_chain,
+            thought_chain=bloom_chain,
             thought_memory=local_chain.thought_memory
         )
         response = await chat(
             inp=input,
             thought=thought,
-            response_chain=response_chain,
+            response_chain=bloom_chain,
             response_memory=local_chain.response_memory
         )
-        # local_chain.thought_memory.save_context({"input":input}, {"output": thought})
-        # local_chain.response_memory.save_context({"input":input}, {"output": response})
+
         return thought, response
     
     @commands.Cog.listener()
