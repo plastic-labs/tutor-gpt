@@ -85,8 +85,9 @@ class BloomChain:
 
         # verbose logging
         if self.verbose:
-            message_strings = [message.content for message in messages]
-            print("Thought Conversation: ```\n", "\n".join(message_strings), "\n```\n")
+            # Seralize messages to strings
+            message_strings = [f"{message.type}: {message.content}" for message in messages]
+            print("Thought Conversation: ```\n", "\n\n".join(message_strings), "\n```\n")
 
             print("New Thought: ```\n", thought_message.content, "\n```\n")
 
@@ -106,10 +107,11 @@ class BloomChain:
 
         # verbose logging
         if self.verbose:
-            message_strings = [message.content for message in messages]
-            print("Response Conversation: ```\n", "\n".join(message_strings), "\n```\n")
+            # Seralize messages to strings
+            message_strings = [f"{message.type}: {message.content}" for message in messages]
+            print("Response Conversation: ```\n", "\n\n".join(message_strings), "\n```\n")
 
-            print("Response: ```\n", response_message.content, "\n```\n")
+            print("New Response: ```\n", response_message.content, "\n```\n")
 
         # update chat memory
         response_memory.add_message(HumanMessage(content=input))
