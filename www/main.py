@@ -94,8 +94,8 @@ async def chat_and_save(local_chain: ConversationCache, input: str) -> tuple[str
             response_chain=response_chain,
             response_memory=local_chain.response_memory
         )
-        local_chain.thought_memory.save_context({"input":input}, {"output": thought})
-        local_chain.response_memory.save_context({"input":input}, {"output": response})
+        # local_chain.thought_memory.save_context({"input":input}, {"output": thought})
+        # local_chain.response_memory.save_context({"input":input}, {"output": response})
         return
         
 
