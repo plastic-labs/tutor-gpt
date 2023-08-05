@@ -3,13 +3,14 @@ import validators
 
 from langchain.chat_models import ChatOpenAI
 from langchain import LLMChain
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory, ChatMessageHistory
 from langchain.prompts import (
     ChatPromptTemplate,
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
 from langchain.prompts import load_prompt
+from langchain.schema import AIMessage, HumanMessage
 
 from dotenv import load_dotenv
 
@@ -42,23 +43,79 @@ def load_memories(conversation_type: str = "objective"):
         "ai_prefix":"Bloom",
         "human_prefix":"User",
     }
-    thought_memory: ConversationBufferMemory
-    response_memory: ConversationBufferMemory
+    # thought_memory: ConversationBufferMemory
+    # response_memory: ConversationBufferMemory
+
+    thought_memory: ChatMessageHistory
+    response_memory: ChatMessageHistory
+
     # memory definitions
     if conversation_type == "objective":
-        thought_memory = ConversationBufferMemory(
-            **thought_defaults
-        )
+        # thought_memory = ConversationBufferMemory(
+        #     **thought_defaults
+        # )
 
-        response_memory = ConversationBufferMemory(
-            **response_defaults
-        )
+        # response_memory = ConversationBufferMemory(
+        #     **response_defaults
+        # )
+        thought_memory = ChatMessageHistory()
+        response_memory = ChatMessageHistory()
     else:
         print("Conversation type didn't default to objective")
         raise
 
     return (thought_memory, response_memory)
 
+class BloomChain:
+    def __init__(self, llm: ChatOpenAI, verbose: bool = False):
+        self.llm = llm
+        self.verbose = verbose
+
+        # setup prompts
+        self.system_thought = SystemMessagePromptTemplate(prompt=OBJECTIVE_SYSTEM_THOUGHT)
+        self.system_response = SystemMessagePromptTemplate(prompt=OBJECTIVE_SYSTEM_RESPONSE)
+        
+
+    def think(self, thought_memory: ChatMessageHistory, input: str):
+        """Generate Bloom's thought on the user."""
+
+        # load message history
+        messages = [self.system_thought.format(), *thought_memory.messages, HumanMessage(content=input)]
+        thought_message = self.llm.predict_messages(messages)
+
+        # verbose logging
+        if self.verbose:
+            message_strings = [message.content for message in messages]
+            print("Thought Conversation: ```\n", "\n".join(message_strings), "\n```\n")
+
+            print("New Thought: ```\n", thought_message.content, "\n```\n")
+
+        # update chat memory
+        thought_memory.add_message(HumanMessage(content=input))
+        thought_memory.add_message(thought_message)
+
+        return thought_message.content
+    
+
+    def respond(self, response_memory: ChatMessageHistory, thought: str, input: str):
+        """Generate Bloom's response to the user."""
+
+        # load message history
+        messages = [self.system_response.format(), *response_memory.messages, HumanMessage(content=input), AIMessage(content=f"Thought: {thought}")]
+        response_message = self.llm.predict_messages(messages)
+
+        # verbose logging
+        if self.verbose:
+            message_strings = [message.content for message in messages]
+            print("Response Conversation: ```\n", "\n".join(message_strings), "\n```\n")
+
+            print("Response: ```\n", response_message.content, "\n```\n")
+
+        # update chat memory
+        response_memory.add_message(HumanMessage(content=input))
+        response_memory.add_message(response_message)
+
+        return response_message.content
 
 def load_chains():
     """Logic for loading the chain you want to use should go here."""
@@ -87,9 +144,16 @@ def load_chains():
         verbose=True
     )
 
-    return ( 
-        objective_thought_chain, 
-        objective_response_chain,
+    bloom_chain = BloomChain(llm=llm, verbose=True)
+
+    # return ( 
+    #     objective_thought_chain, 
+    #     objective_response_chain,
+    # )
+
+    return (
+        bloom_chain,
+        bloom_chain,
     )
 
 
@@ -97,19 +161,22 @@ async def chat(**kwargs):
     # if we sent a thought across, generate a response
     if kwargs.get('thought'):
         assert kwargs.get('response_chain'), "Please pass the response chain."
-        response_chain = kwargs.get('response_chain')
-        response_memory = kwargs.get('response_memory')
+        response_chain: BloomChain = kwargs.get('response_chain')
+        response_memory: ChatMessageHistory = kwargs.get('response_memory')
         inp = kwargs.get('inp')
         thought = kwargs.get('thought')
 
         # get the history into a string
-        history = response_memory.load_memory_variables({})['history']
+        # history = response_memory.load_memory_variables({})['history']
 
-        response = await response_chain.apredict(
-            input=inp,
-            thought=thought,
-            history=history
-        )
+        # response = response_chain.apredict(
+        #     input=inp,
+        #     thought=thought,
+        #     history=history
+        # )
+
+        response = response_chain.respond(response_memory, thought, inp)
+
         if 'Student:' in response:
             response = response.split('Student:')[0].strip()
         if 'Studen:' in response:
@@ -121,16 +188,18 @@ async def chat(**kwargs):
     else:
         assert kwargs.get('thought_chain'), "Please pass the thought chain."
         inp = kwargs.get('inp')
-        thought_chain = kwargs.get('thought_chain')
-        thought_memory = kwargs.get('thought_memory')
+        thought_chain: BloomChain = kwargs.get('thought_chain')
+        thought_memory: ChatMessageHistory = kwargs.get('thought_memory')
 
         # get the history into a string
-        history = thought_memory.load_memory_variables({})['history']
+        # history = thought_memory.load_memory_variables({})['history']
         
-        response = await thought_chain.apredict(
-            input=inp,
-            history=history
-        )
+        # response = await thought_chain.apredict(
+        #     input=inp,
+        #     history=history
+        # )
+
+        response = thought_chain.think(thought_memory, inp)
 
         if 'Tutor:' in response:
             response = response.split('Tutor:')[0].strip()
