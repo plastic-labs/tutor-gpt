@@ -8,13 +8,13 @@ load_dotenv()
 token = os.environ['BOT_TOKEN']
 
 def init():
-    global OBJECTIVE_BLOOM_CHAIN, \
+    global BLOOM_CHAIN, \
     CACHE, \
     THOUGHT_CHANNEL
     
     CACHE = LRUCache(50)
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
-    OBJECTIVE_BLOOM_CHAIN = load_chains()
+    BLOOM_CHAIN = load_chains()
 
 init()
 

@@ -9,8 +9,8 @@ from langchain.prompts import load_prompt
 from langchain.schema import AIMessage, HumanMessage
 
 
-OBJECTIVE_SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/system/thought.yaml'))
-OBJECTIVE_SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/objective/system/response.yaml'))
+SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/system/thought.yaml'))
+SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/system/response.yaml'))
 
 class BloomChain:
     def __init__(self, llm: ChatOpenAI, verbose: bool = False):
@@ -18,8 +18,8 @@ class BloomChain:
         self.verbose = verbose
 
         # setup prompts
-        self.system_thought = SystemMessagePromptTemplate(prompt=OBJECTIVE_SYSTEM_THOUGHT)
-        self.system_response = SystemMessagePromptTemplate(prompt=OBJECTIVE_SYSTEM_RESPONSE)
+        self.system_thought = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
+        self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
         
 
     def think(self, thought_memory: ChatMessageHistory, input: str):

@@ -9,13 +9,13 @@ import asyncio
 
 
 def init():
-    global OBJECTIVE_BLOOM_CHAIN, \
+    global BLOOM_CHAIN, \
     CACHE, \
     THOUGHT_CHANNEL
     
     CACHE = LRUCache(50)
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
-    OBJECTIVE_BLOOM_CHAIN = load_chains()
+    BLOOM_CHAIN = load_chains()
     
 load_dotenv()
 token = os.environ['BOT_TOKEN']
@@ -75,7 +75,7 @@ for message in st.session_state.messages:
 thought, response = '', ''
 async def chat_and_save(local_chain: ConversationCache, input: str) -> tuple[str, str]:
         global thought, response
-        bloom_chain =  OBJECTIVE_BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
+        bloom_chain =  BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
         # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
 
         thought = await chat(
