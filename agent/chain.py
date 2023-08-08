@@ -64,7 +64,7 @@ class BloomChain:
         """Generate Bloom's response to the user."""
 
         # load message history
-        messages = [self.system_response.format(), *response_memory.messages, HumanMessage(content=input), AIMessage(content=f"Thought: {thought}")]
+        messages = [self.system_response.format(thought=thought), *response_memory.messages, HumanMessage(content=input)]
         response_message = await self.llm.apredict_messages(messages)
 
         # verbose logging
