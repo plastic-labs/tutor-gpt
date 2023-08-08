@@ -1,5 +1,4 @@
 import os
-import validators
 
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ChatMessageHistory
@@ -18,18 +17,17 @@ SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prom
 class ConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
     def __init__(self):
-        # self.thought_memory: ChatMessageHistory
-        # self.response_memory: ChatMessageHistory
         self.thought_memory: ChatMessageHistory = ChatMessageHistory()
         self.response_memory: ChatMessageHistory = ChatMessageHistory()
 
 
-    def restart(self):
+    def restart(self) -> None:
        self.thought_memory.clear()
        self.response_memory.clear()
 
 class BloomChain:
-    def __init__(self, llm: ChatOpenAI, verbose: bool = False):
+    "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
+    def __init__(self, llm: ChatOpenAI, verbose: bool = False) -> None:
         self.llm = llm
         self.verbose = verbose
 
@@ -38,7 +36,7 @@ class BloomChain:
         self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
         
 
-    async def think(self, thought_memory: ChatMessageHistory, input: str):
+    async def think(self, thought_memory: ChatMessageHistory, input: str) -> str:
         """Generate Bloom's thought on the user."""
 
         # load message history
@@ -55,12 +53,12 @@ class BloomChain:
 
         # update chat memory
         thought_memory.add_message(HumanMessage(content=input))
-        thought_memory.add_message(thought_message)
+        thought_memory.add_message(thought_message) # apredict_messages returns AIMessage so can add directly
 
         return thought_message.content
     
 
-    async def respond(self, response_memory: ChatMessageHistory, thought: str, input: str):
+    async def respond(self, response_memory: ChatMessageHistory, thought: str, input: str) -> str:
         """Generate Bloom's response to the user."""
 
         # load message history
@@ -77,7 +75,7 @@ class BloomChain:
 
         # update chat memory
         response_memory.add_message(HumanMessage(content=input))
-        response_memory.add_message(response_message)
+        response_memory.add_message(response_message) # apredict_messages returns AIMessage so can add directly
 
         return response_message.content
     
@@ -85,70 +83,8 @@ class BloomChain:
         thought  = await self.think(cache.thought_memory, inp)
         response = await self.respond(cache.response_memory, thought, inp)
         return thought, response
-    #async def chat(self, **kwargs):
-    # if we sent a thought across, generate a response
-    #     if kwargs.get('thought'):
-    #         assert kwargs.get('response_chain'), "Please pass the response chain."
-    #         response_chain: BloomChain = kwargs.get('response_chain')
-    #         response_memory: ChatMessageHistory = kwargs.get('response_memory')
-    #         inp = kwargs.get('inp')
-    #         thought = kwargs.get('thought')
 
-    #         # get the history into a string
-    #         # history = response_memory.load_memory_variables({})['history']
-
-    #         # response = response_chain.apredict(
-    #         #     input=inp,
-    #         #     thought=thought,
-    #         #     history=history
-    #         # )
-
-    #         response = response_chain.respond(response_memory, thought, inp)
-
-    #         if 'Student:' in response:
-    #             response = response.split('Student:')[0].strip()
-    #         if 'Studen:' in response:
-    #             response = response.split('Studen:')[0].strip()
-
-    #         return response
-
-    #     # otherwise, we're generating a thought
-    #     else:
-    #         assert kwargs.get('thought_chain'), "Please pass the thought chain."
-    #         inp = kwargs.get('inp')
-    #         thought_chain: BloomChain = kwargs.get('thought_chain')
-    #         thought_memory: ChatMessageHistory = kwargs.get('thought_memory')
-
-    #         # get the history into a string
-    #         # history = thought_memory.load_memory_variables({})['history']
-    #         
-    #         # response = await thought_chain.apredict(
-    #         #     input=inp,
-    #         #     history=history
-    #         # )
-
-    #         response = thought_chain.think(thought_memory, inp)
-
-    #         if 'Tutor:' in response:
-    #             response = response.split('Tutor:')[0].strip()
-
-    #         return response
-
-
-# def load_memories():
-#     """Load the memory objects"""
-#     thought_memory: ChatMessageHistory
-#     response_memory: ChatMessageHistory
-# 
-#     # memory definitions
-#     thought_memory = ChatMessageHistory()
-#     response_memory = ChatMessageHistory()
-# 
-# 
-#     return (thought_memory, response_memory)
-
-
-def load_chains():
+def load_chains() -> BloomChain:
     """Logic for loading the chain you want to use should go here."""
     llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
 
