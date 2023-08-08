@@ -2,41 +2,37 @@
 
 import discord
 import time
-#from discord_gateway import (
 from __main__ import (
-    OBJECTIVE_THOUGHT_CHAIN,
-    OBJECTIVE_RESPONSE_CHAIN,
+    BLOOM_CHAIN,
     CACHE,
     THOUGHT_CHANNEL,
 )
 from discord.ext import commands
 from typing import Optional
-from agent.chain import chat, ConversationCache
+from agent.chain import ConversationCache
 
 
 class Core(commands.Cog):
     def __init__(self, bot) -> None:
         self.bot = bot
 
-    async def chat_and_save(self, local_chain: ConversationCache, input: str) -> tuple[str, str]:
-        thought_chain =  OBJECTIVE_THOUGHT_CHAIN 
-        response_chain = OBJECTIVE_RESPONSE_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
-        # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
-
-        thought = await chat(
-            inp=input,
-            thought_chain=thought_chain,
-            thought_memory=local_chain.thought_memory
-        )
-        response = await chat(
-            inp=input,
-            thought=thought,
-            response_chain=response_chain,
-            response_memory=local_chain.response_memory
-        )
-        local_chain.thought_memory.save_context({"input":input}, {"output": thought})
-        local_chain.response_memory.save_context({"input":input}, {"output": response})
-        return thought, response
+#     async def chat_and_save(self, local_chain: ConversationCache, input: str) -> tuple[str, str]:
+#         bloom_chain =  BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
+#         # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
+# 
+#         thought = await chat(
+#             inp=input,
+#             thought_chain=bloom_chain,
+#             thought_memory=local_chain.thought_memory
+#         )
+#         response = await chat(
+#             inp=input,
+#             thought=thought,
+#             response_chain=bloom_chain,
+#             response_memory=local_chain.response_memory
+#         )
+# 
+#         return thought, response
     
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -76,7 +72,8 @@ Enjoy!
             
             start = time.time()
             async with message.channel.typing():
-                thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                # thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, i)
 
             thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
             link = f"DM: {message.author.mention}"
@@ -115,7 +112,8 @@ Enjoy!
 
                 start = time.time()
                 async with message.channel.typing():
-                    thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                    # thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                    thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, i)
 
                 thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
                 link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
@@ -160,7 +158,8 @@ Enjoy!
                         return
                     start = time.time()
                     async with message.channel.typing():
-                        thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                        # thought, response = await self.chat_and_save(LOCAL_CHAIN, i)
+                        thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, i)
 
                     thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
                     link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
@@ -235,7 +234,7 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
 
         if respond:
             msg = "Great! The conversation has been restarted. What would you like to talk about?"
-            LOCAL_CHAIN.response_memory.chat_memory.add_ai_message(msg)
+            LOCAL_CHAIN.response_memory.add_ai_message(msg)
             await ctx.respond(msg)
         else:
             return
