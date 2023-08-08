@@ -24,10 +24,18 @@ The repository containers a `Dockerfile` for running the bot in a containerized 
 
 ```bash
 docker build -t tutor-gpt:latest .
-docker run --env-file .env tutor-gpt
+docker run --env-file .env tutor-gpt 
 ```
 
-The current behaviour will utilize the `.env` file in your local repository and run the bot.
+The current behaviour will utilize the `.env` file in your local repository and
+run the bot. There are two separate entry points for tutor-gpt both a discord UI
+and a web ui. Below contains snippets for manually specifying the execution
+environment. 
+
+```bash
+docker run --env-file .env tutor-gpt python -u -m bot.app # Discord UI
+docker run -p 8501:8501 --env-file .env tutor-gpt python -u -m streamlit run www/main.py # Web UI
+```
 
 ### Architecture
 
@@ -45,5 +53,19 @@ following one-liner
 
 ```bash
 source $(poetry env info --path)/bin/activate
+```
+
+On some systems this may not detect the proper virtual environment. You can
+diagnose this by running `poetry env info` directly to see if the virtualenv
+is defined. 
+
+If using `pyenv` remember to set **prefer-active-python** to true. As per
+this section of the [documentation](https://python-poetry.org/docs/managing-environments/).
+
+Another workaround that may work if the above setting does not work is to
+continue directly with `poetry shell` or wrap the source command like below
+
+```bash
+poetry run source $(poetry env info --path)/bin/activate
 ```
 

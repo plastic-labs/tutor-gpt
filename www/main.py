@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 import streamlit as st
 import time
 from agent.cache import LRUCache
-
 from agent.chain import ConversationCache, load_chains
 import asyncio
 
@@ -76,19 +75,7 @@ thought, response = '', ''
 async def chat_and_save(local_chain: ConversationCache, input: str) -> None:
         global thought, response
         bloom_chain =  BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
-        # response_chain = local_chain.conversation_type == "discuss" ? DISCUSS_RESPONSE_CHAIN : WORKSHOP_RESPONSE_CHAIN
         thought, response = await bloom_chain.chat(local_chain, input)
-        # thought = await chat(
-        #     inp=input,
-        #     thought_chain=bloom_chain,
-        #     thought_memory=local_chain.thought_memory
-        # )
-        # response = await chat(
-        #     inp=input,
-        #     thought=thought,
-        #     response_chain=bloom_chain,
-        #     response_memory=local_chain.response_memory
-        # )
         return None
         
 
