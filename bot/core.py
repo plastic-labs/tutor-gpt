@@ -55,6 +55,7 @@ Enjoy!
         n = 1800
 
         async def reply(forward_thought = True):
+            "Generate response too user"
             start = time.time()
             async with message.channel.typing():
                 thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, inp)
