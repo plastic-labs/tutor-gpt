@@ -53,7 +53,7 @@ class BloomChain:
 
         # update chat memory
         thought_memory.add_message(HumanMessage(content=input))
-        thought_memory.add_message(thought_message)
+        thought_memory.add_message(thought_message) # apredict_messages returns AIMessage so can add directly
 
         return thought_message.content
     
@@ -75,7 +75,7 @@ class BloomChain:
 
         # update chat memory
         response_memory.add_message(HumanMessage(content=input))
-        response_memory.add_message(response_message)
+        response_memory.add_message(response_message) # apredict_messages returns AIMessage so can add directly
 
         return response_message.content
     
