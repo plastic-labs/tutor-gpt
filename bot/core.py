@@ -1,7 +1,6 @@
 # core functionality
 
 import discord
-import time
 from __main__ import (
     BLOOM_CHAIN,
     CACHE,
@@ -56,7 +55,6 @@ Enjoy!
 
         async def reply(forward_thought = True):
             "Generate response too user"
-            start = time.time()
             async with message.channel.typing():
                 thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, inp)
 
@@ -80,13 +78,6 @@ Enjoy!
             else:
                 await message.channel.send(response)
 
-            end = time.time()
-            print(f"DM: {message.author.mention}")
-            print(f"Input: {inp}")
-            print(f"Thought: {thought}")
-            print(f"Response: {response}")
-            print(f"Elapsed: {end - start}")
-            print("=========================================")
         # if the message came from a DM channel...
         if isinstance(message.channel, discord.channel.DMChannel):
             await reply(forward_thought=False)
