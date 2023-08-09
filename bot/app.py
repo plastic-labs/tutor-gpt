@@ -1,7 +1,7 @@
 import os
 import discord
 from dotenv import load_dotenv
-from agent.chain import load_chains
+from agent.chain import BloomChain
 from agent.cache import LRUCache
     
 load_dotenv()
@@ -14,7 +14,7 @@ def init():
     
     CACHE = LRUCache(50)
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
-    BLOOM_CHAIN = load_chains()
+    BLOOM_CHAIN = BloomChain()
 
 init()
 

@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import streamlit as st
 import time
 from agent.cache import LRUCache
-from agent.chain import ConversationCache, load_chains
+from agent.chain import ConversationCache, BloomChain
 import asyncio
 
 
@@ -14,7 +14,7 @@ def init():
     
     CACHE = LRUCache(50)
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
-    BLOOM_CHAIN = load_chains()
+    BLOOM_CHAIN = BloomChain()
     
 load_dotenv()
 token = os.environ['BOT_TOKEN']
@@ -71,12 +71,39 @@ for message in st.session_state.messages:
         st.markdown(message['content'])
 
 
-thought, response = '', ''
-async def chat_and_save(local_chain: ConversationCache, input: str) -> None:
-        global thought, response
-        bloom_chain =  BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
-        thought, response = await bloom_chain.chat(local_chain, input)
-        return None
+# thought, response = '', ''
+# async def chat_and_save(local_chain: ConversationCache, input: str) -> None:
+#         global thought, response
+#         bloom_chain =  BLOOM_CHAIN # if local_chain.conversation_type == "discuss" else WORKSHOP_RESPONSE_CHAIN
+#         thought, response = await bloom_chain.chat(local_chain, input)
+#         return None
+
+async def stream_and_save(local_chain: ConversationCache, input: str) -> None:
+    thought_iterator = BLOOM_CHAIN.think(st.session_state.local_chain.thought_memory, prompt)
+
+    thought_placeholder = st.sidebar.empty()
+    thought_placeholder.markdown("Thinking...")
+    full_thought = ""
+    async for thought in thought_iterator:
+        full_thought += thought.content
+        thought_placeholder.markdown(full_thought)
+    BLOOM_CHAIN.save_thought(full_thought, st.session_state.local_chain)
+    
+    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain.response_memory, thought, prompt)
+    with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
+        response_placeholder = st.empty()
+        response_placeholder.markdown("Responding...")
+        full_response = ""
+        async for response in response_iterator:
+            full_response += response.content
+            response_placeholder.markdown(full_response)
+    BLOOM_CHAIN.save_response(full_response, st.session_state.local_chain)
+    
+    st.session_state.messages.append({
+        "role": "assistant",    
+        "content": response
+    })
+    
         
 
 if prompt := st.chat_input("hello!"):
@@ -86,16 +113,9 @@ if prompt := st.chat_input("hello!"):
         'role': 'user',
         'content': prompt
     })
-    with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
-        with st.spinner("Thinking..."):
-            asyncio.run(chat_and_save(st.session_state.local_chain, prompt))
-        st.markdown(response)
+    asyncio.run(stream_and_save(st.session_state.local_chain, prompt))
 
-    st.sidebar.write(thought)
-    st.sidebar.divider()
 
-    st.session_state.messages.append({
-        "role": "assistant",    
-        "content": response
-    })
+
+
     
