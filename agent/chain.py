@@ -60,16 +60,6 @@ class BloomChain:
     def respond(self, response_memory: ChatMessageHistory, thought: str, input: str):
         """Generate Bloom's response to the user."""
 
-        # # load message history
-        # messages = [self.system_response.format(thought=thought), *response_memory.messages, HumanMessage(content=input)]
-        # response_message = await self.llm.apredict_messages(messages)
-
-        # # update chat memory
-        # response_memory.add_message(HumanMessage(content=input))
-        # response_memory.add_message(response_message) # apredict_messages returns AIMessage so can add directly
-
-        # return response_message.content
-
         response_prompt = ChatPromptTemplate.from_messages([
             self.system_response,
             *response_memory.messages,
