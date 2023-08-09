@@ -26,6 +26,10 @@ data/flagged_data_points/
 
 # Virtual Environment
 venv/
+.venv/
+
+# Local Fly Testing
+fly.toml
 
 # jupyter
 *.ipynb

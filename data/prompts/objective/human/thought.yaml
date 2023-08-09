@@ -1,8 +1,0 @@
-_type: prompt
-input_variables:
-  ["history", "input"]
-template: |
-  "{history}
-  BEGIN DIALOGUE
-  User: {input}
-  Thought:"

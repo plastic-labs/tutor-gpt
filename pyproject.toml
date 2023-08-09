@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tutor-gpt"
-version = "0.1.0"
+version = "0.2.0"
 description = "LangChain LLM application. Dynamic few-shot metaprompting for the task of tutoring."
 authors = ["vintro <vince@plasticlabs.ai>", "VVoruganti <vineeth@plasticlabs.ai"]
 readme = "README.md"
@@ -14,6 +14,7 @@ validators = "^0.20.0"
 openai = "^0.27.5"
 pexpect = "^4.8.0"
 tiktoken = "^0.3.3"
+streamlit = "^1.25.0"
 
 [build-system]
 requires = ["poetry-core"]
