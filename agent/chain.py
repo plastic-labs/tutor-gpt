@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/system/thought.yaml'))
-SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'data/prompts/system/response.yaml'))
+SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/thought.yaml'))
+SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/response.yaml'))
 
 class ConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
