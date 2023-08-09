@@ -20,10 +20,10 @@ class ConversationCache:
         self.thought_memory: ChatMessageHistory = ChatMessageHistory()
         self.response_memory: ChatMessageHistory = ChatMessageHistory()
 
-
     def restart(self) -> None:
        self.thought_memory.clear()
        self.response_memory.clear()
+
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
@@ -43,14 +43,6 @@ class BloomChain:
         messages = [self.system_thought.format(), *thought_memory.messages, HumanMessage(content=input)]
         thought_message = await self.llm.apredict_messages(messages)
 
-        # verbose logging
-        if self.verbose:
-            # Seralize messages to strings
-            message_strings = [f"{message.type}: {message.content}" for message in messages]
-            print("Thought Conversation: ```\n", "\n\n".join(message_strings), "\n```\n")
-
-            print("New Thought: ```\n", thought_message.content, "\n```\n")
-
         # update chat memory
         thought_memory.add_message(HumanMessage(content=input))
         thought_memory.add_message(thought_message) # apredict_messages returns AIMessage so can add directly
@@ -65,24 +57,18 @@ class BloomChain:
         messages = [self.system_response.format(thought=thought), *response_memory.messages, HumanMessage(content=input)]
         response_message = await self.llm.apredict_messages(messages)
 
-        # verbose logging
-        if self.verbose:
-            # Seralize messages to strings
-            message_strings = [f"{message.type}: {message.content}" for message in messages]
-            print("Response Conversation: ```\n", "\n\n".join(message_strings), "\n```\n")
-
-            print("New Response: ```\n", response_message.content, "\n```\n")
-
         # update chat memory
         response_memory.add_message(HumanMessage(content=input))
         response_memory.add_message(response_message) # apredict_messages returns AIMessage so can add directly
 
         return response_message.content
     
+
     async def chat(self, cache: ConversationCache, inp: str ) -> tuple[str, str]:
         thought  = await self.think(cache.thought_memory, inp)
         response = await self.respond(cache.response_memory, thought, inp)
         return thought, response
+
 
 def load_chains() -> BloomChain:
     """Logic for loading the chain you want to use should go here."""
