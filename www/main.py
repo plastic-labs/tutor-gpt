@@ -22,7 +22,7 @@ token = os.environ['BOT_TOKEN']
 init()
 
 st.set_page_config(
-    page_title="Bloom - Reading. Reimagined.",
+    page_title="Bloom - Learning. Reimagined.",
     layout="wide",
     initial_sidebar_state="expanded",
     page_icon="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"
