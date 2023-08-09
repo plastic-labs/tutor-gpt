@@ -28,7 +28,7 @@ st.set_page_config(
     page_icon="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"
 )
 st.image("https://bloombot.ai/wp-content/uploads/2023/02/Bloom-Logo@2x-1.svg", width=200)
-st.title("Bloom - Reading. Reimagined.")
+st.title("Learning. Reimagined.")
 st.sidebar.header("See my thoughts below!")
 
 st.markdown("""
