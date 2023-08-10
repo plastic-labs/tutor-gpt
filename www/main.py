@@ -89,7 +89,7 @@ async def stream_and_save(local_chain: ConversationCache, input: str) -> None:
         thought_placeholder.markdown(full_thought)
     BLOOM_CHAIN.save_thought(full_thought, st.session_state.local_chain)
     
-    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain.response_memory, thought, prompt)
+    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain.response_memory, full_thought, prompt)
     with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
         response_placeholder = st.empty()
         response_placeholder.markdown("Responding...")
