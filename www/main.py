@@ -1,8 +1,7 @@
 import os
 import streamlit as st
 import time
-from agent.cache import LRUCache
-from agent.chain import ConversationCache, BloomChain
+from agent.chain import ConversationCache
 import asyncio
 
 from dotenv import load_dotenv
@@ -70,30 +69,22 @@ for message in st.session_state.messages:
 #         thought, response = await bloom_chain.chat(local_chain, input)
 #         return None
 
-async def stream_and_save(local_chain: ConversationCache, input: str) -> None:
+async def stream_and_save(prompt: str) -> None:
     thought_iterator = BLOOM_CHAIN.think(st.session_state.local_chain.thought_memory, prompt)
 
     thought_placeholder = st.sidebar.empty()
-    thought_placeholder.markdown("Thinking...")
-    full_thought = ""
     async for thought in thought_iterator:
-        full_thought += thought.content
-        thought_placeholder.markdown(full_thought)
-    BLOOM_CHAIN.save_thought(full_thought, st.session_state.local_chain)
+        thought_placeholder.markdown(thought)
     
-    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain.response_memory, full_thought, prompt)
+    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain.response_memory, thought_iterator.content, prompt)
     with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
         response_placeholder = st.empty()
-        response_placeholder.markdown("Responding...")
-        full_response = ""
         async for response in response_iterator:
-            full_response += response.content
-            response_placeholder.markdown(full_response)
-    BLOOM_CHAIN.save_response(full_response, st.session_state.local_chain)
+            response_placeholder.markdown(response)
     
     st.session_state.messages.append({
         "role": "assistant",    
-        "content": full_response
+        "content": response_iterator.content
     })
     
         
@@ -105,7 +96,7 @@ if prompt := st.chat_input("hello!"):
         'role': 'user',
         'content': prompt
     })
-    asyncio.run(stream_and_save(st.session_state.local_chain, prompt))
+    asyncio.run(stream_and_save(prompt))
 
 
 

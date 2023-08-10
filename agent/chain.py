@@ -6,8 +6,13 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 from langchain.prompts import load_prompt, ChatPromptTemplate
-from langchain.schema import AIMessage, HumanMessage
+from langchain.schema import AIMessage, HumanMessage, BaseMessage
 from dotenv import load_dotenv
+
+from collections.abc import AsyncIterator, Awaitable
+from typing import Any, List
+import asyncio
+
 
 load_dotenv()
 
@@ -48,14 +53,11 @@ class BloomChain:
         chain = thought_prompt | self.llm 
 
         thought_memory.add_message(HumanMessage(content=input))
-    
-        return chain.astream({}, {"tags": ["thought"]})
-    
-    def save_thought(self, thought: str, cache: ConversationCache) -> None:
-        cache.thought_memory.add_message(AIMessage(content=thought))
-        if self.verbose:
-            print(f"Thought: {thought}")
-    
+
+        return Streamable(
+            chain.astream({}, {"tags": ["thought"]}),
+            lambda thought: thought_memory.add_message(AIMessage(content=thought))
+        )
 
     def respond(self, response_memory: ChatMessageHistory, thought: str, input: str):
         """Generate Bloom's response to the user."""
@@ -68,31 +70,52 @@ class BloomChain:
         chain = response_prompt | self.llm
 
         response_memory.add_message(HumanMessage(content=input))
-        return chain.astream({ "thought": thought }, {"tags": ["response"]})
+
+        return Streamable(
+            chain.astream({ "thought": thought }, {"tags": ["response"]}),
+            lambda response: response_memory.add_message(AIMessage(content=response))
+        )
     
-    def save_response(self, response: str, cache: ConversationCache) -> None:
-        cache.response_memory.add_message(AIMessage(content=response))
-        if self.verbose:
-            print(f"Response: {response}")
         
 
     async def chat(self, cache: ConversationCache, inp: str ) -> tuple[str, str]:
         thought_iterator = self.think(cache.thought_memory, inp)
-        # save thought to string
-        thought = ""
-        async for t in thought_iterator:
-            thought += t.content
-        self.save_thought(thought, cache)
+        thought = await thought_iterator()
 
 
         response_iterator = self.respond(cache.response_memory, thought, inp)
-        # save response to string
-        response = ""
-        async for r in response_iterator:
-            response += r.content
-        self.save_response(response, cache)
+        response = await response_iterator()
+
         return thought, response
     
 
 
 
+class Streamable:
+    "A async iterator wrapper for langchain streams that saves on completion via callback"
+
+    def __init__(self, iterator: AsyncIterator[BaseMessage], callback):
+        self.iterator = iterator
+        self.callback = callback
+        # self.content: List[Awaitable[BaseMessage]] = []
+        self.content = ""
+    
+    def __aiter__(self):
+        return self
+    
+    async def __anext__(self):
+        try:
+            data = await self.iterator.__anext__()
+            self.content += data.content
+            return self.content
+        except StopAsyncIteration as e:
+            self.callback(self.content)
+            raise StopAsyncIteration
+        except Exception as e:
+            raise e
+    
+    async def __call__(self):
+        async for _ in self:
+            pass
+        return self.content
+        
