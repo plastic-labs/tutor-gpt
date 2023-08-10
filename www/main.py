@@ -101,7 +101,7 @@ async def stream_and_save(local_chain: ConversationCache, input: str) -> None:
     
     st.session_state.messages.append({
         "role": "assistant",    
-        "content": response
+        "content": full_response
     })
     
         
