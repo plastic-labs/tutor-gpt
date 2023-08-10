@@ -1,25 +1,17 @@
 import os
-from dotenv import load_dotenv
 import streamlit as st
 import time
 from agent.cache import LRUCache
 from agent.chain import ConversationCache, BloomChain
 import asyncio
 
+from dotenv import load_dotenv
+from common import init
 
-def init():
-    global BLOOM_CHAIN, \
-    CACHE, \
-    THOUGHT_CHANNEL
-    
-    CACHE = LRUCache(50)
-    THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
-    BLOOM_CHAIN = BloomChain()
     
 load_dotenv()
-token = os.environ['BOT_TOKEN']
+CACHE, BLOOM_CHAIN, _ = init()
 
-init()
 
 st.set_page_config(
     page_title="Bloom - Reading. Reimagined.",
