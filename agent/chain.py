@@ -49,7 +49,7 @@ class BloomChain:
 
         thought_memory.add_message(HumanMessage(content=input))
     
-        return chain.astream({})
+        return chain.astream({}, {"tags": ["thought"]})
     
     def save_thought(self, thought: str, cache: ConversationCache) -> None:
         cache.thought_memory.add_message(AIMessage(content=thought))
@@ -68,7 +68,7 @@ class BloomChain:
         chain = response_prompt | self.llm
 
         response_memory.add_message(HumanMessage(content=input))
-        return chain.astream({ "thought": thought })
+        return chain.astream({ "thought": thought }, {"tags": ["response"]})
     
     def save_response(self, response: str, cache: ConversationCache) -> None:
         cache.response_memory.add_message(AIMessage(content=response))
