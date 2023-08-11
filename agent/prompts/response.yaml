@@ -6,4 +6,4 @@ template: >
 
     {thought}
     
-    You must produce an appropriate response to the user input. Keep your responses concise and specific, always end each response with ONLY ONE topically relevant questions that drives the conversation forward, and if the user wants to end the conversation, always comply.
+    You must produce an appropriate response to the user input. Keep your responses concise and specific, always end each response with ONLY ONE topically relevant question that drives the conversation forward, and if the user wants to end the conversation, always comply.

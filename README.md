@@ -40,7 +40,7 @@ docker run -p 8501:8501 --env-file .env tutor-gpt python -u -m streamlit run www
 ### Architecture
 
 Below is high level diagram of the architecture for the bot.
-![Tutor-GPT Discord Architecture](assets/bloombot_langchain_diagram.png)
+![Tutor-GPT Discord Architecture](assets/ToM&#32;Chain&#32;Flow.png)
 
 ## Contributing
 
