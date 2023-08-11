@@ -15,6 +15,9 @@ from langchain.schema import Document
 
 from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain.tools import format_tool_to_openai_function
+from langchain.tools.python.tool import PythonREPLTool
+
+from agent.tools.askquestion import AskQuestion
 
 from dotenv import load_dotenv
 
@@ -41,15 +44,16 @@ class ConversationCache:
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
-    def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), verbose: bool = True) -> None:
+    def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), fast_llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=0.3), verbose: bool = True) -> None:
         self.llm = llm
+        self.fast_llm = fast_llm
         self.verbose = verbose
 
         # setup prompts
         self.system_thought = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
         self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
 
-        self.tools = load_tools(["google-serper", "wolfram-alpha", "wikipedia", "arxiv"], llm=self.llm)
+        self.tools = load_tools(["google-serper", "wolfram-alpha", "wikipedia", "arxiv"], llm=self.llm) + [PythonREPLTool()]
         tool_documents = [Document(page_content=tool.description, metadata={"index": index}) for index, tool in enumerate(self.tools)]
         tool_vectorstore = FAISS.from_documents(tool_documents, OpenAIEmbeddings())
         self.tool_retriever = tool_vectorstore.as_retriever()
@@ -78,15 +82,34 @@ class BloomChain:
     async def gather_info(self, response_memory: ChatMessageHistory, input: str, thought: str) -> str:
         """Collect information via tool."""
         tool_thought = thought.split("Tooling:")[1].split("Data:")[0].strip() # separate tool information from thought
+        ready = "true" in thought.split("Ready:")[1].strip().lower()
+        print("Ready:", ready)
+        if not ready:
+            return "Not ready to gather information"
+
         relevant_tools = self.tool_retriever.get_relevant_documents(tool_thought)
         print("Relevant Tools: ", relevant_tools)
         actual_tools = [self.tools[tool.metadata["index"]] for tool in relevant_tools]
+        actual_tools.append(AskQuestion())
 
         # agent = initialize_agent(actual_tools, self.llm, AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=self.verbose)
         # information = agent.run(f"gather relevant information to this user's question: {input}", fun) 
         history = "\n".join([f"{message.type}: {message.content}" for message in response_memory.messages])
-        agent = initialize_agent(actual_tools, self.llm, AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=self.verbose)
-        information = agent.run(f"Here is the conversation history: \n```\n{history}\n```\nGather relevant information to this user's question, utilizing the conversation history: {input}")
+        agent = initialize_agent(actual_tools, self.fast_llm, AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=self.verbose)
+        
+        # TODO: Handle the agent formatting it's response incorrectly
+        # TODO: Limit the agent's number of math
+        information = agent.run(f"""Here is the conversation history:
+```
+{history}
+```
+
+Gather relevant information to this user's question, utilizing the conversation history: {input}
+
+Here is your thought on the user's question:
+```
+{thought}
+```""")
         print("Information: ", information)
 
         return information
