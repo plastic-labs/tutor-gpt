@@ -27,6 +27,8 @@ RUN addgroup --system app && adduser --system --group app
 USER app
 
 COPY agent/ agent/
+COPY common/ common/
+
 COPY bot/ bot/
 
 COPY www/ www/
