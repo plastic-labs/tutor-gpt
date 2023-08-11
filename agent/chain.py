@@ -4,6 +4,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.memory import ChatMessageHistory
 from langchain.prompts import (
     SystemMessagePromptTemplate,
+    ChatPromptTemplate,
 )
 from langchain.prompts import load_prompt
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
@@ -91,7 +92,7 @@ class BloomChain:
         return information
     
 
-    async def respond(self, response_memory: ChatMessageHistory, thought: str, input: str, info: str) -> str:
+    def respond(self, response_memory: ChatMessageHistory, thought: str, input: str, info: str):
         """Generate Bloom's response to the user."""
 
         response_prompt = ChatPromptTemplate.from_messages([
@@ -104,7 +105,7 @@ class BloomChain:
         response_memory.add_message(HumanMessage(content=input))
 
         return Streamable(
-            chain.astream({ "thought": thought }, {"tags": ["response"]}),
+            chain.astream({ "thought": thought, "info": info }, {"tags": ["response"]}),
             lambda response: response_memory.add_message(AIMessage(content=response))
         )
     
@@ -113,10 +114,10 @@ class BloomChain:
     async def chat(self, cache: ConversationCache, inp: str ) -> tuple[str, str]:
         thought_iterator = self.think(cache.thought_memory, inp)
         thought = await thought_iterator()
+        
         info = await self.gather_info(cache.response_memory, inp, thought)
 
-
-        response_iterator = self.respond(cache.response_memory, thought, inp)
+        response_iterator = self.respond(cache.response_memory, thought, inp, info)
         response = await response_iterator()
 
         return thought, response
