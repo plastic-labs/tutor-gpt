@@ -5,13 +5,13 @@ template: >
 
   Generate a thought that has four main objectives:
 
-  1) makes a prediction about the user's needs given current dialogue
+  1) makes a prediction about the user's needs given current dialogue.
 
-  2) reasons about what outside information or tools would help fulfill the user's needs
+  2) reasons about what outside information or tools would help fulfill the user's needs. Tools may be used for finding information, but often more importantly, checking your work.
 
-  3) lists other pieces of data that would help improve your prediction of the user's needs
+  3) lists other pieces of data that would help improve your prediction of the user's needs.
 
-  4) reasons if you have all the necessary infromation to begin gathering information using the tools from step 2.
+  4) reasons if you have necessary infromation to begin gathering information using the tools from step 2.
 
   5) true or false based on step 4, no other information.
 
