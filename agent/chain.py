@@ -17,6 +17,8 @@ from langchain.agents import load_tools, initialize_agent, AgentType
 from langchain.tools import format_tool_to_openai_function
 from langchain.tools.python.tool import PythonREPLTool
 
+from agent.langchain_agents.react_openai_functions_agent import initialize_react_openai_agent
+
 from agent.tools.askquestion import AskQuestion
 from agent.tools.wolframalphafull import WolframAlphaFull
 
@@ -45,7 +47,7 @@ class ConversationCache:
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
-    def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), fast_llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=0.3), verbose: bool = True) -> None:
+    def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), fast_llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4-0613", temperature=0.3), verbose: bool = True) -> None:
         self.llm = llm
         self.fast_llm = fast_llm
         self.verbose = verbose
@@ -97,10 +99,11 @@ class BloomChain:
         # agent = initialize_agent(actual_tools, self.llm, AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=self.verbose)
         # information = agent.run(f"gather relevant information to this user's question: {input}", fun) 
         history = "\n".join([f"{message.type}: {message.content}" for message in response_memory.messages])
-        agent = initialize_agent(actual_tools, self.fast_llm, AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=self.verbose)
+        # agent = initialize_agent(actual_tools, self.fast_llm, AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=self.verbose)
+        agent = initialize_react_openai_agent(tools=actual_tools, llm=self.fast_llm, verbose=self.verbose)
+        
         
         # TODO: Handle the agent formatting it's response incorrectly
-        # TODO: Limit the agent's number of math
         information = agent.run(f"""Here is the conversation history:
 ```
 {history}
