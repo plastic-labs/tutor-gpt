@@ -1,7 +1,7 @@
 import os
 
 from langchain.chat_models import ChatOpenAI
-from langchain.memory import ChatMessageHistory
+from langchain.memory import ChatMessageHistory, PostgresChatMessageHistory
 from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator, Awaitable
 from typing import Any, List
 import asyncio
 import uuid
+import urllib
 
 
 load_dotenv()
@@ -20,7 +21,7 @@ load_dotenv()
 SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/thought.yaml'))
 SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/response.yaml'))
 
-class ConversationCache:
+class InMemoryConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
     def __init__(self):
         self.thought_memory: ChatMessageHistory = ChatMessageHistory()
@@ -31,7 +32,29 @@ class ConversationCache:
     def restart(self) -> None:
        self.thought_memory.clear()
        self.response_memory.clear()
+       self.conversation_id: str = str(uuid.uuid4()) # New Conversation Id 
 
+class ConversationCache:
+    "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
+    def __init__(self):
+        # Eventually could mix this with a summary memory object: https://python.langchain.com/docs/modules/memory/agent_with_memory_in_db
+        # self.thought_history = PostgresChatMessageHistory()
+        # self.response_history = PostgresChatMessageHistory()
+        self.conversation_id: str = str(uuid.uuid4())
+        # Note the importance of escaping for the connection string make sure that "/:@" are all considered safe
+        self.thought_memory: PostgresChatMessageHistory = PostgresChatMessageHistory(
+                connection_string=urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None),
+            session_id=self.conversation_id
+        )
+        self.response_memory: PostgresChatMessageHistory = PostgresChatMessageHistory(
+            connection_string=urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None),
+            session_id=self.conversation_id
+        )
+
+    def restart(self):
+        self.conversation_id: str = str(uuid.uuid4())
+        self.thought_memory.session_id = self.conversation_id
+        self.response_memory.session_id = self.conversation_id
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
