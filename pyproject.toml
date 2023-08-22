@@ -15,6 +15,8 @@ openai = "^0.27.5"
 pexpect = "^4.8.0"
 tiktoken = "^0.3.3"
 streamlit = "^1.25.0"
+psycopg = {extras = ["binary"], version = "^3.1.10"}
+supabase = "^1.0.4"
 
 [build-system]
 requires = ["poetry-core"]
