@@ -4,17 +4,32 @@ import uuid
 import urllib
 import os
 from dotenv import load_dotenv
+# Pyscopg For Postgres Management
 import psycopg
 from psycopg.rows import dict_row
+# Supabase for Postgres Management
+from supabase import create_client, Client
 from typing import List
 import json
 
 load_dotenv()
 
+class SupabaseMediator:
+    def __init__(self):
+        self.supabase: Client = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
+        self.table = os.environ["MEMORY_TABLE"]
 
+    def messages(self, session_id: str, user_id: str, message_type: str) -> List[BaseMessage]:  # type: ignore
+        response = self.supabase.table(self.table).select("message").eq("session_id", session_id).eq("user_id", user_id).eq("message_type", message_type).execute()
+        items = [record["message"] for record in response.data]
+        messages = messages_from_dict(items)
+        return messages
+
+    def add_message(self, session_id: str, user_id: str, message_type: str, message: BaseMessage) -> None:
+        self.supabase.table(self.table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
 
 # Modification of PostgresChatMessageHistory: https://api.python.langchain.com/en/latest/_modules/langchain/memory/chat_message_histories/postgres.html#PostgresChatMessageHistory
-class PostgresChatMessageHistoryMediator:
+class PostgresMediator:
     """
     Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts
 

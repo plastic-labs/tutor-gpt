@@ -1,7 +1,7 @@
 import os
 
 from langchain.chat_models import ChatOpenAI
-from langchain.memory import ChatMessageHistory, PostgresChatMessageHistory
+from langchain.memory import ChatMessageHistory
 from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
@@ -14,7 +14,7 @@ from typing import Any, List
 import asyncio
 import uuid
 import urllib
-from .conversation import PostgresChatMessageHistoryMediator
+from .mediator import SupabaseMediator
 
 
 load_dotenv()
@@ -28,7 +28,8 @@ class ConversationCache:
         # self.thought_memory: ChatMessageHistory = ChatMessageHistory()
         # self.response_memory: ChatMessageHistory = ChatMessageHistory()
         self.conversation_id: str = str(uuid.uuid4())
-        self.mediator: PostgresChatMessageHistoryMediator = mediator
+        # self.mediator: PostgresChatMessageHistoryMediator = mediator
+        self.mediator: SupabaseMediator = mediator
         self.user_id: str
 
     def add_message(self, message_type: str, message: BaseMessage,) -> None:
