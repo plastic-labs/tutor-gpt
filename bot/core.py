@@ -5,10 +5,12 @@ from __main__ import (
     BLOOM_CHAIN,
     CACHE,
     THOUGHT_CHANNEL,
+    MEDIATOR
 )
 from discord.ext import commands
 from typing import Optional
 from agent.chain import ConversationCache
+from langchain.schema import AIMessage, HumanMessage, BaseMessage
 
 
 class Core(commands.Cog):
@@ -46,7 +48,8 @@ Enjoy!
         # Get cache for conversation
         LOCAL_CHAIN = CACHE.get(message.channel.id)
         if LOCAL_CHAIN is None:
-            LOCAL_CHAIN = ConversationCache()
+            LOCAL_CHAIN = ConversationCache(MEDIATOR)
+            LOCAL_CHAIN.user_id = "discord_" + str(message.author.id)
             CACHE.put(message.channel.id, LOCAL_CHAIN)
 
         # Get the message content but remove any mentions
@@ -139,13 +142,15 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
         LOCAL_CHAIN = CACHE.get(ctx.channel_id)
         if LOCAL_CHAIN:
             LOCAL_CHAIN.restart()
+            LOCAL_CHAIN.user_id = "discord_" +str(ctx.author.id)
         else:
-            LOCAL_CHAIN = ConversationCache()
+            LOCAL_CHAIN = ConversationCache(MEDIATOR)            
+            LOCAL_CHAIN.user_id = str(ctx.author.id)
             CACHE.put(ctx.channel_id, LOCAL_CHAIN )
 
         if respond:
             msg = "Great! The conversation has been restarted. What would you like to talk about?"
-            LOCAL_CHAIN.response_memory.add_ai_message(msg)
+            LOCAL_CHAIN.add_message("response", AIMessage(content=msg))
             await ctx.respond(msg)
         else:
             return
