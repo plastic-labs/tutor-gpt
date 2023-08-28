@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Database support for long term memory storage
+
+### Changed
+
+- The default LLM is now using Azure based OpenAI models
  
 ## [0.2.1] – 2023-08-11
 
