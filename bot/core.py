@@ -56,7 +56,7 @@ Enjoy!
         inp = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
         n = 1800
 
-        async def reply(forward_thought = True):
+        async def respond(reply = True, forward_thought = True):
             "Generate response too user"
             async with message.channel.typing():
                 thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, inp)
@@ -77,18 +77,26 @@ Enjoy!
             if len(response) > n:
                 chunks = [response[i:i+n] for i in range(0, len(response), n)]
                 for chunk in chunks:
-                    await message.channel.send(chunk)
+                    if (reply):
+                        await message.reply(chunk)
+                    else:
+                        await message.channel.send(chunk)
             else:
-                await message.channel.send(response)
+                if (reply):
+                    await message.reply(response)
+                else:
+                    await message.channel.send(response)
 
         # if the message came from a DM channel...
         if isinstance(message.channel, discord.channel.DMChannel):
-            await reply(forward_thought=False)
+            await respond(reply=False, forward_thought=False)
 
+        # If the bot was mentioned in the message
         if not isinstance(message.channel, discord.channel.DMChannel):
             if str(self.bot.user.id) in message.content:
-                await reply(forward_thought=True)
+                await respond(forward_thought=True)
 
+        # If the bot was replied to in the message
         if not isinstance(message.channel, discord.channel.DMChannel):
             if message.reference is not None:
                 reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
@@ -97,7 +105,7 @@ Enjoy!
                         return
                     if message.content.startswith("!no") or message.content.startswith("!No"):
                         return
-                    await reply(forward_thought=True)
+                    await respond(forward_thought=True)
             
 
     @commands.slash_command(description="Help using the bot")
