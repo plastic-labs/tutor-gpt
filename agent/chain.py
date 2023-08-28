@@ -1,5 +1,5 @@
 import os
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
 from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
@@ -36,7 +36,8 @@ class ConversationCache:
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
-    def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), verbose: bool = True) -> None:
+    # def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), verbose: bool = True) -> None:
+    def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
         self.llm = llm
         self.verbose = verbose
 
@@ -47,7 +48,6 @@ class BloomChain:
 
     def think(self, cache: ConversationCache, input: str):
         """Generate Bloom's thought on the user."""
-
         # load message history
         thought_prompt = ChatPromptTemplate.from_messages([
             self.system_thought,
@@ -65,7 +65,6 @@ class BloomChain:
 
     def respond(self, cache: ConversationCache, thought: str, input: str):
         """Generate Bloom's response to the user."""
-
         response_prompt = ChatPromptTemplate.from_messages([
             self.system_response,
             *cache.messages("response"),
