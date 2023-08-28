@@ -1,19 +1,15 @@
 import os
-
 from langchain.chat_models import ChatOpenAI
-from langchain.memory import ChatMessageHistory
 from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 from langchain.prompts import load_prompt, ChatPromptTemplate
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
 from dotenv import load_dotenv
-
 from collections.abc import AsyncIterator, Awaitable
 from typing import Any, List
 import asyncio
 import uuid
-import urllib
 from .mediator import SupabaseMediator
 
 
@@ -25,10 +21,7 @@ SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/r
 class ConversationCache:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
     def __init__(self, mediator):
-        # self.thought_memory: ChatMessageHistory = ChatMessageHistory()
-        # self.response_memory: ChatMessageHistory = ChatMessageHistory()
         self.conversation_id: str = str(uuid.uuid4())
-        # self.mediator: PostgresChatMessageHistoryMediator = mediator
         self.mediator: SupabaseMediator = mediator
         self.user_id: str
 

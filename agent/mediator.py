@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import psycopg
 from psycopg.rows import dict_row
 # Supabase for Postgres Management
-from supabase import create_client, Client
+from supabase.client import create_client, Client
 from typing import List
 import json
 
@@ -23,7 +23,7 @@ class SupabaseMediator:
         response = self.supabase.table(self.table).select("message").eq("session_id", session_id).eq("user_id", user_id).eq("message_type", message_type).order("id", desc=True).limit(10).execute()
         items = [record["message"] for record in response.data]
         messages = messages_from_dict(items)
-        return messages
+        return messages[::-1]
 
     def add_message(self, session_id: str, user_id: str, message_type: str, message: BaseMessage) -> None:
         self.supabase.table(self.table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
@@ -122,11 +122,11 @@ class ConversationCache:
         self.conversation_id: str = str(uuid.uuid4())
         # Note the importance of escaping for the connection string make sure that "/:@" are all considered safe
         self.thought_memory: PostgresChatMessageHistory = PostgresChatMessageHistory(
-            connection_string=urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None),
+            connection_string=urllib.parse.quote(os.environ["POSTGRES_URL"], safe='/:@', encoding=None, errors=None),
             session_id=self.conversation_id
         )
         self.response_memory: PostgresChatMessageHistory = PostgresChatMessageHistory(
-            connection_string=urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None),
+            connection_string=urllib.parse.quote(os.environ["POSTGRES_URL"], safe='/:@', encoding=None, errors=None),
             session_id=self.conversation_id
         )
 
