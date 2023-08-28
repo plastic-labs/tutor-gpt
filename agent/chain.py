@@ -105,7 +105,6 @@ class Streamable:
     def __init__(self, iterator: AsyncIterator[BaseMessage], callback):
         self.iterator = iterator
         self.callback = callback
-        # self.content: List[Awaitable[BaseMessage]] = []
         self.content = ""
     
     def __aiter__(self):
@@ -115,7 +114,7 @@ class Streamable:
         try:
             data = await self.iterator.__anext__()
             self.content += data.content
-            return self.content
+            return data.content
         except StopAsyncIteration as e:
             self.callback(self.content)
             raise StopAsyncIteration

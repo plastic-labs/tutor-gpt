@@ -33,9 +33,16 @@ async def stream(inp: ConversationInput):
         local_chain = ConversationCache(MEDIATOR)
         local_chain.user_id = "web_" + inp.conversation_id
         CACHE.put("web_" + inp.conversation_id, local_chain)
+    print()
+    print()
+    print("local chain", local_chain.messages("thought"), local_chain.messages("response"))
+    print()
+    print()
     thought_iterator = BLOOM_CHAIN.think(local_chain, inp.message)
     thought = await thought_iterator()
+    print(thought)
 
     response_iterator = BLOOM_CHAIN.respond(local_chain, thought, inp.message)
+    print(response_iterator)
 
     return StreamingResponse(response_iterator)
