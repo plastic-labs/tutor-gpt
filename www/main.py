@@ -9,7 +9,7 @@ from common import init
 
     
 load_dotenv()
-CACHE, BLOOM_CHAIN, _ = init()
+CACHE, BLOOM_CHAIN, MEDIATOR, _ = init()
 
 
 st.set_page_config(
@@ -54,7 +54,8 @@ Need to leave or just done chatting? Let me know! I’m conversational by design
     }]
 
 if 'local_chain' not in st.session_state:
-    st.session_state.local_chain = ConversationCache()
+    st.session_state.local_chain = ConversationCache(MEDIATOR)
+    st.session_state.local_chain.user_id = "web"
     
 
 for message in st.session_state.messages:
@@ -70,13 +71,13 @@ for message in st.session_state.messages:
 #         return None
 
 async def stream_and_save(prompt: str) -> None:
-    thought_iterator = BLOOM_CHAIN.think(st.session_state.local_chain.thought_memory, prompt)
+    thought_iterator = BLOOM_CHAIN.think(st.session_state.local_chain, prompt)
 
     thought_placeholder = st.sidebar.empty()
     async for thought in thought_iterator:
         thought_placeholder.markdown(thought)
     
-    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain.response_memory, thought_iterator.content, prompt)
+    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain, thought_iterator.content, prompt)
     with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
         response_placeholder = st.empty()
         async for response in response_iterator:

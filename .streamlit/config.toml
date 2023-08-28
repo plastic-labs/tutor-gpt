@@ -3,3 +3,6 @@ base="light"
 primaryColor="#c3ff4b"
 secondaryBackgroundColor="#fbffec"
 textColor="#1b4431"
+
+[browser]
+serverAddress = "0.0.0.0"
