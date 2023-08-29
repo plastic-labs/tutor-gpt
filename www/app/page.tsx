@@ -7,10 +7,70 @@ import usericon from "@/public/usericon.svg";
 
 import { FaLightbulb, FaPaperPlane } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import ReactMarkdown from "react-markdown";
 
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+      isUser: false,
+    },
+  ]);
+
+  const input = useRef<HTMLInputElement>(null);
+
+  async function chat() {
+    const textbox = input.current!;
+    const message = textbox.value;
+    textbox.value = "";
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        text: message,
+        isUser: true,
+      },
+      {
+        text: "Thinking...",
+        isUser: false,
+      },
+    ]);
+
+    const data = await fetch("http://localhost:8000/stream", {
+      method: "POST",
+      body: JSON.stringify({
+        conversation_id: "ayush1",
+        // TODO: handle converations
+        message: message,
+      }),
+      // no cors
+      // mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const reader = data.body?.pipeThrough(new TextDecoderStream()).getReader()!;
+
+    // clear the last message
+    setMessages((prev) => {
+      prev[prev.length - 1].text = "";
+      return [...prev];
+    });
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      console.log(value);
+      setMessages((prev) => {
+        prev[prev.length - 1].text += value;
+        return [...prev];
+      });
+    }
+  }
 
   return (
     <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] lg:container lg:mx-auto text-sm lg:text-2xl overflow-hidden relative">
@@ -25,37 +85,13 @@ export default function Home() {
         </button>
       </nav>
       <section className="flex flex-col flex-1 overflow-y-auto">
-        <Message>
-          <p>
-            I’m your Aristotelian learning companion — here to help you follow
-            your curiosity in whatever direction you like. My engineering makes
-            me extremely receptive to your needs and interests. You can reply
-            normally, and I’ll always respond!
-          </p>
-          <p>If I&apos;m off track, just say so!</p>
-          <p>
-            Need to leave or just done chatting? Let me know! I’m conversational
-            by design so I’ll say goodbye 😊.
-          </p>
-        </Message>
-        <Message isUser>
-          <p>Can you explain what a metaphor is?</p>
-        </Message>
-        <Message>
-          <p>
-            A metaphor is a figure of speech that directly compares one thing to
-            another for dramatic, more powerful effect. Unlike simile, it
-            doesn’t use the words &apos;like&apos; or &apos;as&apos;. It
-            basically states one thing IS the other. For example, in the
-            metaphor &quot;Time is a thief&quot;, time isn&apos;t literally
-            stealing anything, but this helps us understand it can take away
-            things never to be retrieved again. Why might you be seeking to
-            expand your understanding of metaphors?
-          </p>
-        </Message>
-        <Message isUser>
-          <p>I want to write better poetry.</p>
-        </Message>
+        {messages.map((message, i) => {
+          return (
+            <Message isUser={message.isUser} key={i}>
+              <ReactMarkdown>{message.text}</ReactMarkdown>
+            </Message>
+          );
+        })}
       </section>
       <section
         id="send"
@@ -63,10 +99,14 @@ export default function Home() {
       >
         <input
           type="text"
+          ref={input}
           placeholder="Type a message..."
           className="flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl"
         />
-        <button className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2">
+        <button
+          className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+          onClick={chat}
+        >
           <FaPaperPlane className="inline" />
         </button>
       </section>
@@ -86,6 +126,7 @@ export default function Home() {
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
           <h1 className="text-2xl font-bold">Thoughts</h1>
+          {/* TODO: do thoughts */}
           <p>
             The user is interested in improving their poetry writing skills.
             They might need guidance on not only the specific literary elements

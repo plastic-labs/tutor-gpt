@@ -4,8 +4,22 @@ from pydantic import BaseModel
 from common import init
 from agent.chain import ConversationCache
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True, 
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 CACHE, BLOOM_CHAIN, MEDIATOR, _ = init()
 
