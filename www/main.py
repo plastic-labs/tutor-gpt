@@ -9,7 +9,7 @@ from common import init
 import uuid
     
 load_dotenv()
-CACHE, _ = init()
+CACHE, LOCK, _ = init()
 
 st.set_page_config(
     page_title="Bloom - Learning. Reimagined.",

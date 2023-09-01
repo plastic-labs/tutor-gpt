@@ -3,6 +3,7 @@
 import discord
 from __main__ import (
     CACHE,
+    LOCK,
     THOUGHT_CHANNEL,
 )
 from discord.ext import commands
@@ -44,7 +45,8 @@ Enjoy!
             return
 
         # Get cache for conversation
-        CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=f"discord_{str(message.author.id)}")
+        async with LOCK:
+            CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=f"discord_{str(message.author.id)}")
 
         # Get the message content but remove any mentions
         inp = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
@@ -141,7 +143,8 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
         Args:
             ctx: context, necessary for bot commands
         """
-        CONVERSATION = CACHE.get_or_create(location_id=str(ctx.channel_id), user_id=f"discord_{str(ctx.author.id)}", restart=True)
+        async with LOCK:
+            CONVERSATION = CACHE.get_or_create(location_id=str(ctx.channel_id), user_id=f"discord_{str(ctx.author.id)}", restart=True)
 
         if respond:
             msg = "Great! The conversation has been restarted. What would you like to talk about?"
