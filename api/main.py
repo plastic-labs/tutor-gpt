@@ -59,4 +59,12 @@ async def stream(inp: ConversationInput):
     response_iterator = BLOOM_CHAIN.respond(local_chain, thought, inp.message)
     print(response_iterator)
 
-    return StreamingResponse(response_iterator)
+    # compose the thought and response iterator into a single stream
+    # the thought is sent first, then the response is streamed
+    async def response_stream():
+        yield thought
+
+        async for response in response_iterator:
+            yield response
+
+    return StreamingResponse(response_stream())

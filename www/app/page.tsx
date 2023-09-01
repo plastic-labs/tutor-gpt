@@ -13,6 +13,7 @@ import ReactMarkdown from "react-markdown";
 
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
+  const [thoughts, setThoughts] = useState<string[]>([]);
   const [messages, setMessages] = useState([
     {
       text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
@@ -61,6 +62,11 @@ export default function Home() {
       return [...prev];
     });
 
+    // the thought is the first chunk sent
+    const { done, value } = await reader.read();
+    setThoughts((prev) => [...prev, value as string]);
+
+    // process the response chunks
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -126,21 +132,11 @@ export default function Home() {
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
           <h1 className="text-2xl font-bold">Thoughts</h1>
-          {/* TODO: do thoughts */}
-          <p>
-            The user is interested in improving their poetry writing skills.
-            They might need guidance on not only the specific literary elements
-            such as metaphors, but also cues on other features of effective
-            poetry like rhythm, rhyme, imagery, and effective use of words.
-          </p>
-          <p>
-            Based on the conversation so far, they would likely appreciate
-            practical examples or exercises they could immediately apply to
-            their writing. Understanding more about the user's exposure level
-            and familiarity with other poetic elements, their preferred styles
-            or poets, and any specific areas they're struggling with could help
-            me tailor advice to their unique needs better.
-          </p>
+          {thoughts.length ? (
+            thoughts.map((thought, i) => <p key={i}>{thought}</p>)
+          ) : (
+            <p>Bloom's thoughts will show up here!</p>
+          )}
         </div>
       </section>
     </main>
