@@ -6,13 +6,18 @@ import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 
 import { FaLightbulb, FaPaperPlane } from "react-icons/fa";
+import { IoIosArrowDown } from "react-icons/io";
 import { GrClose } from "react-icons/gr";
 import { useRef, useState } from "react";
 
 import ReactMarkdown from "react-markdown";
+import { v4 as uuidv4 } from "uuid";
+import Typing from "@/components/typing";
 
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
+  const [thought, setThought] = useState("");
+  const [uuid, _] = useState(uuidv4());
   const [messages, setMessages] = useState([
     {
       text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
@@ -34,7 +39,7 @@ export default function Home() {
         isUser: true,
       },
       {
-        text: "Thinking...",
+        text: "",
         isUser: false,
       },
     ]);
@@ -42,8 +47,7 @@ export default function Home() {
     const data = await fetch("http://localhost:8000/stream", {
       method: "POST",
       body: JSON.stringify({
-        conversation_id: "ayush1",
-        // TODO: handle converations
+        conversation_id: uuid,
         message: message,
       }),
       // no cors
@@ -61,14 +65,26 @@ export default function Home() {
       return [...prev];
     });
 
+    let isThinking = true;
+    setThought("");
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       console.log(value);
-      setMessages((prev) => {
-        prev[prev.length - 1].text += value;
-        return [...prev];
-      });
+      if (isThinking) {
+        if (value.includes("❀")) {
+          // a bloom delimiter
+          isThinking = false;
+          continue;
+        }
+        setThought((prev) => prev + value);
+      } else {
+        setMessages((prev) => {
+          prev[prev.length - 1].text += value;
+          return [...prev];
+        });
+      }
     }
   }
 
@@ -88,7 +104,11 @@ export default function Home() {
         {messages.map((message, i) => {
           return (
             <Message isUser={message.isUser} key={i}>
-              <ReactMarkdown>{message.text}</ReactMarkdown>
+              {message.text ? (
+                <ReactMarkdown>{message.text}</ReactMarkdown>
+              ) : (
+                <Typing />
+              )}
             </Message>
           );
         })}
@@ -97,6 +117,7 @@ export default function Home() {
         id="send"
         className="flex p-3 lg:p-5 gap-3 border-t border-gray-300"
       >
+        {/* TODO: validate input */}
         <input
           type="text"
           ref={input}
@@ -126,21 +147,10 @@ export default function Home() {
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
           <h1 className="text-2xl font-bold">Thoughts</h1>
-          {/* TODO: do thoughts */}
-          <p>
-            The user is interested in improving their poetry writing skills.
-            They might need guidance on not only the specific literary elements
-            such as metaphors, but also cues on other features of effective
-            poetry like rhythm, rhyme, imagery, and effective use of words.
-          </p>
-          <p>
-            Based on the conversation so far, they would likely appreciate
-            practical examples or exercises they could immediately apply to
-            their writing. Understanding more about the user's exposure level
-            and familiarity with other poetic elements, their preferred styles
-            or poets, and any specific areas they're struggling with could help
-            me tailor advice to their unique needs better.
-          </p>
+          <ReactMarkdown>{thought}</ReactMarkdown>
+          <button>
+            View More <IoIosArrowDown />{" "}
+          </button>
         </div>
       </section>
     </main>

@@ -52,11 +52,24 @@ async def stream(inp: ConversationInput):
     print("local chain", local_chain.messages("thought"), local_chain.messages("response"))
     print()
     print()
-    thought_iterator = BLOOM_CHAIN.think(local_chain, inp.message)
-    thought = await thought_iterator()
-    print(thought)
 
-    response_iterator = BLOOM_CHAIN.respond(local_chain, thought, inp.message)
-    print(response_iterator)
 
-    return StreamingResponse(response_iterator)
+    async def thought_and_response():
+        thought_iterator = BLOOM_CHAIN.think(local_chain, inp.message)
+        thought = ""
+        async for item in thought_iterator:
+            # escape ❀ if present
+            item = item.replace("❀", "🌸")
+            thought += item
+            yield item
+        yield "❀"
+        response_iterator = BLOOM_CHAIN.respond(local_chain, thought, inp.message)
+        async for item in response_iterator:
+            # if "❀" in item:
+            item = item.replace("❀", "🌸")
+            yield item
+
+        
+
+
+    return StreamingResponse(thought_and_response())
