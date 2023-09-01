@@ -61,6 +61,9 @@ Enjoy!
             async with message.channel.typing():
                 thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, inp)
 
+            # sanitize thought by adding zero width spaces to triple backticks
+            thought = thought.replace("```", "`\u200b`\u200b`")
+
             thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
 
             # Thought Forwarding
