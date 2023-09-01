@@ -6,7 +6,7 @@ from common import init
 from dotenv import load_dotenv
     
 load_dotenv()
-CACHE, BLOOM_CHAIN, MEDIATOR, (THOUGHT_CHANNEL, TOKEN) = init()
+CACHE, MEDIATOR, (THOUGHT_CHANNEL, TOKEN) = init()
 
 intents = discord.Intents.default()
 intents.messages = True

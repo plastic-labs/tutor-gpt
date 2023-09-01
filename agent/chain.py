@@ -36,25 +36,30 @@ class ConversationCache:
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
-    # def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), verbose: bool = True) -> None:
-    def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
-        self.llm = llm
-        self.verbose = verbose
+    llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
+    system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
+    system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
+
+    def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), verbose: bool = True) -> None:
+        pass
+    # def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
+        # self.llm = llm
+        # self.verbose = verbose
 
         # setup prompts
-        self.system_thought = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
-        self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
+        # self.system_thought = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
+        # self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
         
-
-    def think(self, cache: ConversationCache, input: str):
+    @classmethod
+    def think(cls, cache: ConversationCache, input: str):
         """Generate Bloom's thought on the user."""
         # load message history
         thought_prompt = ChatPromptTemplate.from_messages([
-            self.system_thought,
+            cls.system_thought,
             *cache.messages("thought"),
             HumanMessage(content=input)
         ])
-        chain = thought_prompt | self.llm 
+        chain = thought_prompt | cls.llm 
 
         cache.add_message("thought", HumanMessage(content=input))
 
@@ -62,15 +67,16 @@ class BloomChain:
                 chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
             lambda thought: cache.add_message("thought", AIMessage(content=thought))
         )
-
-    def respond(self, cache: ConversationCache, thought: str, input: str):
+        
+    @classmethod
+    def respond(cls, cache: ConversationCache, thought: str, input: str):
         """Generate Bloom's response to the user."""
         response_prompt = ChatPromptTemplate.from_messages([
-            self.system_response,
+            cls.system_response,
             *cache.messages("response"),
             HumanMessage(content=input)
         ])
-        chain = response_prompt | self.llm
+        chain = response_prompt | cls.llm
 
         cache.add_message("response", HumanMessage(content=input))
 
@@ -78,14 +84,13 @@ class BloomChain:
             chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
             lambda response: cache.add_message("response", AIMessage(content=response))
         )
-    
-        
 
-    async def chat(self, cache: ConversationCache, inp: str ) -> tuple[str, str]:
-        thought_iterator = self.think(cache, inp)
+    @classmethod    
+    async def chat(cls, cache: ConversationCache, inp: str ) -> tuple[str, str]:
+        thought_iterator = cls.think(cache, inp)
         thought = await thought_iterator()
 
-        response_iterator = self.respond(cache, thought, inp)
+        response_iterator = cls.respond(cache, thought, inp)
         response = await response_iterator()
 
         return thought, response

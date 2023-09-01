@@ -2,14 +2,13 @@
 
 import discord
 from __main__ import (
-    BLOOM_CHAIN,
     CACHE,
     THOUGHT_CHANNEL,
     MEDIATOR
 )
 from discord.ext import commands
 from typing import Optional
-from agent.chain import ConversationCache
+from agent.chain import ConversationCache, BloomChain
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
 
 
@@ -59,7 +58,7 @@ Enjoy!
         async def respond(reply = True, forward_thought = True):
             "Generate response too user"
             async with message.channel.typing():
-                thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, inp)
+                thought, response = await BloomChain.chat(LOCAL_CHAIN, inp)
 
             thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
 
