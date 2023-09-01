@@ -93,9 +93,13 @@ export default function Home() {
           );
         })}
       </section>
-      <section
+      <form
         id="send"
         className="flex p-3 lg:p-5 gap-3 border-t border-gray-300"
+        onSubmit={(e) => {
+          e.preventDefault();
+          chat();
+        }}
       >
         <input
           type="text"
@@ -105,11 +109,11 @@ export default function Home() {
         />
         <button
           className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-          onClick={chat}
+          type="submit"
         >
           <FaPaperPlane className="inline" />
         </button>
-      </section>
+      </form>
       <section
         className={
           "absolute h-[100dvh] flex flex-col w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out " +
