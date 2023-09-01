@@ -6,33 +6,14 @@ from langchain.prompts import (
 from langchain.prompts import load_prompt, ChatPromptTemplate
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
 from dotenv import load_dotenv
-from collections.abc import AsyncIterator, Awaitable
-from typing import Any, List
-import asyncio
-import uuid
-from .mediator import SupabaseMediator
-
+from collections.abc import AsyncIterator
+from .cache import ConversationCache
 
 load_dotenv()
 
 SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/thought.yaml'))
 SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/response.yaml'))
 
-class ConversationCache:
-    "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
-    def __init__(self, mediator):
-        self.conversation_id: str = str(uuid.uuid4())
-        self.mediator: SupabaseMediator = mediator
-        self.user_id: str
-
-    def add_message(self, message_type: str, message: BaseMessage,) -> None:
-        self.mediator.add_message(self.conversation_id, self.user_id, message_type, message)
-
-    def messages(self, message_type: str) -> List[BaseMessage]:
-        return self.mediator.messages(self.conversation_id, self.user_id, message_type)
-
-    def restart(self) -> None:
-       self.conversation_id: str = str(uuid.uuid4()) # New Conversation Id 
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"

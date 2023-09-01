@@ -1,16 +1,15 @@
 import os
 import streamlit as st
 import time
-from agent.chain import ConversationCache, BloomChain
+from agent.chain import BloomChain
 import asyncio
 
 from dotenv import load_dotenv
 from common import init
-
+import uuid
     
 load_dotenv()
-CACHE, MEDIATOR, _ = init()
-
+CACHE, _ = init()
 
 st.set_page_config(
     page_title="Bloom - Learning. Reimagined.",
@@ -40,8 +39,6 @@ st.markdown("""
     
 </style>""", unsafe_allow_html=True)
 
-
-
 if 'messages' not in st.session_state:
     st.session_state.messages = [{
         "role": "assistant",
@@ -54,8 +51,9 @@ Need to leave or just done chatting? Let me know! I’m conversational by design
     }]
 
 if 'local_chain' not in st.session_state:
-    st.session_state.local_chain = ConversationCache(MEDIATOR)
-    st.session_state.local_chain.user_id = "web"
+    id = str(uuid.uuid4())
+    st.session_state.local_chain = CACHE.put(f"web_{id}", f"web_{id}")
+    st.session_state.local_chain.user_id = f"web_{id}"
     
 
 for message in st.session_state.messages:

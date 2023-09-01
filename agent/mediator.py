@@ -28,6 +28,25 @@ class SupabaseMediator:
     def add_message(self, session_id: str, user_id: str, message_type: str, message: BaseMessage) -> None:
         self.supabase.table(self.table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
 
+    def conversations(self, location_id: str, user_id: str) -> str | None:
+        response = self.supabase.table("vineeth_conversations").select("id").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).maybe_single().execute()
+        print("==================================")
+        print(response)
+        print("==================================")
+        if response:
+           conversation_id = response.data["id"]
+           return conversation_id
+        return None
+    
+    def add_conversation(self, location_id: str, user_id: str) -> str:
+        conversation_id = str(uuid.uuid4())
+        self.supabase.table("vineeth_conversations").insert({"id": conversation_id, "user_id": user_id, "location_id": location_id}).execute()
+        return conversation_id
+
+    def delete_conversation(self, conversation_id: str) -> None:
+        self.supabase.table("vineeth_conversations").update({"isActive": False}).eq("id", conversation_id).execute()
+
+
 # Modification of PostgresChatMessageHistory: https://api.python.langchain.com/en/latest/_modules/langchain/memory/chat_message_histories/postgres.html#PostgresChatMessageHistory
 class PostgresMediator:
     """
