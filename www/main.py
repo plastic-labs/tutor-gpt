@@ -1,16 +1,15 @@
 import os
 import streamlit as st
 import time
-from agent.chain import ConversationCache
+from agent.chain import BloomChain
 import asyncio
 
 from dotenv import load_dotenv
 from common import init
-
+import uuid
     
 load_dotenv()
-CACHE, BLOOM_CHAIN, MEDIATOR, _ = init()
-
+CACHE, LOCK, _ = init()
 
 st.set_page_config(
     page_title="Bloom - Learning. Reimagined.",
@@ -40,8 +39,6 @@ st.markdown("""
     
 </style>""", unsafe_allow_html=True)
 
-
-
 if 'messages' not in st.session_state:
     st.session_state.messages = [{
         "role": "assistant",
@@ -54,8 +51,9 @@ Need to leave or just done chatting? Let me know! I’m conversational by design
     }]
 
 if 'local_chain' not in st.session_state:
-    st.session_state.local_chain = ConversationCache(MEDIATOR)
-    st.session_state.local_chain.user_id = "web"
+    id = str(uuid.uuid4())
+    st.session_state.local_chain = CACHE.put(f"web_{id}", f"web_{id}")
+    st.session_state.local_chain.user_id = f"web_{id}"
     
 
 for message in st.session_state.messages:
@@ -71,13 +69,13 @@ for message in st.session_state.messages:
 #         return None
 
 async def stream_and_save(prompt: str) -> None:
-    thought_iterator = BLOOM_CHAIN.think(st.session_state.local_chain, prompt)
+    thought_iterator = BloomChain.think(st.session_state.local_chain, prompt)
 
     thought_placeholder = st.sidebar.empty()
     async for thought in thought_iterator:
         thought_placeholder.markdown(thought)
     
-    response_iterator = BLOOM_CHAIN.respond(st.session_state.local_chain, thought_iterator.content, prompt)
+    response_iterator = BloomChain.respond(st.session_state.local_chain, thought_iterator.content, prompt)
     with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
         response_placeholder = st.empty()
         async for response in response_iterator:
