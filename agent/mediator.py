@@ -30,8 +30,22 @@ class SupabaseMediator:
         self.supabase.table(self.memory_table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
 
     def conversations(self, location_id: str, user_id: str) -> str | None:
-        response = self.supabase.table(self.conversation_table).select("id").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).maybe_single().execute()
-        if response:
+        print("========================================")
+        print(location_id, user_id)
+        print("========================================")
+        response = "Error Check"
+        try:
+            # TODO change this to get all and look at most recent
+            # Add a cleanup method to get rid of other conversations
+            response = self.supabase.table(self.conversation_table).select("id").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).maybe_single().execute()
+        except Exception as e:
+            print("========================================")
+            print(e)
+            print("========================================")
+        print("========================================")
+        print(response)
+        print("========================================")
+        if response is not None and response != "Error Check":
            conversation_id = response.data["id"]
            return conversation_id
         return None
