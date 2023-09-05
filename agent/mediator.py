@@ -11,7 +11,6 @@ from psycopg.rows import dict_row
 from supabase.client import create_client, Client
 from typing import List
 import json
-
 load_dotenv()
 
 class SupabaseMediator:
@@ -30,25 +29,25 @@ class SupabaseMediator:
         self.supabase.table(self.memory_table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
 
     def conversations(self, location_id: str, user_id: str) -> str | None:
-        print("========================================")
-        print(location_id, user_id)
-        print("========================================")
-        response = "Error Check"
         try:
-            # TODO change this to get all and look at most recent
-            # Add a cleanup method to get rid of other conversations
-            response = self.supabase.table(self.conversation_table).select("id").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).maybe_single().execute()
+            response = self.supabase.table(self.conversation_table).select("id", count="exact").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).order("created_at", desc=True).execute()
+            if response is not None and response.count is not None:
+                if (response.count > 1):
+                    # If there is more than 1 active conversation mark the rest for deletion
+                    conversation_ids = [record["id"] for record in response.data[1:]]
+                    self._cleanup_conversations(conversation_ids) # type: ignore
+                return response.data[0]["id"]
+            return None
         except Exception as e:
             print("========================================")
             print(e)
             print("========================================")
-        print("========================================")
-        print(response)
-        print("========================================")
-        if response is not None and response != "Error Check":
-           conversation_id = response.data["id"]
-           return conversation_id
-        return None
+            return None
+
+
+    def _cleanup_conversations(self, conversation_ids: List[str]) -> None:
+        for conversation_id in conversation_ids:
+            self.supabase.table(self.conversation_table).update({"isActive": False}).eq("id", conversation_id).execute()
     
     def add_conversation(self, location_id: str, user_id: str) -> str:
         conversation_id = str(uuid.uuid4())
@@ -56,7 +55,7 @@ class SupabaseMediator:
         return conversation_id
 
     def delete_conversation(self, conversation_id: str) -> None:
-        self.supabase.table("vineeth_conversations").update({"isActive": False}).eq("id", conversation_id).execute()
+        self.supabase.table(self.conversation_table).update({"isActive": False}).eq("id", conversation_id).execute()
 
 
 # Modification of PostgresChatMessageHistory: https://api.python.langchain.com/en/latest/_modules/langchain/memory/chat_message_histories/postgres.html#PostgresChatMessageHistory
@@ -80,7 +79,7 @@ class PostgresMediator:
     """
     def __init__(self, table_name = "message_store"):
         try:
-            connection_string = urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None)
+            connection_string = urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None) # type: ignore
             self.connection: psycopg.Connection = psycopg.connect(connection_string)
             self.cursor: psycopg.Cursor = self.connection.cursor(row_factory=dict_row)
         except psycopg.OperationalError as error:
