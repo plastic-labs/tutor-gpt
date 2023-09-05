@@ -28,15 +28,17 @@ class SupabaseMediator:
     def add_message(self, session_id: str, user_id: str, message_type: str, message: BaseMessage) -> None:
         self.supabase.table(self.memory_table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
 
-    def conversations(self, location_id: str, user_id: str) -> str | None:
+    def conversations(self, location_id: str, user_id: str, single: bool = True) -> List[str] | None:
         try:
             response = self.supabase.table(self.conversation_table).select("id", count="exact").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).order("created_at", desc=True).execute()
             if response is not None and response.count is not None:
-                if (response.count > 1):
+                if (response.count > 1) and single:
                     # If there is more than 1 active conversation mark the rest for deletion
                     conversation_ids = [record["id"] for record in response.data[1:]]
                     self._cleanup_conversations(conversation_ids) # type: ignore
-                return response.data[0]["id"]
+                    return [response.data[0]["id"]]
+                else:
+                    return [record["id"] for record in response.data]
             return None
         except Exception as e:
             print("========================================")
