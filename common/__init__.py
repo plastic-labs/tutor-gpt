@@ -1,15 +1,18 @@
 import os
-from agent.cache import LRUCache
-from agent.chain import BloomChain
+from agent.cache import LayeredLRULocationCache, LayeredLRUConversationCache
 from agent.mediator import SupabaseMediator
+import asyncio
 
 
-def init():
-    CACHE = LRUCache(50)
-    BLOOM_CHAIN = BloomChain()
+def init(cache_type="Location"):
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
     TOKEN = os.environ['BOT_TOKEN']
-    # MEDIATOR = PostgresChatMessageHistoryMediator()
     MEDIATOR = SupabaseMediator()
+    CACHE = ''
+    if cache_type == "Location":
+        CACHE = LayeredLRULocationCache(50, MEDIATOR) # Support 50 concurrent active conversations cached in memory 
+    else:
+        CACHE = LayeredLRUConversationCache(50, MEDIATOR) # Support 50 concurrent active conversations cached in memory 
+    LOCK = asyncio.Lock()
 
-    return CACHE, BLOOM_CHAIN, MEDIATOR, (THOUGHT_CHANNEL, TOKEN)
+    return CACHE, LOCK, (THOUGHT_CHANNEL, TOKEN)
