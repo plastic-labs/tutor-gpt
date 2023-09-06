@@ -3,9 +3,10 @@ from pydantic import BaseModel
 
 from common import init
 from agent.chain import BloomChain
-from agent.cache import LayeredLRUConversationCache, Conversation
+from agent.cache import Conversation
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI()
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-CACHE, LOCK, _ = init(cache_type="Conversation")
+__, LOCK, MEDIATOR, _ = init()
 
 class ConversationInput(BaseModel):
     conversation_id: str
@@ -31,7 +32,7 @@ class ConversationInput(BaseModel):
 @app.get("/conversations/get")
 async def get_conversations(user_id: str):
     async with LOCK:
-        conversations = CACHE.mediator.conversations(location_id="web", user_id=user_id, single=False)
+        conversations = MEDIATOR.conversations(location_id="web", user_id=user_id, single=False)
     return {
         "conversations": conversations
     }
@@ -39,21 +40,29 @@ async def get_conversations(user_id: str):
 @app.get("/conversations/delete")
 async def delete_conversation(conversation_id: str):
     async with LOCK:
-        CACHE.hard_delete(user_id, conversation_id)
+        MEDIATOR.delete_conversation(conversation_id)
         return
 
 @app.get("/conversations/insert")
 async def add_conversation(user_id: str, location_id: str = "web"):
     async with LOCK:
-        conversation = CACHE.put(location_id=location_id, user_id=user_id)
+        conversation_id = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id)
     return {
-       "conversation_id": conversation.conversation_id
+       "conversation_id": conversation_id
+    }
+
+@app.get("/messages")
+async def get_messages(user_id: str, conversation_id: str):
+    async with LOCK:
+        messages = MEDIATOR.messages(user_id=user_id, session_id=conversation_id, message_type="response", limit=(False, None))
+    return {
+        "messages": messages
     }
 
 @app.post("/")
 async def chat(inp: ConversationInput):
     async with LOCK:
-        conversation = CACHE.get(user_id=inp.user_id, conversation_id=inp.conversation_id)
+        conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
     thought, response = await BloomChain.chat(conversation, inp.message)
@@ -65,7 +74,7 @@ async def chat(inp: ConversationInput):
 @app.post("/stream")
 async def stream(inp: ConversationInput):
     async with LOCK:
-        conversation = CACHE.get(user_id=inp.user_id, conversation_id=inp.conversation_id)
+        conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
     print()
@@ -94,3 +103,5 @@ async def stream(inp: ConversationInput):
 
 
     return StreamingResponse(thought_and_response())
+
+# app.mount("/", StaticFiles(directory="www/out", html=True), name="static")

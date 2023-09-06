@@ -20,8 +20,11 @@ class SupabaseMediator:
         self.memory_table = os.environ["MEMORY_TABLE"]
         self.conversation_table = os.environ["CONVERSATION_TABLE"]
 
-    def messages(self, session_id: str, user_id: str, message_type: str) -> List[BaseMessage]:  # type: ignore
-        response = self.supabase.table(self.memory_table).select("message").eq("session_id", session_id).eq("user_id", user_id).eq("message_type", message_type).order("id", desc=True).limit(10).execute()
+    def messages(self, session_id: str, user_id: str, message_type: str, limit: Tuple[bool, int | None] = (True,10)) -> List[BaseMessage]:  # type: ignore
+        query = self.supabase.table(self.memory_table).select("message").eq("session_id", session_id).eq("user_id", user_id).eq("message_type", message_type).order("id", desc=True)
+        if limit[0]:
+            query = query.limit(limit[1])
+        response = query.execute()
         items = [record["message"] for record in response.data]
         messages = messages_from_dict(items)
         return messages[::-1]
@@ -40,10 +43,6 @@ class SupabaseMediator:
                     return [response.data[0]["id"]]
                 else:
                     return [record["id"] for record in response.data]
-            return None
-            if response:
-               conversation_id = response.data["id"]
-               return conversation_id
             return None
         except Exception as e:
             print("========================================")
