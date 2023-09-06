@@ -5,17 +5,24 @@ import banner from "@/public/bloom2x1.svg";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 
-import { FaLightbulb, FaPaperPlane } from "react-icons/fa";
+import { FaLightbulb, FaPaperPlane, FaBars, FaTrash } from "react-icons/fa";
 import { IoIosArrowDown } from "react-icons/io";
 import { GrClose } from "react-icons/gr";
-import { useRef, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 
 import ReactMarkdown from "react-markdown";
 import { v4 as uuidv4 } from "uuid";
 import Typing from "@/components/typing";
 
+// Supabase 
+import { createClient } from '@supabase/supabase-js'
+import AuthComponent from "@/components/Auth";
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_KEY)
+
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
   const [uuid, _] = useState(uuidv4());
   const [messages, setMessages] = useState([
@@ -24,8 +31,23 @@ export default function Home() {
       isUser: false,
     },
   ]);
-
+  const [session, setSession] = useState(null);
+  const [auth, setAuth] = useState(false)
   const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      console.log(session)
+    })
+
+    const { data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setAuth(false)
+    })
+    return () => subscription.unsubscribe();
+  }, [])
 
   async function chat() {
     const textbox = input.current!;
@@ -89,62 +111,115 @@ export default function Home() {
   }
 
   return (
-    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] lg:container lg:mx-auto text-sm lg:text-2xl overflow-hidden relative">
-      <nav className="flex justify-between items-center p-4 border-b border-gray-300">
-        <Image src={banner} alt="banner" className="h-10  w-auto" />
-        <button
-          className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
-          onClick={() => setIsThoughtsOpen(true)}
+    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-xl overflow-hidden relative">
+      <div className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block ${isSidebarOpen ? "" : "hidden"}`}>
+        <div className={`h-full scrollbar-trigger overflow-hidden bg-white lg:w-full w-4/5 flex flex-col ${isSidebarOpen ? "fixed" : "sticky"} top-0 left-0`}>
+          {/* Section 1: Top buttons */}
+          <div className="flex justify-between items-center p-4 border-b border-gray-300">
+            <button className="bg-neon-green rounded-lg px-4 py-2 w-4/5 lg:w-full mx-auto">New Chat</button>
+            <button className="lg:hidden bg-neon-green rounded-lg px-4 py-2" onClick={() => setIsSidebarOpen(false)}><GrClose /></button>
+          </div>
+
+          {/* Section 2: Scrollable items */}
+          <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300">
+            {/* Replace this with your dynamic items */}
+            {Array(5).fill(null).map((_, i) => (
+              <div key={i} className="flex justify-between items-center p-4">
+                <div>
+                  <h2 className="font-bold">Title</h2>
+                </div>
+                <button className="text-red-500">
+                  <FaTrash />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Section 3: Authentication information */}
+          <div className="border-t border-gray-300 p-4 w-full">
+            
+            {/* Replace this with your authentication information */}
+            <p>Authentication Information</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72">
+        <nav className="flex justify-between items-center p-4 border-b border-gray-300">
+            <FaBars className="inline lg:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+            <Image src={banner} alt="banner" className="h-10  w-auto" />
+            <button
+              className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
+              onClick={() => setIsThoughtsOpen(true)}
+            >
+              See Thoughts
+              <FaLightbulb className="inline" />
+            </button>
+          </nav>
+          {!session ? ( 
+          <section className="banner bg-neon-green text-black text-center py-4">
+              To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline"onClick={() => setAuth(!auth)}>sign in here</span>
+          </section>
+          ) : 
+          (
+          <section className="banner bg-neon-green text-black text-center py-4">
+             <span className="cursor-pointer hover:cursor-pointer font-bold underline"onClick={() => supabase.auth.signOut()}>Sign Out</span>
+          </section>
+          )
+          }
+        { auth ? (<AuthComponent supabase={supabase} />) : (
+        <>
+        <section className="flex flex-col flex-1 overflow-y-auto">
+          {messages.map((message, i) => {
+            return (
+              <Message isUser={message.isUser} key={i}>
+                {message.text ? (
+                  <ReactMarkdown>{message.text}</ReactMarkdown>
+                ) : (
+                  <Typing />
+                )}
+              </Message>
+            );
+          })}
+        </section>
+        <form
+          id="send"
+          className="flex p-3 lg:p-5 gap-3 border-gray-300"
+          onSubmit={(e) => {
+            e.preventDefault();
+            chat();
+          }}
         >
-          See Thoughts
-          <FaLightbulb className="inline" />
-        </button>
-      </nav>
-      <section className="flex flex-col flex-1 overflow-y-auto">
-        {messages.map((message, i) => {
-          return (
-            <Message isUser={message.isUser} key={i}>
-              {message.text ? (
-                <ReactMarkdown>{message.text}</ReactMarkdown>
-              ) : (
-                <Typing />
-              )}
-            </Message>
-          );
-        })}
-      </section>
-      <form
-        id="send"
-        className="flex p-3 lg:p-5 gap-3 border-t border-gray-300"
-        onSubmit={(e) => {
-          e.preventDefault();
-          chat();
-        }}
-      >
-        {/* TODO: validate input */}
-        <input
-          type="text"
-          ref={input}
-          placeholder="Type a message..."
-          className="flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl"
-        />
-        <button
-          className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-          type="submit"
-        >
-          <FaPaperPlane className="inline" />
-        </button>
-      </form>
+          {/* TODO: validate input */}
+          <input
+            type="text"
+            ref={input}
+            placeholder="Type a message..."
+            className="flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl"
+          />
+          <button
+            className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+            type="submit"
+          >
+            <FaPaperPlane className="inline" />
+          </button>
+        </form>
+        </>) }
+      </div>
       <section
         className={
-          "absolute h-[100dvh] flex flex-col w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out " +
+          "absolute h-[100dvh] flex flex-col lg:w-3/5 w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out " +
           (isThoughtsOpen ? "translate-x-0 shadow-lg" : "translate-x-full")
         }
       >
         <div className="flex flex-row-reverse p-4">
           <button
             className="text-dark-green text-xl"
-            onClick={() => setIsThoughtsOpen(false)}
+            onClick={() => {
+              console.log("close thoughts")
+              setIsThoughtsOpen(false)
+            }
+          }
           >
             <GrClose className="inline" />
           </button>
@@ -156,7 +231,7 @@ export default function Home() {
             View More <IoIosArrowDown />{" "}
           </button>
         </div>
-      </section>
+      </section> 
     </main>
   );
 }
