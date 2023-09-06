@@ -1,6 +1,4 @@
 import discord
-from agent.chain import BloomChain
-from agent.cache import LRUCache
 
 from common import init
 from dotenv import load_dotenv

@@ -25,7 +25,7 @@ export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
-  const [uuid, _] = useState(uuidv4());
+  const [userId, setUserId] = useState(`anon_${uuidv4()}`);
   const [messages, setMessages] = useState([
     {
       text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
@@ -33,21 +33,54 @@ export default function Home() {
     },
   ]);
   const [session, setSession] = useState(null);
+  const [conversations, setConversations] = useState([])
+  const [currentConversation, setCurrentConversation] = useState("")
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) {
+        setUserId(session.user.id)
+      }
       console.log(session)
     })
 
     const { data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) {
+        // const response = fetch("http://localhost:8000")
+        getConversations()
+        console.log(conversations)    
+        console.log(userId)
+      } else {
+        console.log()
+        newChat()
+      }
     })
     return () => subscription.unsubscribe();
   }, [])
+
+  async function newChat() {
+    fetch(`http://localhost:8000/conversations/insert?user_id=${userId}`)
+    .then((res) => res.json())
+    .then(({ conversation_id }) => {
+      console.log(conversation_id)
+      setCurrentConversation(conversation_id)
+    })
+    .catch((err) => console.error(err))
+  }
+
+  async function getConversations() {
+    fetch(`http://localhost:8000/conversations/get?user_id=${userId}`)
+    .then((res) => res.json())
+    .then(({ conversations }) => {
+      setConversations(conversations)
+      setCurrentConversation(conversations[0])
+    })
+  }
 
   async function chat() {
     const textbox = input.current!;
@@ -69,7 +102,8 @@ export default function Home() {
     const data = await fetch("http://localhost:8000/stream", {
       method: "POST",
       body: JSON.stringify({
-        conversation_id: uuid,
+        user_id: userId,
+        conversation_id: currentConversation,
         message: message,
       }),
       // no cors
@@ -123,8 +157,8 @@ export default function Home() {
           {/* Section 2: Scrollable items */}
           <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300">
             {/* Replace this with your dynamic items */}
-            {Array(5).fill(null).map((_, i) => (
-              <div key={i} className="flex justify-between items-center p-4">
+            {conversations.map((cur, i) => (
+              <div key={cur} className="flex justify-between items-center p-4">
                 <div>
                   <h2 className="font-bold">Title</h2>
                 </div>
