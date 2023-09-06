@@ -1,9 +1,16 @@
-import { useState } from 'react';
+'use client'
+import AuthComponent from "@/components/Auth"
+import { createClient } from "@supabase/supabase-js"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function AuthComponent({ supabase }) {
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_KEY)
+
+export default function Auth() {
   const [formType, setFormType] = useState('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
   const switchForm = () => {
     if (formType === 'signIn') {
@@ -15,7 +22,6 @@ export default function AuthComponent({ supabase }) {
     }
   };
 
-
   const handleSignIn = async (e) => {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -23,7 +29,9 @@ export default function AuthComponent({ supabase }) {
         console.error(error);
         console.log(email)
         console.log(password)
+        throw error;
     }
+    router.push("/")
   };
 
   const handleSignUp = async (e) => {
@@ -43,6 +51,7 @@ export default function AuthComponent({ supabase }) {
   }
 
   return (
+        <div className="h-[100dvh] flex flex-col justify-center items-center">
     <div className="p-4 bg-white rounded shadow-md">
       <h3 className="text-lg font-semibold mb-4">Welcome to Bloom 🌸</h3>
       {formType === 'signIn' && (
@@ -77,6 +86,6 @@ export default function AuthComponent({ supabase }) {
         )}
       </div>
     </div>
-  );
+        </div>
+  )
 }
-

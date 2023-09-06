@@ -9,6 +9,7 @@ import { FaLightbulb, FaPaperPlane, FaBars, FaTrash } from "react-icons/fa";
 import { IoIosArrowDown } from "react-icons/io";
 import { GrClose } from "react-icons/gr";
 import { useRef, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import ReactMarkdown from "react-markdown";
 import { v4 as uuidv4 } from "uuid";
@@ -32,7 +33,7 @@ export default function Home() {
     },
   ]);
   const [session, setSession] = useState(null);
-  const [auth, setAuth] = useState(false)
+  const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,7 +45,6 @@ export default function Home() {
     const { data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setAuth(false)
     })
     return () => subscription.unsubscribe();
   }, [])
@@ -116,8 +116,8 @@ export default function Home() {
         <div className={`h-full scrollbar-trigger overflow-hidden bg-white lg:w-full w-4/5 flex flex-col ${isSidebarOpen ? "fixed" : "sticky"} top-0 left-0`}>
           {/* Section 1: Top buttons */}
           <div className="flex justify-between items-center p-4 border-b border-gray-300">
-            <button className="bg-neon-green rounded-lg px-4 py-2 w-4/5 lg:w-full mx-auto">New Chat</button>
-            <button className="lg:hidden bg-neon-green rounded-lg px-4 py-2" onClick={() => setIsSidebarOpen(false)}><GrClose /></button>
+            <button className="bg-neon-green rounded-lg px-4 py-2 w-4/5 lg:w-full mx-auto h-10">New Chat</button>
+            <button className="lg:hidden bg-neon-green rounded-lg px-4 py-2 h-10" onClick={() => setIsSidebarOpen(false)}><GrClose /></button>
           </div>
 
           {/* Section 2: Scrollable items */}
@@ -137,10 +137,11 @@ export default function Home() {
 
           {/* Section 3: Authentication information */}
           <div className="border-t border-gray-300 p-4 w-full">
-            
             {/* Replace this with your authentication information */}
-            <p>Authentication Information</p>
-          </div>
+            {session ? 
+            (<button className="bg-neon-green rounded-lg px-4 py-2 w-full" onClick={() => supabase.auth.signOut()}>Sign Out</button>) :
+            (<button className="bg-neon-green rounded-lg px-4 py-2 w-full" onClick={() => router.push("/auth") }>Sign In</button>) }
+             </div>
         </div>
       </div>
 
@@ -156,19 +157,11 @@ export default function Home() {
               <FaLightbulb className="inline" />
             </button>
           </nav>
-          {!session ? ( 
+          {!session && ( 
           <section className="banner bg-neon-green text-black text-center py-4">
-              To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline"onClick={() => setAuth(!auth)}>sign in here</span>
+              To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline"onClick={() => router.push("/auth")}>sign in here</span>
           </section>
-          ) : 
-          (
-          <section className="banner bg-neon-green text-black text-center py-4">
-             <span className="cursor-pointer hover:cursor-pointer font-bold underline"onClick={() => supabase.auth.signOut()}>Sign Out</span>
-          </section>
-          )
-          }
-        { auth ? (<AuthComponent supabase={supabase} />) : (
-        <>
+          )}
         <section className="flex flex-col flex-1 overflow-y-auto">
           {messages.map((message, i) => {
             return (
@@ -204,7 +197,6 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
-        </>) }
       </div>
       <section
         className={
