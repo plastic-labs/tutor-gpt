@@ -31,12 +31,26 @@ class ConversationInput(BaseModel):
     user_id: str
     message: str
 
+class ConversationDefinition(BaseModel):
+    conversation_id: str
+    name: str 
+
 @app.get("/conversations/get")
 async def get_conversations(user_id: str):
     async with LOCK:
         conversations = MEDIATOR.conversations(location_id="web", user_id=user_id, single=False)
+    acc = []
+    if conversations:
+        for convo in conversations:
+           instance = {}
+           instance["conversation_id"] = convo["id"]
+           instance["name"] = ""
+           if convo["metadata"] is not None and "name" in convo["metadata"].keys():
+               instance["name"] = convo["metadata"]["name"]
+           acc.append(instance)
+        
     return {
-        "conversations": conversations
+        "conversations": acc
     }
 
 @app.get("/conversations/delete")
@@ -53,12 +67,17 @@ async def add_conversation(user_id: str, location_id: str = "web"):
        "conversation_id": conversation_id
     }
 
+@app.post("/conversations/update")
+async def update_conversations(change: ConversationDefinition):
+    async with LOCK:
+        MEDIATOR.update_conversation(conversation_id=change.conversation_id, metadata={"name": change.name})
+    return 
+
 @app.get("/messages")
 async def get_messages(user_id: str, conversation_id: str):
     async with LOCK:
         messages = MEDIATOR.messages(user_id=user_id, session_id=conversation_id, message_type="response", limit=(False, None))
         converted_messages = [_message_to_dict(_message) for _message in messages]
-        print(converted_messages)
     return {
         "messages": converted_messages
     }

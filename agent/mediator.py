@@ -9,7 +9,7 @@ import psycopg
 from psycopg.rows import dict_row
 # Supabase for Postgres Management
 from supabase.client import create_client, Client
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import json
 
 load_dotenv()
@@ -32,17 +32,17 @@ class SupabaseMediator:
     def add_message(self, session_id: str, user_id: str, message_type: str, message: BaseMessage) -> None:
         self.supabase.table(self.memory_table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
 
-    def conversations(self, location_id: str, user_id: str, single: bool = True) -> List[str] | None:
+    def conversations(self, location_id: str, user_id: str, single: bool = True, metadata=False) -> List[Dict] | None:
         try:
-            response = self.supabase.table(self.conversation_table).select("id", count="exact").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).order("created_at", desc=True).execute()
+            response = self.supabase.table(self.conversation_table).select(*["id", "metadata"], count="exact").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).order("created_at", desc=True).execute()
             if response is not None and response.count is not None:
                 if (response.count > 1) and single:
                     # If there is more than 1 active conversation mark the rest for deletion
                     conversation_ids = [record["id"] for record in response.data[1:]]
                     self._cleanup_conversations(conversation_ids) # type: ignore
-                    return [response.data[0]["id"]]
+                    return [response.data[0]]
                 else:
-                    return [record["id"] for record in response.data]
+                    return response.data
             return None
         except Exception as e:
             print("========================================")
@@ -64,7 +64,16 @@ class SupabaseMediator:
         return conversation_id
 
     def delete_conversation(self, conversation_id: str) -> None:
-        self.supabase.table("vineeth_conversations").update({"isActive": False}).eq("id", conversation_id).execute()
+        self.supabase.table(self.conversation_table).update({"isActive": False}).eq("id", conversation_id).execute()
+
+    def update_conversation(self, conversation_id: str, metadata: Dict) -> None:
+       cur =  self.supabase.table(self.conversation_table).select("metadata").eq("id", conversation_id).single().execute()
+       if cur.data['metadata'] is not None:
+           new_metadata = cur.data['metadata'].copy()
+           new_metadata.update(metadata)
+       else:
+           new_metadata = metadata
+       self.supabase.table(self.conversation_table).update({"metadata": new_metadata}, returning="representation").eq("id", conversation_id).execute()
 
 
 # Modification of PostgresChatMessageHistory: https://api.python.langchain.com/en/latest/_modules/langchain/memory/chat_message_histories/postgres.html#PostgresChatMessageHistory

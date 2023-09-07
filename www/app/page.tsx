@@ -5,7 +5,7 @@ import banner from "@/public/bloom2x1.svg";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 
-import { FaLightbulb, FaPaperPlane, FaBars, FaTrash } from "react-icons/fa";
+import { FaLightbulb, FaPaperPlane, FaBars, FaTrash, FaEdit } from "react-icons/fa";
 import { IoIosArrowDown } from "react-icons/io";
 import { GrClose } from "react-icons/gr";
 import { useRef, useEffect, useState } from "react";
@@ -19,22 +19,33 @@ import Typing from "@/components/typing";
 import { createClient, Session } from '@supabase/supabase-js'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
+interface Message {
+  text: string;
+  isUser: boolean;
+}
+
+interface Conversation {
+  conversation_id: string;
+  name: string;
+}
+
+
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
   const [userId, setUserId] = useState(`anon_${uuidv4()}`);
-  const defaultMessage = {
+  const defaultMessage: Message = {
     text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
     isUser: false,
   }
 
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Array<Message>>([
     defaultMessage,
   ]);
   const [authSession, setAuthSession] = useState<Session | null>(null);
-  const [conversations, setConversations] = useState<Array<string>>([])
-  const [currentConversation, setCurrentConversation] = useState("")
+  const [conversations, setConversations] = useState<Array<Conversation>>([])
+  const [currentConversation, setCurrentConversation] = useState<Conversation>({"conversation_id":"", "name": ""})
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const supabase = createClientComponentClient()
@@ -44,21 +55,20 @@ export default function Home() {
       setAuthSession(session);
       if (session) {
         setUserId(session.user.id)
-        console.log("User Id", userId)
+        // console.log("User Id", userId)
       }
-      console.log("Session 1", session)
+      // console.log("Session 1", session)
     })
 
-    // const { data: { subscription },
-    // } = supabase.auth.onAuthStateChange((_event, session) => {
-    //   console.log(_event)
-    //   if (_event === "SIGNED_OUT") {
-    //     setAuthSession(session);
-    //     set
-    //   }
-    // })
+    //const { data: { subscription },
+    //} = supabase.auth.onAuthStateChange((_event, session) => {
+    //  console.log(_event)
+    //  if (_event === "SIGNED_OUT") {
+    //    setAuthSession(session);
+    //  }
+    //})
 
-    // return () => subscription.unsubscribe();
+    //return () => subscription.unsubscribe();
   }, [])
 
   useEffect(() => {
@@ -72,14 +82,18 @@ export default function Home() {
           if (conversations.length > 0) {
             setConversations(conversations)
             setCurrentConversation(conversations[0])
-            console.log("Current Conversation", currentConversation)
+            // console.log("Current Conversation", currentConversation)
           } else {
             newChat().then((conversation_id) => {
+              let newConversation: Conversation = {
+                name: "",
+                conversation_id
+              }
               // console.log("Conversation ID", conversation_id)
               // console.log(userId)
-              setCurrentConversation(conversation_id)
-              console.log("Current Conversation", currentConversation)
-              setConversations([...conversations, conversation_id])
+              setCurrentConversation(newConversation)
+              // console.log("Current Conversation", currentConversation)
+              setConversations([...conversations, newConversation])
             })
           }
         })
@@ -88,7 +102,7 @@ export default function Home() {
       newChat().then((conversation_id) => {
         // console.log("Conversation ID", conversation_id)
         setCurrentConversation(conversation_id)
-        console.log("Current Conversation", currentConversation)
+        // console.log("Current Conversation", currentConversation)
         setConversations([...conversations, conversation_id])
       })
     }
@@ -125,20 +139,25 @@ export default function Home() {
     return await fetch(`http://localhost:8000/conversations/get?user_id=${userId}`)
       .then((res) => res.json())
       .then(({ conversations }) => {
+        // console.log(conversations)
         return conversations
       })
   }
 
-  async function deleteConversation(conversation_id: string) {
+  async function deleteConversation(conversation: Conversation) {
+    const check = confirm("Are you sure you want to delete this conversation, this action is irreversible?")
+    if (!check) 
+      return
+    const { conversation_id } = conversation
     await fetch(`http://localhost:8000/conversations/delete?user_id=${userId}&conversation_id=${conversation_id}`)
       .then((res) => res.json())
     // Delete the conversation_id from the conversations state variable
-    setConversations(conversations.filter(cur => cur !== conversation_id));
+    setConversations(conversations.filter(cur => cur.conversation_id !== conversation_id));
 
     // If it was the currentConversation, change the currentConversation to the next one in the list
-    if (conversation_id === currentConversation) {
+    if (conversation === currentConversation) {
       if (conversations.length > 1) {
-        setCurrentConversation(conversations.find(cur => cur !== conversation_id) || "");
+        setCurrentConversation(conversations.find(cur => cur.conversation_id !== conversation_id) || "");
         console.log("Current Conversation", currentConversation)
       } else {
         // If there is no current conversation create a new one
@@ -151,8 +170,33 @@ export default function Home() {
 
   }
 
+  async function editConversation(cur: Conversation) {
+     const newName = prompt("Enter a new name for the conversation")
+     if (!newName)
+      return 
+     fetch(`http://localhost:8000/conversations/update`, {
+      method: "POST",
+      body: JSON.stringify({
+        conversation_id: cur.conversation_id,
+        name: newName
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+     })
+     .then((data) => {
+      const copy = { ...currentConversation }
+      copy.name = newName
+      setCurrentConversation(copy)
+      setConversations(conversations.map(conversation => 
+        conversation.conversation_id === copy.conversation_id ? copy : conversation
+      ))
+     })
+    
+  }
+
   async function getMessages() {
-    return await fetch(`http://localhost:8000/messages?user_id=${userId}&conversation_id=${currentConversation}`)
+    return await fetch(`http://localhost:8000/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`)
       .then((res) => res.json())
       .then(({ messages }) => {
         const formattedMessages = messages.map((message) => {
@@ -210,7 +254,7 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      console.log(value);
+      // console.log(value);
       if (isThinking) {
         if (value.includes("❀")) {
           // a bloom delimiter
@@ -232,8 +276,8 @@ export default function Home() {
       <div className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block ${isSidebarOpen ? "" : "hidden"}`}>
         <div className={`h-full scrollbar-trigger overflow-hidden bg-white lg:w-full w-4/5 flex flex-col ${isSidebarOpen ? "fixed" : "sticky"} top-0 left-0`}>
           {/* Section 1: Top buttons */}
-          <div className="flex justify-between items-center p-4 border-b border-gray-300">
-            <button className="bg-neon-green rounded-lg px-4 py-2 w-4/5 lg:w-full mx-auto h-11" onClick={addChat}>New Chat</button>
+          <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300">
+            <button className="bg-neon-green rounded-lg px-4 py-2 w-full lg:w-full h-11" onClick={addChat}>New Chat</button>
             <button className="lg:hidden bg-neon-green rounded-lg px-4 py-2 h-11" onClick={() => setIsSidebarOpen(false)}><GrClose /></button>
           </div>
 
@@ -241,13 +285,18 @@ export default function Home() {
           <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300">
             {/* Replace this with your dynamic items */}
             {conversations.map((cur, i) => (
-              <div key={cur} className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""}`} onClick={() => setCurrentConversation(cur)}>
+              <div key={i} className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""}`} onClick={() => setCurrentConversation(cur)}>
                 <div>
-                  <h2 className="font-bold text-sm">{cur}</h2>
+                  <h2 className="font-bold text-base overflow-ellipsis overflow-hidden">{cur.name || "Untitled"}</h2>
                 </div>
-                <button className="text-red-500" onClick={() => deleteConversation(cur)}>
-                  <FaTrash />
+                <div className="flex flex-row justify-end gap-2 items-center w-1/5">
+                  <button className="text-gray-500" onClick={() => editConversation(cur)}>
+                    <FaEdit />
+                  </button>
+                  <button className="text-red-500" onClick={() => deleteConversation(cur)}>
+                    <FaTrash />
                 </button>
+                </div>
               </div>
             ))}
           </div>
@@ -275,7 +324,7 @@ export default function Home() {
           </button>
         </nav>
         {!authSession && (
-          <section className="banner bg-neon-green text-black text-center py-4">
+          <section className="bg-neon-green text-black text-center py-4">
             To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline" onClick={() => router.push("/auth")}>sign in here</span>
           </section>
         )}
@@ -325,7 +374,6 @@ export default function Home() {
           <button
             className="text-dark-green text-xl"
             onClick={() => {
-              console.log("close thoughts")
               setIsThoughtsOpen(false)
             }
             }
