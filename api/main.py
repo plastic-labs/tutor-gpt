@@ -14,7 +14,8 @@ from langchain.schema import _message_to_dict
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "https://chat-dev.bloombot.ai"
 ]
 
 app.add_middleware(
@@ -35,7 +36,7 @@ class ConversationDefinition(BaseModel):
     conversation_id: str
     name: str 
 
-@app.get("/conversations/get")
+@app.get("/api/conversations/get")
 async def get_conversations(user_id: str):
     async with LOCK:
         conversations = MEDIATOR.conversations(location_id="web", user_id=user_id, single=False)
@@ -53,13 +54,13 @@ async def get_conversations(user_id: str):
         "conversations": acc
     }
 
-@app.get("/conversations/delete")
+@app.get("/api/conversations/delete")
 async def delete_conversation(conversation_id: str):
     async with LOCK:
         MEDIATOR.delete_conversation(conversation_id)
         return
 
-@app.get("/conversations/insert")
+@app.get("/api/conversations/insert")
 async def add_conversation(user_id: str, location_id: str = "web"):
     async with LOCK:
         conversation_id = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id)
@@ -67,13 +68,13 @@ async def add_conversation(user_id: str, location_id: str = "web"):
        "conversation_id": conversation_id
     }
 
-@app.post("/conversations/update")
+@app.post("/api/conversations/update")
 async def update_conversations(change: ConversationDefinition):
     async with LOCK:
         MEDIATOR.update_conversation(conversation_id=change.conversation_id, metadata={"name": change.name})
     return 
 
-@app.get("/messages")
+@app.get("/api/messages")
 async def get_messages(user_id: str, conversation_id: str):
     async with LOCK:
         messages = MEDIATOR.messages(user_id=user_id, session_id=conversation_id, message_type="response", limit=(False, None))
@@ -82,7 +83,7 @@ async def get_messages(user_id: str, conversation_id: str):
         "messages": converted_messages
     }
 
-@app.post("/")
+@app.post("/api/chat")
 async def chat(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
@@ -94,7 +95,7 @@ async def chat(inp: ConversationInput):
         "response": response
     }
 
-@app.post("/stream")
+@app.post("/api/stream")
 async def stream(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
@@ -122,9 +123,6 @@ async def stream(inp: ConversationInput):
             item = item.replace("❀", "🌸")
             yield item
 
-        
-
-
     return StreamingResponse(thought_and_response())
 
-# app.mount("/", StaticFiles(directory="www/out", html=True), name="static")
+app.mount("/", StaticFiles(directory="www/out", html=True), name="static")

@@ -29,6 +29,7 @@ interface Conversation {
   name: string;
 }
 
+const URL = process.env.NEXT_PUBLIC_URL
 
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
@@ -36,7 +37,7 @@ export default function Home() {
   const [thought, setThought] = useState("");
   const [userId, setUserId] = useState(`anon_${uuidv4()}`);
   const defaultMessage: Message = {
-    text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+    text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
     isUser: false,
   }
 
@@ -45,7 +46,7 @@ export default function Home() {
   ]);
   const [authSession, setAuthSession] = useState<Session | null>(null);
   const [conversations, setConversations] = useState<Array<Conversation>>([])
-  const [currentConversation, setCurrentConversation] = useState<Conversation>({"conversation_id":"", "name": ""})
+  const [currentConversation, setCurrentConversation] = useState<Conversation>({ "conversation_id": "", "name": "" })
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const supabase = createClientComponentClient()
@@ -122,7 +123,7 @@ export default function Home() {
   }
 
   async function newChat() {
-    return await fetch(`http://localhost:8000/conversations/insert?user_id=${userId}`)
+    return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
       .then((res) => res.json())
       .then(({ conversation_id }) => {
         return conversation_id
@@ -136,7 +137,7 @@ export default function Home() {
   }
 
   async function getConversations() {
-    return await fetch(`http://localhost:8000/conversations/get?user_id=${userId}`)
+    return await fetch(`${URL}/api/conversations/get?user_id=${userId}`)
       .then((res) => res.json())
       .then(({ conversations }) => {
         // console.log(conversations)
@@ -146,10 +147,10 @@ export default function Home() {
 
   async function deleteConversation(conversation: Conversation) {
     const check = confirm("Are you sure you want to delete this conversation, this action is irreversible?")
-    if (!check) 
+    if (!check)
       return
     const { conversation_id } = conversation
-    await fetch(`http://localhost:8000/conversations/delete?user_id=${userId}&conversation_id=${conversation_id}`)
+    await fetch(`${URL}/api/conversations/delete?user_id=${userId}&conversation_id=${conversation_id}`)
       .then((res) => res.json())
     // Delete the conversation_id from the conversations state variable
     setConversations(conversations.filter(cur => cur.conversation_id !== conversation_id));
@@ -157,7 +158,7 @@ export default function Home() {
     // If it was the currentConversation, change the currentConversation to the next one in the list
     if (conversation === currentConversation) {
       if (conversations.length > 1) {
-        setCurrentConversation(conversations.find(cur => cur.conversation_id !== conversation_id) || "");
+        setCurrentConversation(conversations[0]);
         console.log("Current Conversation", currentConversation)
       } else {
         // If there is no current conversation create a new one
@@ -171,10 +172,10 @@ export default function Home() {
   }
 
   async function editConversation(cur: Conversation) {
-     const newName = prompt("Enter a new name for the conversation")
-     if (!newName)
-      return 
-     fetch(`http://localhost:8000/conversations/update`, {
+    const newName = prompt("Enter a new name for the conversation")
+    if (!newName)
+      return
+    fetch(`${URL}/api/conversations/update`, {
       method: "POST",
       body: JSON.stringify({
         conversation_id: cur.conversation_id,
@@ -183,23 +184,23 @@ export default function Home() {
       headers: {
         "Content-Type": "application/json",
       },
-     })
-     .then((data) => {
-      const copy = { ...currentConversation }
-      copy.name = newName
-      setCurrentConversation(copy)
-      setConversations(conversations.map(conversation => 
-        conversation.conversation_id === copy.conversation_id ? copy : conversation
-      ))
-     })
-    
+    })
+      .then((data) => {
+        const copy = { ...currentConversation }
+        copy.name = newName
+        setCurrentConversation(copy)
+        setConversations(conversations.map(conversation =>
+          conversation.conversation_id === copy.conversation_id ? copy : conversation
+        ))
+      })
+
   }
 
   async function getMessages() {
-    return await fetch(`http://localhost:8000/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`)
+    return await fetch(`${URL}/api/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`)
       .then((res) => res.json())
       .then(({ messages }) => {
-        const formattedMessages = messages.map((message) => {
+        const formattedMessages = messages.map((message: any) => {
           return {
             text: message.data.content,
             isUser: message.type === "human",
@@ -226,7 +227,7 @@ export default function Home() {
       },
     ]);
 
-    const data = await fetch("http://localhost:8000/stream", {
+    const data = await fetch(`${URL}/api/stream`, {
       method: "POST",
       body: JSON.stringify({
         user_id: userId,
@@ -295,7 +296,7 @@ export default function Home() {
                   </button>
                   <button className="text-red-500" onClick={() => deleteConversation(cur)}>
                     <FaTrash />
-                </button>
+                  </button>
                 </div>
               </div>
             ))}

@@ -22,7 +22,7 @@ export default function Auth() {
     }
   };
 
-  const handleSignIn = async (e) => {
+  const handleSignIn = async (e: any) => {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
@@ -34,7 +34,7 @@ export default function Auth() {
     router.push("/")
   };
 
-  const handleSignUp = async (e) => {
+  const handleSignUp = async (e: any) => {
     e.preventDefault();
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) {
@@ -44,7 +44,7 @@ export default function Auth() {
     }
   };
 
-  const handleForgotPassword = async (e) => {
+  const handleForgotPassword = async (e: any) => {
     e.preventDefault();
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) console.error(error);
