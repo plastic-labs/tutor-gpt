@@ -24,11 +24,13 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
   const [userId, setUserId] = useState(`anon_${uuidv4()}`);
+  const defaultMessage = {
+    text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+    isUser: false,
+  }
+
   const [messages, setMessages] = useState([
-    {
-      text: `I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
-      isUser: false,
-    },
+    defaultMessage,
   ]);
   const [authSession, setAuthSession] = useState<Session | null>(null);
   const [conversations, setConversations] = useState<Array<string>>([])
@@ -47,15 +49,16 @@ export default function Home() {
       console.log("Session 1", session)
     })
 
-    const { data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthSession(session);
-      if (session) {
-        setUserId(session.user.id)
-      }
-    })
+    // const { data: { subscription },
+    // } = supabase.auth.onAuthStateChange((_event, session) => {
+    //   console.log(_event)
+    //   if (_event === "SIGNED_OUT") {
+    //     setAuthSession(session);
+    //     set
+    //   }
+    // })
 
-    return () => subscription.unsubscribe();
+    // return () => subscription.unsubscribe();
   }, [])
 
   useEffect(() => {
@@ -69,11 +72,13 @@ export default function Home() {
           if (conversations.length > 0) {
             setConversations(conversations)
             setCurrentConversation(conversations[0])
+            console.log("Current Conversation", currentConversation)
           } else {
             newChat().then((conversation_id) => {
               // console.log("Conversation ID", conversation_id)
               // console.log(userId)
               setCurrentConversation(conversation_id)
+              console.log("Current Conversation", currentConversation)
               setConversations([...conversations, conversation_id])
             })
           }
@@ -83,10 +88,24 @@ export default function Home() {
       newChat().then((conversation_id) => {
         // console.log("Conversation ID", conversation_id)
         setCurrentConversation(conversation_id)
+        console.log("Current Conversation", currentConversation)
         setConversations([...conversations, conversation_id])
       })
     }
   }, [authSession])
+
+  useEffect(() => {
+    getMessages().then((messages) => {
+      setMessages([defaultMessage, ...messages])
+    })
+
+  }, [currentConversation])
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    console.log("Signed out")
+    location.reload()
+  }
 
   async function newChat() {
     return await fetch(`http://localhost:8000/conversations/insert?user_id=${userId}`)
@@ -113,21 +132,37 @@ export default function Home() {
   async function deleteConversation(conversation_id: string) {
     await fetch(`http://localhost:8000/conversations/delete?user_id=${userId}&conversation_id=${conversation_id}`)
       .then((res) => res.json())
-      // Delete the conversation_id from the conversations state variable
-      setConversations(conversations.filter(cur => cur !== conversation_id));
+    // Delete the conversation_id from the conversations state variable
+    setConversations(conversations.filter(cur => cur !== conversation_id));
 
-      // If it was the currentConversation, change the currentConversation to the next one in the list
-      if (conversation_id === currentConversation) {
-        if (conversations.length > 1) {
-          setCurrentConversation(conversations.find(cur => cur !== conversation_id) || "");
-        } else {
-          // If there is no current conversation create a new one
-          const newConversationId = await newChat();
-          setCurrentConversation(newConversationId);
-          setConversations([newConversationId]);
-        }
+    // If it was the currentConversation, change the currentConversation to the next one in the list
+    if (conversation_id === currentConversation) {
+      if (conversations.length > 1) {
+        setCurrentConversation(conversations.find(cur => cur !== conversation_id) || "");
+        console.log("Current Conversation", currentConversation)
+      } else {
+        // If there is no current conversation create a new one
+        const newConversationId = await newChat();
+        setCurrentConversation(newConversationId);
+        console.log("Current Conversation", currentConversation)
+        setConversations([newConversationId]);
       }
-      
+    }
+
+  }
+
+  async function getMessages() {
+    return await fetch(`http://localhost:8000/messages?user_id=${userId}&conversation_id=${currentConversation}`)
+      .then((res) => res.json())
+      .then(({ messages }) => {
+        const formattedMessages = messages.map((message) => {
+          return {
+            text: message.data.content,
+            isUser: message.type === "human",
+          }
+        })
+        return formattedMessages
+      })
   }
 
   async function chat() {
@@ -206,9 +241,9 @@ export default function Home() {
           <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300">
             {/* Replace this with your dynamic items */}
             {conversations.map((cur, i) => (
-              <div key={cur} className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200" onClick={() => setCurrentConversation(cur)}>
+              <div key={cur} className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""}`} onClick={() => setCurrentConversation(cur)}>
                 <div>
-                  <h2 className="font-bold">Untitled</h2>
+                  <h2 className="font-bold text-sm">{cur}</h2>
                 </div>
                 <button className="text-red-500" onClick={() => deleteConversation(cur)}>
                   <FaTrash />
@@ -221,7 +256,7 @@ export default function Home() {
           <div className="border-t border-gray-300 p-4 w-full">
             {/* Replace this with your authentication information */}
             {authSession ?
-              (<button className="bg-neon-green rounded-lg px-4 py-2 w-full" onClick={() => supabase.auth.signOut()}>Sign Out</button>) :
+              (<button className="bg-neon-green rounded-lg px-4 py-2 w-full" onClick={handleSignOut}>Sign Out</button>) :
               (<button className="bg-neon-green rounded-lg px-4 py-2 w-full" onClick={() => router.push("/auth")}>Sign In</button>)}
           </div>
         </div>

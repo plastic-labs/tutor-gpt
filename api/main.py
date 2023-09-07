@@ -8,6 +8,8 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from langchain.schema import _message_to_dict
+
 
 app = FastAPI()
 
@@ -55,8 +57,10 @@ async def add_conversation(user_id: str, location_id: str = "web"):
 async def get_messages(user_id: str, conversation_id: str):
     async with LOCK:
         messages = MEDIATOR.messages(user_id=user_id, session_id=conversation_id, message_type="response", limit=(False, None))
+        converted_messages = [_message_to_dict(_message) for _message in messages]
+        print(converted_messages)
     return {
-        "messages": messages
+        "messages": converted_messages
     }
 
 @app.post("/")

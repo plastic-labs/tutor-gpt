@@ -9,7 +9,7 @@ import psycopg
 from psycopg.rows import dict_row
 # Supabase for Postgres Management
 from supabase.client import create_client, Client
-from typing import List
+from typing import List, Tuple
 import json
 
 load_dotenv()
