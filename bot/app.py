@@ -1,12 +1,10 @@
 import discord
-from agent.chain import BloomChain
-from agent.cache import LRUCache
 
 from common import init
 from dotenv import load_dotenv
     
 load_dotenv()
-CACHE, BLOOM_CHAIN, MEDIATOR, (THOUGHT_CHANNEL, TOKEN) = init()
+CACHE, LOCK, (THOUGHT_CHANNEL, TOKEN) = init()
 
 intents = discord.Intents.default()
 intents.messages = True

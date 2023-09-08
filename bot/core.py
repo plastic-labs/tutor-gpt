@@ -2,14 +2,13 @@
 
 import discord
 from __main__ import (
-    BLOOM_CHAIN,
     CACHE,
+    LOCK,
     THOUGHT_CHANNEL,
-    MEDIATOR
 )
 from discord.ext import commands
 from typing import Optional
-from agent.chain import ConversationCache
+from agent.chain import  BloomChain
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
 
 
@@ -46,11 +45,8 @@ Enjoy!
             return
 
         # Get cache for conversation
-        LOCAL_CHAIN = CACHE.get(message.channel.id)
-        if LOCAL_CHAIN is None:
-            LOCAL_CHAIN = ConversationCache(MEDIATOR)
-            LOCAL_CHAIN.user_id = "discord_" + str(message.author.id)
-            CACHE.put(message.channel.id, LOCAL_CHAIN)
+        async with LOCK:
+            CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=f"discord_{str(message.author.id)}")
 
         # Get the message content but remove any mentions
         inp = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
@@ -59,7 +55,10 @@ Enjoy!
         async def respond(reply = True, forward_thought = True):
             "Generate response too user"
             async with message.channel.typing():
-                thought, response = await BLOOM_CHAIN.chat(LOCAL_CHAIN, inp)
+                thought, response = await BloomChain.chat(CONVERSATION, inp)
+
+            # sanitize thought by adding zero width spaces to triple backticks
+            thought = thought.replace("```", "`\u200b`\u200b`")
 
             thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
 
@@ -147,18 +146,12 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
         Args:
             ctx: context, necessary for bot commands
         """
-        LOCAL_CHAIN = CACHE.get(ctx.channel_id)
-        if LOCAL_CHAIN:
-            LOCAL_CHAIN.restart()
-            LOCAL_CHAIN.user_id = "discord_" +str(ctx.author.id)
-        else:
-            LOCAL_CHAIN = ConversationCache(MEDIATOR)            
-            LOCAL_CHAIN.user_id = str(ctx.author.id)
-            CACHE.put(ctx.channel_id, LOCAL_CHAIN )
+        async with LOCK:
+            CONVERSATION = CACHE.get_or_create(location_id=str(ctx.channel_id), user_id=f"discord_{str(ctx.author.id)}", restart=True)
 
         if respond:
             msg = "Great! The conversation has been restarted. What would you like to talk about?"
-            LOCAL_CHAIN.add_message("response", AIMessage(content=msg))
+            CONVERSATION.add_message("response", AIMessage(content=msg))
             await ctx.respond(msg)
         else:
             return
