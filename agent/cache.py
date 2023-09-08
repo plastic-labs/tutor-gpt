@@ -70,7 +70,7 @@ class LayeredLRUCache:
             # Add the conversation data to the memory_cache
             if len(self.memory_cache) >= self.capacity:
                 self.memory_cache.popitem(last=False)
-            self.memory_cache[key] = ConversationCache(self.mediator, location_id=location_id, user_id=user_id, conversation_id=conversation_id)
+            self.memory_cache[key] = ConversationCache(self.mediator, location_id=location_id, user_id=user_id, conversation_id=conversation_id[0])
             return self.memory_cache[key]
 
         return None
