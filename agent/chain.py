@@ -21,14 +21,14 @@ class BloomChain:
     # llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
     llm: AzureChatOpenAI | ChatOpenAI
     if (os.environ.get("OPENAI_API_TYPE") == "azure"):
-        llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2)
+        llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
     else:
-        llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
+        llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
 
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
 
-    def __init__(self, llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2), verbose: bool = True) -> None:
+    def __init__(self) -> None:
         pass
     # def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
         # self.llm = llm
