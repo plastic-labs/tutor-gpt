@@ -20,7 +20,7 @@ class SupabaseMediator:
         self.conversation_table = os.environ["CONVERSATION_TABLE"]
 
     def messages(self, session_id: str, user_id: str, message_type: str) -> List[BaseMessage]:  # type: ignore
-        response = self.supabase.table(self.memory_table).select("message").eq("session_id", session_id).eq("user_id", user_id).eq("message_type", message_type).order("id", desc=True).limit(10).execute()
+        response = self.supabase.table(self.table).select("message").eq("session_id", session_id).eq("user_id", user_id).eq("message_type", message_type).order("id", desc=True).limit(10).execute()
         items = [record["message"] for record in response.data]
         messages = messages_from_dict(items)
         return messages[::-1]

@@ -6,6 +6,7 @@ from langchain.prompts import (
 from langchain.prompts import load_prompt, ChatPromptTemplate
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
 from dotenv import load_dotenv
+
 from collections.abc import AsyncIterator
 from .cache import ConversationCache
 
@@ -71,6 +72,7 @@ class BloomChain:
             chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
             lambda response: cache.add_message("response", AIMessage(content=response))
         )
+
 
     @classmethod    
     async def chat(cls, cache: ConversationCache, inp: str ) -> tuple[str, str]:

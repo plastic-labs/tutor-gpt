@@ -5,6 +5,7 @@ from __main__ import (
     CACHE,
     LOCK,
     THOUGHT_CHANNEL,
+    MEDIATOR
 )
 from discord.ext import commands
 from typing import Optional
