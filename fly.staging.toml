@@ -13,10 +13,10 @@ kill_timeout = "5s"
 
 [processes]
   discord = "python -u -m bot.app"
-  web = "python -m streamlit run www/main.py"
+  web = "python -m uvicorn api.main:app --host 0.0.0.0 --port 8000"
 
 [http_service]
-  internal_port = 8501
+  internal_port = 8000
   processes = ["web"]
   force_https = true
   auto_stop_machines = true

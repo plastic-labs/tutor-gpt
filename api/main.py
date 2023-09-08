@@ -10,12 +10,15 @@ from fastapi.staticfiles import StaticFiles
 
 from langchain.schema import _message_to_dict
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000",
-    "https://chat-dev.bloombot.ai"
+    f"{os.environ['URL']}",
 ]
 
 app.add_middleware(
@@ -35,6 +38,10 @@ class ConversationInput(BaseModel):
 class ConversationDefinition(BaseModel):
     conversation_id: str
     name: str 
+
+@app.get("/api/test")
+async def test():
+    return {"test": "test"}
 
 @app.get("/api/conversations/get")
 async def get_conversations(user_id: str):
