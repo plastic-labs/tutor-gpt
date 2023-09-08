@@ -11,7 +11,6 @@ from psycopg.rows import dict_row
 from supabase.client import create_client, Client
 from typing import List, Tuple, Dict
 import json
-
 load_dotenv()
 
 class SupabaseMediator:
@@ -57,6 +56,10 @@ class SupabaseMediator:
            location_id = response.data["location_id"]
            return location_id
         return None
+
+    def _cleanup_conversations(self, conversation_ids: List[str]) -> None:
+        for conversation_id in conversation_ids:
+            self.supabase.table(self.conversation_table).update({"isActive": False}).eq("id", conversation_id).execute()
     
     def add_conversation(self, location_id: str, user_id: str) -> str:
         conversation_id = str(uuid.uuid4())
@@ -97,7 +100,7 @@ class PostgresMediator:
     """
     def __init__(self, table_name = "message_store"):
         try:
-            connection_string = urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None)
+            connection_string = urllib.parse.quote(os.environ["SUPABASE_CONNECTION_URL"], safe='/:@', encoding=None, errors=None) # type: ignore
             self.connection: psycopg.Connection = psycopg.connect(connection_string)
             self.cursor: psycopg.Cursor = self.connection.cursor(row_factory=dict_row)
         except psycopg.OperationalError as error:

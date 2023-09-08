@@ -17,7 +17,13 @@ SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/r
 
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
-    llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
+    # llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
+    llm: AzureChatOpenAI | ChatOpenAI
+    if (os.environ.get("OPENAI_API_TYPE") == "azure"):
+        llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2)
+    else:
+        llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
+
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
 
