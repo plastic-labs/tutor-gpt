@@ -28,9 +28,6 @@ data/flagged_data_points/
 venv/
 .venv/
 
-# Local Fly Testing
-fly.toml
-
 # jupyter
 *.ipynb
 .ipynb_checkpoints/
@@ -74,3 +71,4 @@ www/.vercel
 # typescript
 www/*.tsbuildinfo
 www/next-env.d.ts
+.vercel

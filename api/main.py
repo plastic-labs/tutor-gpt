@@ -6,7 +6,7 @@ from agent.chain import BloomChain
 from agent.cache import Conversation
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 
 from langchain.schema import _message_to_dict
 
@@ -132,4 +132,4 @@ async def stream(inp: ConversationInput):
 
     return StreamingResponse(thought_and_response())
 
-app.mount("/", StaticFiles(directory="www/out", html=True), name="static")
+# app.mount("/", StaticFiles(directory="www/out", html=True), name="static")

@@ -1,0 +1,13 @@
+# fly.toml app configuration file generated for tutor-gpt on 2023-05-26T22:17:48-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+primary_region = "bos"
+kill_signal = "SIGINT"
+kill_timeout = "5s"
+
+[experimental]
+  auto_rollback = true
+
+[processes]
+  api = "python -m uvicorn api.main:app --host 0.0.0.0 --port 8000"
