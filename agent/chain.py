@@ -8,7 +8,7 @@ from langchain.schema import AIMessage, HumanMessage, BaseMessage
 from dotenv import load_dotenv
 
 from collections.abc import AsyncIterator
-from .cache import ConversationCache
+from .cache import Conversation
 
 load_dotenv()
 
@@ -40,7 +40,7 @@ class BloomChain:
         # self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
         
     @classmethod
-    def think(cls, cache: ConversationCache, input: str):
+    def think(cls, cache: Conversation, input: str):
         """Generate Bloom's thought on the user."""
         # load message history
         thought_prompt = ChatPromptTemplate.from_messages([
@@ -58,7 +58,7 @@ class BloomChain:
         )
         
     @classmethod
-    def respond(cls, cache: ConversationCache, thought: str, input: str):
+    def respond(cls, cache: Conversation, thought: str, input: str):
         """Generate Bloom's response to the user."""
         response_prompt = ChatPromptTemplate.from_messages([
             cls.system_response,
@@ -76,7 +76,7 @@ class BloomChain:
 
 
     @classmethod    
-    async def chat(cls, cache: ConversationCache, inp: str ) -> tuple[str, str]:
+    async def chat(cls, cache: Conversation, inp: str ) -> tuple[str, str]:
         thought_iterator = cls.think(cache, inp)
         thought = await thought_iterator()
 
@@ -92,7 +92,6 @@ class Streamable:
     def __init__(self, iterator: AsyncIterator[BaseMessage], callback):
         self.iterator = iterator
         self.callback = callback
-        # self.content: List[Awaitable[BaseMessage]] = []
         self.content = ""
     
     def __aiter__(self):
@@ -102,7 +101,7 @@ class Streamable:
         try:
             data = await self.iterator.__anext__()
             self.content += data.content
-            return self.content
+            return data.content
         except StopAsyncIteration as e:
             self.callback(self.content)
             raise StopAsyncIteration
