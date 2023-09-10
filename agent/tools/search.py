@@ -25,8 +25,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 
 class SearchTool(BaseTool):
-    name = "custom_search"
-    description = "useful for when you need to answer questions about current events"
+    name = "search"
+    description = "useful for when you need to search for something on the internet"
     llm: BaseChatModel
 
     @classmethod
@@ -82,7 +82,6 @@ class SearchTool(BaseTool):
 
             html = loader.load()
             doc = html2text.transform_documents(html)
-            # print(doc[0].page_content)
             doc = doc[0].page_content[:5000]
 
             summary = llm_chain.run({"query": query, "doc": doc})
@@ -100,7 +99,7 @@ search_generation_output_parser = StructuredOutputParser.from_response_schemas(s
 
 # For testing
 if __name__ == "__main__":
-    query = "What's the current state of the art for the GSM8K dataset?."
+    query = "What are the differences between Llama 1 and 2?"
 
     from langchain.chat_models.openai import ChatOpenAI
     from dotenv import load_dotenv
@@ -118,7 +117,7 @@ if __name__ == "__main__":
     search_tool = SearchTool.from_llm(llm=llm)
     search_results = search_tool.run(google_query)
 
-    search_result_summary_prompt = Prompt.from_template("Summarize the following search results the relevant information for answering the question. Make sure to provide reasoning for you answer instead of just saying a source said it was true.\nCite your sources using brackets with numbers, include the full links at the end.\nBe specific instead of vague whenever possible.\n\nQuestion: {query}\n\n{search_results}")
+    search_result_summary_prompt = Prompt.from_template("Summarize the following search results the relevant information for answering the question. Make sure to provide reasoning for you answer instead of just saying a source said it was true.\n\nYOU MUST cite your sources using bracket notation with numbers, and you must include the full links at the end.\n\nBe specific instead of vague whenever possible.\n\nQuestion: {query}\n\n{search_results}")
     search_result_summary_chain = LLMChain(llm=big_llm, prompt=search_result_summary_prompt)
 
     search_result_summary = search_result_summary_chain.run({"query": query, "search_results": search_results})
