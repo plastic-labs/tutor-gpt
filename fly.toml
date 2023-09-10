@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for tutor-gpt on 2023-05-26T22:17:48-07:00
+# fly.toml app configuration file generated for vineeth-test-py on 2023-09-09T17:18:22-04:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -9,18 +9,20 @@ kill_timeout = "5s"
 [experimental]
   auto_rollback = true
 
+[build]
+
 [processes]
-  discord = "python -u -m bot.app"
-  web = "python -m uvicorn api.main:app --host 0.0.0.0 --port 8000"
+#  discord = "python -u -m bot.app"
+api = "python -m uvicorn api.main:app --host 0.0.0.0 --port 8000"
 
 [http_service]
   internal_port = 8000
-  processes = ["web"]
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 0
+  processes = ["api"]
   [http_service.concurrency]
     type = "requests"
-    soft_limit = 200
     hard_limit = 250
+    soft_limit = 200

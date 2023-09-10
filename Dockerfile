@@ -1,31 +1,6 @@
-# -----------------------------------------------------------------------------------------------------------------------------
-FROM node:16-alpine AS web-builder
-RUN apk add --no-cache --virtual .gyp python3 build-base   
-
-WORKDIR /app
-
-COPY ./www/ www/
-
-WORKDIR /app/www
-
-RUN touch .env
-RUN rm .env.local
-
-# Note: You can mount multiple secrets
-RUN --mount=type=secret,id=NEXT_PUBLIC_SUPABASE_URL \
-  --mount=type=secret,id=NEXT_PUBLIC_SUPABASE_ANON_KEY \
-  --mount=type=secret,id=NEXT_PUBLIC_URL \
-  echo "NEXT_PUBLIC_SUPABASE_URL=$(cat /run/secrets/NEXT_PUBLIC_SUPABASE_URL)" >> .env && \
-  echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(cat /run/secrets/NEXT_PUBLIC_SUPABASE_ANON_KEY)" >> .env && \
-  echo "NEXT_PUBLIC_URL=$(cat /run/secrets/NEXT_PUBLIC_URL)" >> .env 
-
-RUN yarn install
-RUN yarn build
-
-# -----------------------------------------------------------------------------------------------------------------------------
 # https://pythonspeed.com/articles/base-image-python-docker-images/
 # https://testdriven.io/blog/docker-best-practices/
-FROM python:3.10-slim-bullseye as runner
+FROM python:3.10-slim-bullseye
 
 WORKDIR /app
 
@@ -48,7 +23,6 @@ COPY poetry.lock pyproject.toml /app/
 RUN poetry config virtualenvs.create false \
   && poetry install --no-root --no-interaction --no-ansi --without dev
 
-COPY --from=web-builder /app/www/out /app/www/out
 WORKDIR /app
 
 RUN addgroup --system app && adduser --system --group app

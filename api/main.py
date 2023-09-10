@@ -17,13 +17,11 @@ load_dotenv()
 
 app = FastAPI()
 
-origins = [
-    f"{os.environ['URL']}",
-]
+# Note this URL should not have a trailing slash will cause errors
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex=os.environ['URL'],
     allow_credentials=True, 
     allow_methods=["*"],
     allow_headers=["*"],

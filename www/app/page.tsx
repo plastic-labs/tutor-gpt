@@ -29,7 +29,7 @@ interface Conversation {
   name: string;
 }
 
-const URL = process.env.NEXT_PUBLIC_URL
+const URL = process.env.NEXT_PUBLIC_URL;
 
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
