@@ -1,20 +1,18 @@
 name: Vercel Preview Deployment
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-on:
-  push:
-    branches-ignore:
-      - main
+on: [push]
 jobs:
-  Deploy-Preview:
+  Deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        if: ${{ github.ref != 'refs/heads/main'}}
+        run: vercel pull --yes --environment=preview --git-branch=${{ github.ref_name }} --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Pull Vercel Environment Information for Production
+        if: ${{ github.ref == 'refs/heads/main'}}
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy Project Artifacts to Vercel
