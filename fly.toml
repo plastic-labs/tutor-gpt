@@ -9,10 +9,8 @@ kill_timeout = "5s"
 [experimental]
   auto_rollback = true
 
-[build]
-
 [processes]
-#  discord = "python -u -m bot.app"
+discord = "python -u -m bot.app"
 api = "python -m uvicorn api.main:app --host 0.0.0.0 --port 8000"
 
 [http_service]
