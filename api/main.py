@@ -77,9 +77,6 @@ async def add_conversation(user_id: str, location_id: str = "web"):
 
 @app.post("/api/conversations/update")
 async def update_conversations(change: ConversationDefinition):
-    print("========================================")
-    print(change)
-    print("========================================")
     async with LOCK:
         MEDIATOR.update_conversation(conversation_id=change.conversation_id, metadata={"name": change.name})
     return 
@@ -92,7 +89,6 @@ async def get_messages(user_id: str, conversation_id: str):
     return {
         "messages": converted_messages
     }
-
 
 @app.post("/api/chat")
 async def chat(inp: ConversationInput):

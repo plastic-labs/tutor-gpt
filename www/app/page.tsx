@@ -180,8 +180,6 @@ export default function Home() {
     const newName = prompt("Enter a new name for the conversation")
     if (!newName)
       return
-    console.log(newName)
-    console.log(cur)
     fetch(`${URL}/api/conversations/update`, {
       method: "POST",
       body: JSON.stringify({

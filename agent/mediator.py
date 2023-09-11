@@ -86,9 +86,6 @@ class SupabaseMediator:
 
     def update_conversation(self, conversation_id: str, metadata: Dict) -> None:
        cur =  self.supabase.table(self.conversation_table).select("metadata").eq("id", conversation_id).single().execute()
-       print("========================================")
-       print(cur)
-       print("========================================")
        if cur.data['metadata'] is not None:
            new_metadata = cur.data['metadata'].copy()
            new_metadata.update(metadata)

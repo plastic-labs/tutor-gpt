@@ -78,7 +78,6 @@ class LayeredLRUCache:
                 self.memory_cache.popitem(last=False)
             self.memory_cache[key] = Conversation(self.mediator, location_id=location_id, user_id=user_id, conversation_id=conversation_id, metadata=metadata)
             return self.memory_cache[key]
-
         return None
 
     def put(self, user_id: str, location_id: str) -> Conversation:
