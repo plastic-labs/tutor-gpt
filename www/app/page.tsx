@@ -133,7 +133,12 @@ export default function Home() {
 
   async function addChat() {
     const conversationId = await newChat();
-    setConversations([...conversations, conversationId])
+    const newConversation: Conversation = {
+      name: "Untitled",
+      conversation_id: conversationId
+    }
+
+    setConversations([...conversations, newConversation])
   }
 
   async function getConversations() {
@@ -175,6 +180,8 @@ export default function Home() {
     const newName = prompt("Enter a new name for the conversation")
     if (!newName)
       return
+    console.log(newName)
+    console.log(cur)
     fetch(`${URL}/api/conversations/update`, {
       method: "POST",
       body: JSON.stringify({
@@ -231,7 +238,7 @@ export default function Home() {
       method: "POST",
       body: JSON.stringify({
         user_id: userId,
-        conversation_id: currentConversation,
+        conversation_id: currentConversation.conversation_id,
         message: message,
       }),
       // no cors

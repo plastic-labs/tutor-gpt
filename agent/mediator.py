@@ -11,6 +11,7 @@ from psycopg.rows import dict_row
 from supabase.client import create_client, Client
 from typing import List, Tuple, Dict
 import json
+import random
 load_dotenv()
 
 class SupabaseMediator:
@@ -29,9 +30,15 @@ class SupabaseMediator:
         return messages[::-1]
 
     def add_message(self, session_id: str, user_id: str, message_type: str, message: BaseMessage) -> None:
-        self.supabase.table(self.memory_table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
+        payload =  {
+                 "session_id": session_id, 
+                 "user_id": user_id, 
+                 "message_type": message_type, 
+                 "message": _message_to_dict(message)
+                }
+        self.supabase.table(self.memory_table).insert(payload).execute()
 
-    def conversations(self, location_id: str, user_id: str, single: bool = True, metadata=False) -> List[Dict] | None:
+    def conversations(self, location_id: str, user_id: str, single: bool = True) -> List[Dict] | None:
         try:
             response = self.supabase.table(self.conversation_table).select(*["id", "metadata"], count="exact").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).order("created_at", desc=True).execute()
             if response is not None and response.count is not None:
@@ -50,33 +57,44 @@ class SupabaseMediator:
             return None
 
 
-    def conversation(self, session_id: str) -> str | None:
-        response = self.supabase.table(self.conversation_table).select("location_id").eq("id", session_id).eq("isActive", True).maybe_single().execute()
+    def conversation(self, session_id: str) -> Dict | None:
+        response = self.supabase.table(self.conversation_table).select("*").eq("id", session_id).eq("isActive", True).maybe_single().execute()
         if response:
-           location_id = response.data["location_id"]
-           return location_id
+           return response.data
         return None
 
     def _cleanup_conversations(self, conversation_ids: List[str]) -> None:
         for conversation_id in conversation_ids:
             self.supabase.table(self.conversation_table).update({"isActive": False}).eq("id", conversation_id).execute()
     
-    def add_conversation(self, location_id: str, user_id: str) -> str:
+    def add_conversation(self, location_id: str, user_id: str) -> Dict:
         conversation_id = str(uuid.uuid4())
-        self.supabase.table(self.conversation_table).insert({"id": conversation_id, "user_id": user_id, "location_id": location_id}).execute()
-        return conversation_id
+        payload = {
+                "id": conversation_id, 
+                "user_id": user_id, 
+                "location_id": location_id,
+                "metadata": {"A/B": bool(random.getrandbits(1))}
+        }
+        representation = self.supabase.table(self.conversation_table).insert(payload, returning="representation").execute() # type: ignore
+        print("========================================")
+        print(representation)
+        print("========================================")
+        return representation.data[0]
 
     def delete_conversation(self, conversation_id: str) -> None:
         self.supabase.table(self.conversation_table).update({"isActive": False}).eq("id", conversation_id).execute()
 
     def update_conversation(self, conversation_id: str, metadata: Dict) -> None:
        cur =  self.supabase.table(self.conversation_table).select("metadata").eq("id", conversation_id).single().execute()
+       print("========================================")
+       print(cur)
+       print("========================================")
        if cur.data['metadata'] is not None:
            new_metadata = cur.data['metadata'].copy()
            new_metadata.update(metadata)
        else:
            new_metadata = metadata
-       self.supabase.table(self.conversation_table).update({"metadata": new_metadata}, returning="representation").eq("id", conversation_id).execute()
+       self.supabase.table(self.conversation_table).update({"metadata": new_metadata}, returning="representation").eq("id", conversation_id).execute() # type: ignore
 
 
 # Modification of PostgresChatMessageHistory: https://api.python.langchain.com/en/latest/_modules/langchain/memory/chat_message_histories/postgres.html#PostgresChatMessageHistory
