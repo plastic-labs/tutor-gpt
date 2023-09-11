@@ -5,16 +5,17 @@ in OrderedDict data structure.
 from collections import OrderedDict
 from .mediator import SupabaseMediator
 import uuid
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from langchain.schema import BaseMessage
 
 class Conversation:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
-    def __init__(self, mediator: SupabaseMediator, user_id: str, conversation_id: str = str(uuid.uuid4()), location_id: str = "web"):
+    def __init__(self, mediator: SupabaseMediator, user_id: str, conversation_id: str = str(uuid.uuid4()), location_id: str = "web", metadata: Dict = {}):
         self.mediator: SupabaseMediator = mediator
         self.user_id: str = user_id
         self.conversation_id: str = conversation_id 
         self.location_id: str = location_id
+        self.metatdata: Dict = {}
 
     def add_message(self, message_type: str, message: BaseMessage,) -> None:
         self.mediator.add_message(self.conversation_id, self.user_id, message_type, message)
@@ -96,44 +97,3 @@ class LayeredLRUCache:
         elif restart:
             cache.restart()
         return cache
-    
-# class LayeredLRUConversationCache:
-#     """A Conversation LRU Cache that bases keys on the conversation_id of a conversation. The assumption is that the conversation is the unique identifier"""
-#     def __init__(self, capacity, mediator: SupabaseMediator):
-#         self.capacity = capacity
-#         self.memory_cache = OrderedDict()
-#         self.mediator = mediator
-# 
-#     def get(self, user_id: str, conversation_id: str) -> None | Conversation:
-#         key = conversation_id+user_id
-#         if key in self.memory_cache:
-#             return self.memory_cache[key]
-# 
-#         location_id = self.mediator.conversation(conversation_id)
-#         if location_id:
-#             # Add the conversation data to the memory_cache
-#             if len(self.memory_cache) >= self.capacity:
-#                 self.memory_cache.popitem(last=False)
-#             self.memory_cache[key] = Conversation(self.mediator, location_id=location_id, user_id=user_id, conversation_id=conversation_id)
-#             return self.memory_cache[key]
-# 
-#         return None
-# 
-#     def put(self, user_id: str, location_id: str) -> Conversation:
-#         # Add the conversation data to the postgres via the mediator
-#         conversation_id = self.mediator.add_conversation(location_id=location_id, user_id=user_id)
-#         key: str = conversation_id+user_id   
-# 
-#         if len(self.memory_cache) >= self.capacity:
-#             # Remove the least recently used item from the memory cache
-#             self.memory_cache.popitem(last=False)
-#         self.memory_cache[key] = Conversation(self.mediator, location_id=location_id, user_id=user_id, conversation_id=conversation_id)
-#         return self.memory_cache[key]
-# 
-# 
-#     def hard_delete(self, user_id: str, conversation_id: str) -> None:
-#         key = conversation_id+user_id
-#         if key in self.memory_cache:
-#             self.memory_cache.pop(key)
-#         self.mediator.delete_conversation(conversation_id)
-# 

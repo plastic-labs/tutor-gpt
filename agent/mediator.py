@@ -29,7 +29,13 @@ class SupabaseMediator:
         return messages[::-1]
 
     def add_message(self, session_id: str, user_id: str, message_type: str, message: BaseMessage) -> None:
-        self.supabase.table(self.memory_table).insert({"session_id": session_id, "user_id": user_id, "message_type": message_type, "message": _message_to_dict(message)}).execute()
+        payload =  {
+                 "session_id": session_id, 
+                 "user_id": user_id, 
+                 "message_type": message_type, 
+                 "message": _message_to_dict(message)
+                }
+        self.supabase.table(self.memory_table).insert(payload).execute()
 
     def conversations(self, location_id: str, user_id: str, single: bool = True, metadata=False) -> List[Dict] | None:
         try:
@@ -50,11 +56,10 @@ class SupabaseMediator:
             return None
 
 
-    def conversation(self, session_id: str) -> str | None:
-        response = self.supabase.table(self.conversation_table).select("location_id").eq("id", session_id).eq("isActive", True).maybe_single().execute()
+    def conversation(self, session_id: str) -> Dict | None:
+        response = self.supabase.table(self.conversation_table).select("*").eq("id", session_id).eq("isActive", True).maybe_single().execute()
         if response:
-           location_id = response.data["location_id"]
-           return location_id
+           return response.data
         return None
 
     def _cleanup_conversations(self, conversation_ids: List[str]) -> None:
@@ -63,7 +68,14 @@ class SupabaseMediator:
     
     def add_conversation(self, location_id: str, user_id: str) -> str:
         conversation_id = str(uuid.uuid4())
-        self.supabase.table(self.conversation_table).insert({"id": conversation_id, "user_id": user_id, "location_id": location_id}).execute()
+        payload = {
+                "id": conversation_id, 
+                "user_id": user_id, 
+                "location_id": location_id
+        }
+        if (True):
+            payload["metadata"] = {"A/B": True}
+        self.supabase.table(self.conversation_table).insert(payload).execute()
         return conversation_id
 
     def delete_conversation(self, conversation_id: str) -> None:
@@ -71,6 +83,9 @@ class SupabaseMediator:
 
     def update_conversation(self, conversation_id: str, metadata: Dict) -> None:
        cur =  self.supabase.table(self.conversation_table).select("metadata").eq("id", conversation_id).single().execute()
+       print("========================================")
+       print(cur)
+       print("========================================")
        if cur.data['metadata'] is not None:
            new_metadata = cur.data['metadata'].copy()
            new_metadata.update(metadata)

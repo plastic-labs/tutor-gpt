@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import requests
 
 from common import init
 from agent.chain import BloomChain
@@ -75,6 +76,9 @@ async def add_conversation(user_id: str, location_id: str = "web"):
 
 @app.post("/api/conversations/update")
 async def update_conversations(change: ConversationDefinition):
+    print("========================================")
+    print(change)
+    print("========================================")
     async with LOCK:
         MEDIATOR.update_conversation(conversation_id=change.conversation_id, metadata={"name": change.name})
     return 
@@ -88,10 +92,22 @@ async def get_messages(user_id: str, conversation_id: str):
         "messages": converted_messages
     }
 
+
 @app.post("/api/chat")
 async def chat(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
+        conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
+    if conversation_data and conversation_data["metadata"]: 
+        metadata = conversation_data["metadata"]
+        if metadata["A/B"]:
+            response = requests.post('http://localhost:8080/stream', json={
+                "user_id": inp.user_id,
+                "conversation_id": inp.conversation_id,
+                "message": inp.message
+                }, stream=True)
+            print(response)
+            return response
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
     thought, response = await BloomChain.chat(conversation, inp.message)
@@ -104,13 +120,30 @@ async def chat(inp: ConversationInput):
 async def stream(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
+        conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
+    if conversation_data and conversation_data["metadata"]: 
+        metadata = conversation_data["metadata"]
+        if metadata["A/B"]:
+            response = requests.post('http://localhost:8080/stream', json={
+                "user_id": inp.user_id,
+                "conversation_id": inp.conversation_id,
+                "message": inp.message
+                }, stream=True)
+
+            def generator():
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        yield chunk
+            
+            print("A/B Confirmed")
+            return StreamingResponse(generator())
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
-    print()
-    print()
-    print("local chain", conversation.messages("thought"), conversation.messages("response"))
-    print()
-    print()
+    # print()
+    # print()
+    # print("local chain", conversation.messages("thought"), conversation.messages("response"))
+    # print()
+    # print()
 
 
     async def thought_and_response():
