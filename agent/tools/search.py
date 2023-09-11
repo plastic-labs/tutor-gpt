@@ -11,8 +11,6 @@ from langchain.utilities import GoogleSerperAPIWrapper
 
 from langchain.chat_models.base import BaseChatModel
 
-import pprint
-
 from langchain.retrievers.web_research import WebResearchRetriever
 from langchain.document_transformers import Html2TextTransformer
 
@@ -29,7 +27,6 @@ from langchain.embeddings import OpenAIEmbeddings
 from dotenv import load_dotenv
 
 load_dotenv()
-pp = pprint.PrettyPrinter(indent=4)
 
 
 class SearchTool(BaseTool):
@@ -83,6 +80,8 @@ class SearchTool(BaseTool):
 
     
     def _research_url(self, url: str, query: str):
+        """Research a URL by embedding the web page and then using the most relevant sections to the query to generate a summary of the most important information on the page."""
+
         prompt = Prompt.from_template("Your job is to write a summary of a web page containing the most essential information to answer a specific question. You will be given a few selected sections of the web page to base your summary off of. \n\nQuestion: {query}\n\nBEGIN SELECTIONS\n{doc}\nEND SELECTIONS")
         llm_chain = LLMChain(llm=self.llm, prompt=prompt)
 
