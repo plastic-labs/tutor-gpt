@@ -128,10 +128,10 @@ async def stream(inp: ConversationInput):
                 }, stream=True)
 
             def generator():
-                for chunk in response.iter_content(chunk_size=1024):
+                for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
                         yield chunk
-            
+
             print("A/B Confirmed")
             return StreamingResponse(generator())
     if conversation is None:
