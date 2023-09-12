@@ -293,7 +293,7 @@ export default function Home() {
             {conversations.map((cur, i) => (
               <div key={i} className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""}`} onClick={() => setCurrentConversation(cur)}>
                 <div>
-                  <h2 className="font-bold text-base overflow-ellipsis overflow-hidden">{cur.name || "Untitled"}</h2>
+                  <h2 className="font-bold overflow-ellipsis overflow-hidden">{cur.name || "Untitled"}</h2>
                 </div>
                 <div className="flex flex-row justify-end gap-2 items-center w-1/5">
                   <button className="text-gray-500" onClick={() => editConversation(cur)}>
@@ -331,7 +331,7 @@ export default function Home() {
         </nav>
         {!authSession && (
           <section className="bg-neon-green text-black text-center py-4">
-            To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline" onClick={() => router.push("/auth")}>sign in here</span>
+            <p>To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline" onClick={() => router.push("/auth")}>sign in here</span></p>
           </section>
         )}
         <section className="flex flex-col flex-1 overflow-y-auto">

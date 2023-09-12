@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
+from requests.exceptions import ChunkedEncodingError
 
 from common import init
 from agent.chain import BloomChain
@@ -128,9 +129,21 @@ async def stream(inp: ConversationInput):
                 }, stream=True)
 
             def generator():
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        yield chunk
+                try:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        print(f"Received chunk: {chunk}")
+                        if chunk:
+                            yield chunk
+                except ChunkedEncodingError as e:
+                    print(f"Chunked encoding error occurred: {e}")
+                    print(response)
+                    print(response.headers)
+                    # Optionally yield an error message to the client
+                    yield b"An error occurred while streaming the response."
+                except Exception as e:
+                    print(f"An unexpected error occurred: {e}")
+                    # Optionally yield an error message to the client
+                    yield b"An unexpected error occurred."
 
             print("A/B Confirmed")
             return StreamingResponse(generator())
