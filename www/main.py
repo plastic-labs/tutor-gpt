@@ -75,7 +75,7 @@ async def stream_and_save(prompt: str) -> None:
     async for thought in thought_iterator:
         thought_placeholder.markdown(thought)
     
-    response_iterator = BloomChain.respond(st.session_state.local_chain, thought_iterator.content, prompt)
+    response_iterator = await BloomChain.respond(st.session_state.local_chain, thought_iterator.content, prompt)
     with st.chat_message('assistant', avatar="https://bloombot.ai/wp-content/uploads/2023/02/bloom-fav-icon@10x-200x200.png"):
         response_placeholder = st.empty()
         async for response in response_iterator:
