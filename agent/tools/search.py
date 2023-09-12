@@ -35,7 +35,6 @@ load_dotenv()
 
 
 # TODO: Store search results for entire conversation in vector store
-# TODO: Try new Seper.dev API key? Not returning enough results
 # TODO: Add answerbox to search results when available
 
 class SearchTool(BaseTool):
