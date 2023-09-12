@@ -51,7 +51,7 @@ class SearchTool(BaseTool):
         search = GoogleSerperAPIWrapper()
         search.k = 3
 
-        if os.environ["USE_RERANKER"] == "true":
+        if os.environ.get("USE_RERANKER") == "true":
             from FlagEmbedding import FlagReranker
             model = 'BAAI/bge-reranker-base'
 
@@ -146,7 +146,7 @@ class SearchTool(BaseTool):
                 scores_with_index = sorted(scores_with_index, key=lambda x: x[0], reverse=True)
                 relevant_sections = [relevant_sections[index] for _score, index in scores_with_index[:3]]
 
-                logger.info("Reranked webpage sections, different from original order: " + scores_with_index, "Chunk count:", len(docs))
+                logger.info("Reranked webpage sections, different from original order: " + str([index for _score, index in scores_with_index]) + "Chunk count:" + len(docs))
 
             # format sections together to be used as input to the LLM
             relevant_sections = "\n".join([f'"{section.page_content}"' for section in relevant_sections])
@@ -177,10 +177,10 @@ class SearchTool(BaseTool):
 
             # embedding search
             db = FAISS.from_documents(docs, self.embeddings)
-            relevant_sections = await db.asimilarity_search(query=query, k=3)
+            relevant_sections = await db.asimilarity_search(query=("Represent this sentence for searching relevant passages: " + query), k=12)
 
             # rerank
-            if self.reranker:
+            if hasattr(self, "reranker"):
                 scores = self.reranker.compute_score([[query, section.page_content] for section in relevant_sections])
                 # if there's only section, scores is a single score, not a list
                 if isinstance(scores, float):
@@ -188,12 +188,12 @@ class SearchTool(BaseTool):
 
                 scores_with_index = zip(scores, range(len(scores)))
                 scores_with_index = sorted(scores_with_index, key=lambda x: x[0], reverse=True)
-                relevant_sections = [relevant_sections[index] for _score, index in scores_with_index[:3]]
+                relevant_sections = [relevant_sections[index] for _score, index in scores_with_index]
 
-                logger.info("Reranked webpage sections, different from original order: " + str([index for _score, index in scores_with_index[:]]))
+                logger.info("Reranked webpage sections, different from original order: " + str([index for _score, index in scores_with_index]) + " Chunk count: " + str(len(docs)))
 
             # format sections together to be used as input to the LLM
-            relevant_sections = "\n".join([f'"{section.page_content}"' for section in relevant_sections])
+            relevant_sections = "\n".join([f'"{section.page_content}"' for section in relevant_sections[:3]])
 
             # summarize the relevant sections
             summary = await llm_chain.arun({"query": query, "doc": relevant_sections})

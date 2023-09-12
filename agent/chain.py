@@ -36,7 +36,7 @@ class BloomChain:
 
     search_tool: SearchTool
     # Load Embeddings for search
-    model_name = "BAAI/bge-base-en"
+    model_name = "BAAI/bge-small-en-v1.5"
     model_kwargs = {'device': 'cpu'}
     encode_kwargs = {'normalize_embeddings': False}
     embeddings = HuggingFaceBgeEmbeddings(
