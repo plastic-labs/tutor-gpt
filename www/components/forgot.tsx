@@ -1,50 +1,67 @@
-export default function Forgot(props: any) {    
-    const { handler, stateSync } = props
-    return (
-        <form action="#" className="mt-8 grid grid-cols-6 gap-6">
-            
-            <div className="col-span-6">
-                <label htmlFor="Email" className="block text-sm font-medium text-gray-700">
-                    Email
-                </label>
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useState } from "react";
+import Swal from 'sweetalert2'
 
-                <input
-                    type="email"
-                    id="Email"
-                    name="email"
-                    className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
-                />
-            </div>
+export default function Forgot(props: any) {
+  const { stateSync } = props
+  const [email, setEmail] = useState('')
+  const handleForgotPassword = async (e: any) => {
+    e.preventDefault();
+    const { error } = await supabase.auth.resetPasswordForEmail(email,
+      {
+        redirectTo: `${location.origin}/auth/reset`
+      }
+    );
+    if (error) {
+      console.error(error);
+      Swal.fire({
+        title: "Error!",
+        text: "Something went wrong",
+        icon: "error",
+        confirmButtonText: "Close"
+      })
+      return
+    }
+    Swal.fire({
+      title: "Success!",
+      text: "Please check your email for a password reset link",
+      icon: "success",
+      confirmButtonText: "Close"
+    })
+  }
 
-            <div className="col-span-6">
-                <label
-                    htmlFor="Password"
-                    className="block text-sm font-medium text-gray-700"
-                >
-                    Password
-                </label>
+  const supabase = createClientComponentClient()
+  return (
+    <form action="#" className="mt-8 grid grid-cols-6 gap-6">
 
-                <input
-                    type="password"
-                    id="Password"
-                    name="password"
-                    className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
-                />
-            </div>
+      <div className="col-span-6">
+        <label htmlFor="Email" className="block text-sm font-medium text-gray-700">
+          Email
+        </label>
 
-            <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
-                <button
-                    className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
-                    onClick={handler}
-                >
-                    Recover
-                </button>
+        <input
+          type="email"
+          id="Email"
+          name="email"
+          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
 
-                <p className="mt-4 text-sm text-gray-500 sm:mt-0">
-                    Don't have an account?{' '}
-                    <a href="#" onClick={() => stateSync("signUp")} className="text-gray-700 underline">Sign up</a>.
-                </p>
-            </div>
-        </form>
-    )
+      <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
+        <button
+          className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
+          onClick={handleForgotPassword}
+        >
+          Send Recovery Email
+        </button>
+
+        <p className="mt-4 text-sm text-gray-500 sm:mt-0">
+          Don&apos;t have an account?{' '}
+          <a href="#" onClick={() => stateSync("SIGNUP")} className="text-gray-700 underline">Sign up</a>.
+        </p>
+      </div>
+    </form>
+  )
 }
