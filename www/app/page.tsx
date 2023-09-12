@@ -12,11 +12,13 @@ import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import ReactMarkdown from "react-markdown";
+import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter'
+import {dark} from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { v4 as uuidv4 } from "uuid";
 import Typing from "@/components/typing";
 
 // Supabase 
-import { createClient, Session } from '@supabase/supabase-js'
+import { Session } from '@supabase/supabase-js'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface Message {
@@ -35,7 +37,7 @@ export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
-  const [userId, setUserId] = useState(`anon_${uuidv4()}`);
+  const [userId, setUserId] = useState("LOADING");
   const defaultMessage: Message = {
     text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
     isUser: false,
@@ -56,63 +58,50 @@ export default function Home() {
       setAuthSession(session);
       if (session) {
         setUserId(session.user.id)
-        // console.log("User Id", userId)
+      } else {
+        setUserId(`anon_${uuidv4()}`)
       }
-      // console.log("Session 1", session)
     })
 
-    //const { data: { subscription },
-    //} = supabase.auth.onAuthStateChange((_event, session) => {
-    //  console.log(_event)
-    //  if (_event === "SIGNED_OUT") {
-    //    setAuthSession(session);
-    //  }
-    //})
-
-    //return () => subscription.unsubscribe();
   }, [])
 
   useEffect(() => {
+    console.log(authSession)
+    console.log(userId)
     if (authSession) {
-      // console.log(userId)
-      // const response = fetch("http://localhost:8000")
       getConversations()
         .then((conversations) => {
-          // console.log("Conversations", conversations)
-          // console.log(userId)
           if (conversations.length > 0) {
             setConversations(conversations)
             setCurrentConversation(conversations[0])
-            // console.log("Current Conversation", currentConversation)
           } else {
             newChat().then((conversation_id) => {
               let newConversation: Conversation = {
                 name: "",
                 conversation_id
               }
-              // console.log("Conversation ID", conversation_id)
-              // console.log(userId)
               setCurrentConversation(newConversation)
-              // console.log("Current Conversation", currentConversation)
               setConversations([...conversations, newConversation])
             })
           }
         })
     } else {
       // TODO store anonymous chats in localstorage or cookies
-      newChat().then((conversation_id) => {
-        // console.log("Conversation ID", conversation_id)
-        setCurrentConversation(conversation_id)
-        // console.log("Current Conversation", currentConversation)
-        setConversations([...conversations, conversation_id])
-      })
+      if (userId !== "LOADING") {
+        newChat().then((conversation_id) => {
+          setCurrentConversation(conversation_id)
+          setConversations([...conversations, conversation_id])
+        })
+      }
     }
-  }, [authSession])
+  }, [authSession, userId])
 
   useEffect(() => {
-    getMessages().then((messages) => {
-      setMessages([defaultMessage, ...messages])
-    })
+    if (userId !== "LOADING") {
+      getMessages().then((messages) => {
+        setMessages([defaultMessage, ...messages])
+      })
+    }
 
   }, [currentConversation])
 
@@ -191,14 +180,12 @@ export default function Home() {
       },
     })
       .then((data) => {
-        const copy = { ...currentConversation }
+        const copy = { ...cur }
         copy.name = newName
-        setCurrentConversation(copy)
         setConversations(conversations.map(conversation =>
           conversation.conversation_id === copy.conversation_id ? copy : conversation
         ))
       })
-
   }
 
   async function getMessages() {
@@ -278,9 +265,9 @@ export default function Home() {
   }
 
   return (
-    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-xl overflow-hidden relative">
-      <div className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block ${isSidebarOpen ? "" : "hidden"}`}>
-        <div className={`h-full scrollbar-trigger overflow-hidden bg-white lg:w-full w-4/5 flex flex-col ${isSidebarOpen ? "fixed" : "sticky"} top-0 left-0`}>
+    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative">
+      <div className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block ${isSidebarOpen ? "" : "hidden"}`}>
+        <div className={`h-full scrollbar-trigger overflow-hidden bg-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? "fixed lg:static" : "sticky"} top-0 left-0`}>
           {/* Section 1: Top buttons */}
           <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300">
             <button className="bg-neon-green rounded-lg px-4 py-2 w-full lg:w-full h-11" onClick={addChat}>New Chat</button>
@@ -335,11 +322,35 @@ export default function Home() {
           </section>
         )}
         <section className="flex flex-col flex-1 overflow-y-auto">
+          
           {messages.map((message, i) => {
             return (
               <Message isUser={message.isUser} key={i}>
                 {message.text ? (
-                  <ReactMarkdown>{message.text}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      ol: ({node, ...props}) => <ol className="list-decimal" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc" {...props} />,
+                      code({node, inline, className, children, ...props}) {
+                        const match = /language-(\w+)/.exec(className || '')
+                        return !inline && match ? (
+                          <SyntaxHighlighter
+                            {...props}
+                            children={String(children).replace(/\n$/, '')}
+                            lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}}
+                            style={dark}
+                            language={match[1]}
+                            PreTag="div"
+                            wrapLines={true}
+                          />
+                        ) : (
+                          <code {...props} className={className} style={{ whiteSpace: 'pre-wrap'}}>
+                            {children}
+                          </code>
+                        )
+                      }
+                    }}
+                  >{message.text}</ReactMarkdown>
                 ) : (
                   <Typing />
                 )}
@@ -390,10 +401,11 @@ export default function Home() {
         <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
           <h1 className="text-2xl font-bold">Thoughts</h1>
           <ReactMarkdown>{thought}</ReactMarkdown>
+          {/*
           <button>
             View More <IoIosArrowDown />{" "}
           </button>
-        </div>
+ */}       </div>
       </section>
     </main>
   );
