@@ -20,6 +20,7 @@ supabase = "^1.0.4"
 playwright = "^1.37.0"
 beautifulsoup4 = "^4.12.2"
 html2text = "^2020.1.16"
+sentence-transformers = "^2.2.2"
 
 [build-system]
 requires = ["poetry-core"]

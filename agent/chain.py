@@ -4,11 +4,15 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 from langchain.prompts import load_prompt, ChatPromptTemplate
-from langchain.schema import AIMessage, HumanMessage, BaseMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from dotenv import load_dotenv
 
 from collections.abc import AsyncIterator
 from .cache import ConversationCache
+
+from agent.tools.search import SearchTool, search_ready_output_parser
+from langchain.embeddings import HuggingFaceBgeEmbeddings
+
 
 load_dotenv()
 
@@ -24,10 +28,23 @@ class BloomChain:
         llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
     else:
         llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
+        fast_llm = ChatOpenAI(model_name = "gpt-3.5-turbo", temperature=0.3, model_kwargs={"top_p": 0.5})
 
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
 
+
+    search_tool: SearchTool
+    # Load Embeddings for search
+    model_name = "BAAI/bge-base-en"
+    model_kwargs = {'device': 'cpu'}
+    encode_kwargs = {'normalize_embeddings': False}
+    embeddings = HuggingFaceBgeEmbeddings(
+        model_name=model_name,
+        model_kwargs=model_kwargs,
+        encode_kwargs=encode_kwargs
+    )
+    search_tool = SearchTool.from_llm(llm=fast_llm, embeddings=embeddings)
 
     def __init__(self) -> None:
         pass
@@ -58,13 +75,31 @@ class BloomChain:
         )
         
     @classmethod
-    def respond(cls, cache: ConversationCache, thought: str, input: str):
+    async def respond(cls, cache: ConversationCache, thought: str, input: str):
         """Generate Bloom's response to the user."""
-        response_prompt = ChatPromptTemplate.from_messages([
+        
+        messages = [
             cls.system_response,
             *cache.messages("response"),
             HumanMessage(content=input)
-        ])
+        ]
+
+        search_messages = ChatPromptTemplate.from_messages(messages).format_messages(thought=thought).copy()
+        search_messages.append(SystemMessage(content=f"Reason about whether or not a google search would be benificial to answer the question. Always use it if you are unsure about your knowledge.\n\nf{search_ready_output_parser.get_format_instructions()}"))
+
+        search_ready_message = await cls.llm.apredict_messages(search_messages)
+        search_ready = search_ready_output_parser.parse(search_ready_message.content)
+
+        if search_ready["Search"].lower() == "true":
+            search_messages.append(search_ready_message)
+            search_messages.append(SystemMessage(content=f"Now generate a google query that would be best to find information to answer the question."))
+            
+            search_query_message = await cls.llm.apredict_messages(search_messages)
+            search_result_summary = await cls.search_tool.arun(search_query_message.content)
+
+            messages.append(SystemMessage(content=f"Use the information from these searchs to help answer your question.\nMake sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nRelevant Google Search: {search_query_message.content}\n\n{search_result_summary}\n\nCite your sources via bracket notation with numbers (don't use any other special characters), and include the full links at the end."))
+
+        response_prompt = ChatPromptTemplate.from_messages(messages)
         chain = response_prompt | cls.llm
 
         cache.add_message("response", HumanMessage(content=input))
@@ -80,7 +115,7 @@ class BloomChain:
         thought_iterator = cls.think(cache, inp)
         thought = await thought_iterator()
 
-        response_iterator = cls.respond(cache, thought, inp)
+        response_iterator = await cls.respond(cache, thought, inp)
         response = await response_iterator()
 
         return thought, response

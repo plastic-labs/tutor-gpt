@@ -1,17 +1,19 @@
 from typing import Optional, Type
 
+import asyncio
+import os
+import logging
+
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool
 from langchain.document_loaders import AsyncChromiumLoader
-from langchain.document_transformers import BeautifulSoupTransformer
 from langchain.utilities import GoogleSerperAPIWrapper
 
 from langchain.chat_models.base import BaseChatModel
 
-from langchain.retrievers.web_research import WebResearchRetriever
 from langchain.document_transformers import Html2TextTransformer
 
 from langchain.chains import LLMChain
@@ -22,32 +24,47 @@ from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain.text_splitter import TokenTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.embeddings.base import Embeddings
-from langchain.embeddings import OpenAIEmbeddings
+
+from langchain.docstore.document import Document
 
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
+
+# TODO: Store search results for entire conversation in vector store
+# TODO: Try new Seper.dev API key? Not returning enough results
+# TODO: Add answerbox to search results when available
 
 class SearchTool(BaseTool):
     name = "search"
     description = "useful for when you need to search for something on the internet"
     llm: BaseChatModel
     embeddings: Embeddings
+    search: GoogleSerperAPIWrapper
 
     @classmethod
     def from_llm(cls, llm: BaseChatModel, embeddings: Embeddings):
         """Return a tool from a chat model."""
-        return cls(llm=llm, embeddings=embeddings)
+        search = GoogleSerperAPIWrapper()
+        search.k = 3
+
+        if os.environ["USE_RERANKER"] == "true":
+            from FlagEmbedding import FlagReranker
+            model = 'BAAI/bge-reranker-base'
+
+            cls.reranker = FlagReranker(model)
+            logger.info(f"Loaded reranker \"{model}\" for webpage search")
+
+        return cls(llm=llm, embeddings=embeddings, search=search)
 
     def _run(
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
-        search = GoogleSerperAPIWrapper()
-        search.k = 4
-
-        results = search.results(query=query)
+        results = self.search.results(query=query)
         organic_results = results["organic"]
 
         # TODO: Make this async for speed!!
@@ -65,9 +82,8 @@ class SearchTool(BaseTool):
         ]
         formatted_results = "Search Results:\n" + "\n----------------------\n\n".join(formatted_results)
 
-        # pp.pprint(formatted_results)
-        # print(formatted_results)
-        return self._summarize_results(formatted_results)
+        return formatted_results
+        # return self._summarize_results(query, formatted_results)
 
 
         
@@ -76,7 +92,31 @@ class SearchTool(BaseTool):
         self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("custom_search does not support async")
+
+        # remove quotes from query if present
+        if query[0] == '"' and query[-1] == '"':
+            query = query[1:-1]
+
+        results = await self.search.aresults(query=query)
+        organic_results = results["organic"]
+
+        summaries = await asyncio.gather(*[self._aresearch_url(result["link"], query) for result in organic_results])
+        relevant_results = [
+            {
+                "title": result["title"],
+                "snippet": result["snippet"],
+                "link": result["link"],
+                "summary": summary,
+            } for result, summary in zip(organic_results, summaries)
+        ]
+
+        formatted_results = [
+            f"{result['title']} - {result['link']}\nSnippet: {result['snippet']}\nPage Summary: {result['summary']}" for result in relevant_results
+        ]
+        formatted_results = "Search Results:\n" + "\n----------------------\n\n".join(formatted_results)
+
+        return formatted_results
+        # return self._summarize_results(query, formatted_results)
 
     
     def _research_url(self, url: str, query: str):
@@ -95,50 +135,89 @@ class SearchTool(BaseTool):
             docs = html2text.transform_documents(html)
             docs = text_splitter.split_documents(docs)
 
+            # embedding search
             db = FAISS.from_documents(docs, self.embeddings)
-            relevant_sections = db.similarity_search(query=query, k=3)
+            relevant_sections = db.similarity_search(query=query, k=8)
+
+            # rerank
+            if self.reranker:
+                scores = self.reranker.compute_score([[query, section.page_content] for section in relevant_sections])
+                scores_with_index = zip(scores, range(len(scores)))
+                scores_with_index = sorted(scores_with_index, key=lambda x: x[0], reverse=True)
+                relevant_sections = [relevant_sections[index] for _score, index in scores_with_index[:3]]
+
+                logger.info("Reranked webpage sections, different from original order: " + scores_with_index, "Chunk count:", len(docs))
+
+            # format sections together to be used as input to the LLM
             relevant_sections = "\n".join([f'"{section.page_content}"' for section in relevant_sections])
 
-            # doc = doc[0].page_content[:5000]
-
+            # summarize the relevant sections
             summary = llm_chain.run({"query": query, "doc": relevant_sections})
             return summary
         except Exception as e:
-            print(e)
-            return "Error loading HTML"
+            logger.error("Error loading HTML:", e)
+            return "Error loading HTML: " + e
 
-    def _summarize_results(self, search_results: str):
-        search_result_summary_prompt = Prompt.from_template("Summarize the following search results the relevant information for answering the question. Make sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nBe specific instead of vague whenever possible.\n\nQuestion: {query}\n\n{search_results}\n\n\n\nYOU MUST cite your sources using bracket notation with numbers, and you must include the full links at the end.")
-        search_result_summary_chain = LLMChain(llm=llm_fast, prompt=search_result_summary_prompt)
+    async def _aresearch_url(self, url: str, query: str):
+        """Research a URL by embedding the web page and then using the most relevant sections to the query to generate a summary of the most important information on the page."""
+
+        prompt = Prompt.from_template("Your job is to write a summary of a web page containing the most essential information to answer a specific question. You will be given a few selected sections of the web page to base your summary off of. \n\nQuestion: {query}\n\nBEGIN SELECTIONS\n{doc}\nEND SELECTIONS")
+        llm_chain = LLMChain(llm=self.llm, prompt=prompt)
+
+        try:
+            # Load HTML
+            loader = AsyncChromiumLoader([url])
+            html2text = Html2TextTransformer()
+            text_splitter = TokenTextSplitter(chunk_size=300, chunk_overlap=0)
+
+            # html = await loader.aload()
+            html = [Document(page_content=await loader.ascrape_playwright(url), metadata={"source": url})] 
+            docs = html2text.transform_documents(html)
+            docs = text_splitter.split_documents(docs)
+
+            # embedding search
+            db = FAISS.from_documents(docs, self.embeddings)
+            relevant_sections = await db.asimilarity_search(query=query, k=3)
+
+            # rerank
+            if self.reranker:
+                scores = self.reranker.compute_score([[query, section.page_content] for section in relevant_sections])
+                # if there's only section, scores is a single score, not a list
+                if isinstance(scores, float):
+                    scores = [scores]
+
+                scores_with_index = zip(scores, range(len(scores)))
+                scores_with_index = sorted(scores_with_index, key=lambda x: x[0], reverse=True)
+                relevant_sections = [relevant_sections[index] for _score, index in scores_with_index[:3]]
+
+                logger.info("Reranked webpage sections, different from original order: " + str([index for _score, index in scores_with_index[:]]))
+
+            # format sections together to be used as input to the LLM
+            relevant_sections = "\n".join([f'"{section.page_content}"' for section in relevant_sections])
+
+            # summarize the relevant sections
+            summary = await llm_chain.arun({"query": query, "doc": relevant_sections})
+            return summary
+        except Exception as e:
+            logger.error("Error loading HTML:", e)
+            return "Error loading HTML: " + e
+
+
+    def _summarize_results(self, query: str, search_results: str):
+        search_result_summary_prompt = Prompt.from_template("Summarize the following search results the relevant information for answering the question. Make sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nBe specific instead of vague whenever possible.\n\nQuestion: {query}\n\n{search_results}\n\n\n\nYOU MUST cite your sources using bracket notation with numbers, and you must include the full links at the end. Do not cite sources that are not listed here.")
+        search_result_summary_chain = LLMChain(llm=self.llm, prompt=search_result_summary_prompt)
 
         return search_result_summary_chain.run({"query": query, "search_results": search_results})
 
 
 search_generation_schemas = [
     ResponseSchema(name="Reasoning", description="Reasoning behind what google query would be best to find information to answer the question"),
-    ResponseSchema(name="Search Query", description="The google query that would be best to find information to answer the question"),
+    ResponseSchema(name="Search Query", description="The google query that would be best to find information to answer the question. DO NOT USE ANY QUOTES OR OTHER SPECIAL CHARACTERS ANYWHERE."),
 ]
 search_generation_output_parser = StructuredOutputParser.from_response_schemas(search_generation_schemas)
 
-# For testing
-if __name__ == "__main__":
-    query = "What are the differences between Llama 1 and 2?"
-
-    from langchain.chat_models.openai import ChatOpenAI
-    from dotenv import load_dotenv
-
-    load_dotenv()
-    llm_fast = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.0)
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.0)
-    embeddings = OpenAIEmbeddings()
-
-    search_generation_prompt = Prompt.from_template("Your job is to generate a google query that would be best to find information to answer the question.\n\nQuestion: {query}\n\n{format_instructions}")
-    format_instructions = search_generation_output_parser.get_format_instructions()
-    search_generation_chain = LLMChain(llm=llm, prompt=search_generation_prompt, output_parser=search_generation_output_parser)
-
-    google_query = search_generation_chain.run({"query": query, "format_instructions": format_instructions})["Search Query"]
-    
-    search_tool = SearchTool.from_llm(llm=llm_fast, embeddings=embeddings)
-    search_result_summary = search_tool.run(google_query)
-
-    print(search_result_summary)
+search_ready_schemas = [
+    ResponseSchema(name="Reasoning", description="Reasoning behind whether or not a google search would be necessary to effectively answer the question."),
+    ResponseSchema(name="Search", description="<true/false> whether or not a google search should be used to find information to answer the question."),
+]
+search_ready_output_parser = StructuredOutputParser.from_response_schemas(search_ready_schemas)
