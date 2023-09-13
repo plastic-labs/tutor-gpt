@@ -12,10 +12,11 @@ export default function ResetPage() {
         <aside
           className="relative block h-16 lg:order-last lg:col-span-5 lg:h-full xl:col-span-6"
         >
-          <img
+          <Image
             alt="Pattern"
             src="/auth_banner.jpg"
             className="absolute inset-0 h-full w-full object-cover"
+            fill={true}
           />
         </aside>
 
