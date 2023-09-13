@@ -1,40 +1,10 @@
 'use client'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import Image from "next/image";
-
 import icon from "@/public/bloomicon.jpg";
-
-import SignUp from '@/components/signUp';
-import SignIn from '@/components/signIn';
-import Forgot from '@/components/forgot'
 import Reset from '@/components/reset'
 
-export default function Auth() {
-  const [formType, setFormType] = useState('LOGIN');
-  const supabase = createClientComponentClient()
-  const router = useRouter()
-
-  useEffect(() => {
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) { // Can't access this page if you're logged in
-        router.push('/')
-      }
-    })
-
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event != "INITIAL_SESSION") {
-        console.log(event)
-      }
-      if (event == "PASSWORD_RECOVERY") {
-        router.push("/auth/reset")
-      }
-
-    })
-  }, [router, supabase])
+export default function ResetPage() {
 
   return (
     <section className="bg-white">
@@ -68,15 +38,7 @@ export default function Auth() {
             <p className="mt-4 leading-relaxed text-gray-500">
               Your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like.
             </p>
-            {formType === 'LOGIN' && (
-              <SignIn stateSync={setFormType} />
-            )}
-            {formType === 'SIGNUP' && (
-              <SignUp stateSync={setFormType} />
-            )}
-            {formType === 'FORGOT' && (
-              <Forgot stateSync={setFormType} />
-            )}
+            <Reset />
 
           </div>
         </main>
