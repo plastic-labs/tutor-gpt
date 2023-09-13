@@ -23,6 +23,14 @@ export default function SignUp(props: any) {
       })
       return
     }
+    if (password.length >= 6) {
+      await Swal.fire({
+        title: "Insufficient Password",
+        icon: 'error',
+        text: 'Make sure the password is atleast 6 characters long',
+      })
+      return
+    }
     const { error } = await supabase.auth.signUp(
       {
         email,
@@ -35,6 +43,11 @@ export default function SignUp(props: any) {
         }
       });
     if (error) {
+      Swal.fire({
+        title: "Something went wrong",
+        icon: "error",
+        text: "Please try again and make sure the password is atleast 6 characters long",
+      })
       console.error(error);
     } else {
       Swal.fire({
