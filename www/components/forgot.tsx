@@ -5,6 +5,8 @@ import Swal from 'sweetalert2'
 export default function Forgot(props: any) {
   const { stateSync } = props
   const [email, setEmail] = useState('')
+  const supabase = createClientComponentClient()
+
   const handleForgotPassword = async (e: any) => {
     e.preventDefault();
     const { error } = await supabase.auth.resetPasswordForEmail(email,
@@ -30,7 +32,6 @@ export default function Forgot(props: any) {
     })
   }
 
-  const supabase = createClientComponentClient()
   return (
     <form action="#" className="mt-8 grid grid-cols-6 gap-6">
 

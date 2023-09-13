@@ -18,6 +18,13 @@ export default function Auth() {
   const router = useRouter()
 
   useEffect(() => {
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) { // Can't access this page if you're logged in
+        router.push('/')
+      }
+    })
+
     const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event != "INITIAL_SESSION") {
         console.log(event)
@@ -25,6 +32,7 @@ export default function Auth() {
       if (event == "PASSWORD_RECOVERY") {
         router.push("/auth/reset")
       }
+
     })
   }, [router, supabase])
 

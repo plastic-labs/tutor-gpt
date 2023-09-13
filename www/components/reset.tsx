@@ -1,5 +1,5 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Swal from 'sweetalert2'
 
@@ -9,12 +9,19 @@ export default function Forgot(props: any) {
   const supabase = createClientComponentClient()
   const router = useRouter()
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { // Can't access this page if you're not logged in
+        router.push('/')
+      }
+    })
+  }, [supabase, router])
+
   const handleReset = async (e: any) => {
     e.preventDefault()
     const { data, error } = await supabase.auth.updateUser({ password })
 
     if (error) {
-      alert("There was an error updating your password.")
       await Swal.fire({
         title: 'Error!',
         text: "Something went wrong",
