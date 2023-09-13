@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import requests
+from requests.exceptions import ChunkedEncodingError
 
 from common import init
 from agent.chain import BloomChain
@@ -68,7 +70,8 @@ async def delete_conversation(conversation_id: str):
 @app.get("/api/conversations/insert")
 async def add_conversation(user_id: str, location_id: str = "web"):
     async with LOCK:
-        conversation_id = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id)
+        representation = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id)
+        conversation_id = representation["id"]
     return {
        "conversation_id": conversation_id
     }
@@ -92,6 +95,17 @@ async def get_messages(user_id: str, conversation_id: str):
 async def chat(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
+        conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
+    if conversation_data and conversation_data["metadata"]: 
+        metadata = conversation_data["metadata"]
+        if metadata["A/B"]:
+            response = requests.post(f'{os.environ["HONCHO_URL"]}/chat', json={
+                "user_id": inp.user_id,
+                "conversation_id": inp.conversation_id,
+                "message": inp.message
+                }, stream=True)
+            print(response)
+            return response
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
     thought, response = await BloomChain.chat(conversation, inp.message)
@@ -100,18 +114,43 @@ async def chat(inp: ConversationInput):
         "response": response
     }
 
+
 @app.post("/api/stream")
 async def stream(inp: ConversationInput):
+    """Stream the response too the user, currently only used by the Web UI and has integration to be able to use Honcho is not anonymous"""
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
+        conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
+    if not inp.user_id.startswith("anon_") and conversation_data and conversation_data["metadata"]: 
+        metadata = conversation_data["metadata"]
+        if metadata["A/B"]:
+            response = requests.post(f'{os.environ["HONCHO_URL"]}/stream', json={
+                "user_id": inp.user_id,
+                "conversation_id": inp.conversation_id,
+                "message": inp.message
+                }, stream=True)
+
+            def generator():
+                try:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        # print(f"Received chunk: {chunk}")
+                        if chunk:
+                            yield chunk
+                except ChunkedEncodingError as e:
+                    print(f"Chunked encoding error occurred: {e}")
+                    print(response)
+                    print(response.headers)
+                    # Optionally yield an error message to the client
+                    yield b"An error occurred while streaming the response."
+                except Exception as e:
+                    print(f"An unexpected error occurred: {e}")
+                    # Optionally yield an error message to the client
+                    yield b"An unexpected error occurred."
+
+            print("A/B Confirmed")
+            return StreamingResponse(generator())
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
-    print()
-    print()
-    print("local chain", conversation.messages("thought"), conversation.messages("response"))
-    print()
-    print()
-
 
     async def thought_and_response():
         thought_iterator = BloomChain.think(conversation, inp.message)
@@ -130,4 +169,3 @@ async def stream(inp: ConversationInput):
 
     return StreamingResponse(thought_and_response())
 
-# app.mount("/", StaticFiles(directory="www/out", html=True), name="static")

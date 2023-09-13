@@ -2,21 +2,24 @@
 import Image from "next/image";
 
 import banner from "@/public/bloom2x1.svg";
-import icon from "@/public/bloomicon.jpg";
-import usericon from "@/public/usericon.svg";
+import Message from "@/components/message";
+import Thoughts from "@/components/thoughts";
+import Sidebar from "@/components/sidebar"
 
 import { FaLightbulb, FaPaperPlane, FaBars, FaTrash, FaEdit } from "react-icons/fa";
-import { IoIosArrowDown } from "react-icons/io";
-import { GrClose } from "react-icons/gr";
-import { useRef, useEffect, useState } from "react";
+// import { IoIosArrowDown } from "react-icons/io";
+// import { GrClose } from "react-icons/gr";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { v4 as uuidv4 } from "uuid";
 import Typing from "@/components/typing";
 
 // Supabase 
-import { createClient, Session } from '@supabase/supabase-js'
+import { Session } from '@supabase/supabase-js'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 interface Message {
@@ -29,17 +32,19 @@ interface Conversation {
   name: string;
 }
 
-const URL = process.env.NEXT_PUBLIC_URL;
+const URL = process.env.NEXT_PUBLIC_API_URL;
+const defaultMessage: Message = {
+  text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+  isUser: false,
+}
 
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
-  const [userId, setUserId] = useState(`anon_${uuidv4()}`);
-  const defaultMessage: Message = {
-    text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
-    isUser: false,
-  }
+  const [userId, setUserId] = useState("LOADING");
+  const [canSend, setCanSend] = useState(false)
+
 
   const [messages, setMessages] = useState<Array<Message>>([
     defaultMessage,
@@ -51,169 +56,129 @@ export default function Home() {
   const input = useRef<HTMLInputElement>(null);
   const supabase = createClientComponentClient()
 
+  const newChat = useCallback(
+    async () => {
+      return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
+        .then((res) => res.json())
+        .then(({ conversation_id }) => {
+          return conversation_id
+        })
+        .catch((err) => console.error(err))
+
+    },
+    [userId],)
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthSession(session);
       if (session) {
         setUserId(session.user.id)
-        // console.log("User Id", userId)
+      } else {
+        setUserId(`anon_${uuidv4()}`)
       }
-      // console.log("Session 1", session)
     })
-
-    //const { data: { subscription },
-    //} = supabase.auth.onAuthStateChange((_event, session) => {
-    //  console.log(_event)
-    //  if (_event === "SIGNED_OUT") {
-    //    setAuthSession(session);
-    //  }
-    //})
-
-    //return () => subscription.unsubscribe();
-  }, [])
+  }, [supabase])
 
   useEffect(() => {
+    // console.log(authSession)
+    // console.log(userId)
+    const getConversations = async () => {
+      return await fetch(`${URL}/api/conversations/get?user_id=${userId}`)
+        .then((res) => res.json())
+        .then(({ conversations }) => {
+          // console.log(conversations)
+          return conversations
+        })
+    }
     if (authSession) {
-      // console.log(userId)
-      // const response = fetch("http://localhost:8000")
       getConversations()
         .then((conversations) => {
-          // console.log("Conversations", conversations)
-          // console.log(userId)
           if (conversations.length > 0) {
             setConversations(conversations)
             setCurrentConversation(conversations[0])
-            // console.log("Current Conversation", currentConversation)
           } else {
             newChat().then((conversation_id) => {
               let newConversation: Conversation = {
                 name: "",
                 conversation_id
               }
-              // console.log("Conversation ID", conversation_id)
-              // console.log(userId)
               setCurrentConversation(newConversation)
-              // console.log("Current Conversation", currentConversation)
-              setConversations([...conversations, newConversation])
+              setConversations(c => [...c, newConversation])
             })
           }
         })
     } else {
       // TODO store anonymous chats in localstorage or cookies
-      newChat().then((conversation_id) => {
-        // console.log("Conversation ID", conversation_id)
-        setCurrentConversation(conversation_id)
-        // console.log("Current Conversation", currentConversation)
-        setConversations([...conversations, conversation_id])
-      })
-    }
-  }, [authSession])
-
-  useEffect(() => {
-    getMessages().then((messages) => {
-      setMessages([defaultMessage, ...messages])
-    })
-
-  }, [currentConversation])
-
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    console.log("Signed out")
-    location.reload()
-  }
-
-  async function newChat() {
-    return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
-      .then((res) => res.json())
-      .then(({ conversation_id }) => {
-        return conversation_id
-      })
-      .catch((err) => console.error(err))
-  }
-
-  async function addChat() {
-    const conversationId = await newChat();
-    setConversations([...conversations, conversationId])
-  }
-
-  async function getConversations() {
-    return await fetch(`${URL}/api/conversations/get?user_id=${userId}`)
-      .then((res) => res.json())
-      .then(({ conversations }) => {
-        // console.log(conversations)
-        return conversations
-      })
-  }
-
-  async function deleteConversation(conversation: Conversation) {
-    const check = confirm("Are you sure you want to delete this conversation, this action is irreversible?")
-    if (!check)
-      return
-    const { conversation_id } = conversation
-    await fetch(`${URL}/api/conversations/delete?user_id=${userId}&conversation_id=${conversation_id}`)
-      .then((res) => res.json())
-    // Delete the conversation_id from the conversations state variable
-    setConversations(conversations.filter(cur => cur.conversation_id !== conversation_id));
-
-    // If it was the currentConversation, change the currentConversation to the next one in the list
-    if (conversation === currentConversation) {
-      if (conversations.length > 1) {
-        setCurrentConversation(conversations[0]);
-        console.log("Current Conversation", currentConversation)
-      } else {
-        // If there is no current conversation create a new one
-        const newConversationId = await newChat();
-        setCurrentConversation(newConversationId);
-        console.log("Current Conversation", currentConversation)
-        setConversations([newConversationId]);
+      if (userId !== "LOADING") {
+        newChat().then((conversation_id) => {
+          const newConversation: Conversation = {
+            name: "",
+            conversation_id
+          }
+          setCurrentConversation(newConversation)
+          setConversations(c => [...c, newConversation])
+        })
       }
     }
+  }, [authSession, userId, newChat])
 
-  }
-
-  async function editConversation(cur: Conversation) {
-    const newName = prompt("Enter a new name for the conversation")
-    if (!newName)
-      return
-    fetch(`${URL}/api/conversations/update`, {
-      method: "POST",
-      body: JSON.stringify({
-        conversation_id: cur.conversation_id,
-        name: newName
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((data) => {
-        const copy = { ...currentConversation }
-        copy.name = newName
-        setCurrentConversation(copy)
-        setConversations(conversations.map(conversation =>
-          conversation.conversation_id === copy.conversation_id ? copy : conversation
-        ))
-      })
-
-  }
-
-  async function getMessages() {
-    return await fetch(`${URL}/api/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`)
-      .then((res) => res.json())
-      .then(({ messages }) => {
-        const formattedMessages = messages.map((message: any) => {
-          return {
-            text: message.data.content,
-            isUser: message.type === "human",
-          }
+  useEffect(() => {
+    const getMessages = async () => {
+      return await fetch(`${URL}/api/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`)
+        .then((res) => res.json())
+        .then(({ messages }) => {
+          const formattedMessages = messages.map((message: any) => {
+            return {
+              text: message.data.content,
+              isUser: message.type === "human",
+            }
+          })
+          return formattedMessages
         })
-        return formattedMessages
+    }
+
+    if (currentConversation.conversation_id) {
+      setCanSend(true)
+      getMessages().then((messages) => {
+        setMessages([defaultMessage, ...messages])
       })
-  }
+    }
+
+  }, [currentConversation, userId])
+
+
+  // async function newChat() {
+  //   return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
+  //     .then((res) => res.json())
+  //     .then(({ conversation_id }) => {
+  //       return conversation_id
+  //     })
+  //     .catch((err) => console.error(err))
+  // }
+  // const chatContainerRef = useRef(null);
+  // const shouldAutoScroll = useRef(true);
+
+  // useEffect(() => {
+  //   if (chatContainerRef.current) {
+  //     const container = chatContainerRef.current;
+  //     // Detect if user is at the bottom of the messages
+  //     shouldAutoScroll.current = container.scrollHeight - container.scrollTop === container.clientHeight;
+  //   }
+  // }, [messages]);
+
+  // useEffect(() => {
+  //   if (shouldAutoScroll.current && chatContainerRef.current) {
+  //     const container = chatContainerRef.current;
+  //     container.scrollTop = container.scrollHeight;
+  //   }
+  // }, [messages]);
 
   async function chat() {
     const textbox = input.current!;
     const message = textbox.value;
     textbox.value = "";
+
+    setCanSend(false) // Disable sending more messages until the current generation is done
 
     setMessages((prev) => [
       ...prev,
@@ -231,7 +196,7 @@ export default function Home() {
       method: "POST",
       body: JSON.stringify({
         user_id: userId,
-        conversation_id: currentConversation,
+        conversation_id: currentConversation.conversation_id,
         message: message,
       }),
       // no cors
@@ -254,7 +219,11 @@ export default function Home() {
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        console.log("done")
+        setCanSend(true)
+        break;
+      }
       // console.log(value);
       if (isThinking) {
         if (value.includes("❀")) {
@@ -264,6 +233,10 @@ export default function Home() {
         }
         setThought((prev) => prev + value);
       } else {
+        if (value.includes("❀")) {
+          setCanSend(true) // Bloom delimeter
+          continue
+        }
         setMessages((prev) => {
           prev[prev.length - 1].text += value;
           return [...prev];
@@ -273,45 +246,18 @@ export default function Home() {
   }
 
   return (
-    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-xl overflow-hidden relative">
-      <div className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block ${isSidebarOpen ? "" : "hidden"}`}>
-        <div className={`h-full scrollbar-trigger overflow-hidden bg-white lg:w-full w-4/5 flex flex-col ${isSidebarOpen ? "fixed" : "sticky"} top-0 left-0`}>
-          {/* Section 1: Top buttons */}
-          <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300">
-            <button className="bg-neon-green rounded-lg px-4 py-2 w-full lg:w-full h-11" onClick={addChat}>New Chat</button>
-            <button className="lg:hidden bg-neon-green rounded-lg px-4 py-2 h-11" onClick={() => setIsSidebarOpen(false)}><GrClose /></button>
-          </div>
-
-          {/* Section 2: Scrollable items */}
-          <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300">
-            {/* Replace this with your dynamic items */}
-            {conversations.map((cur, i) => (
-              <div key={i} className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""}`} onClick={() => setCurrentConversation(cur)}>
-                <div>
-                  <h2 className="font-bold text-base overflow-ellipsis overflow-hidden">{cur.name || "Untitled"}</h2>
-                </div>
-                <div className="flex flex-row justify-end gap-2 items-center w-1/5">
-                  <button className="text-gray-500" onClick={() => editConversation(cur)}>
-                    <FaEdit />
-                  </button>
-                  <button className="text-red-500" onClick={() => deleteConversation(cur)}>
-                    <FaTrash />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Section 3: Authentication information */}
-          <div className="border-t border-gray-300 p-4 w-full">
-            {/* Replace this with your authentication information */}
-            {authSession ?
-              (<button className="bg-neon-green rounded-lg px-4 py-2 w-full" onClick={handleSignOut}>Sign Out</button>) :
-              (<button className="bg-neon-green rounded-lg px-4 py-2 w-full" onClick={() => router.push("/auth")}>Sign In</button>)}
-          </div>
-        </div>
-      </div>
-
+    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative">
+      <Sidebar
+        conversations={conversations}
+        authSession={authSession}
+        currentConversation={currentConversation}
+        setCurrentConversation={setCurrentConversation}
+        setConversations={setConversations}
+        newChat={newChat}
+        userId={userId}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
       <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72">
         <nav className="flex justify-between items-center p-4 border-b border-gray-300">
           <FaBars className="inline lg:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
@@ -326,15 +272,38 @@ export default function Home() {
         </nav>
         {!authSession && (
           <section className="bg-neon-green text-black text-center py-4">
-            To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline" onClick={() => router.push("/auth")}>sign in here</span>
+            <p>To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline" onClick={() => router.push("/auth")}>sign in here</span></p>
           </section>
         )}
-        <section className="flex flex-col flex-1 overflow-y-auto">
+        <section className="flex flex-col flex-1 overflow-y-auto" >
           {messages.map((message, i) => {
             return (
               <Message isUser={message.isUser} key={i}>
                 {message.text ? (
-                  <ReactMarkdown>{message.text}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      ol: ({ node, ...props }) => <ol className="list-decimal" {...props} />,
+                      ul: ({ node, ...props }) => <ul className="list-disc" {...props} />,
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || '')
+                        return !inline && match ? (
+                          <SyntaxHighlighter
+                            {...props}
+                            children={String(children).replace(/\n$/, '')}
+                            lineProps={{ style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' } }}
+                            style={dark}
+                            language={match[1]}
+                            PreTag="div"
+                            wrapLines={true}
+                          />
+                        ) : (
+                          <code {...props} className={className} style={{ whiteSpace: 'pre-wrap' }}>
+                            {children}
+                          </code>
+                        )
+                      }
+                    }}
+                  >{message.text}</ReactMarkdown>
                 ) : (
                   <Typing />
                 )}
@@ -355,7 +324,8 @@ export default function Home() {
             type="text"
             ref={input}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl"
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"}`}
+            disabled={!canSend}
           />
           <button
             className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
@@ -365,55 +335,11 @@ export default function Home() {
           </button>
         </form>
       </div>
-      <section
-        className={
-          "absolute h-[100dvh] flex flex-col lg:w-3/5 w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out " +
-          (isThoughtsOpen ? "translate-x-0 shadow-lg" : "translate-x-full")
-        }
-      >
-        <div className="flex flex-row-reverse p-4">
-          <button
-            className="text-dark-green text-xl"
-            onClick={() => {
-              setIsThoughtsOpen(false)
-            }
-            }
-          >
-            <GrClose className="inline" />
-          </button>
-        </div>
-        <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
-          <h1 className="text-2xl font-bold">Thoughts</h1>
-          <ReactMarkdown>{thought}</ReactMarkdown>
-          <button>
-            View More <IoIosArrowDown />{" "}
-          </button>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-function Message({
-  children,
-  isUser,
-}: {
-  children: React.ReactNode;
-  isUser?: boolean;
-}) {
-  return (
-    <article
-      className={
-        "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
-        (isUser ? "bg-gray-100" : "")
-      }
-    >
-      <Image
-        src={isUser ? usericon : icon}
-        alt="icon"
-        className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
+      <Thoughts
+        thought={thought}
+        setIsThoughtsOpen={setIsThoughtsOpen}
+        isThoughtsOpen={isThoughtsOpen}
       />
-      <div className=" flex flex-col gap-2">{children}</div>
-    </article>
+    </main>
   );
 }
