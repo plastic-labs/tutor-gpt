@@ -15,19 +15,19 @@ export const metadata: Metadata = {
     siteName: "Bloombot",
     type: "website",
     url: "/",
-    images: [
-      {
-        url: '/small_preview.jpg',
-        width: 800,
-        height: 600,
-      },
-      {
-        url: '/large_preview.jpg',
-        width: 1800,
-        height: 1600,
-        alt: 'Bloombot Preview',
-      },
-    ],
+    // images: [
+    //   {
+    //     url: '@/small_preview.jpg',
+    //     width: 800,
+    //     height: 600,
+    //   },
+    //   {
+    //     url: '@/large_preview.jpg',
+    //     width: 1800,
+    //     height: 1600,
+    //     alt: 'Bloombot Preview',
+    //   },
+    // ],
     locale: "en_US",
   },
   robots: {
