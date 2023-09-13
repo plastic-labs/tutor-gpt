@@ -110,11 +110,11 @@ export default function Home() {
       // TODO store anonymous chats in localstorage or cookies
       if (userId !== "LOADING") {
         newChat().then((conversation_id) => {
-          setCurrentConversation(conversation_id)
           const newConversation: Conversation = {
             name: "",
             conversation_id
           }
+          setCurrentConversation(newConversation)
           setConversations(c => [...c, newConversation])
         })
       }
