@@ -16,11 +16,11 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://chat.bloombot.ai",
     images: [
-      {
-        url: '/small_preview.jpg',
-        width: 800,
-        height: 600,
-      },
+      // {
+      //   url: '/small_preview.jpg',
+      //   width: 800,
+      //   height: 600,
+      // },
       {
         url: '/opengraph-image.jpg',
         width: 1800,
