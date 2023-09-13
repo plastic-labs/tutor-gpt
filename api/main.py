@@ -119,7 +119,7 @@ async def stream(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
-    if conversation_data and conversation_data["metadata"]: 
+    if not inp.user_id.startswith("anon_") and conversation_data and conversation_data["metadata"]: 
         metadata = conversation_data["metadata"]
         if metadata["A/B"]:
             response = requests.post(f'{os.environ["HONCHO_URL"]}/stream', json={
