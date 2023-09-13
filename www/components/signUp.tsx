@@ -10,16 +10,33 @@ export default function SignUp(props: any) {
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [opt, setOpt] = useState<boolean>(true)
+  const [age, setAge] = useState<boolean>(false)
   const router = useRouter();
   const supabase = createClientComponentClient()
 
   const handleSignUp = async (e: any) => {
     e.preventDefault();
+    if (!age) {
+      await Swal.fire({
+        title: "Age Verification Required",
+        icon: 'error',
+        text: 'Please confirm that you are 13 years or older',
+      })
+      return
+    }
     if (password !== passwordConfirmation) {
       await Swal.fire({
         title: "Passwords don't match",
         icon: 'error',
         text: 'Re-confirm you password and try again',
+      })
+      return
+    }
+    if (password.length < 6) {
+      await Swal.fire({
+        title: "Insufficient Password",
+        icon: 'error',
+        text: 'Make sure the password is atleast 6 characters long',
       })
       return
     }
@@ -30,11 +47,17 @@ export default function SignUp(props: any) {
         options: {
           emailRedirectTo: `${location.origin}/`,
           data: {
-            dataOptIn: opt
+            dataOptIn: opt,
+            ageVerification: age
           }
         }
       });
     if (error) {
+      Swal.fire({
+        title: "Something went wrong",
+        icon: "error",
+        text: "Please try again and make sure the password is atleast 6 characters long",
+      })
       console.error(error);
     } else {
       Swal.fire({
@@ -115,13 +138,32 @@ export default function SignUp(props: any) {
       </div>
 
       <div className="col-span-6">
+        <label htmlFor="AgeAccept" className="flex gap-4">
+          <input
+            type="checkbox"
+            id="MarketingAccept"
+            name="marketing_accept"
+            className="h-5 w-5 rounded-md border-gray-200 bg-white shadow-sm"
+            checked={age}
+            onChange={(e) => setAge(!age)}
+            required
+          />
+
+          <span className="text-sm text-gray-700">
+            I am confirming that I am atleast 13 years old.
+          </span>
+        </label>
+      </div>
+
+
+      <div className="col-span-6">
         <p className="text-sm text-gray-500">
           By creating an account, you agree to our{' '}
           <a href="https://app.termly.io/document/terms-of-service/ba5ac452-fdd6-4746-8b31-973351d05008" target="_blank" className="text-gray-700 underline">
-            terms and conditions
+            Terms and Conditions
           </a>
           {' '}and{' '}
-          <a href="https://app.termly.io/document/privacy-policy/29672110-b634-40ae-854d-ebaf55e8fa75" target="_blank" className="text-gray-700 underline">privacy policy</a>.
+          <a href="https://app.termly.io/document/privacy-policy/29672110-b634-40ae-854d-ebaf55e8fa75" target="_blank" className="text-gray-700 underline">Privacy Policy</a>.
         </p>
       </div>
 

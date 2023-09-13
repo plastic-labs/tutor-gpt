@@ -15,19 +15,14 @@ export const metadata: Metadata = {
     siteName: "Bloombot",
     type: "website",
     url: "https://chat.bloombot.ai",
-    // images: [
-    //   {
-    //     url: '@/small_preview.jpg',
-    //     width: 800,
-    //     height: 600,
-    //   },
-    //   {
-    //     url: '@/large_preview.jpg',
-    //     width: 1800,
-    //     height: 1600,
-    //     alt: 'Bloombot Preview',
-    //   },
-    // ],
+    images: [
+      {
+        url: '/opengraph-image.jpg',
+        width: 1800,
+        height: 1600,
+        alt: 'Bloombot Preview',
+      },
+    ],
     locale: "en_US",
   },
   robots: {

@@ -32,7 +32,7 @@ interface Conversation {
   name: string;
 }
 
-const URL = process.env.NEXT_PUBLIC_URL;
+const URL = process.env.NEXT_PUBLIC_API_URL;
 const defaultMessage: Message = {
   text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
@@ -43,6 +43,7 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
   const [userId, setUserId] = useState("LOADING");
+  const [canSend, setCanSend] = useState(false)
 
 
   const [messages, setMessages] = useState<Array<Message>>([
@@ -137,6 +138,7 @@ export default function Home() {
     }
 
     if (currentConversation.conversation_id) {
+      setCanSend(true)
       getMessages().then((messages) => {
         setMessages([defaultMessage, ...messages])
       })
@@ -153,11 +155,30 @@ export default function Home() {
   //     })
   //     .catch((err) => console.error(err))
   // }
+  // const chatContainerRef = useRef(null);
+  // const shouldAutoScroll = useRef(true);
+
+  // useEffect(() => {
+  //   if (chatContainerRef.current) {
+  //     const container = chatContainerRef.current;
+  //     // Detect if user is at the bottom of the messages
+  //     shouldAutoScroll.current = container.scrollHeight - container.scrollTop === container.clientHeight;
+  //   }
+  // }, [messages]);
+
+  // useEffect(() => {
+  //   if (shouldAutoScroll.current && chatContainerRef.current) {
+  //     const container = chatContainerRef.current;
+  //     container.scrollTop = container.scrollHeight;
+  //   }
+  // }, [messages]);
 
   async function chat() {
     const textbox = input.current!;
     const message = textbox.value;
     textbox.value = "";
+
+    setCanSend(false) // Disable sending more messages until the current generation is done
 
     setMessages((prev) => [
       ...prev,
@@ -198,7 +219,11 @@ export default function Home() {
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        console.log("done")
+        setCanSend(true)
+        break;
+      }
       // console.log(value);
       if (isThinking) {
         if (value.includes("❀")) {
@@ -208,6 +233,10 @@ export default function Home() {
         }
         setThought((prev) => prev + value);
       } else {
+        if (value.includes("❀")) {
+          setCanSend(true) // Bloom delimeter
+          continue
+        }
         setMessages((prev) => {
           prev[prev.length - 1].text += value;
           return [...prev];
@@ -246,8 +275,7 @@ export default function Home() {
             <p>To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline" onClick={() => router.push("/auth")}>sign in here</span></p>
           </section>
         )}
-        <section className="flex flex-col flex-1 overflow-y-auto">
-
+        <section className="flex flex-col flex-1 overflow-y-auto" >
           {messages.map((message, i) => {
             return (
               <Message isUser={message.isUser} key={i}>
@@ -296,7 +324,8 @@ export default function Home() {
             type="text"
             ref={input}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl"
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"}`}
+            disabled={!canSend}
           />
           <button
             className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
