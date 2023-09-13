@@ -114,12 +114,14 @@ async def chat(inp: ConversationInput):
         "response": response
     }
 
+
 @app.post("/api/stream")
 async def stream(inp: ConversationInput):
+    """Stream the response too the user, currently only used by the Web UI and has integration to be able to use Honcho is not anonymous"""
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
-    if conversation_data and conversation_data["metadata"]: 
+    if not inp.user_id.startswith("anon_") and conversation_data and conversation_data["metadata"]: 
         metadata = conversation_data["metadata"]
         if metadata["A/B"]:
             response = requests.post(f'{os.environ["HONCHO_URL"]}/stream', json={
@@ -131,7 +133,7 @@ async def stream(inp: ConversationInput):
             def generator():
                 try:
                     for chunk in response.iter_content(chunk_size=8192):
-                        print(f"Received chunk: {chunk}")
+                        # print(f"Received chunk: {chunk}")
                         if chunk:
                             yield chunk
                 except ChunkedEncodingError as e:
