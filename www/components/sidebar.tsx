@@ -5,6 +5,8 @@ import { GrClose } from "react-icons/gr"
 import { Session } from '@supabase/supabase-js'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
+import Swal from 'sweetalert2'
+
 interface Conversation {
   conversation_id: string;
   name: string;
@@ -44,8 +46,21 @@ export default function Sidebar({
   }
 
   async function editConversation(cur: Conversation) {
-    const newName = prompt("Enter a new name for the conversation")
-    if (!newName)
+
+    const { value: newName } = await Swal.fire({
+      title: 'Enter a new name for the conversation',
+      input: 'text',
+      inputLabel: 'Conversation Name',
+      inputValue: cur.name,
+      showCancelButton: true,
+      inputValidator: (value) => {
+        if (!value) {
+          return 'You need to write something!'
+        }
+      }
+    })
+    console.log(newName)
+    if (!newName || newName === cur.name)
       return
     fetch(`${URL}/api/conversations/update`, {
       method: "POST",
@@ -67,32 +82,41 @@ export default function Sidebar({
   }
 
   async function deleteConversation(conversation: Conversation) {
-    const check = confirm("Are you sure you want to delete this conversation, this action is irreversible?")
-    if (!check)
-      return
-    const { conversation_id } = conversation
-    await fetch(`${URL}/api/conversations/delete?user_id=${userId}&conversation_id=${conversation_id}`)
-      .then((res) => res.json())
-    // Delete the conversation_id from the conversations state variable
-    setConversations((conversations: Array<Conversation>) => {
-      const newConversations = conversations.filter((cur: Conversation) => cur.conversation_id !== conversation_id);
-      console.log("New Conversations", newConversations)
-      // If it was the currentConversation, change the currentConversation to the next one in the list
-      if (conversation === currentConversation) {
-        if (newConversations.length > 1) {
-          setCurrentConversation(newConversations[0]);
-          console.log("Current Conversation", newConversations[0])
-        } else {
-          // If there is no current conversation create a new one
-          newChat().
-            then((newConversationId: string) => {
-              setCurrentConversation(newConversationId);
-              console.log("Current Conversation", newConversationId)
-              setConversations([newConversationId]);
-            })
-        }
+    Swal.fire({
+      title: 'Are you sure you want to delete this conversation?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const { conversation_id } = conversation
+        await fetch(`${URL}/api/conversations/delete?user_id=${userId}&conversation_id=${conversation_id}`)
+          .then((res) => res.json())
+        // Delete the conversation_id from the conversations state variable
+        setConversations((conversations: Array<Conversation>) => {
+          const newConversations = conversations.filter((cur: Conversation) => cur.conversation_id !== conversation_id);
+          console.log("New Conversations", newConversations)
+          // If it was the currentConversation, change the currentConversation to the next one in the list
+          if (conversation === currentConversation) {
+            if (newConversations.length > 1) {
+              setCurrentConversation(newConversations[0]);
+              console.log("Current Conversation", newConversations[0])
+            } else {
+              // If there is no current conversation create a new one
+              newChat().
+                then((newConversationId: string) => {
+                  setCurrentConversation(newConversationId);
+                  console.log("Current Conversation", newConversationId)
+                  setConversations([newConversationId]);
+                })
+            }
+          }
+          return newConversations;
+        })
       }
-      return newConversations;
     })
   }
 
