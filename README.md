@@ -1,10 +1,10 @@
 # tutor-gpt
 
-Tutor-GPT is a LangChain LLM application. It dynamically reasons about your learning needs and *updates its own prompts* to best serve you.  
+Tutor-GPT is a LangChain LLM application. It dynamically reasons about your learning needs and _updates its own prompts_ to best serve you.
 
-We leaned into theory of mind experiments and Bloom is now more than just a literacy tutor, it’s an expansive learning companion. Read more about how it works [here](https://plasticlabs.ai/blog/Theory-of-Mind-is-All-You-Need) or you can join our [Discord](https://discord.gg/bloombotai) to try out our implementation for free (while our OpenAI spend lasts 😄).  
+We leaned into theory of mind experiments and Bloom is now more than just a literacy tutor, it’s an expansive learning companion. Read more about how it works [here](https://plasticlabs.ai/blog/Theory-of-Mind-is-All-You-Need) or you can join our [Discord](https://discord.gg/bloombotai) to try out our implementation for free (while our OpenAI spend lasts 😄).
 
-Alternatively, you can run your own instance of the bot by following the instructions below.  
+Alternatively, you can run your own instance of the bot by following the instructions below.
 
 ## Installation
 
@@ -25,7 +25,7 @@ The repository containers a `Dockerfile` for running the bot in a containerized 
 
 ```bash
 docker build -t tutor-gpt:latest .
-docker run --env-file .env tutor-gpt 
+docker run --env-file .env tutor-gpt
 ```
 
 The current behaviour will utilize the `.env` file in your local repository and
@@ -41,7 +41,7 @@ docker run -p 8501:8501 --env-file .env tutor-gpt python -u -m streamlit run www
 ### Architecture
 
 Below is high level diagram of the architecture for the bot.
-![Tutor-GPT Discord Architecture](assets/ToM&#32;Chain&#32;Flow.png)
+![Tutor-GPT Discord Architecture](<assets/ToM Chain Flow.png>)
 
 ## Contributing
 

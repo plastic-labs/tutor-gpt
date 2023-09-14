@@ -37,3 +37,7 @@ fly.toml
 
 # Github Actions and nektos/act
 act.env
+
+# Next
+www/.next/
+www/node_modules/
