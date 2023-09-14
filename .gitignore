@@ -28,12 +28,47 @@ data/flagged_data_points/
 venv/
 .venv/
 
-# Local Fly Testing
-fly.toml
-
 # jupyter
 *.ipynb
 .ipynb_checkpoints/
 
 # Github Actions and nektos/act
 act.env
+
+
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+www/node_modules
+www/.pnp
+www/.pnp.js
+
+# testing
+www/coverage
+
+# next.js
+www/.next/
+/out/
+
+# production
+/build
+
+# misc
+www/.DS_Store
+www/*.pem
+
+# debug
+www/npm-debug.log*
+www/yarn-debug.log*
+www/yarn-error.log*
+
+# local env files
+www/.env*.local
+
+# vercel
+www/.vercel
+
+# typescript
+www/*.tsbuildinfo
+www/next-env.d.ts
+.vercel
