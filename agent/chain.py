@@ -8,7 +8,7 @@ from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from dotenv import load_dotenv
 
 from collections.abc import AsyncIterator
-from .cache import ConversationCache
+from .cache import Conversation
 
 from agent.tools.search import SearchTool, search_ready_output_parser
 from langchain.embeddings import HuggingFaceBgeEmbeddings
@@ -18,6 +18,8 @@ load_dotenv()
 
 SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/thought.yaml'))
 SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/response.yaml'))
+SYSTEM_USER_PREDICTION_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/user_prediction_thought.yaml'))
+
 
 
 class BloomChain:
@@ -32,6 +34,7 @@ class BloomChain:
 
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
+    system_user_prediction_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT)
 
 
     search_tool: SearchTool
@@ -57,7 +60,7 @@ class BloomChain:
         # self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
         
     @classmethod
-    def think(cls, cache: ConversationCache, input: str):
+    def think(cls, cache: Conversation, input: str):
         """Generate Bloom's thought on the user."""
         # load message history
         thought_prompt = ChatPromptTemplate.from_messages([
@@ -108,15 +111,36 @@ class BloomChain:
             chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
             lambda response: cache.add_message("response", AIMessage(content=response))
         )
+    
+    @classmethod
+    async def think_user_prediction(cls, cache: Conversation):
+        """Generate a thought about what the user is going to say"""
+
+        messages = ChatPromptTemplate.from_messages([
+            cls.system_user_prediction_thought,
+        ])
+        chain = messages | cls.llm
+
+        history = unpack_messages(cache.messages('response'))
+
+        user_prediction_thought = await chain.ainvoke(
+            {"history": history}, 
+            {"tags": ["user_prediction_thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}
+        )
+
+        cache.add_message("user_prediction_thought", user_prediction_thought)
+
 
 
     @classmethod    
-    async def chat(cls, cache: ConversationCache, inp: str ) -> tuple[str, str]:
+    async def chat(cls, cache: Conversation, inp: str ) -> tuple[str, str]:
         thought_iterator = cls.think(cache, inp)
         thought = await thought_iterator()
 
         response_iterator = await cls.respond(cache, thought, inp)
         response = await response_iterator()
+
+        await cls.think_user_prediction(cache)
 
         return thought, response
 
@@ -127,7 +151,6 @@ class Streamable:
     def __init__(self, iterator: AsyncIterator[BaseMessage], callback):
         self.iterator = iterator
         self.callback = callback
-        # self.content: List[Awaitable[BaseMessage]] = []
         self.content = ""
     
     def __aiter__(self):
@@ -137,7 +160,7 @@ class Streamable:
         try:
             data = await self.iterator.__anext__()
             self.content += data.content
-            return self.content
+            return data.content
         except StopAsyncIteration as e:
             self.callback(self.content)
             raise StopAsyncIteration
@@ -149,3 +172,12 @@ class Streamable:
             pass
         return self.content
         
+def unpack_messages(messages):
+    unpacked = ""
+    for message in messages:
+        if isinstance(message, HumanMessage):
+            unpacked += f"User: {message.content}\n"
+        elif isinstance(message, AIMessage):
+            unpacked += f"AI: {message.content}\n"
+        # Add more conditions here if you're using other message types
+    return unpacked

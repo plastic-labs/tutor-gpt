@@ -14,9 +14,12 @@ validators = "^0.20.0"
 openai = "^0.27.5"
 pexpect = "^4.8.0"
 tiktoken = "^0.3.3"
-streamlit = "^1.25.0"
 psycopg = {extras = ["binary"], version = "^3.1.10"}
 supabase = "^1.0.4"
+fastapi = "^0.101.1"
+uvicorn = {extras = ["standard"], version = "^0.23.2"}
+requests = "^2.31.0"
+httpx = "^0.24.0"
 playwright = "^1.37.0"
 beautifulsoup4 = "^4.12.2"
 html2text = "^2020.1.16"
