@@ -11,7 +11,7 @@ from discord.ext import commands
 from typing import Optional
 from agent.chain import  BloomChain
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
-import httpx
+# import httpx
 
 
 class Core(commands.Cog):
