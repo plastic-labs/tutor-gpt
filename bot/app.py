@@ -4,7 +4,7 @@ from common import init
 from dotenv import load_dotenv
     
 load_dotenv()
-CACHE, LOCK, (THOUGHT_CHANNEL, TOKEN) = init()
+CACHE, LOCK, _, (THOUGHT_CHANNEL, TOKEN) = init()
 
 intents = discord.Intents.default()
 intents.messages = True

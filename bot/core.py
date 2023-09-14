@@ -1,6 +1,7 @@
 # core functionality
 
 import discord
+import os
 from __main__ import (
     CACHE,
     LOCK,
@@ -10,6 +11,7 @@ from discord.ext import commands
 from typing import Optional
 from agent.chain import  BloomChain
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
+import httpx
 
 
 class Core(commands.Cog):
@@ -44,9 +46,10 @@ Enjoy!
         if message.author == self.bot.user:
             return
 
+        user_id = f"discord_{str(message.author.id)}"
         # Get cache for conversation
         async with LOCK:
-            CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=f"discord_{str(message.author.id)}")
+            CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=user_id)
 
         # Get the message content but remove any mentions
         inp = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
@@ -55,36 +58,49 @@ Enjoy!
         async def respond(reply = True, forward_thought = True):
             "Generate response too user"
             async with message.channel.typing():
+                # thought = ""
+                # response = ""
+                # if (CONVERSATION.metadata is not None and "A/B" in CONVERSATION.metadata and CONVERSATION.metadata["A/B"] == True):
+                #     async with httpx.AsyncClient() as client:
+                #         response = await client.post(f'{os.environ["HONCHO_URL"]}/chat', json={
+                #             "user_id": CONVERSATION.user_id,
+                #             "conversation_id": CONVERSATION.conversation_id,
+                #             "message": inp
+                #         }, timeout=None)
+                #     response_text = response.json()
+                #     thought = response_text["thought"]
+                #     response = response_text["response"]
+                # else:
                 thought, response = await BloomChain.chat(CONVERSATION, inp)
 
-            # sanitize thought by adding zero width spaces to triple backticks
-            thought = thought.replace("```", "`\u200b`\u200b`")
+                # sanitize thought by adding zero width spaces to triple backticks
+                thought = thought.replace("```", "`\u200b`\u200b`")
 
-            thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
+                thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
 
-            # Thought Forwarding
-            if (forward_thought):
-                link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
-                if len(thought) > n:
-                    chunks = [thought[i:i+n] for i in range(0, len(thought), n)]
-                    for i in range(len(chunks)):
-                        await thought_channel.send(f"{link}\n```\nThought #{i}: {chunks[i]}\n```")
-                else:
-                    await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
-
-            # Response Forwarding   
-            if len(response) > n:
-                chunks = [response[i:i+n] for i in range(0, len(response), n)]
-                for chunk in chunks:
-                    if (reply):
-                        await message.reply(chunk)
+                # Thought Forwarding
+                if (forward_thought):
+                    link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                    if len(thought) > n:
+                        chunks = [thought[i:i+n] for i in range(0, len(thought), n)]
+                        for i in range(len(chunks)):
+                            await thought_channel.send(f"{link}\n```\nThought #{i}: {chunks[i]}\n```")
                     else:
-                        await message.channel.send(chunk)
-            else:
-                if (reply):
-                    await message.reply(response)
+                        await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
+
+                # Response Forwarding   
+                if len(response) > n:
+                    chunks = [response[i:i+n] for i in range(0, len(response), n)]
+                    for chunk in chunks:
+                        if (reply):
+                            await message.reply(chunk)
+                        else:
+                            await message.channel.send(chunk)
                 else:
-                    await message.channel.send(response)
+                    if (reply):
+                        await message.reply(response)
+                    else:
+                        await message.channel.send(response)
 
         # if the message came from a DM channel...
         if isinstance(message.channel, discord.channel.DMChannel):
@@ -155,8 +171,6 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
             await ctx.respond(msg)
         else:
             return
-
-
 
 
 def setup(bot):
