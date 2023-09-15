@@ -160,7 +160,7 @@ class SearchTool(BaseTool):
     async def _aresearch_url(self, url: str, query: str):
         """Research a URL by embedding the web page and then using the most relevant sections to the query to generate a summary of the most important information on the page."""
 
-        prompt = Prompt.from_template("Your job is to write a summary of a web page containing the most essential information to answer a specific question. You will be given a few selected sections of the web page to base your summary off of. \n\nQuestion: {query}\n\nBEGIN SELECTIONS\n{doc}\nEND SELECTIONS")
+        prompt = Prompt.from_template("Your job is to summarize the information on the web page AS IT PERTAINS TO THE QUERY. You will be given a few selected sections of the web page to base your answer off of. \n\nQuestion: {query}\n\nBEGIN SELECTIONS\n{doc}\nEND SELECTIONS")
         llm_chain = LLMChain(llm=self.llm, prompt=prompt)
 
         try:
