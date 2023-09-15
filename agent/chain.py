@@ -78,7 +78,7 @@ class BloomChain:
         )
         
     @classmethod
-    async def respond(cls, cache: ConversationCache, thought: str, input: str):
+    async def respond(cls, cache: Conversation, thought: str, input: str):
         """Generate Bloom's response to the user."""
         
         messages = [

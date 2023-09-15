@@ -153,7 +153,7 @@ async def stream(inp: ConversationInput):
         raise HTTPException(status_code=404, detail="Item not found")
 
     async def thought_and_response():
-        thought_iterator = BloomChain.think(conversation, inp.message)
+        thought_iterator = await BloomChain.think(conversation, inp.message)
         thought = ""
         async for item in thought_iterator:
             # escape ❀ if present

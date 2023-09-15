@@ -176,6 +176,7 @@ class SearchTool(BaseTool):
 
             # embedding search
             db = FAISS.from_documents(docs, self.embeddings)
+            # query prefix is used per instructions https://github.com/FlagOpen/FlagEmbedding
             relevant_sections = await db.asimilarity_search(query=("Represent this sentence for searching relevant passages: " + query), k=12)
 
             # rerank
