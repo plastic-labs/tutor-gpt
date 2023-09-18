@@ -17,9 +17,6 @@ import {
 // import { GrClose } from "react-icons/gr";
 import { useRef, useEffect, useState, useCallback } from "react";
 
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { dark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { v4 as uuidv4 } from "uuid";
 import Typing from "@/components/typing";
 
@@ -27,6 +24,7 @@ import Typing from "@/components/typing";
 import { Session } from "@supabase/supabase-js";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Link from "next/link";
+import MarkdownWrapper from "@/components/markdownWrapper";
 
 interface Message {
   text: string;
@@ -288,55 +286,11 @@ export default function Home() {
           </section>
         )}
         <section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
-          {messages.map((message, i) => {
-            return (
-              <Message isUser={message.isUser} key={i}>
-                {message.text ? (
-                  <ReactMarkdown
-                    components={{
-                      ol: ({ node, ...props }) => (
-                        <ol className="list-decimal" {...props} />
-                      ),
-                      ul: ({ node, ...props }) => (
-                        <ul className="list-disc" {...props} />
-                      ),
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || "");
-                        return !inline && match ? (
-                          <SyntaxHighlighter
-                            {...props}
-                            children={String(children).replace(/\n$/, "")}
-                            lineProps={{
-                              style: {
-                                wordBreak: "break-all",
-                                whiteSpace: "pre-wrap",
-                              },
-                            }}
-                            style={dark}
-                            language={match[1]}
-                            PreTag="div"
-                            wrapLines={true}
-                          />
-                        ) : (
-                          <code
-                            {...props}
-                            className={className}
-                            style={{ whiteSpace: "pre-wrap" }}
-                          >
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
-                  >
-                    {message.text}
-                  </ReactMarkdown>
-                ) : (
-                  <Typing />
-                )}
-              </Message>
-            );
-          })}
+          {messages.map((message, i) => (
+            <Message isUser={message.isUser} key={i}>
+              <MarkdownWrapper text={message.text} />
+            </Message>
+          ))}
         </section>
         <form
           id="send"

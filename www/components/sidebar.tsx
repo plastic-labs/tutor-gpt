@@ -1,5 +1,4 @@
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
 import { Session } from "@supabase/supabase-js";
@@ -60,7 +59,7 @@ export default function Sidebar({
     });
     console.log(newName);
     if (!newName || newName === cur.name) return;
-    fetch(`${URL}/api/conversations/update`, {
+    const data = await fetch(`${URL}/api/conversations/update`, {
       method: "POST",
       body: JSON.stringify({
         conversation_id: cur.conversation_id,
@@ -69,17 +68,16 @@ export default function Sidebar({
       headers: {
         "Content-Type": "application/json",
       },
-    }).then((data) => {
-      const copy = { ...cur };
-      copy.name = newName;
-      setConversations(
-        conversations.map((conversation) =>
-          conversation.conversation_id === copy.conversation_id
-            ? copy
-            : conversation
-        )
-      );
     });
+    const copy = { ...cur };
+    copy.name = newName;
+    setConversations(
+      conversations.map((conversation) =>
+        conversation.conversation_id === copy.conversation_id
+          ? copy
+          : conversation
+      )
+    );
   }
 
   async function deleteConversation(conversation: Conversation) {
