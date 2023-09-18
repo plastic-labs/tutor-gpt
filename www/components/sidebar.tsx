@@ -129,8 +129,8 @@ export default function Sidebar({
       name: "Untitled",
       conversation_id: conversationId,
     };
-
-    setConversations([...conversations, newConversation]);
+    setCurrentConversation(newConversation);
+    setConversations([newConversation, ...conversations]);
   }
 
   return (
