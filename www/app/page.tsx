@@ -16,7 +16,6 @@ import {
 // import { IoIosArrowDown } from "react-icons/io";
 // import { GrClose } from "react-icons/gr";
 import { useRef, useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -27,6 +26,7 @@ import Typing from "@/components/typing";
 // Supabase
 import { Session } from "@supabase/supabase-js";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import Link from "next/link";
 
 interface Message {
   text: string;
@@ -58,7 +58,6 @@ export default function Home() {
     conversation_id: "",
     name: "",
   });
-  const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const supabase = createClientComponentClient();
 
@@ -279,12 +278,12 @@ export default function Home() {
           <section className="bg-neon-green text-black text-center py-4">
             <p>
               To save your conversation history and personalize your messages{" "}
-              <span
+              <Link
                 className="cursor-pointer hover:cursor-pointer font-bold underline"
-                onClick={() => router.push("/auth")}
+                href={"/auth"}
               >
                 sign in here
-              </span>
+              </Link>
             </p>
           </section>
         )}
