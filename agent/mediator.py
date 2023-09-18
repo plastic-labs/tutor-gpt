@@ -67,13 +67,14 @@ class SupabaseMediator:
         for conversation_id in conversation_ids:
             self.supabase.table(self.conversation_table).update({"isActive": False}).eq("id", conversation_id).execute()
     
-    def add_conversation(self, location_id: str, user_id: str) -> Dict:
+    def add_conversation(self, location_id: str, user_id: str, metadata: Dict = {}) -> Dict:
         conversation_id = str(uuid.uuid4())
         payload = {
                 "id": conversation_id, 
                 "user_id": user_id, 
                 "location_id": location_id,
-                "metadata": {"A/B": bool(random.getrandbits(1))}
+                "metadata": metadata,
+                # "metadata": {"A/B": bool(random.getrandbits(1))}
         }
         representation = self.supabase.table(self.conversation_table).insert(payload, returning="representation").execute() # type: ignore
         print("========================================")

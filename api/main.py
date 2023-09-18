@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from langchain.schema import _message_to_dict
 
 import os
+import random
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,6 +30,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 __, LOCK, MEDIATOR, _ = init()
+
+honcho_url = os.getenv("HONCHO_URL")
 
 class ConversationInput(BaseModel):
     conversation_id: str
@@ -70,7 +73,10 @@ async def delete_conversation(conversation_id: str):
 @app.get("/api/conversations/insert")
 async def add_conversation(user_id: str, location_id: str = "web"):
     async with LOCK:
-        representation = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id)
+        metadata = {"A/B": False}
+        if not user_id.startswith("anon_"):
+            metadata["A/B"] = bool(random.getrandbits(1))
+        representation = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id, metadata=metadata)
         conversation_id = representation["id"]
     return {
        "conversation_id": conversation_id
@@ -96,10 +102,10 @@ async def chat(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
-    if conversation_data and conversation_data["metadata"]: 
+    if honcho_url and conversation_data and conversation_data["metadata"]: 
         metadata = conversation_data["metadata"]
         if metadata["A/B"]:
-            response = requests.post(f'{os.environ["HONCHO_URL"]}/chat', json={
+            response = requests.post(f'{honcho_url}/chat', json={
                 "user_id": inp.user_id,
                 "conversation_id": inp.conversation_id,
                 "message": inp.message
@@ -121,10 +127,10 @@ async def stream(inp: ConversationInput):
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
-    if not inp.user_id.startswith("anon_") and conversation_data and conversation_data["metadata"]: 
+    if honcho_url and not inp.user_id.startswith("anon_") and conversation_data and conversation_data["metadata"]: 
         metadata = conversation_data["metadata"]
         if metadata["A/B"]:
-            response = requests.post(f'{os.environ["HONCHO_URL"]}/stream', json={
+            response = requests.post(f'{honcho_url}/stream', json={
                 "user_id": inp.user_id,
                 "conversation_id": inp.conversation_id,
                 "message": inp.message
@@ -153,19 +159,25 @@ async def stream(inp: ConversationInput):
         raise HTTPException(status_code=404, detail="Item not found")
 
     async def thought_and_response():
-        thought_iterator = BloomChain.think(conversation, inp.message)
-        thought = ""
-        async for item in thought_iterator:
-            # escape ❀ if present
-            item = item.replace("❀", "🌸")
-            thought += item
-            yield item
-        yield "❀"
-        response_iterator = BloomChain.respond(conversation, thought, inp.message)
-        async for item in response_iterator:
-            # if "❀" in item:
-            item = item.replace("❀", "🌸")
-            yield item
+        try: 
+            thought_iterator = BloomChain.think(conversation, inp.message)
+            thought = ""
+            async for item in thought_iterator:
+                # escape ❀ if present
+                item = item.replace("❀", "🌸")
+                thought += item
+                yield item
+            yield "❀"
+            response_iterator = BloomChain.respond(conversation, thought, inp.message)
+
+            async for item in response_iterator:
+                # if "❀" in item:
+                item = item.replace("❀", "🌸")
+                yield item
+
+            user_prediction = await BloomChain.think_user_prediction(conversation)
+        finally:
+            yield "❀"
 
     return StreamingResponse(thought_and_response())
 
