@@ -84,7 +84,8 @@ async def add_conversation(user_id: str, location_id: str = "web"):
     async with LOCK:
         metadata = {"A/B": False}
         if not user_id.startswith("anon_"):
-            metadata["A/B"] = bool(random.getrandbits(1))
+            # metadata["A/B"] = bool(random.getrandbits(1))
+            metadata["A/B"] = True
         representation = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id, metadata=metadata)
         conversation_id = representation["id"]
     return {
@@ -138,7 +139,7 @@ async def stream(inp: ConversationInput):
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
     if honcho_url and not inp.user_id.startswith("anon_") and conversation_data and conversation_data["metadata"]: 
         metadata = conversation_data["metadata"]
-        if metadata["A/B"]:
+        if "A/B" in metadata.keys() and metadata["A/B"]:
             response = requests.post(f'{honcho_url}/stream', json={
                 "user_id": inp.user_id,
                 "conversation_id": inp.conversation_id,
