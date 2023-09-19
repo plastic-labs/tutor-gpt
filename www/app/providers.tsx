@@ -5,9 +5,12 @@ import { PostHogProvider } from 'posthog-js/react'
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
+const posthogKey: string = process.env.NEXT_PUBLIC_POSTHOG_KEY || ""
+const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || ""
+
 if (typeof window !== 'undefined') {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+  posthog.init(posthogKey, {
+    api_host: posthogHost,
     capture_pageview: false // Disable automatic pageview capture, as we capture manually
   })
 }
