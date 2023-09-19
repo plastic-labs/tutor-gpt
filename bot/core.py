@@ -1,7 +1,6 @@
 # core functionality
 
 import discord
-import os
 from __main__ import (
     CACHE,
     LOCK,
@@ -10,8 +9,8 @@ from __main__ import (
 from discord.ext import commands
 from typing import Optional
 from agent.chain import  BloomChain
-from langchain.schema import AIMessage, HumanMessage, BaseMessage
-# import httpx
+from langchain.schema import AIMessage
+import sentry_sdk
 
 
 class Core(commands.Cog):
@@ -20,20 +19,21 @@ class Core(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        welcome_message = """
-Hello! Thanks for joining the Bloom server. 
+        with sentry_sdk.start_transaction(op="on_member_join", name="discord.on_member_join"):
+            welcome_message = """
+    Hello! Thanks for joining the Bloom server. 
 
-I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!
+    I’m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!
 
-If I'm off track, just say so! If you'd like to reset our dialogue, use the /restart  command.
+    If I'm off track, just say so! If you'd like to reset our dialogue, use the /restart  command.
 
-Need to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.
+    Need to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.
 
-If you have any further questions, use the /help command or feel free to post them in https://discord.com/channels/1076192451997474938/1092832830159065128 and someone from the Plastic Labs team will get back to you ASAP!
+    If you have any further questions, use the /help command or feel free to post them in https://discord.com/channels/1076192451997474938/1092832830159065128 and someone from the Plastic Labs team will get back to you ASAP!
 
-Enjoy!
-        """
-        await member.send(welcome_message)
+    Enjoy!
+            """
+            await member.send(welcome_message)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -42,85 +42,86 @@ Enjoy!
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        # Don't let the bot reply too itself
-        if message.author == self.bot.user:
-            return
+        with sentry_sdk.start_transaction(op="on_message", name="discord.on_message"):
+            # Don't let the bot reply too itself
+            if message.author == self.bot.user:
+                return
 
-        user_id = f"discord_{str(message.author.id)}"
-        # Get cache for conversation
-        async with LOCK:
-            CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=user_id)
+            user_id = f"discord_{str(message.author.id)}"
+            # Get cache for conversation
+            async with LOCK:
+                CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=user_id)
 
-        # Get the message content but remove any mentions
-        inp = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
-        n = 1800
+            # Get the message content but remove any mentions
+            inp = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
+            n = 1800
 
-        async def respond(reply = True, forward_thought = True):
-            "Generate response too user"
-            async with message.channel.typing():
-                # thought = ""
-                # response = ""
-                # if (CONVERSATION.metadata is not None and "A/B" in CONVERSATION.metadata and CONVERSATION.metadata["A/B"] == True):
-                #     async with httpx.AsyncClient() as client:
-                #         response = await client.post(f'{os.environ["HONCHO_URL"]}/chat', json={
-                #             "user_id": CONVERSATION.user_id,
-                #             "conversation_id": CONVERSATION.conversation_id,
-                #             "message": inp
-                #         }, timeout=None)
-                #     response_text = response.json()
-                #     thought = response_text["thought"]
-                #     response = response_text["response"]
-                # else:
-                thought, response = await BloomChain.chat(CONVERSATION, inp)
+            async def respond(reply = True, forward_thought = True):
+                "Generate response too user"
+                async with message.channel.typing():
+                    # thought = ""
+                    # response = ""
+                    # if (CONVERSATION.metadata is not None and "A/B" in CONVERSATION.metadata and CONVERSATION.metadata["A/B"] == True):
+                    #     async with httpx.AsyncClient() as client:
+                    #         response = await client.post(f'{os.environ["HONCHO_URL"]}/chat', json={
+                    #             "user_id": CONVERSATION.user_id,
+                    #             "conversation_id": CONVERSATION.conversation_id,
+                    #             "message": inp
+                    #         }, timeout=None)
+                    #     response_text = response.json()
+                    #     thought = response_text["thought"]
+                    #     response = response_text["response"]
+                    # else:
+                    thought, response = await BloomChain.chat(CONVERSATION, inp)
 
-                # sanitize thought by adding zero width spaces to triple backticks
-                thought = thought.replace("```", "`\u200b`\u200b`")
+                    # sanitize thought by adding zero width spaces to triple backticks
+                    thought = thought.replace("```", "`\u200b`\u200b`")
 
-                thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
+                    thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
 
-                # Thought Forwarding
-                if (forward_thought):
-                    link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
-                    if len(thought) > n:
-                        chunks = [thought[i:i+n] for i in range(0, len(thought), n)]
-                        for i in range(len(chunks)):
-                            await thought_channel.send(f"{link}\n```\nThought #{i}: {chunks[i]}\n```")
-                    else:
-                        await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
-
-                # Response Forwarding   
-                if len(response) > n:
-                    chunks = [response[i:i+n] for i in range(0, len(response), n)]
-                    for chunk in chunks:
-                        if (reply):
-                            await message.reply(chunk)
+                    # Thought Forwarding
+                    if (forward_thought):
+                        link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
+                        if len(thought) > n:
+                            chunks = [thought[i:i+n] for i in range(0, len(thought), n)]
+                            for i in range(len(chunks)):
+                                await thought_channel.send(f"{link}\n```\nThought #{i}: {chunks[i]}\n```")
                         else:
-                            await message.channel.send(chunk)
-                else:
-                    if (reply):
-                        await message.reply(response)
+                            await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
+
+                    # Response Forwarding   
+                    if len(response) > n:
+                        chunks = [response[i:i+n] for i in range(0, len(response), n)]
+                        for chunk in chunks:
+                            if (reply):
+                                await message.reply(chunk)
+                            else:
+                                await message.channel.send(chunk)
                     else:
-                        await message.channel.send(response)
+                        if (reply):
+                            await message.reply(response)
+                        else:
+                            await message.channel.send(response)
 
-        # if the message came from a DM channel...
-        if isinstance(message.channel, discord.channel.DMChannel):
-            await respond(reply=False, forward_thought=False)
+            # if the message came from a DM channel...
+            if isinstance(message.channel, discord.channel.DMChannel):
+                await respond(reply=False, forward_thought=False)
 
-        # If the bot was mentioned in the message
-        if not isinstance(message.channel, discord.channel.DMChannel):
-            if str(self.bot.user.id) in message.content:
-                await respond(forward_thought=True)
-
-        # If the bot was replied to in the message
-        if not isinstance(message.channel, discord.channel.DMChannel):
-            if message.reference is not None:
-                reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
-                if reply_msg.author == self.bot.user:
-                    if reply_msg.content.startswith("https://discord.com"):
-                        return
-                    if message.content.startswith("!no") or message.content.startswith("!No"):
-                        return
+            # If the bot was mentioned in the message
+            if not isinstance(message.channel, discord.channel.DMChannel):
+                if str(self.bot.user.id) in message.content:
                     await respond(forward_thought=True)
+
+            # If the bot was replied to in the message
+            if not isinstance(message.channel, discord.channel.DMChannel):
+                if message.reference is not None:
+                    reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
+                    if reply_msg.author == self.bot.user:
+                        if reply_msg.content.startswith("https://discord.com"):
+                            return
+                        if message.content.startswith("!no") or message.content.startswith("!No"):
+                            return
+                        await respond(forward_thought=True)
             
 
     @commands.slash_command(description="Help using the bot")
@@ -156,21 +157,22 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
 
     @commands.slash_command(description="Restart the conversation with the tutor")
     async def restart(self, ctx: discord.ApplicationContext, respond: Optional[bool] = True):
-        """
-        Clears the conversation history and reloads the chains
+        with sentry_sdk.start_transaction(op="restart", name="discord.restart"):
+            """
+            Clears the conversation history and reloads the chains
 
-        Args:
-            ctx: context, necessary for bot commands
-        """
-        async with LOCK:
-            CONVERSATION = CACHE.get_or_create(location_id=str(ctx.channel_id), user_id=f"discord_{str(ctx.author.id)}", restart=True)
+            Args:
+                ctx: context, necessary for bot commands
+            """
+            async with LOCK:
+                CONVERSATION = CACHE.get_or_create(location_id=str(ctx.channel_id), user_id=f"discord_{str(ctx.author.id)}", restart=True)
 
-        if respond:
-            msg = "Great! The conversation has been restarted. What would you like to talk about?"
-            CONVERSATION.add_message("response", AIMessage(content=msg))
-            await ctx.respond(msg)
-        else:
-            return
+            if respond:
+                msg = "Great! The conversation has been restarted. What would you like to talk about?"
+                CONVERSATION.add_message("response", AIMessage(content=msg))
+                await ctx.respond(msg)
+            else:
+                return
 
 
 def setup(bot):

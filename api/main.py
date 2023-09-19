@@ -11,12 +11,21 @@ from fastapi.middleware.cors import CORSMiddleware
 # from fastapi.staticfiles import StaticFiles
 
 from langchain.schema import _message_to_dict
+import sentry_sdk
 
 import os
 import random
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+rate = 0.2 if os.getenv("SENTRY_ENVIRONMENT") == "production" else 1.0
+sentry_sdk.init(
+    dsn=os.environ['SENTRY_DSN_API'],
+    traces_sample_rate=rate,
+    profiles_sample_rate=rate
+)
 
 app = FastAPI()
 
