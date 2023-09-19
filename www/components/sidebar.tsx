@@ -40,7 +40,7 @@ export default function Sidebar({
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    console.log("Signed out");
+    // console.log("Signed out");
     location.reload();
   }
 
@@ -57,7 +57,7 @@ export default function Sidebar({
         }
       },
     });
-    console.log(newName);
+    // console.log(newName);
     if (!newName || newName === cur.name) return;
     const data = await fetch(`${URL}/api/conversations/update`, {
       method: "POST",
@@ -100,17 +100,17 @@ export default function Sidebar({
           const newConversations = conversations.filter(
             (cur: Conversation) => cur.conversation_id !== conversation_id
           );
-          console.log("New Conversations", newConversations);
+          // console.log("New Conversations", newConversations);
           // If it was the currentConversation, change the currentConversation to the next one in the list
           if (conversation === currentConversation) {
             if (newConversations.length > 1) {
               setCurrentConversation(newConversations[0]);
-              console.log("Current Conversation", newConversations[0]);
+              // console.log("Current Conversation", newConversations[0]);
             } else {
               // If there is no current conversation create a new one
               newChat().then((newConversationId: string) => {
                 setCurrentConversation(newConversationId);
-                console.log("Current Conversation", newConversationId);
+                // console.log("Current Conversation", newConversationId);
                 setConversations([newConversationId]);
               });
             }
@@ -133,14 +133,12 @@ export default function Sidebar({
 
   return (
     <div
-      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 ${
-        isSidebarOpen ? "" : "hidden"
-      }`}
+      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 ${isSidebarOpen ? "" : "hidden"
+        }`}
     >
       <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
-          isSidebarOpen ? "fixed lg:static" : "sticky"
-        } top-0 left-0`}
+        className={`h-full scrollbar-trigger overflow-hidden bg-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? "fixed lg:static" : "sticky"
+          } top-0 left-0`}
       >
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300">
@@ -163,9 +161,8 @@ export default function Sidebar({
           {conversations.map((cur, i) => (
             <div
               key={i}
-              className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${
-                currentConversation === cur ? "bg-gray-200" : ""
-              }`}
+              className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""
+                }`}
               onClick={() => setCurrentConversation(cur)}
             >
               <div>

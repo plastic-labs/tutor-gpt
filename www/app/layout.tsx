@@ -1,6 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
+import { PHProvider, PostHogPageview } from './providers'
+import { Suspense } from 'react'
 
 const spacegrotesk = Space_Grotesk({ subsets: ["latin"] });
 
@@ -50,7 +52,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={spacegrotesk.className}>{children}</body>
-    </html>
+      <Suspense>
+        <PostHogPageview />
+      </Suspense>
+      <PHProvider>
+        <body className={spacegrotesk.className}>{children}</body>
+      </PHProvider>
+    </html >
   );
 }

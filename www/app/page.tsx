@@ -219,7 +219,7 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
-        console.log("done");
+        // console.log("done");
         setCanSend(true);
         break;
       }
@@ -305,9 +305,8 @@ export default function Home() {
             type="text"
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${
-              canSend ? " border-green-200" : "border-red-200 opacity-50"
-            }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"
+              }`}
             disabled={!canSend}
           />
           <button
