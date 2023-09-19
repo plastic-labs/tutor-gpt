@@ -32,6 +32,10 @@ class Conversation:
         self.mediator.delete_conversation(self.conversation_id)
 
     @sentry_sdk.trace
+    def messages(self, message_type: str, limit: Tuple[bool, int | None] = (True, 10)) -> List[BaseMessage]:
+        return self.mediator.messages(self.conversation_id, self.user_id, message_type, limit=limit)
+
+    @sentry_sdk.trace
     def restart(self) -> None:
         self.delete()
         representation = self.mediator.add_conversation(user_id=self.user_id, location_id=self.location_id)

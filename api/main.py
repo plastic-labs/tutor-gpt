@@ -114,7 +114,7 @@ async def chat(inp: ConversationInput):
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
     if honcho_url and conversation_data and conversation_data["metadata"]: 
         metadata = conversation_data["metadata"]
-        if metadata["A/B"]:
+        if "A/B" in metadata.keys() and metadata["A/B"]:
             response = requests.post(f'{honcho_url}/chat', json={
                 "user_id": inp.user_id,
                 "conversation_id": inp.conversation_id,

@@ -95,4 +95,3 @@ class SupabaseMediator:
        else:
            new_metadata = metadata
        self.supabase.table(self.conversation_table).update({"metadata": new_metadata}, returning="representation").eq("id", conversation_id).execute() # type: ignore
-

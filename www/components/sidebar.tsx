@@ -154,60 +154,62 @@ export default function Sidebar({
           >
             <GrClose />
           </button>
-        </div>
+              </div>
 
-        {/* Section 2: Scrollable items */}
-        <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300">
-          {conversations.map((cur, i) => (
-            <div
-              key={i}
-              className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""
-                }`}
-              onClick={() => setCurrentConversation(cur)}
-            >
-              <div>
-                <h2 className="font-bold overflow-ellipsis overflow-hidden">
-                  {cur.name || "Untitled"}
-                </h2>
-              </div>
-              <div className="flex flex-row justify-end gap-2 items-center w-1/5">
-                <button
-                  className="text-gray-500"
-                  onClick={() => editConversation(cur)}
-                >
-                  <FaEdit />
-                </button>
-                <button
-                  className="text-red-500"
-                  onClick={() => deleteConversation(cur)}
-                >
-                  <FaTrash />
-                </button>
-              </div>
-            </div>
+              {/* Section 2: Scrollable items */}
+              <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300">
+                {conversations.map((cur, i) => (
+                  <div
+                    key={i}
+                    className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""
+                      }`}
+                    onClick={() => setCurrentConversation(cur)}
+                  >
+                    <div>
+                      <h2 className="font-bold overflow-ellipsis overflow-hidden">
+                        {cur.name || "Untitled"}
+                      </h2>
+                    </div>
+                    <div className="flex flex-row justify-end gap-2 items-center w-1/5">
+                      <button
+                        className="text-gray-500"
+                        onClick={() => editConversation(cur)}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="text-red-500"
+                        onClick={() => deleteConversation(cur)}
+                      >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </div>
           ))}
-        </div>
+                    </div>
 
-        {/* Section 3: Authentication information */}
-        <div className="border-t border-gray-300 p-4 w-full">
-          {/* Replace this with your authentication information */}
-          {authSession ? (
-            <button
-              className="bg-neon-green rounded-lg px-4 py-2 w-full"
-              onClick={handleSignOut}
-            >
-              Sign Out
-            </button>
-          ) : (
-            <button
-              className="bg-neon-green rounded-lg px-4 py-2 w-full"
-              onClick={() => router.push("/auth")}
-            >
-              Sign In
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+                    {/* Section 3: Authentication information */}
+                    <div className="border-t border-gray-300 p-4 w-full">
+                      {/* Replace this with your authentication information */}
+  {
+    authSession ? (
+      <button
+        className="bg-neon-green rounded-lg px-4 py-2 w-full"
+        onClick={handleSignOut}
+      >
+        Sign Out
+      </button>
+    ) : (
+      <button
+        className="bg-neon-green rounded-lg px-4 py-2 w-full"
+        onClick={() => router.push("/auth")}
+      >
+        Sign In
+      </button>
+    )
+  }
+        </div >
+      </div >
+    </div >
   );
 }

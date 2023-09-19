@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Honcho is not required to run locally
 - A/B is only set for logged in users
 
-
 ## [0.4.0] – 2023-09-14
 
 ### Added
@@ -40,7 +39,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Upgrade Langchain version to `0.0.286`
 - Deployment redundancy and minimum availability requirements
 - Added asyncio `locks` for better concurrency safety
-
 
 ## [0.3.0] – 2023-08-28
 

@@ -1,6 +1,7 @@
 # core functionality
 
 import discord
+import os
 from __main__ import (
     CACHE,
     LOCK,

@@ -271,26 +271,27 @@ export default function Home() {
             See Thoughts
             <FaLightbulb className="inline" />
           </button>
-        </nav>
-        {!authSession && (
-          <section className="bg-neon-green text-black text-center py-4">
-            <p>
-              To save your conversation history and personalize your messages{" "}
-              <Link
-                className="cursor-pointer hover:cursor-pointer font-bold underline"
-                href={"/auth"}
-              >
-                sign in here
-              </Link>
-            </p>
-          </section>
-        )}
-        <section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
-          {messages.map((message, i) => (
-            <Message isUser={message.isUser} key={i}>
-              <MarkdownWrapper text={message.text} />
-            </Message>
-          ))}
+        </nav >
+    {!authSession && (
+      <section className="bg-neon-green text-black text-center py-4">
+  <p>
+    To save your conversation history and personalize your messages{" "}
+    <Link
+      className="cursor-pointer hover:cursor-pointer font-bold underline"
+      href={"/auth"}
+    >
+      sign in here
+    </Link>
+  </p>
+          </section >
+        )
+}
+<section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
+  {messages.map((message, i) => (
+    <Message isUser={message.isUser} key={i}>
+      <MarkdownWrapper text={message.text} />
+    </Message>
+  ))}
         </section>
         <form
           id="send"
@@ -316,12 +317,12 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
-      </div>
-      <Thoughts
-        thought={thought}
-        setIsThoughtsOpen={setIsThoughtsOpen}
-        isThoughtsOpen={isThoughtsOpen}
-      />
-    </main>
+      </div >
+  <Thoughts
+    thought={thought}
+    setIsThoughtsOpen={setIsThoughtsOpen}
+    isThoughtsOpen={isThoughtsOpen}
+  />
+    </main >
   );
 }
