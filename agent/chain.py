@@ -125,7 +125,6 @@ class Streamable:
     def __aiter__(self):
         return self
     
-    @sentry_sdk.trace
     async def __anext__(self):
         try:
             data = await self.iterator.__anext__()

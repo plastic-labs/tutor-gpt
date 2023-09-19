@@ -184,7 +184,7 @@ async def stream(inp: ConversationInput):
                 item = item.replace("❀", "🌸")
                 yield item
 
-            user_prediction = await BloomChain.think_user_prediction(conversation)
+            await BloomChain.think_user_prediction(conversation)
         finally:
             yield "❀"
 
