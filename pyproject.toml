@@ -24,6 +24,7 @@ playwright = "^1.37.0"
 beautifulsoup4 = "^4.12.2"
 html2text = "^2020.1.16"
 sentence-transformers = "^2.2.2"
+faiss-cpu = "^1.7.4"
 
 [build-system]
 requires = ["poetry-core"]
