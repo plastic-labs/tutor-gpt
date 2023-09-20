@@ -12,7 +12,7 @@ from langchain.tools.base import BaseTool
 from langchain.document_loaders import AsyncChromiumLoader
 from langchain.utilities import GoogleSerperAPIWrapper
 
-from langchain.chat_models.base import BaseChatModel
+from langchain.llms.base import BaseLLM
 
 from langchain.document_transformers import Html2TextTransformer
 
@@ -40,12 +40,12 @@ load_dotenv()
 class SearchTool(BaseTool):
     name = "search"
     description = "useful for when you need to search for something on the internet"
-    llm: BaseChatModel
+    llm: BaseLLM
     embeddings: Embeddings
     search: GoogleSerperAPIWrapper
 
     @classmethod
-    def from_llm(cls, llm: BaseChatModel, embeddings: Embeddings):
+    def from_llm(cls, llm: BaseLLM, embeddings: Embeddings):
         """Return a tool from a chat model."""
         search = GoogleSerperAPIWrapper()
         search.k = 3
