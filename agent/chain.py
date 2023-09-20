@@ -1,5 +1,6 @@
 import os
 from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
+from langchain.llms import OpenAI
 from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
@@ -30,7 +31,7 @@ class BloomChain:
         llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
     else:
         llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
-        fast_llm = ChatOpenAI(model_name = "gpt-3.5-turbo", temperature=0.3, model_kwargs={"top_p": 0.5})
+        fast_llm = OpenAI(model_name = "gpt-3.5-turbo-instruct", temperature=0.3, top_p=0.5)
 
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
