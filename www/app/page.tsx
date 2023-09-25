@@ -150,10 +150,7 @@ export default function Home() {
             </p>
           </section>
         )}
-        <section
-          className="flex flex-col flex-1 overflow-y-auto lg:px-5"
-          ref={messageContainerRef}
-        >
+        <section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
           {messages.map((message, i) => (
             <Message isUser={message.isUser} key={i}>
               <MarkdownWrapper text={message.text} />
@@ -178,6 +175,9 @@ export default function Home() {
             className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${
               canSend ? " border-green-200" : "border-red-200 opacity-50"
             }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${
+              canSend ? " border-green-200" : "border-red-200 opacity-50"
+            }`}
             disabled={!canSend}
           />
           <button
@@ -187,6 +187,13 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
+      </div>
+      <Thoughts
+        thought={thought}
+        setIsThoughtsOpen={setIsThoughtsOpen}
+        isThoughtsOpen={isThoughtsOpen}
+      />
+    </main>
       </div>
       <Thoughts
         thought={thought}
