@@ -15,7 +15,14 @@ import {
 } from "react-icons/fa";
 // import { IoIosArrowDown } from "react-icons/io";
 // import { GrClose } from "react-icons/gr";
-import { useRef, useEffect, useState, useCallback } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  use,
+  ElementRef,
+} from "react";
 
 import { v4 as uuidv4 } from "uuid";
 import Typing from "@/components/typing";
@@ -56,8 +63,11 @@ export default function Home() {
     conversation_id: "",
     name: "",
   });
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<ElementRef<"input">>(null);
   const supabase = createClientComponentClient();
+
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const messageContainerRef = useRef<ElementRef<"section">>(null);
 
   const newChat = useCallback(async () => {
     return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
@@ -146,6 +156,19 @@ export default function Home() {
     }
   }, [currentConversation, userId]);
 
+  useEffect(() => {
+    const messageContainer = messageContainerRef.current;
+    if (!messageContainer) return;
+
+    messageContainer.addEventListener("scroll", () =>
+      setIsAtBottom(
+        Math.round(
+          messageContainer.scrollHeight - messageContainer.scrollTop
+        ) === messageContainer.clientHeight
+      )
+    );
+  }, []);
+
   // async function newChat() {
   //   return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
   //     .then((res) => res.json())
@@ -207,6 +230,11 @@ export default function Home() {
 
     const reader = data.body?.pipeThrough(new TextDecoderStream()).getReader()!;
 
+    const messageContainer = messageContainerRef.current;
+    if (messageContainer) {
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
     // clear the last message
     setMessages((prev) => {
       prev[prev.length - 1].text = "";
@@ -240,6 +268,14 @@ export default function Home() {
           prev[prev.length - 1].text += value;
           return [...prev];
         });
+
+        console.log(isAtBottom);
+        if (isAtBottom) {
+          const messageContainer = messageContainerRef.current;
+          if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          }
+        }
       }
     }
   }
@@ -271,27 +307,29 @@ export default function Home() {
             See Thoughts
             <FaLightbulb className="inline" />
           </button>
-        </nav >
-    {!authSession && (
-      <section className="bg-neon-green text-black text-center py-4">
-  <p>
-    To save your conversation history and personalize your messages{" "}
-    <Link
-      className="cursor-pointer hover:cursor-pointer font-bold underline"
-      href={"/auth"}
-    >
-      sign in here
-    </Link>
-  </p>
-          </section >
-        )
-}
-<section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
-  {messages.map((message, i) => (
-    <Message isUser={message.isUser} key={i}>
-      <MarkdownWrapper text={message.text} />
-    </Message>
-  ))}
+        </nav>
+        {!authSession && (
+          <section className="bg-neon-green text-black text-center py-4">
+            <p>
+              To save your conversation history and personalize your messages{" "}
+              <Link
+                className="cursor-pointer hover:cursor-pointer font-bold underline"
+                href={"/auth"}
+              >
+                sign in here
+              </Link>
+            </p>
+          </section>
+        )}
+        <section
+          className="flex flex-col flex-1 overflow-y-auto lg:px-5"
+          ref={messageContainerRef}
+        >
+          {messages.map((message, i) => (
+            <Message isUser={message.isUser} key={i}>
+              <MarkdownWrapper text={message.text} />
+            </Message>
+          ))}
         </section>
         <form
           id="send"
@@ -306,8 +344,9 @@ export default function Home() {
             type="text"
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"
-              }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${
+              canSend ? " border-green-200" : "border-red-200 opacity-50"
+            }`}
             disabled={!canSend}
           />
           <button
@@ -317,12 +356,12 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
-      </div >
-  <Thoughts
-    thought={thought}
-    setIsThoughtsOpen={setIsThoughtsOpen}
-    isThoughtsOpen={isThoughtsOpen}
-  />
-    </main >
+      </div>
+      <Thoughts
+        thought={thought}
+        setIsThoughtsOpen={setIsThoughtsOpen}
+        isThoughtsOpen={isThoughtsOpen}
+      />
+    </main>
   );
 }
