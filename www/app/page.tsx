@@ -271,34 +271,35 @@ export default function Home() {
             See Thoughts
             <FaLightbulb className="inline" />
           </button>
-        </nav >
-    {!authSession && (
-      <section className="bg-neon-green text-black text-center py-4">
-  <p>
-    To save your conversation history and personalize your messages{" "}
-    <Link
-      className="cursor-pointer hover:cursor-pointer font-bold underline"
-      href={"/auth"}
-    >
-      sign in here
-    </Link>
-  </p>
-          </section >
-        )
-}
-<section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
-  {messages.map((message, i) => (
-    <Message isUser={message.isUser} key={i}>
-      <MarkdownWrapper text={message.text} />
-    </Message>
-  ))}
+        </nav>
+        {!authSession && (
+          <section className="bg-neon-green text-black text-center py-4">
+            <p>
+              To save your conversation history and personalize your messages{" "}
+              <Link
+                className="cursor-pointer hover:cursor-pointer font-bold underline"
+                href={"/auth"}
+              >
+                sign in here
+              </Link>
+            </p>
+          </section>
+        )}
+        <section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
+          {messages.map((message, i) => (
+            <Message isUser={message.isUser} key={i}>
+              <MarkdownWrapper text={message.text} />
+            </Message>
+          ))}
         </section>
         <form
           id="send"
           className="flex p-3 lg:p-5 gap-3 border-gray-300"
           onSubmit={(e) => {
             e.preventDefault();
-            chat();
+            if (canSend && input.current?.value) {
+              chat();
+            }
           }}
         >
           {/* TODO: validate input */}
@@ -306,8 +307,9 @@ export default function Home() {
             type="text"
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"
-              }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${
+              canSend ? " border-green-200" : "border-red-200 opacity-50"
+            }`}
             disabled={!canSend}
           />
           <button
@@ -317,12 +319,12 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
-      </div >
-  <Thoughts
-    thought={thought}
-    setIsThoughtsOpen={setIsThoughtsOpen}
-    isThoughtsOpen={isThoughtsOpen}
-  />
-    </main >
+      </div>
+      <Thoughts
+        thought={thought}
+        setIsThoughtsOpen={setIsThoughtsOpen}
+        isThoughtsOpen={isThoughtsOpen}
+      />
+    </main>
   );
 }
