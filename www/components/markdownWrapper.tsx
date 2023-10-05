@@ -3,10 +3,16 @@ import SyntaxHighlighter from "react-syntax-highlighter";
 import { dark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import Typing from "./typing";
 import { text } from "stream/consumers";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 export default function MarkdownWrapper({ text }: { text: string }) {
   return text ? (
     <ReactMarkdown
+      remarkPlugins={[remarkMath]}
+      // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
+      rehypePlugins={[rehypeKatex]}
       components={{
         ol: ({ node, ...props }) => <ol className="list-decimal" {...props} />,
         ul: ({ node, ...props }) => <ul className="list-disc" {...props} />,
