@@ -12,7 +12,9 @@ from collections.abc import AsyncIterator
 from .cache import Conversation
 
 from agent.tools.search import SearchTool, search_ready_output_parser
-from langchain.embeddings import HuggingFaceBgeEmbeddings
+from langchain.embeddings import HuggingFaceBgeEmbeddings, OpenAIEmbeddings
+
+from langchain.output_parsers import CommaSeparatedListOutputParser
 
 
 load_dotenv()
@@ -40,14 +42,15 @@ class BloomChain:
 
     search_tool: SearchTool
     # Load Embeddings for search
-    model_name = "BAAI/bge-small-en-v1.5"
-    model_kwargs = {'device': 'cpu'}
-    encode_kwargs = {'normalize_embeddings': False}
-    embeddings = HuggingFaceBgeEmbeddings(
-        model_name=model_name,
-        model_kwargs=model_kwargs,
-        encode_kwargs=encode_kwargs
-    )
+    # model_name = "BAAI/bge-small-en-v1.5"
+    # model_kwargs = {'device': 'cpu'}
+    # encode_kwargs = {'normalize_embeddings': False}
+    # embeddings = HuggingFaceBgeEmbeddings(
+    #     model_name=model_name,
+    #     model_kwargs=model_kwargs,
+    #     encode_kwargs=encode_kwargs
+    # )
+    embeddings = OpenAIEmbeddings()
     search_tool = SearchTool.from_llm(llm=fast_llm, embeddings=embeddings)
 
     def __init__(self) -> None:
