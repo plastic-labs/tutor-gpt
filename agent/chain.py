@@ -16,13 +16,13 @@ from langchain.embeddings import HuggingFaceBgeEmbeddings, OpenAIEmbeddings
 
 from langchain.output_parsers import CommaSeparatedListOutputParser
 
+import sentry_sdk
 
 load_dotenv()
 
 SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/thought.yaml'))
 SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/response.yaml'))
 SYSTEM_USER_PREDICTION_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/user_prediction_thought.yaml'))
-
 
 
 class BloomChain:
@@ -64,6 +64,7 @@ class BloomChain:
         # self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
         
     @classmethod
+    @sentry_sdk.trace
     def think(cls, cache: Conversation, input: str):
         """Generate Bloom's thought on the user."""
         # load message history
@@ -82,6 +83,7 @@ class BloomChain:
         )
         
     @classmethod
+    @sentry_sdk.trace
     async def respond(cls, cache: Conversation, thought: str, input: str):
         """Generate Bloom's response to the user."""
         
@@ -117,6 +119,7 @@ class BloomChain:
         )
     
     @classmethod
+    @sentry_sdk.trace
     async def think_user_prediction(cls, cache: Conversation):
         """Generate a thought about what the user is going to say"""
 
@@ -137,6 +140,7 @@ class BloomChain:
 
 
     @classmethod    
+    @sentry_sdk.trace
     async def chat(cls, cache: Conversation, inp: str ) -> tuple[str, str]:
         thought_iterator = cls.think(cache, inp)
         thought = await thought_iterator()
@@ -176,6 +180,7 @@ class Streamable:
             pass
         return self.content
         
+@sentry_sdk.trace
 def unpack_messages(messages):
     unpacked = ""
     for message in messages:

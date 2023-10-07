@@ -4,23 +4,27 @@ import Image from "next/image";
 import banner from "@/public/bloom2x1.svg";
 import Message from "@/components/message";
 import Thoughts from "@/components/thoughts";
-import Sidebar from "@/components/sidebar"
+import Sidebar from "@/components/sidebar";
 
-import { FaLightbulb, FaPaperPlane, FaBars, FaTrash, FaEdit } from "react-icons/fa";
+import {
+  FaLightbulb,
+  FaPaperPlane,
+  FaBars,
+  FaTrash,
+  FaEdit,
+} from "react-icons/fa";
 // import { IoIosArrowDown } from "react-icons/io";
 // import { GrClose } from "react-icons/gr";
 import { useRef, useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { v4 as uuidv4 } from "uuid";
 import Typing from "@/components/typing";
 
-// Supabase 
-import { Session } from '@supabase/supabase-js'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+// Supabase
+import { Session } from "@supabase/supabase-js";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import Link from "next/link";
+import MarkdownWrapper from "@/components/markdownWrapper";
 
 interface Message {
   text: string;
@@ -36,48 +40,44 @@ const URL = process.env.NEXT_PUBLIC_API_URL;
 const defaultMessage: Message = {
   text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
-}
+};
 
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [thought, setThought] = useState("");
   const [userId, setUserId] = useState("LOADING");
-  const [canSend, setCanSend] = useState(false)
+  const [canSend, setCanSend] = useState(false);
 
-
-  const [messages, setMessages] = useState<Array<Message>>([
-    defaultMessage,
-  ]);
+  const [messages, setMessages] = useState<Array<Message>>([defaultMessage]);
   const [authSession, setAuthSession] = useState<Session | null>(null);
-  const [conversations, setConversations] = useState<Array<Conversation>>([])
-  const [currentConversation, setCurrentConversation] = useState<Conversation>({ "conversation_id": "", "name": "" })
-  const router = useRouter();
+  const [conversations, setConversations] = useState<Array<Conversation>>([]);
+  const [currentConversation, setCurrentConversation] = useState<Conversation>({
+    conversation_id: "",
+    name: "",
+  });
   const input = useRef<HTMLInputElement>(null);
-  const supabase = createClientComponentClient()
+  const supabase = createClientComponentClient();
 
-  const newChat = useCallback(
-    async () => {
-      return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
-        .then((res) => res.json())
-        .then(({ conversation_id }) => {
-          return conversation_id
-        })
-        .catch((err) => console.error(err))
-
-    },
-    [userId],)
+  const newChat = useCallback(async () => {
+    return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
+      .then((res) => res.json())
+      .then(({ conversation_id }) => {
+        return conversation_id;
+      })
+      .catch((err) => console.error(err));
+  }, [userId]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthSession(session);
       if (session) {
-        setUserId(session.user.id)
+        setUserId(session.user.id);
       } else {
-        setUserId(`anon_${uuidv4()}`)
+        setUserId(`anon_${uuidv4()}`);
       }
-    })
-  }, [supabase])
+    });
+  }, [supabase]);
 
   useEffect(() => {
     // console.log(authSession)
@@ -87,65 +87,64 @@ export default function Home() {
         .then((res) => res.json())
         .then(({ conversations }) => {
           // console.log(conversations)
-          return conversations
-        })
-    }
+          return conversations;
+        });
+    };
     if (authSession) {
-      getConversations()
-        .then((conversations) => {
-          if (conversations.length > 0) {
-            setConversations(conversations)
-            setCurrentConversation(conversations[0])
-          } else {
-            newChat().then((conversation_id) => {
-              let newConversation: Conversation = {
-                name: "",
-                conversation_id
-              }
-              setCurrentConversation(newConversation)
-              setConversations(c => [...c, newConversation])
-            })
-          }
-        })
+      getConversations().then((conversations) => {
+        if (conversations.length > 0) {
+          setConversations(conversations);
+          setCurrentConversation(conversations[0]);
+        } else {
+          newChat().then((conversation_id) => {
+            let newConversation: Conversation = {
+              name: "",
+              conversation_id,
+            };
+            setCurrentConversation(newConversation);
+            setConversations((c) => [...c, newConversation]);
+          });
+        }
+      });
     } else {
       // TODO store anonymous chats in localstorage or cookies
       if (userId !== "LOADING") {
         newChat().then((conversation_id) => {
           const newConversation: Conversation = {
             name: "",
-            conversation_id
-          }
-          setCurrentConversation(newConversation)
-          setConversations(c => [...c, newConversation])
-        })
+            conversation_id,
+          };
+          setCurrentConversation(newConversation);
+          setConversations((c) => [...c, newConversation]);
+        });
       }
     }
-  }, [authSession, userId, newChat])
+  }, [authSession, userId, newChat]);
 
   useEffect(() => {
     const getMessages = async () => {
-      return await fetch(`${URL}/api/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`)
+      return await fetch(
+        `${URL}/api/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`
+      )
         .then((res) => res.json())
         .then(({ messages }) => {
           const formattedMessages = messages.map((message: any) => {
             return {
               text: message.data.content,
               isUser: message.type === "human",
-            }
-          })
-          return formattedMessages
-        })
-    }
+            };
+          });
+          return formattedMessages;
+        });
+    };
 
     if (currentConversation.conversation_id) {
-      setCanSend(true)
+      setCanSend(true);
       getMessages().then((messages) => {
-        setMessages([defaultMessage, ...messages])
-      })
+        setMessages([defaultMessage, ...messages]);
+      });
     }
-
-  }, [currentConversation, userId])
-
+  }, [currentConversation, userId]);
 
   // async function newChat() {
   //   return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
@@ -178,7 +177,7 @@ export default function Home() {
     const message = textbox.value;
     textbox.value = "";
 
-    setCanSend(false) // Disable sending more messages until the current generation is done
+    setCanSend(false); // Disable sending more messages until the current generation is done
 
     setMessages((prev) => [
       ...prev,
@@ -220,8 +219,8 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
-        console.log("done")
-        setCanSend(true)
+        // console.log("done");
+        setCanSend(true);
         break;
       }
       // console.log(value);
@@ -234,8 +233,8 @@ export default function Home() {
         setThought((prev) => prev + value);
       } else {
         if (value.includes("❀")) {
-          setCanSend(true) // Bloom delimeter
-          continue
+          setCanSend(true); // Bloom delimeter
+          continue;
         }
         setMessages((prev) => {
           prev[prev.length - 1].text += value;
@@ -260,7 +259,10 @@ export default function Home() {
       />
       <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72">
         <nav className="flex justify-between items-center p-4 border-b border-gray-300">
-          <FaBars className="inline lg:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <FaBars
+            className="inline lg:hidden"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
           <Image src={banner} alt="banner" className="h-10  w-auto" />
           <button
             className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
@@ -272,51 +274,32 @@ export default function Home() {
         </nav>
         {!authSession && (
           <section className="bg-neon-green text-black text-center py-4">
-            <p>To save your conversation history and personalize your messages <span className="cursor-pointer hover:cursor-pointer font-bold underline" onClick={() => router.push("/auth")}>sign in here</span></p>
+            <p>
+              To save your conversation history and personalize your messages{" "}
+              <Link
+                className="cursor-pointer hover:cursor-pointer font-bold underline"
+                href={"/auth"}
+              >
+                sign in here
+              </Link>
+            </p>
           </section>
         )}
-        <section className="flex flex-col flex-1 overflow-y-auto" >
-          {messages.map((message, i) => {
-            return (
-              <Message isUser={message.isUser} key={i}>
-                {message.text ? (
-                  <ReactMarkdown
-                    components={{
-                      ol: ({ node, ...props }) => <ol className="list-decimal" {...props} />,
-                      ul: ({ node, ...props }) => <ul className="list-disc" {...props} />,
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '')
-                        return !inline && match ? (
-                          <SyntaxHighlighter
-                            {...props}
-                            children={String(children).replace(/\n$/, '')}
-                            lineProps={{ style: { wordBreak: 'break-all', whiteSpace: 'pre-wrap' } }}
-                            style={dark}
-                            language={match[1]}
-                            PreTag="div"
-                            wrapLines={true}
-                          />
-                        ) : (
-                          <code {...props} className={className} style={{ whiteSpace: 'pre-wrap' }}>
-                            {children}
-                          </code>
-                        )
-                      }
-                    }}
-                  >{message.text}</ReactMarkdown>
-                ) : (
-                  <Typing />
-                )}
-              </Message>
-            );
-          })}
+        <section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
+          {messages.map((message, i) => (
+            <Message isUser={message.isUser} key={i}>
+              <MarkdownWrapper text={message.text} />
+            </Message>
+          ))}
         </section>
         <form
           id="send"
           className="flex p-3 lg:p-5 gap-3 border-gray-300"
           onSubmit={(e) => {
             e.preventDefault();
-            chat();
+            if (canSend && input.current?.value) {
+              chat();
+            }
           }}
         >
           {/* TODO: validate input */}
@@ -324,7 +307,9 @@ export default function Home() {
             type="text"
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"}`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${
+              canSend ? " border-green-200" : "border-red-200 opacity-50"
+            }`}
             disabled={!canSend}
           />
           <button
