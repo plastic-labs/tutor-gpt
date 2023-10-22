@@ -14,6 +14,7 @@ ENV PYTHONFAULTHANDLER=1 \
   POETRY_VERSION=1.4.1
 
 RUN pip install "poetry==$POETRY_VERSION"
+RUN pip install streamlit
 
 # Copy only requirements to cache them in docker layer
 WORKDIR /app

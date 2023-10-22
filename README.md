@@ -34,7 +34,7 @@ environment.
 
 ```bash
 docker run --env-file .env tutor-gpt python -u -m bot.app # Discord UI
-docker run -p 8501:8501 --env-file .env tutor-gpt python -u -m streamlit run www/main.py # Web UI
+docker run -p 8501:8501 --env-file .env tutor-gpt python -u -m streamlit run api/main.py # Web UI
 ```
 
 ### Architecture
