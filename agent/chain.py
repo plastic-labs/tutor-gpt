@@ -33,14 +33,14 @@ class BloomChain:
     system_user_prediction_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT)
 
     def __init__(self) -> None:
-        pass
+        # pass
     # def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
         # self.llm = llm
-        # self.verbose = verbose
+        # self.verbose = True
 
         # setup prompts
-        # self.system_thought = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
-        # self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
+        self.system_thought = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
+        self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
         
     @classmethod
     @sentry_sdk.trace
