@@ -66,7 +66,7 @@ export default function Home() {
   const input = useRef<ElementRef<"input">>(null);
   const supabase = createClientComponentClient();
 
-  const [isAtBottom, setIsAtBottom] = useState(true);
+  const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<"section">>(null);
 
   const newChat = useCallback(async () => {
@@ -154,19 +154,31 @@ export default function Home() {
         setMessages([defaultMessage, ...messages]);
       });
     }
+
+    // scroll to bottom
+    const messageContainer = messageContainerRef.current;
+    if (messageContainer) {
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
   }, [currentConversation, userId]);
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
     if (!messageContainer) return;
 
-    messageContainer.addEventListener("scroll", () =>
-      setIsAtBottom(
+    const func = () => {
+      const val =
         Math.round(
           messageContainer.scrollHeight - messageContainer.scrollTop
-        ) === messageContainer.clientHeight
-      )
-    );
+        ) === messageContainer.clientHeight;
+      isAtBottom.current = val;
+    };
+
+    messageContainer.addEventListener("scroll", func);
+
+    return () => {
+      messageContainer.removeEventListener("scroll", func);
+    };
   }, []);
 
   // async function newChat() {
@@ -269,8 +281,7 @@ export default function Home() {
           return [...prev];
         });
 
-        console.log(isAtBottom);
-        if (isAtBottom) {
+        if (isAtBottom.current) {
           const messageContainer = messageContainerRef.current;
           if (messageContainer) {
             messageContainer.scrollTop = messageContainer.scrollHeight;
