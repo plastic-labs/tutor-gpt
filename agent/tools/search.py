@@ -63,6 +63,11 @@ class SearchTool(BaseTool):
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
+
+        # remove quotes from query if present
+        if query[0] == '"' and query[-1] == '"':
+            query = query[1:-1]
+
         results = self.search.results(query=query)
         organic_results = results["organic"]
 
@@ -169,7 +174,6 @@ class SearchTool(BaseTool):
             html2text = Html2TextTransformer()
             text_splitter = TokenTextSplitter(chunk_size=300, chunk_overlap=0)
 
-            # html = await loader.aload()
             html = [Document(page_content=await loader.ascrape_playwright(url), metadata={"source": url})] 
             docs = html2text.transform_documents(html)
             docs = text_splitter.split_documents(docs)
