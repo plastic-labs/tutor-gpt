@@ -33,7 +33,7 @@ class BloomChain:
         llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
     else:
         llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
-        fast_llm = OpenAI(model_name = "gpt-3.5-turbo-instruct", temperature=0.3, top_p=0.5)
+        tool_llm = OpenAI(model_name = "gpt-3.5-turbo-instruct", temperature=0.3, top_p=0.5)
 
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
@@ -51,7 +51,7 @@ class BloomChain:
     #     encode_kwargs=encode_kwargs
     # )
     embeddings = OpenAIEmbeddings()
-    search_tool = SearchTool.from_llm(llm=fast_llm, embeddings=embeddings)
+    search_tool = SearchTool.from_llm(llm=tool_llm, embeddings=embeddings)
 
     def __init__(self) -> None:
         pass
