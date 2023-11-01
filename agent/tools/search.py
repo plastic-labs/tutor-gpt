@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+import nest_asyncio
+nest_asyncio.apply()
+
 
 # TODO: Store search results for entire conversation in vector store
 # TODO: Add answerbox to search results when available
@@ -63,34 +66,7 @@ class SearchTool(BaseTool):
         self, query: str, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Use the tool."""
-
-        # remove quotes from query if present
-        if query[0] == '"' and query[-1] == '"':
-            query = query[1:-1]
-
-        results = self.search.results(query=query)
-        organic_results = results["organic"]
-
-        # TODO: Make this async for speed!!
-        relevant_results = [
-            {
-                "title": result["title"],
-                "snippet": result["snippet"],
-                "link": result["link"],
-                "summary": self._research_url(result["link"], query),
-            } for result in organic_results
-        ]
-
-        formatted_results = [
-            f"{result['title']} - {result['link']}\nSnippet: {result['snippet']}\nPage Summary: {result['summary']}" for result in relevant_results
-        ]
-        formatted_results = "Search Results:\n" + "\n----------------------\n\n".join(formatted_results)
-
-        return formatted_results
-        # return self._summarize_results(query, formatted_results)
-
-
-        
+        return asyncio.run(self._arun(query=query))
 
     async def _arun(
         self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
@@ -120,47 +96,6 @@ class SearchTool(BaseTool):
         formatted_results = "Search Results:\n" + "\n----------------------\n\n".join(formatted_results)
 
         return formatted_results
-        # return self._summarize_results(query, formatted_results)
-
-    
-    def _research_url(self, url: str, query: str):
-        """Research a URL by embedding the web page and then using the most relevant sections to the query to generate a summary of the most important information on the page."""
-
-        prompt = Prompt.from_template("Your job is to write a summary of a web page containing the most essential information to answer a specific question. You will be given a few selected sections of the web page to base your summary off of. \n\nQuestion: {query}\n\nBEGIN SELECTIONS\n{doc}\nEND SELECTIONS")
-        llm_chain = LLMChain(llm=self.llm, prompt=prompt)
-
-        try:
-            # Load HTML
-            loader = AsyncChromiumLoader([url])
-            html2text = Html2TextTransformer()
-            text_splitter = TokenTextSplitter(chunk_size=300, chunk_overlap=0)
-
-            html = loader.load()
-            docs = html2text.transform_documents(html)
-            docs = text_splitter.split_documents(docs)
-
-            # embedding search
-            db = FAISS.from_documents(docs, self.embeddings)
-            relevant_sections = db.similarity_search(query=query, k=8)
-
-            # rerank
-            if self.reranker:
-                scores = self.reranker.compute_score([[query, section.page_content] for section in relevant_sections])
-                scores_with_index = zip(scores, range(len(scores)))
-                scores_with_index = sorted(scores_with_index, key=lambda x: x[0], reverse=True)
-                relevant_sections = [relevant_sections[index] for _score, index in scores_with_index[:3]]
-
-                logger.info("Reranked webpage sections, different from original order: " + str([index for _score, index in scores_with_index]) + "Chunk count:" + len(docs))
-
-            # format sections together to be used as input to the LLM
-            relevant_sections = "\n".join([f'"{section.page_content}"' for section in relevant_sections])
-
-            # summarize the relevant sections
-            summary = llm_chain.run({"query": query, "doc": relevant_sections})
-            return summary
-        except Exception as e:
-            logger.error("Error loading HTML:", e)
-            return "Error loading HTML: " + e
 
     async def _aresearch_url(self, url: str, query: str):
         """Research a URL by embedding the web page and then using the most relevant sections to the query to generate a summary of the most important information on the page."""
@@ -205,13 +140,6 @@ class SearchTool(BaseTool):
         except Exception as e:
             logger.error("Error loading HTML:", e)
             return "Error loading HTML: " + e
-
-
-    def _summarize_results(self, query: str, search_results: str):
-        search_result_summary_prompt = Prompt.from_template("Summarize the following search results the relevant information for answering the question. Make sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nBe specific instead of vague whenever possible.\n\nQuestion: {query}\n\n{search_results}\n\n\n\nYOU MUST cite your sources using bracket notation with numbers, and you must include the full links at the end. Do not cite sources that are not listed here.")
-        search_result_summary_chain = LLMChain(llm=self.llm, prompt=search_result_summary_prompt)
-
-        return search_result_summary_chain.run({"query": query, "search_results": search_results})
 
 
 search_generation_schemas = [
