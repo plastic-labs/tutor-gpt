@@ -34,7 +34,7 @@ class BloomChain:
 
     def __init__(self) -> None:
         pass
-        # def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
+    # def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
         # self.llm = llm
         # self.verbose = verbose
 

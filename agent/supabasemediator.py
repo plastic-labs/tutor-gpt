@@ -6,10 +6,9 @@ from dotenv import load_dotenv
 # Supabase for Postgres Management
 from supabase.client import create_client, Client
 from typing import List, Tuple, Dict
-from agent.imediator import IMediator
 load_dotenv()
 
-class SupabaseMediator(IMediator):
+class SupabaseMediator:
     @sentry_sdk.trace
     def __init__(self):
         self.supabase: Client = create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_KEY'])
@@ -21,13 +20,8 @@ class SupabaseMediator(IMediator):
         query = self.supabase.table(self.memory_table).select("message").eq("session_id", session_id).eq("user_id", user_id).eq("message_type", message_type).order("id", desc=True)
         if limit[0]:
             query = query.limit(limit[1])
-        print("[first query] result", query)
-        print("Length of [first query].data", len(query.data))
-        print("Performing execute")
         response = query.execute()
-        print("[execute] result", response)
         items = [record["message"] for record in response.data]
-        print("items", items)
         messages = messages_from_dict(items)
         return messages[::-1]
 
