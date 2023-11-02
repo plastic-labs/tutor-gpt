@@ -19,17 +19,7 @@ fastapi = "^0.101.1"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 requests = "^2.31.0"
 sentry-sdk = {extras = ["fastapi"], version = "^1.31.0"}
-psycopg = "^3.1.12"
-pytest = "^7.4.3"
-
-[tool.poetry.group.dev.dependencies]
-typing-extensions = "^4.8.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.pytest.ini_options]
-pythonpath = [
-  ".",
-]
