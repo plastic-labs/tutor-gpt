@@ -3,7 +3,7 @@ Below is an implementation of a basic LRUcache that utilizes the built
 in OrderedDict data structure.
 """
 from collections import OrderedDict
-from .mediator import SupabaseMediator
+from .supbase_mediator import SupabaseMediator
 import uuid
 from typing import List, Tuple, Dict
 from langchain.schema import BaseMessage
