@@ -15,7 +15,14 @@ import {
 } from "react-icons/fa";
 // import { IoIosArrowDown } from "react-icons/io";
 // import { GrClose } from "react-icons/gr";
-import { useRef, useEffect, useState, useCallback } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  use,
+  ElementRef,
+} from "react";
 
 import { v4 as uuidv4 } from "uuid";
 import Typing from "@/components/typing";
@@ -56,8 +63,11 @@ export default function Home() {
     conversation_id: "",
     name: "",
   });
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<ElementRef<"input">>(null);
   const supabase = createClientComponentClient();
+
+  const isAtBottom = useRef(true);
+  const messageContainerRef = useRef<ElementRef<"section">>(null);
 
   const newChat = useCallback(async () => {
     return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
@@ -144,7 +154,32 @@ export default function Home() {
         setMessages([defaultMessage, ...messages]);
       });
     }
+
+    // scroll to bottom
+    const messageContainer = messageContainerRef.current;
+    if (messageContainer) {
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
   }, [currentConversation, userId]);
+
+  useEffect(() => {
+    const messageContainer = messageContainerRef.current;
+    if (!messageContainer) return;
+
+    const func = () => {
+      const val =
+        Math.round(
+          messageContainer.scrollHeight - messageContainer.scrollTop
+        ) === messageContainer.clientHeight;
+      isAtBottom.current = val;
+    };
+
+    messageContainer.addEventListener("scroll", func);
+
+    return () => {
+      messageContainer.removeEventListener("scroll", func);
+    };
+  }, []);
 
   // async function newChat() {
   //   return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
@@ -207,6 +242,11 @@ export default function Home() {
 
     const reader = data.body?.pipeThrough(new TextDecoderStream()).getReader()!;
 
+    const messageContainer = messageContainerRef.current;
+    if (messageContainer) {
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
     // clear the last message
     setMessages((prev) => {
       prev[prev.length - 1].text = "";
@@ -240,6 +280,13 @@ export default function Home() {
           prev[prev.length - 1].text += value;
           return [...prev];
         });
+
+        if (isAtBottom.current) {
+          const messageContainer = messageContainerRef.current;
+          if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          }
+        }
       }
     }
   }
@@ -285,7 +332,10 @@ export default function Home() {
             </p>
           </section>
         )}
-        <section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
+        <section
+          className="flex flex-col flex-1 overflow-y-auto lg:px-5"
+          ref={messageContainerRef}
+        >
           {messages.map((message, i) => (
             <Message isUser={message.isUser} key={i}>
               <MarkdownWrapper text={message.text} />
