@@ -347,7 +347,9 @@ export default function Home() {
           className="flex p-3 lg:p-5 gap-3 border-gray-300"
           onSubmit={(e) => {
             e.preventDefault();
-            chat();
+            if (canSend && input.current?.value) {
+              chat();
+            }
           }}
         >
           {/* TODO: validate input */}
