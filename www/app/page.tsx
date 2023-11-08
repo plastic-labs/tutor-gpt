@@ -98,6 +98,13 @@ export default function Home() {
           prev[prev.length - 1].text += value;
           return [...prev];
         });
+
+        if (isAtBottom.current) {
+          const messageContainer = messageContainerRef.current;
+          if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          }
+        }
       }
     }
   }
@@ -143,7 +150,10 @@ export default function Home() {
             </p>
           </section>
         )}
-        <section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
+        <section
+          className="flex flex-col flex-1 overflow-y-auto lg:px-5"
+          ref={messageContainerRef}
+        >
           {messages.map((message, i) => (
             <Message isUser={message.isUser} key={i}>
               <MarkdownWrapper text={message.text} />
