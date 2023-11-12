@@ -2,11 +2,13 @@ import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 
-export default function Message({ children, isUser }: {
+export default function MessageBox({
+  children,
+  isUser,
+}: {
   children: React.ReactNode;
   isUser?: boolean;
 }) {
-
   return (
     <article
       className={
