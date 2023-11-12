@@ -2,16 +2,18 @@ import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 
-export default function Message({ children, isUser }: {
+export default function Message({
+  children,
+  isUser,
+}: {
   children: React.ReactNode;
   isUser?: boolean;
 }) {
-
   return (
     <article
       className={
         "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
-        (isUser ? "bg-gray-100" : "")
+        (isUser ? "bg-gray-100 dark:bg-gray-800" : "")
       }
     >
       <Image
