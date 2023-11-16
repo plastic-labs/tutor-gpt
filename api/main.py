@@ -188,6 +188,5 @@ async def stream(inp: ConversationInput):
             await BloomChain.think_user_prediction(conversation)
         finally:
             yield "❀"
-
     return StreamingResponse(thought_and_response())
 

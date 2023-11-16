@@ -1,14 +1,20 @@
 import os
 from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
+from langchain.llms import OpenAI
 from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 from langchain.prompts import load_prompt, ChatPromptTemplate
-from langchain.schema import AIMessage, HumanMessage, BaseMessage
+from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from dotenv import load_dotenv
 
 from collections.abc import AsyncIterator
 from .cache import Conversation
+
+from agent.tools.search import SearchTool, search_ready_output_parser
+from langchain.embeddings import HuggingFaceBgeEmbeddings, OpenAIEmbeddings
+
+from langchain.output_parsers import CommaSeparatedListOutputParser
 
 import sentry_sdk
 
@@ -27,10 +33,25 @@ class BloomChain:
         llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
     else:
         llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
+        tool_llm = OpenAI(model_name = "gpt-3.5-turbo-instruct", temperature=0.3, top_p=0.5)
 
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
     system_user_prediction_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT)
+
+
+    search_tool: SearchTool
+    # Load Embeddings for search
+    # model_name = "BAAI/bge-small-en-v1.5"
+    # model_kwargs = {'device': 'cpu'}
+    # encode_kwargs = {'normalize_embeddings': False}
+    # embeddings = HuggingFaceBgeEmbeddings(
+    #     model_name=model_name,
+    #     model_kwargs=model_kwargs,
+    #     encode_kwargs=encode_kwargs
+    # )
+    embeddings = OpenAIEmbeddings()
+    search_tool = SearchTool.from_llm(llm=tool_llm, embeddings=embeddings)
 
     def __init__(self) -> None:
         pass
@@ -60,24 +81,52 @@ class BloomChain:
                 chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
             lambda thought: cache.add_message("thought", AIMessage(content=thought))
         )
+
         
     @classmethod
     @sentry_sdk.trace
     def respond(cls, cache: Conversation, thought: str, input: str):
         """Generate Bloom's response to the user."""
+        
         response_prompt = ChatPromptTemplate.from_messages([
             cls.system_response,
             *cache.messages("response"),
             HumanMessage(content=input)
         ])
+
+        # apply search step
+        response_prompt = cls.search_step(response_prompt.format_messages(thought=thought))
+
         chain = response_prompt | cls.llm
 
         cache.add_message("response", HumanMessage(content=input))
 
         return Streamable(
-            chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
+            chain.astream({"thought": thought}, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
             lambda response: cache.add_message("response", AIMessage(content=response))
         )
+    
+
+    @classmethod
+    @sentry_sdk.trace
+    def search_step(cls, messages: list[BaseMessage]):
+        search_messages = messages.copy()
+        search_messages.append(SystemMessage(content=f"Reason about whether or not a google search would be benificial to answer the question. Always use it if you are unsure about your knowledge.\n\nf{search_ready_output_parser.get_format_instructions()}"))
+
+        search_ready_message = cls.llm.predict_messages(search_messages)
+        search_ready = search_ready_output_parser.parse(search_ready_message.content)
+
+        if search_ready["Search"].lower() == "true":
+            search_messages.append(search_ready_message)
+            search_messages.append(SystemMessage(content=f"Now generate a google query that would be best to find information to answer the question."))
+            
+            search_query_message = cls.llm.predict_messages(search_messages)
+            search_result_summary = cls.search_tool.run(search_query_message.content)
+
+            messages.append(SystemMessage(content=f"Use the information from these searchs to help answer your question.\nMake sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nRelevant Google Search: {search_query_message.content}\n\n{search_result_summary}\n\nCite your sources via bracket notation with numbers (don't use any other special characters), and include the full links at the end."))
+        
+        return ChatPromptTemplate.from_messages(messages)
+
     
     @classmethod
     @sentry_sdk.trace
