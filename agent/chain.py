@@ -71,7 +71,7 @@ class BloomChain:
         
     @classmethod
     @sentry_sdk.trace
-    def think(cls, cache: Conversation, input: str):
+    async def think(cls, cache: Conversation, input: str):
         """Generate Bloom's thought on the user."""
 
         # load message history
@@ -91,7 +91,7 @@ class BloomChain:
            
     @classmethod
     @sentry_sdk.trace
-    def respond(cls, cache: Conversation, thought: str, input: str):
+    async def respond(cls, cache: Conversation, thought: str, input: str):
         """Generate Bloom's response to the user."""
 
         response_prompt = ChatPromptTemplate.from_messages([
@@ -101,7 +101,7 @@ class BloomChain:
         ])
 
         # apply search step
-        response_prompt = cls.search_step(response_prompt.format_messages(thought=thought))
+        response_prompt = await cls.search_step(response_prompt.format_messages(thought=thought))
 
         chain = response_prompt | cls.llm
 
@@ -115,7 +115,7 @@ class BloomChain:
 
     @classmethod
     @sentry_sdk.trace
-    def search_step(cls, messages: list[BaseMessage]):
+    async def search_step(cls, messages: list[BaseMessage]):
         search_messages = messages.copy()
         search_messages.append(SystemMessage(content=f"Reason about whether or not a google search would be benificial to answer the question. Always use it if you are unsure about your knowledge.\n\nf{search_ready_output_parser.get_format_instructions()}"))
 
@@ -127,7 +127,8 @@ class BloomChain:
             search_messages.append(SystemMessage(content=f"Now generate a google query that would be best to find information to answer the question."))
             
             search_query_message = cls.llm.predict_messages(search_messages)
-            search_result_summary = cls.search_tool.run(search_query_message.content)
+            # search_result_summary = cls.search_tool.run(search_query_message.content)
+            search_result_summary = await cls.search_tool.arun(search_query_message.content)
 
             messages.append(SystemMessage(content=f"Use the information from these searchs to help answer your question.\nMake sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nRelevant Google Search: {search_query_message.content}\n\n{search_result_summary}\n\nCite your sources via bracket notation with numbers (don't use any other special characters), and include the full links at the end."))
         
@@ -158,10 +159,10 @@ class BloomChain:
     @classmethod    
     @sentry_sdk.trace
     async def chat(cls, cache: Conversation, inp: str ) -> tuple[str, str]:
-        thought_iterator = cls.think(cache, inp)
+        thought_iterator = await cls.think(cache, inp)
         thought = await thought_iterator()
 
-        response_iterator = cls.respond(cache, thought, inp)
+        response_iterator = await cls.respond(cache, thought, inp)
         response = await response_iterator()
 
         await cls.think_user_prediction(cache)

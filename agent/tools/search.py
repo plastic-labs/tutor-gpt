@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 load_dotenv() # Load environment variables
 
 
-import nest_asyncio
-nest_asyncio.apply() # https://github.com/erdewit/nest_asyncio
+# import nest_asyncio
+# nest_asyncio.apply() # https://github.com/erdewit/nest_asyncio
 
 # TODO: Store search results for entire conversation in vector store
 # TODO: Add answerbox to search results when available

@@ -1,4 +1,3 @@
-import logging
 import os
 import random
 
@@ -170,7 +169,7 @@ async def stream(inp: ConversationInput):
 
     async def thought_and_response():
         try: 
-            thought_iterator = BloomChain.think(conversation, inp.message)
+            thought_iterator = await BloomChain.think(conversation, inp.message)
             thought = ""
             async for item in thought_iterator:
                 # escape ❀ if present
@@ -178,8 +177,8 @@ async def stream(inp: ConversationInput):
                 thought += item
                 yield item
             yield "❀"
-            response_iterator = BloomChain.respond(conversation, thought, inp.message)
 
+            response_iterator = await BloomChain.respond(conversation, thought, inp.message)
             async for item in response_iterator:
                 # if "❀" in item:
                 item = item.replace("❀", "🌸")
@@ -187,7 +186,14 @@ async def stream(inp: ConversationInput):
 
             await BloomChain.think_user_prediction(conversation)
         except Exception as e:
+            import traceback
+            stack_trace = traceback.format_exc()
+            print("====================")
+            print("Exception")
             print(e)
+            print(stack_trace)
+            print("====================")
+            yield "!!!!! Sorry an error occurred. Please try again. !!!!!"
         finally:
             yield "❀"
     return StreamingResponse(thought_and_response())
