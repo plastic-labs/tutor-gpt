@@ -1,24 +1,24 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import requests
-from requests.exceptions import ChunkedEncodingError
-
-from common import init
-from agent.chain import BloomChain
-from agent.cache import Conversation
-from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
-# from fastapi.staticfiles import StaticFiles
-
-from langchain.schema import _message_to_dict
-import sentry_sdk
-
+import logging
 import os
 import random
+
+import requests
+import sentry_sdk
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+
+# from fastapi.staticfiles import StaticFiles
+from langchain.schema import _message_to_dict
+from pydantic import BaseModel
+from requests.exceptions import ChunkedEncodingError
+
+from agent.cache import Conversation
+from agent.chain import BloomChain
+from common import init
 
 load_dotenv()
-
 
 rate = 0.2 if os.getenv("SENTRY_ENVIRONMENT") == "production" else 1.0
 sentry_sdk.init(
@@ -186,6 +186,8 @@ async def stream(inp: ConversationInput):
                 yield item
 
             await BloomChain.think_user_prediction(conversation)
+        except Exception as e:
+            print(e)
         finally:
             yield "❀"
     return StreamingResponse(thought_and_response())

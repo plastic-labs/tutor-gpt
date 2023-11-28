@@ -1,22 +1,22 @@
 import os
-from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
-from langchain.llms import OpenAI
-from langchain.prompts import (
-    SystemMessagePromptTemplate,
-)
-from langchain.prompts import load_prompt, ChatPromptTemplate
-from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
-from dotenv import load_dotenv
-
 from collections.abc import AsyncIterator
-from .cache import Conversation
-
-from agent.tools.search import SearchTool, search_ready_output_parser
-from langchain.embeddings import HuggingFaceBgeEmbeddings, OpenAIEmbeddings
-
-from langchain.output_parsers import CommaSeparatedListOutputParser
 
 import sentry_sdk
+from dotenv import load_dotenv
+from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain.embeddings import HuggingFaceBgeEmbeddings, OpenAIEmbeddings
+from langchain.llms import OpenAI, AzureOpenAI
+from langchain.output_parsers import CommaSeparatedListOutputParser
+from langchain.prompts import (
+    ChatPromptTemplate,
+    SystemMessagePromptTemplate,
+    load_prompt,
+)
+from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
+
+from agent.tools.search import SearchTool, search_ready_output_parser
+
+from .cache import Conversation
 
 load_dotenv()
 
@@ -31,6 +31,7 @@ class BloomChain:
     llm: AzureChatOpenAI | ChatOpenAI
     if (os.environ.get("OPENAI_API_TYPE") == "azure"):
         llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
+        tool_llm = AzureOpenAI(deployment_name = os.environ['OPENAI_API_TOOL_DEPLOYMENT_NAME'], temperature=0.3, top_p=0.5)
     else:
         llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
         tool_llm = OpenAI(model_name = "gpt-3.5-turbo-instruct", temperature=0.3, top_p=0.5)
@@ -50,7 +51,12 @@ class BloomChain:
     #     model_kwargs=model_kwargs,
     #     encode_kwargs=encode_kwargs
     # )
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(
+                    deployment=os.environ["OPENAI_API_EMBEDDING_DEPLOYMENT_NAME"],
+                    model="text-embedding-ada-002",
+                    openai_api_base=os.environ["OPENAI_API_BASE"],
+                    openai_api_type=os.environ["OPENAI_API_TYPE"],
+                )
     search_tool = SearchTool.from_llm(llm=tool_llm, embeddings=embeddings)
 
     def __init__(self) -> None:
@@ -67,6 +73,7 @@ class BloomChain:
     @sentry_sdk.trace
     def think(cls, cache: Conversation, input: str):
         """Generate Bloom's thought on the user."""
+
         # load message history
         thought_prompt = ChatPromptTemplate.from_messages([
             cls.system_thought,
@@ -78,16 +85,15 @@ class BloomChain:
         cache.add_message("thought", HumanMessage(content=input))
 
         return Streamable(
-                chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
+            chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
             lambda thought: cache.add_message("thought", AIMessage(content=thought))
         )
-
-        
+           
     @classmethod
     @sentry_sdk.trace
     def respond(cls, cache: Conversation, thought: str, input: str):
         """Generate Bloom's response to the user."""
-        
+
         response_prompt = ChatPromptTemplate.from_messages([
             cls.system_response,
             *cache.messages("response"),

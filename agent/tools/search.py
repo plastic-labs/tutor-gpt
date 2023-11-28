@@ -1,48 +1,39 @@
+import asyncio
+import logging
+import os
 from typing import Optional, Type
 
-import asyncio
-import os
-import logging
-
+from dotenv import load_dotenv
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain.tools.base import BaseTool
-from langchain.document_loaders import AsyncChromiumLoader
-from langchain.utilities import GoogleSerperAPIWrapper
-
-from langchain.llms.base import BaseLLM
-
-from langchain.document_transformers import Html2TextTransformer
-
 from langchain.chains import LLMChain
-from langchain.prompts import Prompt
-
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-
-from langchain.text_splitter import TokenTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings.base import Embeddings
-
 from langchain.docstore.document import Document
-
-from dotenv import load_dotenv
+from langchain.document_loaders import AsyncChromiumLoader
+from langchain.document_transformers import Html2TextTransformer
+from langchain.embeddings.base import Embeddings
+from langchain.llms.base import BaseLLM
+from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+from langchain.prompts import Prompt
+from langchain.text_splitter import TokenTextSplitter
+from langchain.tools.base import BaseTool
+from langchain.utilities import GoogleSerperAPIWrapper
+from langchain.vectorstores import FAISS
 
 logger = logging.getLogger(__name__)
+load_dotenv() # Load environment variables
 
-load_dotenv()
 
 import nest_asyncio
-nest_asyncio.apply()
-
+nest_asyncio.apply() # https://github.com/erdewit/nest_asyncio
 
 # TODO: Store search results for entire conversation in vector store
 # TODO: Add answerbox to search results when available
 
 class SearchTool(BaseTool):
-    name = "search"
-    description = "useful for when you need to search for something on the internet"
+    name: str = "search"
+    description: str = "useful for when you need to search for something on the internet"
     llm: BaseLLM
     embeddings: Embeddings
     search: GoogleSerperAPIWrapper
@@ -139,7 +130,7 @@ class SearchTool(BaseTool):
             return summary
         except Exception as e:
             logger.error("Error loading HTML:", e)
-            return "Error loading HTML: " + e
+            return f"Error loading HTML: {e}"
 
 
 search_generation_schemas = [

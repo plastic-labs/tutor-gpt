@@ -25,6 +25,8 @@ html2text = "^2020.1.16"
 sentence-transformers = "^2.2.2"
 faiss-cpu = "^1.7.4"
 sentry-sdk = {extras = ["fastapi"], version = "^1.31.0"}
+nest-asyncio = "^1.5.8"
+flagembedding = "^1.1.6"
 
 [build-system]
 requires = ["poetry-core"]
