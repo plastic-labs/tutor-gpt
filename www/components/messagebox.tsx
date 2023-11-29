@@ -2,7 +2,7 @@ import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 
-export default function Message({
+export default function MessageBox({
   children,
   isUser,
 }: {
