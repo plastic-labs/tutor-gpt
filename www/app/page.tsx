@@ -38,7 +38,8 @@ export default function Home() {
   const [currentConversation, setCurrentConversation] =
     useState<Conversation>();
 
-  const input = useRef<ElementRef<"input">>(null);
+  const input = useRef<ElementRef<"textarea">>(null);
+  //const input = useRef<ElementRef<"input">>(null);
   const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<"section">>(null);
 
@@ -83,7 +84,8 @@ export default function Home() {
 
   async function chat() {
     const textbox = input.current!;
-    const message = textbox.value;
+    // process message to have double newline for markdown
+    const message = textbox.value.replace(/\n/g, "\n\n");
     textbox.value = "";
 
     setCanSend(false); // Disable sending more messages until the current generation is done
@@ -205,13 +207,21 @@ export default function Home() {
           }}
         >
           {/* TODO: validate input */}
-          <input
-            type="text"
+          <textarea
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"
               }`}
             disabled={!canSend}
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (canSend && input.current?.value) {
+                  chat();
+                }
+              }
+            }}
           />
           <button
             className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
