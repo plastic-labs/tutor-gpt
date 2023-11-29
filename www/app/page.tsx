@@ -2,6 +2,7 @@
 import Image from "next/image";
 
 import banner from "@/public/bloom2x1.svg";
+import darkBanner from "@/public/bloom2x1dark.svg";
 import MessageBox from "@/components/messagebox";
 import Thoughts from "@/components/thoughts";
 import Sidebar from "@/components/sidebar";
@@ -16,6 +17,7 @@ import {
 
 import Link from "next/link";
 import MarkdownWrapper from "@/components/markdownWrapper";
+import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { Message, Conversation, API } from "@/utils/api";
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
@@ -81,6 +83,13 @@ export default function Home() {
       messageContainer.removeEventListener("scroll", func);
     };
   }, []);
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
+  const toggleDarkMode = (checked: boolean) => {
+    setIsDarkMode(checked);
+  };
 
   async function chat() {
     const textbox = input.current!;
@@ -148,7 +157,10 @@ export default function Home() {
   }
 
   return (
-    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative">
+    <main
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? "dark" : ""
+        }`}
+    >
       <Sidebar
         conversations={conversations}
         currentConversation={currentConversation}
@@ -158,20 +170,28 @@ export default function Home() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-      <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72">
-        <nav className="flex justify-between items-center p-4 border-b border-gray-300">
+      <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
+        <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
           <FaBars
-            className="inline lg:hidden"
+            className="inline lg:hidden dark:text-white"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           />
-          <Image src={banner} alt="banner" className="h-10  w-auto" />
-          <button
-            className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
-            onClick={() => setIsThoughtsOpen(true)}
-          >
-            See Thoughts
-            <FaLightbulb className="inline" />
-          </button>
+
+          <Image
+            src={isDarkMode ? darkBanner : banner}
+            alt="banner"
+            className="h-10  w-auto"
+          />
+          <div className="flex justify-between items-center gap-4">
+            <DarkModeSwitch checked={isDarkMode} onChange={toggleDarkMode} />
+            <button
+              className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
+              onClick={() => setIsThoughtsOpen(true)}
+            >
+              See Thoughts
+              <FaLightbulb className="inline" />
+            </button>
+          </div>
         </nav>
         {!api?.session && (
           <section className="bg-neon-green text-black text-center py-4">
@@ -187,7 +207,7 @@ export default function Home() {
           </section>
         )}
         <section
-          className="flex flex-col flex-1 overflow-y-auto lg:px-5"
+          className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
           ref={messageContainerRef}
         >
           {messages.map((message, i) => (
@@ -210,8 +230,7 @@ export default function Home() {
           <textarea
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"
-              }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"}`}
             disabled={!canSend}
             rows={1}
             onKeyDown={(e) => {

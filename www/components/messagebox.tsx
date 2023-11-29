@@ -13,7 +13,7 @@ export default function MessageBox({
     <article
       className={
         "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
-        (isUser ? "bg-gray-100" : "")
+        (isUser ? "bg-gray-100 dark:bg-gray-800" : "")
       }
     >
       <Image
