@@ -2,6 +2,8 @@
 # https://testdriven.io/blog/docker-best-practices/
 FROM python:3.10-slim-bullseye
 
+RUN apt-get update && apt-get install -y build-essential
+
 WORKDIR /app
 
 # https://stackoverflow.com/questions/53835198/integrating-python-poetry-with-docker

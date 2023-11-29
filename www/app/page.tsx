@@ -11,17 +11,9 @@ import {
   useRef,
   useEffect,
   useState,
-  useCallback,
   ElementRef,
-  use,
 } from "react";
 
-import { v4 as uuidv4 } from "uuid";
-import Typing from "@/components/typing";
-
-// Supabase
-import { Session } from "@supabase/supabase-js";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Link from "next/link";
 import MarkdownWrapper from "@/components/markdownWrapper";
 import { Message, Conversation, API } from "@/utils/api";
@@ -217,9 +209,8 @@ export default function Home() {
             type="text"
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${
-              canSend ? " border-green-200" : "border-red-200 opacity-50"
-            }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"
+              }`}
             disabled={!canSend}
           />
           <button

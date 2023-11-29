@@ -43,6 +43,15 @@ export default function Sidebar({
     });
 
     await cur.setName(newName);
+
+    // Force a re-render by directly updating the state
+    setConversations(
+      conversations.map((conversation) =>
+        conversation.conversationId === cur.conversationId
+          ? new Conversation({ ...conversation, name: newName })
+          : conversation
+      )
+    );
   }
 
   async function deleteConversation(conversation: Conversation) {
@@ -102,14 +111,12 @@ export default function Sidebar({
 
   return (
     <div
-      className={`fixed lg:absolute z-20 inset-0 flex-none h-full w-full lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 ${
-        isSidebarOpen ? "" : "hidden"
-      }`}
+      className={`fixed lg:absolute z-20 inset-0 flex-none h-full w-full lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 ${isSidebarOpen ? "" : "hidden"
+        }`}
     >
       <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
-          isSidebarOpen ? "fixed lg:static" : "sticky"
-        } top-0 left-0`}
+        className={`h-full scrollbar-trigger overflow-hidden bg-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? "fixed lg:static" : "sticky"
+          } top-0 left-0`}
       >
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300">
@@ -132,9 +139,8 @@ export default function Sidebar({
           {conversations.map((cur, i) => (
             <div
               key={i}
-              className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${
-                currentConversation === cur ? "bg-gray-200" : ""
-              }`}
+              className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 ${currentConversation === cur ? "bg-gray-200" : ""
+                }`}
               onClick={() => setCurrentConversation(cur)}
             >
               <div>
@@ -166,8 +172,8 @@ export default function Sidebar({
           {api?.session ? (
             <button
               className="bg-neon-green rounded-lg px-4 py-2 w-full"
-              onClick={() => {
-                signOut();
+              onClick={async () => {
+                await signOut();
                 location.reload();
               }}
             >
@@ -175,10 +181,12 @@ export default function Sidebar({
             </button>
           ) : (
             <Link
-              className="bg-neon-green rounded-lg px-4 py-2 w-full"
               href={"/auth"}
             >
-              Sign In
+              <button
+                className="bg-neon-green rounded-lg px-4 py-2 w-full">
+                Sign In
+              </button>
             </Link>
           )}
         </div>
