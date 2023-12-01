@@ -45,8 +45,16 @@ export default function Home() {
   const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<"section">>(null);
 
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const toggleDarkMode = (checked: boolean) => {
+    setIsDarkMode(checked);
+  };
+
   useEffect(() => {
     (async () => {
+      setIsDarkMode(
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      );
       const api = await API.create(URL!);
       setApi(api);
       const conversations = await api.getConversations();
@@ -84,12 +92,7 @@ export default function Home() {
     };
   }, []);
 
-  const [isDarkMode, setIsDarkMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
-  const toggleDarkMode = (checked: boolean) => {
-    setIsDarkMode(checked);
-  };
+
 
   async function chat() {
     const textbox = input.current!;
