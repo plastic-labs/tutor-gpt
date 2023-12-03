@@ -10,7 +10,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.chains import LLMChain
 from langchain.docstore.document import Document
-from langchain.document_loaders import AsyncChromiumLoader
+from langchain.document_loaders import AsyncHtmlLoader
 from langchain.document_transformers import Html2TextTransformer
 from langchain.embeddings.base import Embeddings
 from langchain.llms.base import BaseLLM
@@ -96,11 +96,11 @@ class SearchTool(BaseTool):
 
         try:
             # Load HTML
-            loader = AsyncChromiumLoader([url])
+            loader = AsyncHtmlLoader([url])
             html2text = Html2TextTransformer()
             text_splitter = TokenTextSplitter(chunk_size=300, chunk_overlap=0)
 
-            html = [Document(page_content=await loader.ascrape_playwright(url), metadata={"source": url})] 
+            html = loader.load()
             docs = html2text.transform_documents(html)
             docs = text_splitter.split_documents(docs)
 

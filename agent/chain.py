@@ -130,7 +130,7 @@ class BloomChain:
             # search_result_summary = cls.search_tool.run(search_query_message.content)
             search_result_summary = await cls.search_tool.arun(search_query_message.content)
 
-            messages.append(SystemMessage(content=f"Use the information from these searchs to help answer your question.\nMake sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nRelevant Google Search: {search_query_message.content}\n\n{search_result_summary}\n\nCite your sources via bracket notation with numbers (don't use any other special characters), and include the full links at the end."))
+            messages.append(SystemMessage(content=f"Use the information from these searchs to help answer your question.\nMake sure to not just repeat answers from sources, provide the sources justifications when possible. More detail is better.\n\nRelevant Google Search: {search_query_message.content}\n\n{search_result_summary}\n\nCite your sources via bracket notation with numbers (don't use any other special characters like \"^\", only use \"[\" and \"]\"), and include the full links at the end."))
         
         return ChatPromptTemplate.from_messages(messages)
 

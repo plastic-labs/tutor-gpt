@@ -27,7 +27,7 @@
     "react-markdown": "^8.0.7",
     "react-syntax-highlighter": "^15.5.0",
     "rehype-katex": "^7.0.0",
-    "remark-math": "^6.0.0",
+    "remark-math": "^5.1.1",
     "sharp": "^0.32.5",
     "sweetalert2": "^11.7.27",
     "sweetalert2-react-content": "^5.0.7",

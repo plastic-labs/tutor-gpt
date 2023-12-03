@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-langchain = "~0.0.2"
+langchain = "~0.0.3"
 py-cord = "^2.4.1"
 python-dotenv = "^1.0.0"
 validators = "^0.20.0"
@@ -26,6 +26,7 @@ sentence-transformers = "^2.2.2"
 faiss-cpu = "^1.7.4"
 sentry-sdk = {extras = ["fastapi"], version = "^1.31.0"}
 flagembedding = "^1.1.6"
+fake-useragent = "^1.4.0"
 
 [build-system]
 requires = ["poetry-core"]
