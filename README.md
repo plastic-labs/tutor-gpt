@@ -54,6 +54,10 @@ Follow the [Supabase Documentation](https://supabase.com/docs/guides/cli/local-d
 supabase start
 ```
 
+Another, useful note about doing testing locally with supabase is that there is
+no need to verify an account when it is created so you can create a new account
+on the webui and then immediately sign in with it.
+
 ## Installation
 
 > NOTE: The project uses
