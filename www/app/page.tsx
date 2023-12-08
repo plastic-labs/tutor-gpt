@@ -2,39 +2,27 @@
 import Image from "next/image";
 
 import banner from "@/public/bloom2x1.svg";
-import Message from "@/components/message";
+import darkBanner from "@/public/bloom2x1dark.svg";
+import MessageBox from "@/components/messagebox";
 import Thoughts from "@/components/thoughts";
 import Sidebar from "@/components/sidebar";
 
+import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
 import {
-  FaLightbulb,
-  FaPaperPlane,
-  FaBars,
-  FaTrash,
-  FaEdit,
-} from "react-icons/fa";
-// import { IoIosArrowDown } from "react-icons/io";
-// import { GrClose } from "react-icons/gr";
-import { useRef, useEffect, useState, useCallback } from "react";
+  useRef,
+  useEffect,
+  useState,
+  ElementRef,
+} from "react";
 
-import { v4 as uuidv4 } from "uuid";
-import Typing from "@/components/typing";
+import Swal from "sweetalert2"
+import { useRouter } from "next/navigation";
+import { usePostHog } from 'posthog-js/react'
 
-// Supabase
-import { Session } from "@supabase/supabase-js";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Link from "next/link";
 import MarkdownWrapper from "@/components/markdownWrapper";
-
-interface Message {
-  text: string;
-  isUser: boolean;
-}
-
-interface Conversation {
-  conversation_id: string;
-  name: string;
-}
+import { DarkModeSwitch } from "react-toggle-dark-mode";
+import { Message, Conversation, API } from "@/utils/api";
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 const defaultMessage: Message = {
@@ -45,136 +33,94 @@ const defaultMessage: Message = {
 export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [thought, setThought] = useState("");
-  const [userId, setUserId] = useState("LOADING");
   const [canSend, setCanSend] = useState(false);
 
-  const [messages, setMessages] = useState<Array<Message>>([defaultMessage]);
-  const [authSession, setAuthSession] = useState<Session | null>(null);
-  const [conversations, setConversations] = useState<Array<Conversation>>([]);
-  const [currentConversation, setCurrentConversation] = useState<Conversation>({
-    conversation_id: "",
-    name: "",
-  });
-  const input = useRef<HTMLInputElement>(null);
-  const supabase = createClientComponentClient();
+  const [api, setApi] = useState<API>();
 
-  const newChat = useCallback(async () => {
-    return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
-      .then((res) => res.json())
-      .then(({ conversation_id }) => {
-        return conversation_id;
-      })
-      .catch((err) => console.error(err));
-  }, [userId]);
+  const [messages, setMessages] = useState<Message[]>([defaultMessage]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversation, setCurrentConversation] =
+    useState<Conversation>();
+
+  const router = useRouter();
+  const posthog = usePostHog();
+  const input = useRef<ElementRef<"textarea">>(null);
+  //const input = useRef<ElementRef<"input">>(null);
+  const isAtBottom = useRef(true);
+  const messageContainerRef = useRef<ElementRef<"section">>(null);
+
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const toggleDarkMode = (checked: boolean) => {
+    setIsDarkMode(checked);
+  };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthSession(session);
-      if (session) {
-        setUserId(session.user.id);
+    (async () => {
+      setIsDarkMode(
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      );
+      const api = await API.create(URL!);
+      if (!api.session) {
+        Swal.fire({
+          title: "Notice: Bloombot now requires signing in for usage",
+          text: "Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom",
+          icon: "warning",
+          confirmButtonColor: "#3085d6",
+          confirmButtonText: "Sign In"
+        })
+          .then((res) => {
+            router.push("/auth")
+          })
       } else {
-        setUserId(`anon_${uuidv4()}`);
+        posthog?.identify(
+          api.userId,
+          { "email": api.session.user.email }
+        );
+        setApi(api);
+        const conversations = await api.getConversations();
+        setConversations(conversations);
+        setCurrentConversation(conversations[0]);
+        setCanSend(true);
       }
-    });
-  }, [supabase]);
+    })();
+  }, []);
 
   useEffect(() => {
-    // console.log(authSession)
-    // console.log(userId)
-    const getConversations = async () => {
-      return await fetch(`${URL}/api/conversations/get?user_id=${userId}`)
-        .then((res) => res.json())
-        .then(({ conversations }) => {
-          // console.log(conversations)
-          return conversations;
-        });
-    };
-    if (authSession) {
-      getConversations().then((conversations) => {
-        if (conversations.length > 0) {
-          setConversations(conversations);
-          setCurrentConversation(conversations[0]);
-        } else {
-          newChat().then((conversation_id) => {
-            let newConversation: Conversation = {
-              name: "",
-              conversation_id,
-            };
-            setCurrentConversation(newConversation);
-            setConversations((c) => [...c, newConversation]);
-          });
-        }
-      });
-    } else {
-      // TODO store anonymous chats in localstorage or cookies
-      if (userId !== "LOADING") {
-        newChat().then((conversation_id) => {
-          const newConversation: Conversation = {
-            name: "",
-            conversation_id,
-          };
-          setCurrentConversation(newConversation);
-          setConversations((c) => [...c, newConversation]);
-        });
-      }
-    }
-  }, [authSession, userId, newChat]);
+    (async () => {
+      if (!currentConversation) return;
+      const messages = await currentConversation.getMessages();
+      setMessages([defaultMessage, ...messages]);
+      // console.log("set messages", messages);
+    })();
+  }, [currentConversation]);
 
   useEffect(() => {
-    const getMessages = async () => {
-      return await fetch(
-        `${URL}/api/messages?user_id=${userId}&conversation_id=${currentConversation.conversation_id}`
-      )
-        .then((res) => res.json())
-        .then(({ messages }) => {
-          const formattedMessages = messages.map((message: any) => {
-            return {
-              text: message.data.content,
-              isUser: message.type === "human",
-            };
-          });
-          return formattedMessages;
-        });
+    const messageContainer = messageContainerRef.current;
+    if (!messageContainer) return;
+
+    const func = () => {
+      const val =
+        Math.round(
+          messageContainer.scrollHeight - messageContainer.scrollTop
+        ) === messageContainer.clientHeight;
+      isAtBottom.current = val;
     };
 
-    if (currentConversation.conversation_id) {
-      setCanSend(true);
-      getMessages().then((messages) => {
-        setMessages([defaultMessage, ...messages]);
-      });
-    }
-  }, [currentConversation, userId]);
+    messageContainer.addEventListener("scroll", func);
 
-  // async function newChat() {
-  //   return await fetch(`${URL}/api/conversations/insert?user_id=${userId}`)
-  //     .then((res) => res.json())
-  //     .then(({ conversation_id }) => {
-  //       return conversation_id
-  //     })
-  //     .catch((err) => console.error(err))
-  // }
-  // const chatContainerRef = useRef(null);
-  // const shouldAutoScroll = useRef(true);
+    return () => {
+      messageContainer.removeEventListener("scroll", func);
+    };
+  }, []);
 
-  // useEffect(() => {
-  //   if (chatContainerRef.current) {
-  //     const container = chatContainerRef.current;
-  //     // Detect if user is at the bottom of the messages
-  //     shouldAutoScroll.current = container.scrollHeight - container.scrollTop === container.clientHeight;
-  //   }
-  // }, [messages]);
 
-  // useEffect(() => {
-  //   if (shouldAutoScroll.current && chatContainerRef.current) {
-  //     const container = chatContainerRef.current;
-  //     container.scrollTop = container.scrollHeight;
-  //   }
-  // }, [messages]);
 
   async function chat() {
     const textbox = input.current!;
-    const message = textbox.value;
+    // process message to have double newline for markdown
+    const message = textbox.value.replace(/\n/g, "\n\n");
     textbox.value = "";
 
     setCanSend(false); // Disable sending more messages until the current generation is done
@@ -191,27 +137,12 @@ export default function Home() {
       },
     ]);
 
-    const data = await fetch(`${URL}/api/stream`, {
-      method: "POST",
-      body: JSON.stringify({
-        user_id: userId,
-        conversation_id: currentConversation.conversation_id,
-        message: message,
-      }),
-      // no cors
-      // mode: "no-cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const reader = await currentConversation!.chat(message);
 
-    const reader = data.body?.pipeThrough(new TextDecoderStream()).getReader()!;
-
-    // clear the last message
-    setMessages((prev) => {
-      prev[prev.length - 1].text = "";
-      return [...prev];
-    });
+    const messageContainer = messageContainerRef.current;
+    if (messageContainer) {
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
 
     let isThinking = true;
     setThought("");
@@ -240,75 +171,103 @@ export default function Home() {
           prev[prev.length - 1].text += value;
           return [...prev];
         });
+
+        if (isAtBottom.current) {
+          const messageContainer = messageContainerRef.current;
+          if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          }
+        }
       }
     }
   }
 
   return (
-    <main className="flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative">
+    <main
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? "dark" : ""
+        }`}
+    >
       <Sidebar
         conversations={conversations}
-        authSession={authSession}
         currentConversation={currentConversation}
         setCurrentConversation={setCurrentConversation}
         setConversations={setConversations}
-        newChat={newChat}
-        userId={userId}
+        api={api}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-      <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72">
-        <nav className="flex justify-between items-center p-4 border-b border-gray-300">
+      <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
+        <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
           <FaBars
-            className="inline lg:hidden"
+            className="inline lg:hidden dark:text-white"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           />
-          <Image src={banner} alt="banner" className="h-10  w-auto" />
-          <button
-            className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
-            onClick={() => setIsThoughtsOpen(true)}
-          >
-            See Thoughts
-            <FaLightbulb className="inline" />
-          </button>
-        </nav >
-    {!authSession && (
-      <section className="bg-neon-green text-black text-center py-4">
-  <p>
-    To save your conversation history and personalize your messages{" "}
-    <Link
-      className="cursor-pointer hover:cursor-pointer font-bold underline"
-      href={"/auth"}
-    >
-      sign in here
-    </Link>
-  </p>
-          </section >
-        )
-}
-<section className="flex flex-col flex-1 overflow-y-auto lg:px-5">
-  {messages.map((message, i) => (
-    <Message isUser={message.isUser} key={i}>
-      <MarkdownWrapper text={message.text} />
-    </Message>
-  ))}
+
+          <Image
+            src={isDarkMode ? darkBanner : banner}
+            alt="banner"
+            className="h-10  w-auto"
+          />
+          <div className="flex justify-between items-center gap-4">
+            <DarkModeSwitch checked={isDarkMode} onChange={toggleDarkMode} />
+            <button
+              className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
+              onClick={() => setIsThoughtsOpen(true)}
+            >
+              See Thoughts
+              <FaLightbulb className="inline" />
+            </button>
+          </div>
+        </nav>
+        <section className="bg-neon-green text-black text-center py-4">
+          <p>
+            Help inform the future of Bloom by filling out this{" "}
+            <Link
+              className="cursor-pointer hover:cursor-pointer font-bold underline"
+              href={"https://form.typeform.com/to/se0tN3J6"}
+              target="_blank"
+            >
+              survey
+            </Link>
+          </p>
+        </section>
+        <section
+          className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
+          ref={messageContainerRef}
+        >
+          {messages.map((message, i) => (
+            <MessageBox isUser={message.isUser} key={i}>
+              <MarkdownWrapper text={message.text} />
+            </MessageBox>
+          ))}
         </section>
         <form
           id="send"
           className="flex p-3 lg:p-5 gap-3 border-gray-300"
           onSubmit={(e) => {
             e.preventDefault();
-            chat();
+            if (canSend && input.current?.value) {
+              posthog.capture("user_sent_message");
+              chat();
+            }
           }}
         >
           {/* TODO: validate input */}
-          <input
-            type="text"
+          <textarea
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 text-gray-400 rounded-2xl border-2 ${canSend ? " border-green-200" : "border-red-200 opacity-50"
-              }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"}`}
             disabled={!canSend}
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (canSend && input.current?.value) {
+                  posthog.capture("user_sent_message");
+                  chat();
+                }
+              }
+            }}
           />
           <button
             className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
@@ -318,11 +277,11 @@ export default function Home() {
           </button>
         </form>
       </div >
-  <Thoughts
-    thought={thought}
-    setIsThoughtsOpen={setIsThoughtsOpen}
-    isThoughtsOpen={isThoughtsOpen}
-  />
+      <Thoughts
+        thought={thought}
+        setIsThoughtsOpen={setIsThoughtsOpen}
+        isThoughtsOpen={isThoughtsOpen}
+      />
     </main >
   );
 }

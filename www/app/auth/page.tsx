@@ -10,7 +10,6 @@ import icon from "@/public/bloomicon.jpg";
 import SignUp from '@/components/signUp';
 import SignIn from '@/components/signIn';
 import Forgot from '@/components/forgot'
-import Reset from '@/components/reset'
 
 export default function Auth() {
   const [formType, setFormType] = useState('LOGIN');
