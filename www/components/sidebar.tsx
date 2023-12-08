@@ -169,7 +169,7 @@ export default function Sidebar({
               </div>
             </div>
           ))}
-        </div>
+                    </div>
 
         {/* Section 3: Authentication information */}
         <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full">
