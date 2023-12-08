@@ -1,11 +1,9 @@
-import { useRouter } from "next/navigation";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
-import { Session } from "@supabase/supabase-js";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Conversation, API } from "@/utils/api";
 import { signOut } from "@/utils/supabase";
 
+import { usePostHog } from "posthog-js/react";
 import Swal from "sweetalert2";
 import Link from "next/link";
 
@@ -28,6 +26,9 @@ export default function Sidebar({
   setIsSidebarOpen: Function;
   api: API | undefined;
 }) {
+
+  const postHog = usePostHog();
+
   async function editConversation(cur: Conversation) {
     const { value: newName } = await Swal.fire({
       title: "Enter a new name for the conversation",
@@ -67,6 +68,7 @@ export default function Sidebar({
 
     if (isConfirmed) {
       await conversation.delete();
+      postHog?.capture("user_deleted_conversation")
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(
         (cur) => cur.conversationId != conversation.conversationId
@@ -105,6 +107,7 @@ export default function Sidebar({
 
   async function addChat() {
     const conversation = await api?.new();
+    postHog?.capture("user_created_conversation")
     setCurrentConversation(conversation);
     setConversations([conversation, ...conversations]);
   }

@@ -15,6 +15,10 @@ import {
   ElementRef,
 } from "react";
 
+import Swal from "sweetalert2"
+import { useRouter } from "next/navigation";
+import { usePostHog } from 'posthog-js/react'
+
 import Link from "next/link";
 import MarkdownWrapper from "@/components/markdownWrapper";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
@@ -40,6 +44,8 @@ export default function Home() {
   const [currentConversation, setCurrentConversation] =
     useState<Conversation>();
 
+  const router = useRouter();
+  const posthog = usePostHog();
   const input = useRef<ElementRef<"textarea">>(null);
   //const input = useRef<ElementRef<"input">>(null);
   const isAtBottom = useRef(true);
@@ -56,11 +62,28 @@ export default function Home() {
         window.matchMedia("(prefers-color-scheme: dark)").matches
       );
       const api = await API.create(URL!);
-      setApi(api);
-      const conversations = await api.getConversations();
-      setConversations(conversations);
-      setCurrentConversation(conversations[0]);
-      setCanSend(true);
+      if (!api.session) {
+        Swal.fire({
+          title: "Notice: Bloombot now requires signing in for usage",
+          text: "Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom",
+          icon: "warning",
+          confirmButtonColor: "#3085d6",
+          confirmButtonText: "Sign In"
+        })
+          .then((res) => {
+            router.push("/auth")
+          })
+      } else {
+        posthog?.identify(
+          api.userId,
+          { "email": api.session.user.email }
+        );
+        setApi(api);
+        const conversations = await api.getConversations();
+        setConversations(conversations);
+        setCurrentConversation(conversations[0]);
+        setCanSend(true);
+      }
     })();
   }, []);
 
@@ -225,6 +248,7 @@ export default function Home() {
           onSubmit={(e) => {
             e.preventDefault();
             if (canSend && input.current?.value) {
+              posthog.capture("user_sent_message");
               chat();
             }
           }}
@@ -240,6 +264,7 @@ export default function Home() {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 if (canSend && input.current?.value) {
+                  posthog.capture("user_sent_message");
                   chat();
                 }
               }
