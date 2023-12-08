@@ -28,13 +28,13 @@ export class Conversation {
   async getMessages() {
     const req = await fetch(
       `${this.api.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: this.conversationId,
-          user_id: this.api.userId,
-        })
+      new URLSearchParams({
+        conversation_id: this.conversationId,
+        user_id: this.api.userId,
+      })
     );
     const { messages: rawMessages } = await req.json();
-    console.log(rawMessages);
+    // console.log(rawMessages);
     if (!rawMessages) return [];
     const messages = rawMessages.map((rawMessage: any) => {
       return {
