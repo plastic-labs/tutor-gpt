@@ -196,51 +196,50 @@ export default function Home() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-  <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
-    <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
-      <FaBars
-        className="inline lg:hidden dark:text-white"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-      />
+      <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
+        <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
+          <FaBars
+            className="inline lg:hidden dark:text-white"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
 
-      <Image
-        src={isDarkMode ? darkBanner : banner}
-        alt="banner"
-        className="h-10  w-auto"
-      />
-      <div className="flex justify-between items-center gap-4">
-        <DarkModeSwitch checked={isDarkMode} onChange={toggleDarkMode} />
-        <button
-          className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
-          onClick={() => setIsThoughtsOpen(true)}
+          <Image
+            src={isDarkMode ? darkBanner : banner}
+            alt="banner"
+            className="h-10  w-auto"
+          />
+          <div className="flex justify-between items-center gap-4">
+            <DarkModeSwitch checked={isDarkMode} onChange={toggleDarkMode} />
+            <button
+              className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
+              onClick={() => setIsThoughtsOpen(true)}
+            >
+              See Thoughts
+              <FaLightbulb className="inline" />
+            </button>
+          </div>
+        </nav>
+        <section className="bg-neon-green text-black text-center py-4">
+          <p>
+            Help inform the future of Bloom by filling out this{" "}
+            <Link
+              className="cursor-pointer hover:cursor-pointer font-bold underline"
+              href={"https://form.typeform.com/to/se0tN3J6"}
+              target="_blank"
+            >
+              survey
+            </Link>
+          </p>
+        </section>
+        <section
+          className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
+          ref={messageContainerRef}
         >
-          See Thoughts
-          <FaLightbulb className="inline" />
-        </button>
-      </div>
-    </nav>
-    {!api?.session && (
-      <section className="bg-neon-green text-black text-center py-4">
-        <p>
-          To save your conversation history and personalize your messages{" "}
-          <Link
-            className="cursor-pointer hover:cursor-pointer font-bold underline"
-            href={"/auth"}
-          >
-            sign in here
-          </Link>
-        </p>
-      </section>
-    )}
-    <section
-      className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
-      ref={messageContainerRef}
-    >
-      {messages.map((message, i) => (
-        <MessageBox isUser={message.isUser} key={i}>
-          <MarkdownWrapper text={message.text} />
-        </MessageBox>
-      ))}
+          {messages.map((message, i) => (
+            <MessageBox isUser={message.isUser} key={i}>
+              <MarkdownWrapper text={message.text} />
+            </MessageBox>
+          ))}
         </section>
         <form
           id="send"
@@ -284,5 +283,5 @@ export default function Home() {
         isThoughtsOpen={isThoughtsOpen}
       />
     </main >
-    );
+  );
 }
