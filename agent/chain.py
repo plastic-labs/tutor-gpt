@@ -114,6 +114,7 @@ class BloomChain:
         return thought, response
 
 
+
 class Streamable:
     "A async iterator wrapper for langchain streams that saves on completion via callback"
 
@@ -121,20 +122,37 @@ class Streamable:
         self.iterator = iterator
         self.callback = callback
         self.content = ""
+        self.stream_error = False
     
     def __aiter__(self):
         return self
     
     async def __anext__(self):
         try:
+            if self.stream_error:
+                raise StopAsyncIteration
+
             data = await self.iterator.__anext__()
             self.content += data.content
             return data.content
         except StopAsyncIteration as e:
             self.callback(self.content)
             raise StopAsyncIteration
+        except BadRequestError as e:
+            if e.code == "content_filter":
+                self.stream_error = True
+                self.message = "Sorry, your message was flagged as inappropriate. Please try again."
+
+                return self.message
+            else: 
+                raise Exception(e)
         except Exception as e:
-            raise e
+            sentry_sdk.capture_exception(e)
+
+            self.stream_error = True
+            self.message = "Sorry, an error occurred while streaming the response. Please try again."
+
+            return self.message
     
     async def __call__(self):
         async for _ in self:
