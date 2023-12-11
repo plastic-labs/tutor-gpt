@@ -5,6 +5,9 @@ from langchain.prompts import (
 )
 from langchain.prompts import load_prompt, ChatPromptTemplate
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
+
+from openai import BadRequestError
+
 from dotenv import load_dotenv
 
 from collections.abc import AsyncIterator
@@ -54,12 +57,11 @@ class BloomChain:
         ])
         chain = thought_prompt | cls.llm 
 
-        cache.add_message("thought", HumanMessage(content=input))
+        def save_new_messages(ai_response):
+            cache.add_message("response", HumanMessage(content=input))
+            cache.add_message("response", AIMessage(content=ai_response))
 
-        return Streamable(
-                chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
-            lambda thought: cache.add_message("thought", AIMessage(content=thought))
-        )
+        return Streamable(chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
         
     @classmethod
     @sentry_sdk.trace
@@ -72,13 +74,12 @@ class BloomChain:
         ])
         chain = response_prompt | cls.llm
 
-        cache.add_message("response", HumanMessage(content=input))
+        def save_new_messages(ai_response):
+            cache.add_message("response", HumanMessage(content=input))
+            cache.add_message("response", AIMessage(content=ai_response))
 
-        return Streamable(
-            chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
-            lambda response: cache.add_message("response", AIMessage(content=response))
-        )
-    
+        return Streamable(chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
+
     @classmethod
     @sentry_sdk.trace
     async def think_user_prediction(cls, cache: Conversation):
