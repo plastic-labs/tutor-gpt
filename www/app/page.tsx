@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import useSWR from "swr";
 
 import banner from "@/public/bloom2x1.svg";
 import darkBanner from "@/public/bloom2x1dark.svg";
@@ -8,41 +9,33 @@ import Thoughts from "@/components/thoughts";
 import Sidebar from "@/components/sidebar";
 
 import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
-import {
-  useRef,
-  useEffect,
-  useState,
-  ElementRef,
-} from "react";
+import { useRef, useEffect, useState, ElementRef } from "react";
 
-import Swal from "sweetalert2"
+import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
-import { usePostHog } from 'posthog-js/react'
+import { usePostHog } from "posthog-js/react";
 
 import Link from "next/link";
 import MarkdownWrapper from "@/components/markdownWrapper";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { Message, Conversation, API } from "@/utils/api";
+import { getId } from "@/utils/supabase";
+import { data } from "autoprefixer";
+import { Session } from "@supabase/supabase-js";
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
-const defaultMessage: Message = {
-  text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
-  isUser: false,
-};
 
 export default function Home() {
+  const [userId, setUserId] = useState<string>();
+  const [session, setSession] = useState<Session | null>(null);
+
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [thought, setThought] = useState("");
   const [canSend, setCanSend] = useState(false);
 
-  const [api, setApi] = useState<API>();
-
-  const [messages, setMessages] = useState<Message[]>([defaultMessage]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversation, setCurrentConversation] =
-    useState<Conversation>();
+  const [conversationId, setConversationId] = useState<string>();
 
   const router = useRouter();
   const posthog = usePostHog();
@@ -58,43 +51,25 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      setIsDarkMode(
-        window.matchMedia("(prefers-color-scheme: dark)").matches
-      );
-      const api = await API.create(URL!);
-      if (!api.session) {
+      const { userId, session } = await getId();
+      setUserId(userId);
+      setSession(session);
+      setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
+      if (!session) {
         Swal.fire({
           title: "Notice: Bloombot now requires signing in for usage",
           text: "Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom",
           icon: "warning",
           confirmButtonColor: "#3085d6",
-          confirmButtonText: "Sign In"
-        })
-          .then((res) => {
-            router.push("/auth")
-          })
+          confirmButtonText: "Sign In",
+        }).then((res) => {
+          router.push("/auth");
+        });
       } else {
-        posthog?.identify(
-          api.userId,
-          { "email": api.session.user.email }
-        );
-        setApi(api);
-        const conversations = await api.getConversations();
-        setConversations(conversations);
-        setCurrentConversation(conversations[0]);
-        setCanSend(true);
+        posthog?.identify(userId, { email: session.user.email });
       }
     })();
   }, []);
-
-  useEffect(() => {
-    (async () => {
-      if (!currentConversation) return;
-      const messages = await currentConversation.getMessages();
-      setMessages([defaultMessage, ...messages]);
-      // console.log("set messages", messages);
-    })();
-  }, [currentConversation]);
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -115,7 +90,36 @@ export default function Home() {
     };
   }, []);
 
+  const conversationsFetcher = async (userId: string) => {
+    const api = new API({ url: URL!, userId });
+    return api.getConversations();
+  };
 
+  const {
+    data: conversations,
+    mutate: mutateConversations,
+    error,
+  } = useSWR(userId, conversationsFetcher, {
+    onSuccess: (conversations) => {
+      setConversationId(conversations[0].conversationId);
+      setCanSend(true);
+    },
+  });
+
+  const messagesFetcher = async (conversationId: string) => {
+    if (!userId) return Promise.resolve([]);
+    if (!conversationId) return Promise.resolve([]);
+
+    const api = new API({ url: URL!, userId });
+    return api.getMessages(conversationId);
+  };
+
+  const {
+    data: messages,
+    mutate: mutateMessages,
+    isLoading: messagesLoading,
+    error: _,
+  } = useSWR(conversationId, messagesFetcher);
 
   async function chat() {
     const textbox = input.current!;
@@ -125,8 +129,8 @@ export default function Home() {
 
     setCanSend(false); // Disable sending more messages until the current generation is done
 
-    setMessages((prev) => [
-      ...prev,
+    mutateMessages([
+      ...messages!,
       {
         text: message,
         isUser: true,
@@ -137,7 +141,10 @@ export default function Home() {
       },
     ]);
 
-    const reader = await currentConversation!.chat(message);
+    // const reader = await currentConversation!.chat(message);
+    const reader = await conversations!
+      .find((conversation) => conversation.conversationId === conversationId)!
+      .chat(message);
 
     const messageContainer = messageContainerRef.current;
     if (messageContainer) {
@@ -167,10 +174,18 @@ export default function Home() {
           setCanSend(true); // Bloom delimeter
           continue;
         }
-        setMessages((prev) => {
-          prev[prev.length - 1].text += value;
-          return [...prev];
-        });
+        // setMessages((prev) => {
+        //   prev[prev.length - 1].text += value;
+        //   return [...prev];
+        // });
+
+        mutateMessages([
+          ...messages?.slice(0, -1)!,
+          {
+            text: messages![messages!.length - 1].text + value,
+            isUser: false,
+          },
+        ]);
 
         if (isAtBottom.current) {
           const messageContainer = messageContainerRef.current;
@@ -184,17 +199,19 @@ export default function Home() {
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? "dark" : ""
-        }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
+        isDarkMode ? "dark" : ""
+      }`}
     >
       <Sidebar
-        conversations={conversations}
-        currentConversation={currentConversation}
-        setCurrentConversation={setCurrentConversation}
-        setConversations={setConversations}
-        api={api}
+        conversations={conversations || []}
+        mutateConversations={mutateConversations}
+        conversationId={conversationId}
+        setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
+        api={new API({ url: URL!, userId: userId! })}
+        session={session}
       />
       <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
         <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
@@ -235,11 +252,15 @@ export default function Home() {
           className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
           ref={messageContainerRef}
         >
-          {messages.map((message, i) => (
-            <MessageBox isUser={message.isUser} key={i}>
-              <MarkdownWrapper text={message.text} />
-            </MessageBox>
-          ))}
+          {messagesLoading || messages === undefined ? (
+            <MessageBox loading />
+          ) : (
+            messages.map((message, i) => (
+              <MessageBox isUser={message.isUser} key={i}>
+                <MarkdownWrapper text={message.text} />
+              </MessageBox>
+            ))
+          )}
         </section>
         <form
           id="send"
@@ -256,7 +277,9 @@ export default function Home() {
           <textarea
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"}`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+              canSend ? " border-green-200" : "border-red-200 opacity-50"
+            }`}
             disabled={!canSend}
             rows={1}
             onKeyDown={(e) => {
@@ -276,12 +299,12 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
-      </div >
+      </div>
       <Thoughts
         thought={thought}
         setIsThoughtsOpen={setIsThoughtsOpen}
         isThoughtsOpen={isThoughtsOpen}
       />
-    </main >
+    </main>
   );
 }
