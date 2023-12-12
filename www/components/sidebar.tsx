@@ -1,4 +1,3 @@
-import { FaEdit, FaTrash } from "react-icons/fa";
 import { GrClose } from "react-icons/gr";
 import { Conversation, API } from "@/utils/api";
 import { signOut } from "@/utils/supabase";
@@ -6,27 +5,30 @@ import { signOut } from "@/utils/supabase";
 import { usePostHog } from "posthog-js/react";
 import Swal from "sweetalert2";
 import Link from "next/link";
+import { Session } from "@supabase/supabase-js";
+import { ConversationTab } from "./conversationtab";
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Sidebar({
   conversations,
-  currentConversation,
-  setCurrentConversation,
-  setConversations,
+  mutateConversations,
+  conversationId,
+  setConversationId,
   isSidebarOpen,
   setIsSidebarOpen,
   api,
+  session,
 }: {
   conversations: Conversation[];
-  currentConversation: Conversation | undefined;
-  setCurrentConversation: Function;
-  setConversations: Function;
+  mutateConversations: Function;
+  conversationId: string | undefined;
+  setConversationId: Function;
   isSidebarOpen: boolean;
   setIsSidebarOpen: Function;
   api: API | undefined;
+  session: Session | null;
 }) {
-
   const postHog = usePostHog();
 
   async function editConversation(cur: Conversation) {
@@ -46,7 +48,7 @@ export default function Sidebar({
     await cur.setName(newName);
 
     // Force a re-render by directly updating the state
-    setConversations(
+    mutateConversations(
       conversations.map((conversation) =>
         conversation.conversationId === cur.conversationId
           ? new Conversation({ ...conversation, name: newName })
@@ -68,21 +70,21 @@ export default function Sidebar({
 
     if (isConfirmed) {
       await conversation.delete();
-      postHog?.capture("user_deleted_conversation")
+      postHog?.capture("user_deleted_conversation");
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(
         (cur) => cur.conversationId != conversation.conversationId
       );
-      if (conversation == currentConversation) {
+      if (conversation.conversationId == conversationId) {
         if (newConversations.length > 1) {
-          setCurrentConversation(newConversations[0]);
+          setConversationId(newConversations[0].conversationId);
         } else {
           const newConv = await api?.new();
-          setCurrentConversation(newConv);
-          setConversations([newConv]);
+          setConversationId(newConv?.conversationId);
+          mutateConversations([newConv]);
         }
       }
-      setConversations(newConversations);
+      mutateConversations(newConversations);
       // setConversations((oldConversations: Conversation[]) => {
       //   const newConversations = oldConversations.filter(
       //     (cur) => cur.conversationId != conversation.conversationId
@@ -107,19 +109,21 @@ export default function Sidebar({
 
   async function addChat() {
     const conversation = await api?.new();
-    postHog?.capture("user_created_conversation")
-    setCurrentConversation(conversation);
-    setConversations([conversation, ...conversations]);
+    postHog?.capture("user_created_conversation");
+    setConversationId(conversation?.conversationId);
+    mutateConversations([conversation, ...conversations]);
   }
 
   return (
     <div
-      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${isSidebarOpen ? "" : "hidden"
-        }`}
+      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
+        isSidebarOpen ? "" : "hidden"
+      }`}
     >
       <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? "fixed lg:static" : "sticky"
-          } top-0 left-0`}
+        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
+          isSidebarOpen ? "fixed lg:static" : "sticky"
+        } top-0 left-0`}
       >
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
@@ -139,42 +143,26 @@ export default function Sidebar({
 
         {/* Section 2: Scrollable items */}
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
-          {conversations.map((cur, i) => (
-            <div
-              key={i}
-              className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 hover:dark:bg-gray-800  ${currentConversation === cur
-                ? "bg-gray-200 dark:bg-gray-800"
-                : ""
-                }`}
-              onClick={() => setCurrentConversation(cur)}
-            >
-              <div>
-                <h2 className="font-bold overflow-ellipsis overflow-hidden">
-                  {cur.name || "Untitled"}
-                </h2>
-              </div>
-              <div className="flex flex-row justify-end gap-2 items-center w-1/5">
-                <button
-                  className="text-gray-500"
-                  onClick={async () => await editConversation(cur)}
-                >
-                  <FaEdit />
-                </button>
-                <button
-                  className="text-red-500"
-                  onClick={async () => await deleteConversation(cur)}
-                >
-                  <FaTrash />
-                </button>
-              </div>
-            </div>
-          ))}
-                    </div>
+          {conversations.length > 0
+            ? conversations.map((cur, i) => (
+                <ConversationTab
+                  conversation={cur}
+                  select={() => setConversationId(cur.conversationId)}
+                  selected={conversationId === cur.conversationId}
+                  edit={() => editConversation(cur)}
+                  del={() => deleteConversation(cur)}
+                  key={i}
+                />
+              ))
+            : Array.from({ length: 5 }).map((_, i) => (
+                <ConversationTab loading key={i} />
+              ))}
+        </div>
 
         {/* Section 3: Authentication information */}
         <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full">
           {/* Replace this with your authentication information */}
-          {api?.session ? (
+          {session ? (
             <button
               className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
               onClick={async () => {
@@ -185,18 +173,14 @@ export default function Sidebar({
               Sign Out
             </button>
           ) : (
-
-            <Link
-              href={"/auth"}
-            >
-              <button
-                className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
+            <Link href={"/auth"}>
+              <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
                 Sign In
               </button>
             </Link>
           )}
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }
