@@ -5,6 +5,9 @@ from langchain.prompts import (
 )
 from langchain.prompts import load_prompt, ChatPromptTemplate
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
+
+from openai import BadRequestError
+
 from dotenv import load_dotenv
 
 from collections.abc import AsyncIterator
@@ -54,12 +57,11 @@ class BloomChain:
         ])
         chain = thought_prompt | cls.llm 
 
-        cache.add_message("thought", HumanMessage(content=input))
+        def save_new_messages(ai_response):
+            cache.add_message("response", HumanMessage(content=input))
+            cache.add_message("response", AIMessage(content=ai_response))
 
-        return Streamable(
-                chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
-            lambda thought: cache.add_message("thought", AIMessage(content=thought))
-        )
+        return Streamable(chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
         
     @classmethod
     @sentry_sdk.trace
@@ -72,13 +74,12 @@ class BloomChain:
         ])
         chain = response_prompt | cls.llm
 
-        cache.add_message("response", HumanMessage(content=input))
+        def save_new_messages(ai_response):
+            cache.add_message("response", HumanMessage(content=input))
+            cache.add_message("response", AIMessage(content=ai_response))
 
-        return Streamable(
-            chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}),
-            lambda response: cache.add_message("response", AIMessage(content=response))
-        )
-    
+        return Streamable(chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
+
     @classmethod
     @sentry_sdk.trace
     async def think_user_prediction(cls, cache: Conversation):
@@ -114,6 +115,7 @@ class BloomChain:
         return thought, response
 
 
+
 class Streamable:
     "A async iterator wrapper for langchain streams that saves on completion via callback"
 
@@ -121,20 +123,37 @@ class Streamable:
         self.iterator = iterator
         self.callback = callback
         self.content = ""
+        self.stream_error = False
     
     def __aiter__(self):
         return self
     
     async def __anext__(self):
         try:
+            if self.stream_error:
+                raise StopAsyncIteration
+
             data = await self.iterator.__anext__()
             self.content += data.content
             return data.content
         except StopAsyncIteration as e:
             self.callback(self.content)
             raise StopAsyncIteration
+        except BadRequestError as e:
+            if e.code == "content_filter":
+                self.stream_error = True
+                self.message = "Sorry, your message was flagged as inappropriate. Please try again."
+
+                return self.message
+            else: 
+                raise Exception(e)
         except Exception as e:
-            raise e
+            sentry_sdk.capture_exception(e)
+
+            self.stream_error = True
+            self.message = "Sorry, an error occurred while streaming the response. Please try again."
+
+            return self.message
     
     async def __call__(self):
         async for _ in self:
