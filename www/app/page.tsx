@@ -129,7 +129,7 @@ export default function Home() {
 
     setCanSend(false); // Disable sending more messages until the current generation is done
 
-    mutateMessages([
+    const newMessages = [
       ...messages!,
       {
         text: message,
@@ -139,7 +139,11 @@ export default function Home() {
         text: "",
         isUser: false,
       },
-    ]);
+    ];
+    mutateMessages(newMessages, { revalidate: false });
+
+    // sleep for 1 second to give the user the illusion of typing
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // const reader = await currentConversation!.chat(message);
     const reader = await conversations!
@@ -153,6 +157,8 @@ export default function Home() {
 
     let isThinking = true;
     setThought("");
+
+    let currentModelOutput = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -169,6 +175,7 @@ export default function Home() {
           continue;
         }
         setThought((prev) => prev + value);
+        mutateMessages(newMessages, { revalidate: false });
       } else {
         if (value.includes("❀")) {
           setCanSend(true); // Bloom delimeter
@@ -179,13 +186,18 @@ export default function Home() {
         //   return [...prev];
         // });
 
-        mutateMessages([
-          ...messages?.slice(0, -1)!,
-          {
-            text: messages![messages!.length - 1].text + value,
-            isUser: false,
-          },
-        ]);
+        currentModelOutput += value;
+
+        mutateMessages(
+          [
+            ...newMessages?.slice(0, -1)!,
+            {
+              text: currentModelOutput,
+              isUser: false,
+            },
+          ],
+          { revalidate: false }
+        );
 
         if (isAtBottom.current) {
           const messageContainer = messageContainerRef.current;
@@ -195,6 +207,8 @@ export default function Home() {
         }
       }
     }
+
+    mutateMessages();
   }
 
   return (
