@@ -33,10 +33,10 @@ export class Conversation {
   async getMessages() {
     const req = await fetch(
       `${this.api.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: this.conversationId,
-          user_id: this.api.userId,
-        })
+      new URLSearchParams({
+        conversation_id: this.conversationId,
+        user_id: this.api.userId,
+      })
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);
@@ -146,10 +146,10 @@ export class API {
   async getMessages(conversationId: string) {
     const req = await fetch(
       `${this.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: conversationId,
-          user_id: this.userId,
-        })
+      new URLSearchParams({
+        conversation_id: conversationId,
+        user_id: this.userId,
+      })
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);

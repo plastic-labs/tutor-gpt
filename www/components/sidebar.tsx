@@ -116,14 +116,12 @@ export default function Sidebar({
 
   return (
     <div
-      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
-        isSidebarOpen ? "" : "hidden"
-      }`}
+      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${isSidebarOpen ? "" : "hidden"
+        }`}
     >
       <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
-          isSidebarOpen ? "fixed lg:static" : "sticky"
-        } top-0 left-0`}
+        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? "fixed lg:static" : "sticky"
+          } top-0 left-0`}
       >
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
@@ -143,44 +141,47 @@ export default function Sidebar({
 
         {/* Section 2: Scrollable items */}
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
-          {conversations.length > 0
-            ? conversations.map((cur, i) => (
-                <ConversationTab
-                  conversation={cur}
-                  select={() => setConversationId(cur.conversationId)}
-                  selected={conversationId === cur.conversationId}
-                  edit={() => editConversation(cur)}
-                  del={() => deleteConversation(cur)}
-                  key={i}
-                />
-              ))
-            : Array.from({ length: 5 }).map((_, i) => (
-                <ConversationTab loading key={i} />
-              ))}
-        </div>
+  {
+    conversations.length > 0
+      ? conversations.map((cur, i) => (
+        <ConversationTab
+          conversation={cur}
+          select={() => setConversationId(cur.conversationId)}
+          selected={conversationId === cur.conversationId}
+          edit={() => editConversation(cur)}
+          del={() => deleteConversation(cur)}
+          key={i}
+        />
+      ))
+      : Array.from({ length: 5 }).map((_, i) => (
+        <ConversationTab loading key={i} />
+      ))
+  }
+        </div >
 
-        {/* Section 3: Authentication information */}
-        <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full">
-          {/* Replace this with your authentication information */}
-          {session ? (
-            <button
-              className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
-              onClick={async () => {
-                await signOut();
-                location.reload();
-              }}
-            >
-              Sign Out
+    {/* Section 3: Authentication information */ }
+    < div className = "border-t border-gray-300 dark:border-gray-700 p-4 w-full" >
+      {/* Replace this with your authentication information */ }
+  {
+    session ? (
+      <button
+        className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
+        onClick={async () => {
+          await signOut();
+          location.reload();
+        }}
+      >
+        Sign Out
+      </button>
+    ) : (
+      <Link href={"/auth"}>
+        <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
+              Sign In
             </button>
-          ) : (
-            <Link href={"/auth"}>
-              <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
-                Sign In
-              </button>
-            </Link>
+          </Link>
           )}
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
-}
+  }
