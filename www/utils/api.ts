@@ -1,11 +1,6 @@
 import { Session } from "@supabase/supabase-js";
 import { getId } from "./supabase";
 
-const defaultMessage: Message = {
-  text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
-  isUser: false,
-};
-
 export interface Message {
   text: string;
   isUser: boolean;
@@ -33,10 +28,10 @@ export class Conversation {
   async getMessages() {
     const req = await fetch(
       `${this.api.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: this.conversationId,
-          user_id: this.api.userId,
-        })
+      new URLSearchParams({
+        conversation_id: this.conversationId,
+        user_id: this.api.userId,
+      })
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);
@@ -99,17 +94,27 @@ interface RawConversation {
 export class API {
   url: string;
   userId: string;
+  session: Session | null;
 
-  constructor({ url, userId }: { url: string; userId: string }) {
+  constructor({
+    url,
+    userId,
+    session,
+  }: {
+    url: string;
+    userId: string;
+    session: Session | null;
+  }) {
     this.url = url;
     this.userId = userId;
+    this.session = session;
   }
 
-  // static async create(url: string) {
-  //   const { userId } = await getId();
-  //   const api = new API({ url, userId });
-  //   return api;
-  // }
+  static async create(url: string) {
+    const { userId, session } = await getId();
+    const api = new API({ url, userId, session });
+    return api;
+  }
 
   async new() {
     const req = await fetch(
@@ -141,26 +146,5 @@ export class API {
           conversationId: conversation.conversation_id,
         })
     );
-  }
-
-  async getMessages(conversationId: string) {
-    const req = await fetch(
-      `${this.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: conversationId,
-          user_id: this.userId,
-        })
-    );
-    const { messages: rawMessages } = await req.json();
-    // console.log(rawMessages);
-    if (!rawMessages) return [];
-    const messages: Message[] = rawMessages.map((rawMessage: any) => {
-      return {
-        text: rawMessage.data.content,
-        isUser: rawMessage.type === "human",
-      };
-    });
-
-    return [defaultMessage, ...messages];
   }
 }
