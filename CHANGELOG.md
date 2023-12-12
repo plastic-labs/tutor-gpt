@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.5.1] - 2023-12-12
+
+### Added
+
+- Dark mode
+- Web Caching
+- LateX Support
+- Multiline support for chat textbox
+
+### Changed
+
+- Required Sign In
+- No A/B for Honcho
+- Error handling for content filter
+
+### Security
+
+- Update Langchain version to ^0.0.348
+- Update OpenAI Package to ^1.3.8
+
+
 ## [0.4.1] – 2023-09-14
 
 ### Added
