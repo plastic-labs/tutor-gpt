@@ -109,6 +109,8 @@ async def get_messages(user_id: str, conversation_id: str):
 
 @app.post("/api/chat")
 async def chat(inp: ConversationInput):
+    if inp.user_id.startswith("anon_"):
+        return HTTPException(status_code=401, detail="unauthorized please sign in")
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
@@ -134,6 +136,8 @@ async def chat(inp: ConversationInput):
 @app.post("/api/stream")
 async def stream(inp: ConversationInput):
     """Stream the response too the user, currently only used by the Web UI and has integration to be able to use Honcho is not anonymous"""
+    if inp.user_id.startswith("anon_"):
+        return HTTPException(status_code=401, detail="unauthorized please sign in")
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
         conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
