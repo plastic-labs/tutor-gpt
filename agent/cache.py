@@ -6,14 +6,17 @@ from collections import OrderedDict
 from .mediator import SupabaseMediator
 import uuid
 from typing import List, Tuple, Dict
-from langchain.schema import BaseMessage
+from langchain.schema import BaseMessage, message_to_dict
 import sentry_sdk
+import requests
+import json
 
 class Conversation:
     "Wrapper Class for storing contexts between channels. Using an object to pass by reference avoid additional cache hits"
     @sentry_sdk.trace
     def __init__(self, mediator: SupabaseMediator, user_id: str, conversation_id: str = str(uuid.uuid4()), location_id: str = "web", metadata: Dict = {}):
-        self.mediator: SupabaseMediator = mediator
+        # self.mediator: SupabaseMediator = mediator
+        self.honcho: str = "http://localhost:5000"
         self.user_id: str = user_id
         self.conversation_id: str = conversation_id 
         self.location_id: str = location_id
@@ -21,26 +24,57 @@ class Conversation:
 
     @sentry_sdk.trace
     def add_message(self, message_type: str, message: BaseMessage,) -> None:
-        self.mediator.add_message(self.conversation_id, self.user_id, message_type, message)
+        # self.mediator.add_message(self.conversation_id, self.user_id, message_type, message)
+        requests.post(
+            f"{self.honcho}/messages/add",
+            json={
+                "session_id": self.conversation_id,
+                "user_id": self.user_id,
+                "message_type": message_type,
+                "message": json.dumps(message_to_dict(message)),
+            }
+        )
 
     @sentry_sdk.trace
     def messages(self, message_type: str, limit: Tuple[bool, int | None] = (True, 10)) -> List[BaseMessage]:
-        return self.mediator.messages(self.conversation_id, self.user_id, message_type, limit=limit)
+        # return self.mediator.messages(self.conversation_id, self.user_id, message_type, limit=limit)
+        response = requests.get(
+            f"{self.honcho}/messages",
+            params={
+                "session_id": self.conversation_id,
+                "user_id": self.user_id,
+                "message_type": message_type,
+            }
+        )
+        print(response)
+        return response.json()
 
     @sentry_sdk.trace
     def delete(self) -> None:
-        self.mediator.delete_conversation(self.conversation_id)
-
-    @sentry_sdk.trace
-    def messages(self, message_type: str, limit: Tuple[bool, int | None] = (True, 10)) -> List[BaseMessage]:
-        return self.mediator.messages(self.conversation_id, self.user_id, message_type, limit=limit)
+        # self.mediator.delete_conversation(self.conversation_id)
+        response = requests.delete(
+            f"{self.honcho}/session/delete",
+            json={
+                "conversation_id": self.conversation_id,
+                "user_id": self.user_id
+            }
+        )
+        print(response)
 
     @sentry_sdk.trace
     def restart(self) -> None:
         self.delete()
         representation = self.mediator.add_conversation(user_id=self.user_id, location_id=self.location_id)
-        self.conversation_id: str = representation["id"]
-        self.metadata = representation["metadata"]
+        representation = requests.post(
+            f"{self.honcho}/session/add",
+            json={
+                "conversation_id": self.conversation_id,
+                "user_id": self.user_id
+            }
+        )
+        print(representation.json())
+        # self.conversation_id: str = representation["id"]
+        # self.metadata = representation["metadata"]
 
 
 class LRUCache:

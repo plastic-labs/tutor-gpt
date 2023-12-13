@@ -40,6 +40,9 @@ class SupabaseMediator:
         try:
             response = self.supabase.table(self.conversation_table).select(*["id", "metadata"], count="exact").eq("location_id", location_id).eq("user_id", user_id).eq("isActive", True).order("created_at", desc=True).execute()
             if response is not None and response.count is not None:
+                print("========================================")
+                print(response)
+                print("========================================")
                 if (response.count > 1) and single:
                     # If there is more than 1 active conversation mark the rest for deletion
                     conversation_ids = [record["id"] for record in response.data[1:]]
