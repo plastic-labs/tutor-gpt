@@ -46,7 +46,6 @@ export const metadata: Metadata = {
   manifest: "site.webmanifest",
 };
 
-// TODO add the posthog provider back
 export default function RootLayout({
   children,
 }: {
@@ -54,12 +53,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      {/* <Suspense> */}
-      {/*   <PostHogPageview /> */}
-      {/* </Suspense> */}
-      {/* <PHProvider> */}
-      <body className={spacegrotesk.className}>{children}</body>
-      {/* </PHProvider> */}
+      <Suspense>
+        <PostHogPageview />
+      </Suspense>
+      <PHProvider>
+        <body className={spacegrotesk.className}>{children}</body>
+      </PHProvider>
     </html>
   );
 }
