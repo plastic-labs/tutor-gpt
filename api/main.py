@@ -82,11 +82,11 @@ async def delete_conversation(conversation_id: str):
 @app.get("/api/conversations/insert")
 async def add_conversation(user_id: str, location_id: str = "web"):
     async with LOCK:
-        metadata = {"A/B": False}
-        if not user_id.startswith("anon_"):
+        # metadata = /B": False}
+        # if not user_id.startswith("anon_"):
             # metadata["A/B"] = bool(random.getrandbits(1))
-            metadata["A/B"] = True
-        representation = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id, metadata=metadata)
+            # metadata["A/B"] = True
+        representation = MEDIATOR.add_conversation(location_id=location_id, user_id=user_id)
         conversation_id = representation["id"]
     return {
        "conversation_id": conversation_id
@@ -113,17 +113,17 @@ async def chat(inp: ConversationInput):
         return HTTPException(status_code=401, detail="unauthorized please sign in")
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
-        conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
-    if honcho_url and conversation_data and conversation_data["metadata"]: 
-        metadata = conversation_data["metadata"]
-        if "A/B" in metadata.keys() and metadata["A/B"]:
-            response = requests.post(f'{honcho_url}/chat', json={
-                "user_id": inp.user_id,
-                "conversation_id": inp.conversation_id,
-                "message": inp.message
-                }, stream=True)
-            print(response)
-            return response
+        # conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
+    if honcho_url: 
+        # metadata = conversation_data["metadata"]
+        # if "A/B" in metadata.keys() and metadata["A/B"]:
+        response = requests.post(f'{honcho_url}/chat', json={
+            "user_id": inp.user_id,
+            "conversation_id": inp.conversation_id,
+            "message": inp.message
+            }, stream=True)
+        print(response)
+        return response
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
     thought, response = await BloomChain.chat(conversation, inp.message)
@@ -140,35 +140,34 @@ async def stream(inp: ConversationInput):
         return HTTPException(status_code=401, detail="unauthorized please sign in")
     async with LOCK:
         conversation = Conversation(MEDIATOR, user_id=inp.user_id, conversation_id=inp.conversation_id)
-        conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
-    if honcho_url and not inp.user_id.startswith("anon_") and conversation_data and conversation_data["metadata"]: 
-        metadata = conversation_data["metadata"]
-        if "A/B" in metadata.keys() and metadata["A/B"]:
-            response = requests.post(f'{honcho_url}/stream', json={
-                "user_id": inp.user_id,
-                "conversation_id": inp.conversation_id,
-                "message": inp.message
-                }, stream=True)
+        # conversation_data = MEDIATOR.conversation(session_id=inp.conversation_id)
+    if honcho_url and not inp.user_id.startswith("anon_"): 
+        # metadata = conversation_data["metadata"]
+        # if "A/B" in metadata.keys() and metadata["A/B"]:
+        response = requests.post(f'{honcho_url}/stream', json={
+            "user_id": inp.user_id,
+            "conversation_id": inp.conversation_id,
+            "message": inp.message
+            }, stream=True)
 
-            def generator():
-                try:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        # print(f"Received chunk: {chunk}")
-                        if chunk:
-                            yield chunk
-                except ChunkedEncodingError as e:
-                    print(f"Chunked encoding error occurred: {e}")
-                    print(response)
-                    print(response.headers)
-                    # Optionally yield an error message to the client
-                    yield b"An error occurred while streaming the response."
-                except Exception as e:
-                    print(f"An unexpected error occurred: {e}")
-                    # Optionally yield an error message to the client
-                    yield b"An unexpected error occurred."
+        def generator():
+            try:
+                for chunk in response.iter_content(chunk_size=8192):
+                    # print(f"Received chunk: {chunk}")
+                    if chunk:
+                        yield chunk
+            except ChunkedEncodingError as e:
+                print(f"Chunked encoding error occurred: {e}")
+                print(response)
+                print(response.headers)
+                # Optionally yield an error message to the client
+                yield b"An error occurred while streaming the response."
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
+                # Optionally yield an error message to the client
+                yield b"An unexpected error occurred."
 
-            print("A/B Confirmed")
-            return StreamingResponse(generator())
+        return StreamingResponse(generator())
     if conversation is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
