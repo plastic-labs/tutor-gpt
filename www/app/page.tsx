@@ -104,6 +104,7 @@ export default function Home() {
       setConversationId(conversations[0].conversationId);
       setCanSend(true);
     },
+    revalidateOnFocus: false,
   });
 
   const messagesFetcher = async (conversationId: string) => {
@@ -119,7 +120,7 @@ export default function Home() {
     mutate: mutateMessages,
     isLoading: messagesLoading,
     error: _,
-  } = useSWR(conversationId, messagesFetcher);
+  } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
 
   async function chat() {
     const textbox = input.current!;
@@ -163,11 +164,9 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
-        // console.log("done");
         setCanSend(true);
         break;
       }
-      // console.log(value);
       if (isThinking) {
         if (value.includes("❀")) {
           // a bloom delimiter
@@ -175,7 +174,7 @@ export default function Home() {
           continue;
         }
         setThought((prev) => prev + value);
-        mutateMessages(newMessages, { revalidate: false });
+        // mutateMessages(newMessages, { revalidate: false });
       } else {
         if (value.includes("❀")) {
           setCanSend(true); // Bloom delimeter
@@ -265,60 +264,60 @@ export default function Home() {
           className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
           ref={messageContainerRef}
         >
-  {
-    messagesLoading || messages === undefined ? (
-      <MessageBox loading />
-    ) : (
-      messages.map((message, i) => (
-        <MessageBox isUser={message.isUser} key={i}>
-          <MarkdownWrapper text={message.text} />
-        </MessageBox>
-      ))
-    )
-  }
+          {
+            messagesLoading || messages === undefined ? (
+              <MessageBox loading />
+            ) : (
+              messages.map((message, i) => (
+                <MessageBox isUser={message.isUser} key={i}>
+                  <MarkdownWrapper text={message.text} />
+                </MessageBox>
+              ))
+            )
+          }
         </section >
-    <form
-      id="send"
-      className="flex p-3 lg:p-5 gap-3 border-gray-300"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (canSend && input.current?.value) {
-          posthog.capture("user_sent_message");
-          chat();
-        }
-      }}
-    >
-      {/* TODO: validate input */}
-      <textarea
-        ref={input}
-        placeholder="Type a message..."
-        className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"
-          }`}
-        disabled={!canSend}
-        rows={1}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
+        <form
+          id="send"
+          className="flex p-3 lg:p-5 gap-3 border-gray-300"
+          onSubmit={(e) => {
             e.preventDefault();
             if (canSend && input.current?.value) {
               posthog.capture("user_sent_message");
               chat();
             }
-          }
-        }}
-      />
-      <button
-        className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-        type="submit"
-      >
-        <FaPaperPlane className="inline" />
-      </button>
-    </form>
+          }}
+        >
+          {/* TODO: validate input */}
+          <textarea
+            ref={input}
+            placeholder="Type a message..."
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"
+              }`}
+            rows={1}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (canSend && input.current?.value) {
+                  posthog.capture("user_sent_message");
+                  chat();
+                }
+              }
+            }}
+          />
+          <button
+            className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+            type="submit"
+            disabled={!canSend}
+          >
+            <FaPaperPlane className="inline" />
+          </button>
+        </form>
       </div >
-    <Thoughts
-      thought={thought}
-      setIsThoughtsOpen={setIsThoughtsOpen}
-      isThoughtsOpen={isThoughtsOpen}
-    />
+      <Thoughts
+        thought={thought}
+        setIsThoughtsOpen={setIsThoughtsOpen}
+        isThoughtsOpen={isThoughtsOpen}
+      />
     </main >
   );
 }
