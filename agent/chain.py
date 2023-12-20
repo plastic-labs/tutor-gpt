@@ -58,8 +58,8 @@ class BloomChain:
         chain = thought_prompt | cls.llm 
 
         def save_new_messages(ai_response):
-            cache.add_message("response", HumanMessage(content=input))
-            cache.add_message("response", AIMessage(content=ai_response))
+            cache.add_message("thought", HumanMessage(content=input))
+            cache.add_message("thought", AIMessage(content=ai_response))
 
         return Streamable(chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
         
