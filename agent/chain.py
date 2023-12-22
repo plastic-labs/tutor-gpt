@@ -1,10 +1,11 @@
 import os
-from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
-from langchain.prompts import (
+from langchain_community.chat_models import ChatOpenAI, AzureChatOpenAI
+from langchain_core.prompts import (
     SystemMessagePromptTemplate,
 )
-from langchain.prompts import load_prompt, ChatPromptTemplate
-from langchain.schema import AIMessage, HumanMessage, BaseMessage
+from langchain_core.prompts import load_prompt, ChatPromptTemplate
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
+from langchain_mistralai.chat_models import ChatMistralAI
 
 from openai import BadRequestError
 
@@ -25,9 +26,11 @@ SYSTEM_USER_PREDICTION_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file
 class BloomChain:
     "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
     # llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
-    llm: AzureChatOpenAI | ChatOpenAI
-    if (os.environ.get("OPENAI_API_TYPE") == "azure"):
+    llm: AzureChatOpenAI | ChatOpenAI | ChatMistralAI
+    if (os.environ["LLM_API"] == "azure"):
         llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
+    if (os.environ['LLM_API'] == "mistral"):
+        llm = ChatMistralAI(model="mistral-medium", mistral_api_key=os.environ['MISTRAL_API_KEY'], temperature=1, top_p=0.5)
     else:
         llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
 
@@ -58,8 +61,8 @@ class BloomChain:
         chain = thought_prompt | cls.llm 
 
         def save_new_messages(ai_response):
-            cache.add_message("response", HumanMessage(content=input))
-            cache.add_message("response", AIMessage(content=ai_response))
+            cache.add_message("thought", HumanMessage(content=input))
+            cache.add_message("thought", AIMessage(content=ai_response))
 
         return Streamable(chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
         

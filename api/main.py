@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 # from fastapi.staticfiles import StaticFiles
 
-from langchain.schema import _message_to_dict
+from langchain_core.messages import message_to_dict
 import sentry_sdk
 
 import os
@@ -20,12 +20,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-rate = 0.2 if os.getenv("SENTRY_ENVIRONMENT") == "production" else 1.0
-sentry_sdk.init(
-    dsn=os.environ['SENTRY_DSN_API'],
-    traces_sample_rate=rate,
-    profiles_sample_rate=rate
-)
+# rate = 0.2 if os.getenv("SENTRY_ENVIRONMENT") == "production" else 1.0
+# sentry_sdk.init(
+#     dsn=os.environ['SENTRY_DSN_API'],
+#     traces_sample_rate=rate,
+#     profiles_sample_rate=rate
+# )
 
 app = FastAPI()
 
@@ -102,7 +102,7 @@ async def update_conversations(change: ConversationDefinition):
 async def get_messages(user_id: str, conversation_id: str):
     async with LOCK:
         messages = MEDIATOR.messages(user_id=user_id, session_id=conversation_id, message_type="response", limit=(False, None))
-        converted_messages = [_message_to_dict(_message) for _message in messages]
+        converted_messages = [message_to_dict(_message) for _message in messages]
     return {
         "messages": converted_messages
     }

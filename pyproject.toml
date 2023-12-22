@@ -7,8 +7,6 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-langchain = "^0.0.348"
-py-cord = "^2.4.1"
 python-dotenv = "^1.0.0"
 validators = "^0.20.0"
 openai = "^1.3.8"
@@ -19,6 +17,8 @@ fastapi = "^0.101.1"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 requests = "^2.31.0"
 sentry-sdk = {extras = ["fastapi"], version = "^1.31.0"}
+langchain-mistralai = "^0.0.1"
+langchain-community = "^0.0.6"
 
 [build-system]
 requires = ["poetry-core"]

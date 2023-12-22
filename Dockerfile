@@ -32,7 +32,7 @@ USER app
 
 COPY agent/ agent/
 COPY common/ common/
-COPY bot/ bot/
+# COPY bot/ bot/
 COPY api/ api/
 
 # https://stackoverflow.com/questions/29663459/python-app-does-not-print-anything-when-running-detached-in-docker

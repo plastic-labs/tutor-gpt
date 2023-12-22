@@ -1,4 +1,4 @@
-from langchain.schema.messages import BaseMessage, _message_to_dict, messages_from_dict
+from langchain_core.messages import BaseMessage, message_to_dict, messages_from_dict
 import uuid
 import os
 import sentry_sdk
@@ -35,7 +35,7 @@ class SupabaseMediator:
                  "session_id": session_id, 
                  "user_id": user_id, 
                  "message_type": message_type, 
-                 "message": _message_to_dict(message)
+                 "message": message_to_dict(message)
                 }
         self.supabase.table(self.memory_table).insert(payload).execute()
 

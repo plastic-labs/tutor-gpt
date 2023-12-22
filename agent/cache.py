@@ -6,7 +6,7 @@ from collections import OrderedDict
 from .mediator import SupabaseMediator
 import uuid
 from typing import List, Tuple, Dict
-from langchain.schema import BaseMessage
+from langchain_core.messages import BaseMessage
 import sentry_sdk
 
 class Conversation:
