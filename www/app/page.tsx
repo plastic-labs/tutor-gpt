@@ -55,19 +55,31 @@ export default function Home() {
       setUserId(userId);
       setSession(session);
       setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
-      if (!session) {
-        Swal.fire({
-          title: "Notice: Bloombot now requires signing in for usage",
-          text: "Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom",
-          icon: "warning",
-          confirmButtonColor: "#3085d6",
-          confirmButtonText: "Sign In",
-        }).then((res) => {
-          router.push("/auth");
-        });
-      } else {
-        posthog?.identify(userId, { email: session.user.email });
-      }
+      Swal.fire({
+        title: "Notice: Temporarily discontinuing service",
+        text: `Due to the increasing operational costs, we’ve made the difficult decision to temporarily suspend our free hosted service. This decision wasn’t made lightly, but it’s a necessary step to ensure the sustainability and future growth of our platform.
+               In the meantime, Bloom is still available for self - hosting via the tutor- gpt repo on GitHub.
+              We’re grateful for your support and understanding. We’ll keep you updated on our progress and look forward to the future of Bloom`,
+        icon: "warning",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "Self Host",
+      })
+        .then((res) => {
+          router.push("https://github.com/plastic-labs/tutor-gpt")
+        })
+      // if (!session) {
+      //   Swal.fire({
+      //     title: "Notice: Bloombot now requires signing in for usage",
+      //     text: "Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom",
+      //     icon: "warning",
+      //     confirmButtonColor: "#3085d6",
+      //     confirmButtonText: "Sign In",
+      //   }).then((res) => {
+      //     router.push("/auth");
+      //   });
+      // } else {
+      //   posthog?.identify(userId, { email: session.user.email });
+      // }
     })();
   }, []);
 

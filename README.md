@@ -182,7 +182,7 @@ run the bot.
 
 ```bash
 docker run -p 8000:8000 --env-file .env tutor-gpt-core python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 # FastAPI Backend
-docker run tutor-gpt-web
+docker run -p 3000:3000 tutor-gpt-web  
 ```
 
 > NOTE: the default run command in the docker file for the core runs the FastAPI backend so you could just run docker run  --env-file .env tutor-gpt-core
