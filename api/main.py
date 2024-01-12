@@ -57,6 +57,7 @@ async def test():
 
 @app.get("/api/conversations/get")
 async def get_conversations(user_id: str):
+    return
     async with LOCK:
         conversations = MEDIATOR.conversations(location_id="web", user_id=user_id, single=False)
     acc = []
@@ -75,12 +76,14 @@ async def get_conversations(user_id: str):
 
 @app.get("/api/conversations/delete")
 async def delete_conversation(conversation_id: str):
+    return
     async with LOCK:
         MEDIATOR.delete_conversation(conversation_id)
         return
 
 @app.get("/api/conversations/insert")
 async def add_conversation(user_id: str, location_id: str = "web"):
+    return
     async with LOCK:
         # metadata = /B": False}
         # if not user_id.startswith("anon_"):
@@ -94,6 +97,7 @@ async def add_conversation(user_id: str, location_id: str = "web"):
 
 @app.post("/api/conversations/update")
 async def update_conversations(change: ConversationDefinition):
+    return
     async with LOCK:
         MEDIATOR.update_conversation(conversation_id=change.conversation_id, metadata={"name": change.name})
     return 
@@ -109,6 +113,7 @@ async def get_messages(user_id: str, conversation_id: str):
 
 @app.post("/api/chat")
 async def chat(inp: ConversationInput):
+    return
     if inp.user_id.startswith("anon_"):
         return HTTPException(status_code=401, detail="unauthorized please sign in")
     async with LOCK:
@@ -192,5 +197,12 @@ async def stream(inp: ConversationInput):
         finally:
             yield "❀"
 
-    return StreamingResponse(thought_and_response())
+    # return StreamingResponse(thought_and_response())
+    async def temp():
+        yield "Service Currently Unavailable"
+        yield "❀"
+        yield "Service Currently Unavailable"
+        yield "❀"
+
+    return StreamingResponse(temp())
 

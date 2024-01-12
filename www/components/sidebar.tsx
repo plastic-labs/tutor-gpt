@@ -32,6 +32,10 @@ export default function Sidebar({
   const postHog = usePostHog();
 
   async function editConversation(cur: Conversation) {
+    Swal.fire({
+      title: "Currently Unavailable",
+    })
+    return
     const { value: newName } = await Swal.fire({
       title: "Enter a new name for the conversation",
       input: "text",
@@ -58,6 +62,10 @@ export default function Sidebar({
   }
 
   async function deleteConversation(conversation: Conversation) {
+    Swal.fire({
+      title: "Currently Unavailable",
+    })
+    return
     const { isConfirmed } = await Swal.fire({
       title: "Are you sure you want to delete this conversation?",
       text: "You won't be able to revert this!",
@@ -108,6 +116,10 @@ export default function Sidebar({
   }
 
   async function addChat() {
+    Swal.fire({
+      title: "Currently Unavailable",
+    })
+    return
     const conversation = await api?.new();
     postHog?.capture("user_created_conversation");
     setConversationId(conversation?.conversationId);
@@ -141,47 +153,47 @@ export default function Sidebar({
 
         {/* Section 2: Scrollable items */}
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
-  {
-    conversations.length > 0
-      ? conversations.map((cur, i) => (
-        <ConversationTab
-          conversation={cur}
-          select={() => setConversationId(cur.conversationId)}
-          selected={conversationId === cur.conversationId}
-          edit={() => editConversation(cur)}
-          del={() => deleteConversation(cur)}
-          key={i}
-        />
-      ))
-      : Array.from({ length: 5 }).map((_, i) => (
-        <ConversationTab loading key={i} />
-      ))
-  }
+          {
+            conversations.length > 0
+              ? conversations.map((cur, i) => (
+                <ConversationTab
+                  conversation={cur}
+                  select={() => setConversationId(cur.conversationId)}
+                  selected={conversationId === cur.conversationId}
+                  edit={() => editConversation(cur)}
+                  del={() => deleteConversation(cur)}
+                  key={i}
+                />
+              ))
+              : Array.from({ length: 5 }).map((_, i) => (
+                <ConversationTab loading key={i} />
+              ))
+          }
         </div >
 
-    {/* Section 3: Authentication information */ }
-    < div className = "border-t border-gray-300 dark:border-gray-700 p-4 w-full" >
-      {/* Replace this with your authentication information */ }
-  {
-    session ? (
-      <button
-        className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
-        onClick={async () => {
-          await signOut();
-          location.reload();
-        }}
-      >
-        Sign Out
-      </button>
-    ) : (
-      <Link href={"/auth"}>
-        <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
-              Sign In
-            </button>
-          </Link>
-          )}
+        {/* Section 3: Authentication information */}
+        < div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full" >
+          {/* Replace this with your authentication information */}
+          {
+            session ? (
+              <button
+                className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
+                onClick={async () => {
+                  await signOut();
+                  location.reload();
+                }}
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link href={"/auth"}>
+                <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
+                  Sign In
+                </button>
+              </Link>
+            )}
         </div>
       </div >
     </div >
   );
-  }
+}

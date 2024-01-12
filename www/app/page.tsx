@@ -57,16 +57,15 @@ export default function Home() {
       setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
       Swal.fire({
         title: "Notice: Temporarily discontinuing service",
-        text: `Due to the increasing operational costs, we’ve made the difficult decision to temporarily suspend our free hosted service. This decision wasn’t made lightly, but it’s a necessary step to ensure the sustainability and future growth of our platform.
-               In the meantime, Bloom is still available for self - hosting via the tutor- gpt repo on GitHub.
-              We’re grateful for your support and understanding. We’ll keep you updated on our progress and look forward to the future of Bloom`,
-        icon: "warning",
-        confirmButtonColor: "#3085d6",
-        confirmButtonText: "Self Host",
+        html: `
+<p>Thanks for your support of Bloom!</p><br>
+<p>We're temporarily suspending our hosted version of the service, but we'll email all users as soon as there is an update to share.</p><br>
+<p>It's been a blast sharing our subversive, experimental AI tutor with the world for free. And it's been integral to the novel machine learning research we're doing at <a style="color:blue" href="https://plasticlabs.ai" target="_blank">Plastic Labs</a>. (More to come on that soon 😉.)</p><br>
+<p>For now, you can still use Bloom by self-hosting your own version via the <a style="color:blue" href="https://github.com/plastic-labs/tutor-gpt" target="_blank">tutor-gpt</a> repository on GitHub. We hope many of you will contribute to the project what you learn along the way.</p><br>
+<p>Keep permissionlessly learning 🌱</p><br>`, icon: "warning",
+        // confirmButtonColor: "#3085d6",
+        // confirmButtonText: "Repository",
       })
-        .then((res) => {
-          router.push("https://github.com/plastic-labs/tutor-gpt")
-        })
       // if (!session) {
       //   Swal.fire({
       //     title: "Notice: Bloombot now requires signing in for usage",
