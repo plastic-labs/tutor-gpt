@@ -3,6 +3,7 @@ from typing import List, Union
 
 # from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
 from langchain_openai import ChatOpenAI, AzureChatOpenAI
+from langchain.output_parsers.list import NumberedListOutputParser
 from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
@@ -12,7 +13,7 @@ from langchain.schema import AIMessage, HumanMessage, BaseMessage
 from openai import BadRequestError
 
 from dotenv import load_dotenv
-from honcho import Session, User, Message, Metamessage
+from honcho import Session, User, Message, Metamessage, Collection
 
 from collections.abc import AsyncIterator
 
@@ -29,8 +30,25 @@ SYSTEM_THOUGHT = load_prompt(
 SYSTEM_RESPONSE = load_prompt(
     os.path.join(os.path.dirname(__file__), "prompts/response.yaml")
 )
+
+SYSTEM_THOUGHT_REVISION = load_prompt(
+    os.path.join(os.path.dirname(__file__), "prompts/thought_revision.yaml")
+)
 SYSTEM_USER_PREDICTION_THOUGHT = load_prompt(
     os.path.join(os.path.dirname(__file__), "prompts/user_prediction_thought.yaml")
+)
+SYSTEM_USER_PREDICTION_THOUGHT_REVISION = load_prompt(
+    os.path.join(
+        os.path.dirname(__file__), "prompts/user_prediction_thought_revision.yaml"
+    )
+)
+
+SYSTEM_VOE_THOUGHT = load_prompt(
+    os.path.join(os.path.dirname(__file__), "prompts/voe_thought.yaml")
+)
+SYSTEM_VOE = load_prompt(os.path.join(os.path.dirname(__file__), "prompts/voe.yaml"))
+SYSTEM_CHECK_VOE_LIST = load_prompt(
+    os.path.join(os.path.dirname(__file__), "prompts/check_voe_list.yaml")
 )
 
 
@@ -53,24 +71,45 @@ class BloomChain:
     llm: AzureChatOpenAI | ChatOpenAI
     if os.environ.get("OPENAI_API_TYPE") == "azure":
         llm = AzureChatOpenAI(
-            deployment_name=os.environ["OPENAI_API_DEPLOYMENT_NAME"],
+            deployment_name=os.environ["OPENAI_API_DEPLOYMENT_NAME"],  # type: ignore
             temperature=1.2,
             model_kwargs={"top_p": 0.5},
         )
     else:
         llm = ChatOpenAI(
-            model_name="gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5}
+            model_name="gpt-4",  # type: ignore
+            temperature=1.2,
+            model_kwargs={"top_p": 0.5},  # type: ignore
         )
-
+    system_voe_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(
+        prompt=SYSTEM_VOE_THOUGHT  # type: ignore
+    )
+    system_voe: SystemMessagePromptTemplate = SystemMessagePromptTemplate(
+        prompt=SYSTEM_VOE  # type: ignore
+    )
+    system_check_voe_list: SystemMessagePromptTemplate = SystemMessagePromptTemplate(
+        prompt=SYSTEM_CHECK_VOE_LIST  # type: ignore
+    )
     system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(
-        prompt=SYSTEM_THOUGHT
+        prompt=SYSTEM_THOUGHT  # type: ignore
     )
     system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(
-        prompt=SYSTEM_RESPONSE
+        prompt=SYSTEM_RESPONSE  # type: ignore
     )
     system_user_prediction_thought: SystemMessagePromptTemplate = (
-        SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT)
+        SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT)  # type: ignore
     )
+    system_thought_revision: SystemMessagePromptTemplate = SystemMessagePromptTemplate(
+        prompt=SYSTEM_THOUGHT_REVISION  # type: ignore
+    )
+    system_user_prediction_thought: SystemMessagePromptTemplate = (
+        SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT)  # type: ignore
+    )
+    system_user_prediction_thought_revision: SystemMessagePromptTemplate = (
+        SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT_REVISION)  # type: ignore
+    )
+
+    output_parser = NumberedListOutputParser()
 
     def __init__(self) -> None:
         pass
@@ -144,6 +183,71 @@ class BloomChain:
 
     @classmethod
     @sentry_sdk.trace
+    def revise_thought(
+        cls, session: Session, collection: Collection, message: Message, thought: str
+    ):
+        """Revise Bloom's thought about the user with retrieved personal data"""
+
+        # construct rag prompt, retrieve docs
+        query = f"input: {input}\n thought: {thought}"
+        docs = collection.query(query)
+
+        # load message history
+        honcho_message_page = session.get_messages(page=1, page_size=10, reverse=True)
+        honcho_messages: List = [
+            message for message in honcho_message_page.items if message.is_user
+        ]
+
+        honcho_metamessage_page = session.get_metamessages(
+            metamessage_type="thought_revision", page=1, page_size=10, reverse=True
+        )
+        honcho_metamessages: List = honcho_metamessage_page.items
+        honcho_messages.extend(honcho_metamessages)
+
+        honcho_messages.sort(key=lambda message: message.created_at, reverse=False)
+
+        final_messages = []
+        for m in honcho_messages:
+            if isinstance(m, Message):
+                final_messages.append(HumanMessage(content=m.content))
+            elif isinstance(m, Metamessage):
+                final_messages.append(AIMessage(content=m.content))
+
+        messages = ChatPromptTemplate.from_messages(
+            [
+                cls.system_thought_revision,
+                *final_messages,
+                HumanMessage(content=message.content),
+            ]
+        )
+        chain = messages | cls.llm
+
+        def save_new_messages(ai_response):
+            # session.add_message("thought_revision", HumanMessage(content=input))
+            # session.add_message("thought_revision", AIMessage(content=ai_response))
+            session.create_metamessage(
+                message, metamessage_type="thought_revision", content=ai_response
+            )
+
+        return Streamable(
+            chain.astream(
+                {
+                    "thought": thought,
+                    "retrieved_vectors": "\n".join(doc.content for doc in docs),
+                },
+                {
+                    "tags": ["thought_revision"],
+                    "metadata": {
+                        "conversation_id": session.id,
+                        "user_id": session.user.id,
+                    },
+                },
+            ),
+            save_new_messages,
+        )
+
+    @classmethod
+    @sentry_sdk.trace
     def respond(cls, session: Session, thought: str, message: Message):
         """Generate Bloom's response to the user."""
 
@@ -196,7 +300,7 @@ class BloomChain:
 
     @classmethod
     @sentry_sdk.trace
-    async def think_user_prediction(cls, session: Session, message: Message):
+    async def think_user_prediction(cls, session: Session, message: Message) -> str:
         """Generate a thought about what the user is going to say"""
 
         messages = ChatPromptTemplate.from_messages(
@@ -208,6 +312,7 @@ class BloomChain:
 
         messages = session.get_messages(page=1, page_size=10, reverse=True).items
         history = unpack_messages(honcho_to_langchain(messages))
+        history = history[::-1]
         # history = unpack_messages(session.messages("response"))
 
         user_prediction_thought = await chain.ainvoke(
@@ -226,6 +331,156 @@ class BloomChain:
             metamessage_type="user_prediction_thought",
             content=user_prediction_thought.content,
         )
+
+        return user_prediction_thought.content
+
+    @classmethod
+    @sentry_sdk.trace
+    async def revise_user_prediction_thought(
+        cls,
+        session: Session,
+        collection: Collection,
+        message: Message,
+        user_prediction_thought: str,
+    ):
+        """Revise the thought about what the user is going to say based on retrieval of VoE facts"""
+
+        messages = ChatPromptTemplate.from_messages(
+            [
+                cls.system_user_prediction_thought_revision,
+            ]
+        )
+        chain = messages | cls.llm
+
+        # construct rag prompt, retrieve docs
+        query = f"input: {input}\n thought: {user_prediction_thought}"
+        docs = collection.query(query)
+
+        messages = session.get_messages(page=1, page_size=10, reverse=True).items
+        history = unpack_messages(honcho_to_langchain(messages))
+        history = history[::-1]
+        # history = unpack_messages(session.messages('response'))
+
+        user_prediction_thought_revision = await chain.ainvoke(
+            {
+                "history": history,
+                "user_prediction_thought": user_prediction_thought,
+                "retrieved_vectors": "\n".join(doc.content for doc in docs),
+            },
+            config={
+                "tags": ["user_prediction_thought_revision"],
+                "metadata": {"conversation_id": session.id, "user_id": session.user.id},
+            },
+        )
+
+        session.create_metamessage(
+            message,
+            metamessage_type="user_prediction_thought_revision",
+            content=user_prediction_thought_revision.content,
+        )
+
+        return user_prediction_thought_revision.content
+
+    @classmethod
+    @sentry_sdk.trace
+    async def think_violation_of_expectation(
+        cls, session: Session, message: Message, user_prediction_thought_revision: str
+    ) -> str:
+        """Assess whether expectation was violated, derive and store facts"""
+
+        # format prompt
+        messages = ChatPromptTemplate.from_messages([cls.system_voe_thought])
+        chain = messages | cls.llm
+
+        voe_thought = await chain.ainvoke(
+            {
+                "user_prediction_thought_revision": user_prediction_thought_revision,
+                "actual": message.content,
+            },
+            config={"tags": ["voe_thought"], "metadata": {"user_id": session.user.id}},
+        )
+
+        session.create_metamessage(
+            message, metamessage_type="voe_thought", content=voe_thought.content
+        )
+        # session.add_message("voe_thought", voe_thought)
+
+        return voe_thought.content
+
+    @classmethod
+    @sentry_sdk.trace
+    async def violation_of_expectation(
+        cls,
+        session: Session,
+        message: Message,
+        user_prediction_thought_revision: str,
+        voe_thought: str,
+    ) -> List[str]:
+        """Assess whether expectation was violated, derive and store facts"""
+
+        # format prompt
+        messages = ChatPromptTemplate.from_messages([cls.system_voe])
+        chain = messages | cls.llm
+
+        ai_message = (
+            session.get_messages(page=1, page_size=1, reverse=True).items[0].content
+        )
+
+        voe = await chain.ainvoke(
+            {
+                "ai_message": ai_message,
+                "user_prediction_thought_revision": user_prediction_thought_revision,
+                "actual": message.content,
+                "voe_thought": voe_thought,
+            },
+            config={"tags": ["voe"], "metadata": {"user_id": session.user.id}},
+        )
+
+        # session.add_message("voe", voe)
+        session.create_metamessage(message, metamessage_type="voe", content=voe.content)
+        facts = cls.output_parser.parse(voe.content)
+        return facts
+
+    @classmethod
+    @sentry_sdk.trace
+    async def check_voe_list(
+        cls, session: Session, collection: Collection, facts: List[str]
+    ):
+        """Filter the facts to just new ones"""
+
+        # create the message object from prompt template
+        messages = ChatPromptTemplate.from_messages([cls.system_check_voe_list])
+        chain = messages | cls.llm
+
+        # unpack the list of strings into one string for similarity search
+        # TODO: should we query 1 by 1 and append to an existing facts list?
+        query = " ".join(facts)
+
+        # query the vector store
+        existing_facts = collection.query(query=query, top_k=10)
+
+        filtered_facts = await chain.ainvoke(
+            {
+                "existing_facts": "\n".join(fact.content for fact in existing_facts),
+                "facts": "\n".join(fact for fact in facts),
+            },
+            config={
+                "tags": ["check_voe_list"],
+                "metadata": {"user_id": session.user.id},
+            },
+        )
+
+        data = cls.output_parser.parse(filtered_facts.content)
+
+        # if the check returned "None", write facts to session
+        if not data:
+            for fact in facts:
+                collection.create_document(fact)
+            # session.add_texts(facts)
+        else:
+            for fact in data:
+                collection.create_document(fact)
+            # session.add_texts(data)
 
     @classmethod
     @sentry_sdk.trace
@@ -259,7 +514,7 @@ class Streamable:
                 raise StopAsyncIteration
 
             data = await self.iterator.__anext__()
-            self.content += data.content
+            self.content += data.content  # type: ignore
             return data.content
         except StopAsyncIteration as e:
             self.callback(self.content)

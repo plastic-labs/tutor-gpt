@@ -164,19 +164,26 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
+        console.log(thought);
         setCanSend(true);
         break;
       }
       if (isThinking) {
-        if (value.includes("❀")) {
+        if (value.includes("❀Thought Revision❀")) {
           // a bloom delimiter
           isThinking = false;
+          setThought((prev) => prev + "\n" + value + "\n");
           continue;
         }
         setThought((prev) => prev + value);
         // mutateMessages(newMessages, { revalidate: false });
       } else {
-        if (value.includes("❀")) {
+        if (value.includes("❀Response❀")) {
+          // a bloom delimiter
+          isThinking = true;
+          continue;
+        }
+        if (value.includes("❀Done❀")) {
           setCanSend(true); // Bloom delimeter
           continue;
         }
