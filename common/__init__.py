@@ -6,9 +6,11 @@ import asyncio
 
 def init():
     THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
-    TOKEN = os.environ['BOT_TOKEN']
-    MEDIATOR = SupabaseMediator()
-    CACHE = LayeredLRUCache(50, MEDIATOR) # Support 50 concurrent active conversations cached in memory 
+    TOKEN = os.environ["BOT_TOKEN"]
+    # MEDIATOR = SupabaseMediator()
+    CACHE = LayeredLRUCache(
+        50, MEDIATOR
+    )  # Support 50 concurrent active conversations cached in memory
     LOCK = asyncio.Lock()
 
     return CACHE, LOCK, MEDIATOR, (THOUGHT_CHANNEL, TOKEN)
