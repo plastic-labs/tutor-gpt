@@ -255,18 +255,18 @@ export default function Home() {
             </button>
           </div>
         </nav>
-        <section className="bg-neon-green text-black text-center py-4">
-          <p>
-            Help inform the future of Bloom by filling out this{" "}
-            <Link
-              className="cursor-pointer hover:cursor-pointer font-bold underline"
-              href={"https://form.typeform.com/to/se0tN3J6"}
-              target="_blank"
-            >
-              survey
-            </Link>
-          </p>
-        </section>
+        {/* <section className="bg-neon-green text-black text-center py-4"> */}
+        {/*   <p> */}
+        {/*     Help inform the future of Bloom by filling out this{" "} */}
+        {/*     <Link */}
+        {/*       className="cursor-pointer hover:cursor-pointer font-bold underline" */}
+        {/*       href={"https://form.typeform.com/to/se0tN3J6"} */}
+        {/*       target="_blank" */}
+        {/*     > */}
+        {/*       survey */}
+        {/*     </Link> */}
+        {/*   </p> */}
+        {/* </section> */}
         <section
           className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
           ref={messageContainerRef}
