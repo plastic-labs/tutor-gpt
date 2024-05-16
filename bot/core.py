@@ -9,7 +9,7 @@ from __main__ import (
 )
 from discord.ext import commands
 from typing import Optional
-from agent.chain import  BloomChain
+from agent.chain import BloomChain
 from langchain.schema import AIMessage
 import sentry_sdk
 
@@ -20,7 +20,9 @@ class Core(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        with sentry_sdk.start_transaction(op="on_member_join", name="discord.on_member_join"):
+        with sentry_sdk.start_transaction(
+            op="on_member_join", name="discord.on_member_join"
+        ):
             welcome_message = """
     Hello! Thanks for joining the Bloom server. 
 
@@ -51,13 +53,15 @@ class Core(commands.Cog):
             user_id = f"discord_{str(message.author.id)}"
             # Get cache for conversation
             async with LOCK:
-                CONVERSATION = CACHE.get_or_create(location_id=str(message.channel.id), user_id=user_id)
+                CONVERSATION = CACHE.get_or_create(
+                    location_id=str(message.channel.id), user_id=user_id
+                )
 
             # Get the message content but remove any mentions
-            inp = message.content.replace(str('<@' + str(self.bot.user.id) + '>'), '')
+            inp = message.content.replace(str("<@" + str(self.bot.user.id) + ">"), "")
             n = 1800
 
-            async def respond(reply = True, forward_thought = True):
+            async def respond(reply=True, forward_thought=True):
                 "Generate response too user"
                 async with message.channel.typing():
                     # thought = ""
@@ -81,25 +85,33 @@ class Core(commands.Cog):
                     thought_channel = self.bot.get_channel(int(THOUGHT_CHANNEL))
 
                     # Thought Forwarding
-                    if (forward_thought):
+                    if forward_thought:
                         link = f"https://discord.com/channels/{message.guild.id}/{message.channel.id}/{message.id}"
                         if len(thought) > n:
-                            chunks = [thought[i:i+n] for i in range(0, len(thought), n)]
+                            chunks = [
+                                thought[i : i + n] for i in range(0, len(thought), n)
+                            ]
                             for i in range(len(chunks)):
-                                await thought_channel.send(f"{link}\n```\nThought #{i}: {chunks[i]}\n```")
+                                await thought_channel.send(
+                                    f"{link}\n```\nThought #{i}: {chunks[i]}\n```"
+                                )
                         else:
-                            await thought_channel.send(f"{link}\n```\nThought: {thought}\n```")
+                            await thought_channel.send(
+                                f"{link}\n```\nThought: {thought}\n```"
+                            )
 
-                    # Response Forwarding   
+                    # Response Forwarding
                     if len(response) > n:
-                        chunks = [response[i:i+n] for i in range(0, len(response), n)]
+                        chunks = [
+                            response[i : i + n] for i in range(0, len(response), n)
+                        ]
                         for chunk in chunks:
-                            if (reply):
+                            if reply:
                                 await message.reply(chunk)
                             else:
                                 await message.channel.send(chunk)
                     else:
-                        if (reply):
+                        if reply:
                             await message.reply(response)
                         else:
                             await message.channel.send(response)
@@ -116,14 +128,17 @@ class Core(commands.Cog):
             # If the bot was replied to in the message
             if not isinstance(message.channel, discord.channel.DMChannel):
                 if message.reference is not None:
-                    reply_msg = await self.bot.get_channel(message.channel.id).fetch_message(message.reference.message_id)
+                    reply_msg = await self.bot.get_channel(
+                        message.channel.id
+                    ).fetch_message(message.reference.message_id)
                     if reply_msg.author == self.bot.user:
                         if reply_msg.content.startswith("https://discord.com"):
                             return
-                        if message.content.startswith("!no") or message.content.startswith("!No"):
+                        if message.content.startswith(
+                            "!no"
+                        ) or message.content.startswith("!No"):
                             return
                         await respond(forward_thought=True)
-            
 
     @commands.slash_command(description="Help using the bot")
     async def help(self, ctx: discord.ApplicationContext):
@@ -157,7 +172,9 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
         await ctx.respond(help_message)
 
     @commands.slash_command(description="Restart the conversation with the tutor")
-    async def restart(self, ctx: discord.ApplicationContext, respond: Optional[bool] = True):
+    async def restart(
+        self, ctx: discord.ApplicationContext, respond: Optional[bool] = True
+    ):
         with sentry_sdk.start_transaction(op="restart", name="discord.restart"):
             """
             Clears the conversation history and reloads the chains
@@ -166,7 +183,11 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
                 ctx: context, necessary for bot commands
             """
             async with LOCK:
-                CONVERSATION = CACHE.get_or_create(location_id=str(ctx.channel_id), user_id=f"discord_{str(ctx.author.id)}", restart=True)
+                CONVERSATION = CACHE.get_or_create(
+                    location_id=str(ctx.channel_id),
+                    user_id=f"discord_{str(ctx.author.id)}",
+                    restart=True,
+                )
 
             if respond:
                 msg = "Great! The conversation has been restarted. What would you like to talk about?"
