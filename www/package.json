@@ -9,18 +9,20 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@sentry/nextjs": "^7.107.0",
+    "@million/lint": "1.0.0-rc.7",
+    "@sentry/nextjs": "^7.116.0",
     "@supabase/auth-helpers-nextjs": "^0.7.4",
-    "@supabase/supabase-js": "^2.39.8",
+    "@supabase/supabase-js": "^2.43.4",
     "@types/node": "20.5.4",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
     "@types/uuid": "^9.0.8",
     "autoprefixer": "10.4.15",
-    "katex": "^0.16.9",
+    "katex": "^0.16.10",
+    "million": "^3.1.1",
     "next": "13.4.19",
     "postcss": "8.4.28",
-    "posthog-js": "^1.115.0",
+    "posthog-js": "^1.133.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-icons": "^4.12.0",
@@ -31,7 +33,7 @@
     "rehype-katex": "^7.0.0",
     "remark-math": "^6.0.0",
     "sharp": "^0.32.6",
-    "sweetalert2": "^11.10.6",
+    "sweetalert2": "^11.11.0",
     "sweetalert2-react-content": "^5.0.7",
     "swr": "^2.2.5",
     "tailwindcss": "3.3.3",
@@ -39,11 +41,11 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/react-syntax-highlighter": "^15.5.11",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "encoding": "^0.1.13",
     "eslint": "^8.57.0",
     "eslint-config-next": "^13.5.6",
     "prettier": "^3.2.5",
-    "prettier-plugin-tailwindcss": "^0.5.12"
+    "prettier-plugin-tailwindcss": "^0.5.14"
   }
 }

@@ -4,6 +4,7 @@ version = "0.5.2"
 description = "LangChain LLM application. Dynamic few-shot metaprompting for the task of tutoring."
 authors = ["vintro <vince@plasticlabs.ai>", "VVoruganti <vineeth@plasticlabs.ai"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -16,7 +17,7 @@ pexpect = "^4.8.0"
 fastapi = "^0.101.1"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 sentry-sdk = {extras = ["fastapi"], version = "^1.31.0"}
-honcho-ai = "0.0.8a1"
+honcho-ai = "^0.0.11"
 langchain-openai = "^0.0.8"
 mirascope = "^0.13.1"
 

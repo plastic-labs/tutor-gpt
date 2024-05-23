@@ -4,7 +4,7 @@ import sentry_sdk
 
 import os
 from dotenv import load_dotenv
-from routers import conversation, chat, messages
+from api.routers import conversation, chat, messages
 
 load_dotenv()
 
