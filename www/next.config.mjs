@@ -1,5 +1,5 @@
 import MillionLint from '@million/lint';
-// import million from '@million/compiler';                                                   │
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   //output: "standalone"
@@ -18,7 +18,7 @@ const nextConfig = {
 const millionConfig = {
   auto: true,
 }
-export default MillionLint.next({rsc: true})(nextConfig, millionConfig)
+export default MillionLint.next({ rsc: true })(nextConfig, millionConfig)
 
 // module.exports = nextConfig;
 

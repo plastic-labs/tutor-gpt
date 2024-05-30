@@ -169,21 +169,21 @@ export default function Home() {
         break;
       }
       if (isThinking) {
-        if (value.includes("❀Thought Revision❀")) {
+        if (value.includes("❀")) {
           // a bloom delimiter
           isThinking = false;
-          setThought((prev) => prev + "\n" + value + "\n");
+          // setThought((prev) => prev + "\n" + value + "\n");
           continue;
         }
         setThought((prev) => prev + value);
         // mutateMessages(newMessages, { revalidate: false });
       } else {
-        if (value.includes("❀Response❀")) {
-          // a bloom delimiter
-          isThinking = true;
-          continue;
-        }
-        if (value.includes("❀Done❀")) {
+        // if (value.includes("❀Response❀")) {
+        //   // a bloom delimiter
+        //   isThinking = true;
+        //   continue;
+        // }
+        if (value.includes("❀")) {
           setCanSend(true); // Bloom delimeter
           continue;
         }

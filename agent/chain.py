@@ -1,25 +1,14 @@
 import os
 from typing import List, Union
 
-# from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
-# from langchain_openai import ChatOpenAI, AzureChatOpenAI
-# from langchain.output_parsers.list import NumberedListOutputParser
-# from langchain.prompts import (
-#     SystemMessagePromptTemplate,
-# )
-# from langchain.prompts import load_prompt, ChatPromptTemplate
-# from langchain.schema import AIMessage, HumanMessage, BaseMessage
-
 from mirascope.openai import OpenAICall, OpenAICallParams
-# from openai import BadRequestError
-
 from dotenv import load_dotenv
-# from honcho import Session, User, Message, Metamessage, Collection
 
 from collections.abc import AsyncIterator
 
-# from .cache import Conversation
-# from honcho import Honcho
+from honcho import Honcho
+
+from pydantic import ConfigDict
 
 import sentry_sdk
 
@@ -27,25 +16,23 @@ load_dotenv()
 
 
 class HonchoCall(OpenAICall):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
 
     user_input: str
     app_id: str
     user_id: str
     session_id: str
+    honcho: Honcho
 
-    _history = []
-
-    @property
-    def history(self) -> List[dict]:
-        return self._history
-
+    # arbitrary_types_allowed = True
     # def call(self):
     #     ouput = super().call()
 
 
-class ThinkCall(OpenAICall):
+class ThinkCall(HonchoCall):
     prompt_template = """
     SYSTEM:
     You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user’s mental state.
@@ -54,13 +41,26 @@ class ThinkCall(OpenAICall):
     MESSAGES: {history}
     USER: {user_input}
     """
-    history: List[dict]
     user_input: str
+
+    @property
+    def history(self) -> List[dict]:
+        """Get the conversation history from Honcho"""
+        history_list = []
+        iter = self.honcho.apps.users.sessions.messages.list(
+            session_id=self.session_id, app_id=self.app_id, user_id=self.user_id
+        )
+        for message in iter:
+            if message.is_user:
+                history_list.append({"role": "user", "content": message.content})
+            else:
+                history_list.append({"role": "assistant", "content": message.content})
+        return history_list
 
     call_params = OpenAICallParams(model="gpt-3.5-turbo-0125")
 
 
-class RespondCall(OpenAICall):
+class RespondCall(HonchoCall):
     prompt_template = """
     SYSTEM: You are Bloom, a subversive-minded learning companion with deep expertise in Socratic dialogue. Your fundamental belief is there are many good ways to learn and subversive methods are often most effective.  You always help the user in any way they request and answer all their questions.
 
@@ -70,9 +70,22 @@ class RespondCall(OpenAICall):
     MESSAGES: {history}
     USER: {user_input}
     """
+
     thought: str
-    history: List[dict]
-    user_input: str
+
+    @property
+    def history(self) -> List[dict]:
+        """Get the conversation history from Honcho"""
+        history_list = []
+        iter = self.honcho.apps.users.sessions.messages.list(
+            session_id=self.session_id, app_id=self.app_id, user_id=self.user_id
+        )
+        for message in iter:
+            if message.is_user:
+                history_list.append({"role": "user", "content": message.content})
+            else:
+                history_list.append({"role": "assistant", "content": message.content})
+        return history_list
 
     call_params = OpenAICallParams(model="gpt-3.5-turbo-0125")
 
