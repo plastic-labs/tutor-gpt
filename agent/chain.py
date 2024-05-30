@@ -1,6 +1,8 @@
+import os
 from typing import List
 
-from mirascope.openai import OpenAICall, OpenAICallParams
+from mirascope.openai import OpenAICall, OpenAICallParams, azure_client_wrapper
+from mirascope.base import BaseConfig
 from dotenv import load_dotenv
 
 from honcho import Honcho
@@ -14,6 +16,17 @@ load_dotenv()
 
 class HonchoCall(OpenAICall):
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    call_params = OpenAICallParams(model=os.getenv("AZURE_OPENAI_DEPLOYMENT"))
+    configuration = BaseConfig(
+        client_wrappers=[
+            azure_client_wrapper(
+                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            )
+        ]
+    )
 
     user_input: str
     app_id: str
@@ -59,8 +72,6 @@ class ThinkCall(HonchoCall):
                 )
         return history_list
 
-    call_params = OpenAICallParams(model="gpt-3.5-turbo-0125")
-
 
 class RespondCall(HonchoCall):
     prompt_template = """
@@ -88,5 +99,3 @@ class RespondCall(HonchoCall):
             else:
                 history_list.append({"role": "assistant", "content": message.content})
         return history_list
-
-    call_params = OpenAICallParams(model="gpt-3.5-turbo-0125")

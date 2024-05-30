@@ -17,7 +17,7 @@ fastapi = "^0.111.0"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 sentry-sdk = {extras = ["fastapi"], version = "^1.31.0"}
 honcho-ai = "^0.0.12"
-mirascope = "^0.14.0"
+mirascope = "^0.15.0"
 
 [build-system]
 requires = ["poetry-core"]
