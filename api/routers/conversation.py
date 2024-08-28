@@ -56,6 +56,7 @@ async def delete_conversation(user_id: str, conversation_id: uuid.UUID):
 
 @router.get("/insert")
 async def add_conversation(user_id: str, location_id: str = "web"):
+    print("help")
     # async with LOCK:
     # user = honcho.get_or_create_user(user_id)
     # user = honcho.apps.users.get_or_create(user_id, app_id=app.id)
@@ -65,9 +66,7 @@ async def add_conversation(user_id: str, location_id: str = "web"):
         print(f"location_id {location_id}")
 
         user = honcho.apps.users.get_or_create(name=user_id, app_id=app.id)
-        session = honcho.apps.users.sessions.create(
-            user_id=user.id, app_id=app.id, location_id=location_id
-        )
+        session = honcho.apps.users.sessions.create(user_id=user.id, app_id=app.id)
     except Exception as e:
         print(e)
         raise HTTPException(status_code=404, detail="Item not found") from None
