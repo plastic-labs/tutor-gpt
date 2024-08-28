@@ -74,3 +74,5 @@ www/next-env.d.ts
 .vercel
 
 .yarn/
+
+dist/
