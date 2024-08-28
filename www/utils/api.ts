@@ -58,6 +58,7 @@ export class Conversation {
       method: "POST",
       body: JSON.stringify({
         conversation_id: this.conversationId,
+        user_id: this.api.userId,
         name,
       }),
       headers: {
@@ -133,6 +134,7 @@ export class API {
     if (conversations.length === 0) {
       return [await this.new()];
     }
+    // console.log(conversations)
     return conversations.map(
       (conversation) =>
         new Conversation({
@@ -152,12 +154,12 @@ export class API {
       })
     );
     const { messages: rawMessages } = await req.json();
-    // console.log(rawMessages);
+    console.log(rawMessages);
     if (!rawMessages) return [];
     const messages: Message[] = rawMessages.map((rawMessage: any) => {
       return {
-        text: rawMessage.data.content,
-        isUser: rawMessage.type === "human",
+        text: rawMessage.content,
+        isUser: rawMessage.isUser,
       };
     });
 

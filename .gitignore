@@ -72,3 +72,5 @@ www/.vercel
 www/*.tsbuildinfo
 www/next-env.d.ts
 .vercel
+
+.yarn/

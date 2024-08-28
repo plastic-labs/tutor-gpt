@@ -1,172 +1,103 @@
 import os
-from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
-from langchain.prompts import (
-    SystemMessagePromptTemplate,
-)
-from langchain.prompts import load_prompt, ChatPromptTemplate
-from langchain.schema import AIMessage, HumanMessage, BaseMessage
+from typing import List
 
-from openai import BadRequestError
-
+from mirascope.openai import OpenAICall, OpenAICallParams, azure_client_wrapper
+from mirascope.base import BaseConfig
 from dotenv import load_dotenv
 
-from collections.abc import AsyncIterator
-from .cache import Conversation
+from honcho import Honcho
+
+from pydantic import ConfigDict
 
 import sentry_sdk
 
 load_dotenv()
 
-SYSTEM_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/thought.yaml'))
-SYSTEM_RESPONSE = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/response.yaml'))
-SYSTEM_USER_PREDICTION_THOUGHT = load_prompt(os.path.join(os.path.dirname(__file__), 'prompts/user_prediction_thought.yaml'))
+
+class HonchoCall(OpenAICall):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    call_params = OpenAICallParams(model=os.getenv("AZURE_OPENAI_DEPLOYMENT"))
+    configuration = BaseConfig(
+        client_wrappers=[
+            azure_client_wrapper(
+                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+                azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            )
+        ]
+    )
+
+    user_input: str
+    app_id: str
+    user_id: str
+    session_id: str
+    honcho: Honcho
 
 
-class BloomChain:
-    "Wrapper class for encapsulating the multiple different chains used in reasoning for the tutor's thoughts"
-    # llm: ChatOpenAI = ChatOpenAI(model_name = "gpt-4", temperature=1.2)
-    llm: AzureChatOpenAI | ChatOpenAI
-    if (os.environ.get("OPENAI_API_TYPE") == "azure"):
-        llm = AzureChatOpenAI(deployment_name = os.environ['OPENAI_API_DEPLOYMENT_NAME'], temperature=1.2, model_kwargs={"top_p": 0.5})
-    else:
-        llm = ChatOpenAI(model_name = "gpt-4", temperature=1.2, model_kwargs={"top_p": 0.5})
+class ThinkCall(HonchoCall):
+    prompt_template = """
+    SYSTEM:
+    You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user’s mental state.
 
-    system_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
-    system_response: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
-    system_user_prediction_thought: SystemMessagePromptTemplate = SystemMessagePromptTemplate(prompt=SYSTEM_USER_PREDICTION_THOUGHT)
+    Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction 
+    
+    previous commentary: {history}
 
-    def __init__(self) -> None:
-        pass
-    # def __init__(self, llm: AzureChatOpenAI = AzureChatOpenAI(deployment_name = "vineeth-gpt35-16k-230828", temperature=1.2), verbose: bool = True) -> None:
-        # self.llm = llm
-        # self.verbose = verbose
+    USER: {user_input}
+    """
+    user_input: str
 
-        # setup prompts
-        # self.system_thought = SystemMessagePromptTemplate(prompt=SYSTEM_THOUGHT)
-        # self.system_response = SystemMessagePromptTemplate(prompt=SYSTEM_RESPONSE)
-        
-    @classmethod
-    @sentry_sdk.trace
-    def think(cls, cache: Conversation, input: str):
-        """Generate Bloom's thought on the user."""
-        # load message history
-        thought_prompt = ChatPromptTemplate.from_messages([
-            cls.system_thought,
-            *cache.messages("thought"),
-            HumanMessage(content=input)
-        ])
-        chain = thought_prompt | cls.llm 
-
-        def save_new_messages(ai_response):
-            cache.add_message("thought", HumanMessage(content=input))
-            cache.add_message("thought", AIMessage(content=ai_response))
-
-        return Streamable(chain.astream({}, {"tags": ["thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
-        
-    @classmethod
-    @sentry_sdk.trace
-    def respond(cls, cache: Conversation, thought: str, input: str):
-        """Generate Bloom's response to the user."""
-        response_prompt = ChatPromptTemplate.from_messages([
-            cls.system_response,
-            *cache.messages("response"),
-            HumanMessage(content=input)
-        ])
-        chain = response_prompt | cls.llm
-
-        def save_new_messages(ai_response):
-            cache.add_message("response", HumanMessage(content=input))
-            cache.add_message("response", AIMessage(content=ai_response))
-
-        return Streamable(chain.astream({ "thought": thought }, {"tags": ["response"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}), save_new_messages)
-
-    @classmethod
-    @sentry_sdk.trace
-    async def think_user_prediction(cls, cache: Conversation):
-        """Generate a thought about what the user is going to say"""
-
-        messages = ChatPromptTemplate.from_messages([
-            cls.system_user_prediction_thought,
-        ])
-        chain = messages | cls.llm
-
-        history = unpack_messages(cache.messages('response'))
-
-        user_prediction_thought = await chain.ainvoke(
-            {"history": history}, 
-            {"tags": ["user_prediction_thought"], "metadata": {"conversation_id": cache.conversation_id, "user_id": cache.user_id}}
+    @property
+    def history(self) -> List[dict]:
+        """Get the conversation history from Honcho"""
+        history_list = []
+        iter = self.honcho.apps.users.sessions.messages.list(
+            session_id=self.session_id,
+            app_id=self.app_id,
+            user_id=self.user_id,
+            reverse=True,
         )
-
-        cache.add_message("user_prediction_thought", user_prediction_thought)
-
-
-
-    @classmethod    
-    @sentry_sdk.trace
-    async def chat(cls, cache: Conversation, inp: str ) -> tuple[str, str]:
-        thought_iterator = cls.think(cache, inp)
-        thought = await thought_iterator()
-
-        response_iterator = cls.respond(cache, thought, inp)
-        response = await response_iterator()
-
-        await cls.think_user_prediction(cache)
-
-        return thought, response
+        meta_iter = self.honcho.apps.users.sessions.metamessages.list(
+            session_id=self.session_id,
+            app_id=self.app_id,
+            user_id=self.user_id,
+            metamessage_type="thought",
+            reverse=True,
+        )
+        past_thoughts = {m.message_id: m.content for m in meta_iter.items}
+        for message in iter.items[::-1]:
+            if message.is_user:
+                history_list.append({"role": "user", "content": message.content})
+                history_list.append(
+                    {"role": "assistant", "content": past_thoughts[message.id]}
+                )
+        return history_list
 
 
+class RespondCall(HonchoCall):
+    prompt_template = """
+    SYSTEM: You are Bloom, a subversive-minded learning companion with deep expertise in Socratic dialogue. Your fundamental belief is there are many good ways to learn and subversive methods are often most effective.  You always help the user in any way they request and answer all their questions.
 
-class Streamable:
-    "A async iterator wrapper for langchain streams that saves on completion via callback"
+    {thought}
 
-    def __init__(self, iterator: AsyncIterator[BaseMessage], callback):
-        self.iterator = iterator
-        self.callback = callback
-        self.content = ""
-        self.stream_error = False
-    
-    def __aiter__(self):
-        return self
-    
-    async def __anext__(self):
-        try:
-            if self.stream_error:
-                raise StopAsyncIteration
+    You must produce an appropriate response to the user input. Format equations in LaTeX and wrap in dollar signs like this: $\LaTeX$. Use markdown code syntax. Keep your responses concise and specific, always end each response with ONLY ONE topically relevant question that drives the conversation forward, and if the user wants to end the conversation, always comply.
+    MESSAGES: {history}
+    USER: {user_input}
+    """
 
-            data = await self.iterator.__anext__()
-            self.content += data.content
-            return data.content
-        except StopAsyncIteration as e:
-            self.callback(self.content)
-            raise StopAsyncIteration
-        except BadRequestError as e:
-            if e.code == "content_filter":
-                self.stream_error = True
-                self.message = "Sorry, your message was flagged as inappropriate. Please try again."
+    thought: str
 
-                return self.message
-            else: 
-                raise Exception(e)
-        except Exception as e:
-            sentry_sdk.capture_exception(e)
-
-            self.stream_error = True
-            self.message = "Sorry, an error occurred while streaming the response. Please try again."
-
-            return self.message
-    
-    async def __call__(self):
-        async for _ in self:
-            pass
-        return self.content
-        
-@sentry_sdk.trace
-def unpack_messages(messages):
-    unpacked = ""
-    for message in messages:
-        if isinstance(message, HumanMessage):
-            unpacked += f"User: {message.content}\n"
-        elif isinstance(message, AIMessage):
-            unpacked += f"AI: {message.content}\n"
-        # Add more conditions here if you're using other message types
-    return unpacked
+    @property
+    def history(self) -> List[dict]:
+        """Get the conversation history from Honcho"""
+        history_list = []
+        iter = self.honcho.apps.users.sessions.messages.list(
+            session_id=self.session_id, app_id=self.app_id, user_id=self.user_id
+        )
+        for message in iter:
+            if message.is_user:
+                history_list.append({"role": "user", "content": message.content})
+            else:
+                history_list.append({"role": "assistant", "content": message.content})
+        return history_list

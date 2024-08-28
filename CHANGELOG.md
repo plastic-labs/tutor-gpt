@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [0.6.0]
+
+### Added
+
+- Honcho
+
+### Changed
+
+- Using mirascope instead of langchain for a smaller package size
+
+
 ## [0.5.2] - 2023-12-20
 
 ### Fixed
