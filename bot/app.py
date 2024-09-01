@@ -1,9 +1,8 @@
 import discord
 import sentry_sdk
 import os
-import asyncio
+from honcho import Honcho
 
-from common import init
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,11 +15,10 @@ sentry_sdk.init(
     profiles_sample_rate=rate,
 )
 
-CACHE, LOCK, _, (THOUGHT_CHANNEL, TOKEN) = init()
-
 THOUGHT_CHANNEL = os.environ["THOUGHT_CHANNEL_ID"]
 TOKEN = os.environ["BOT_TOKEN"]
-LOCK = asyncio.Lock()
+honcho = Honcho()
+app = honcho.apps.get_or_create("Tutor-GPT")  # TODO use environment variable
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -30,7 +28,7 @@ intents.members = True
 bot = discord.Bot(intents=intents)
 
 
-bot.load_extension("bot.core")
+bot.load_extension("core")
 
 
 bot.run(TOKEN)
