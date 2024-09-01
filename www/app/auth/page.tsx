@@ -1,26 +1,25 @@
 'use client'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/utils/supabase/client'
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import Image from "next/image";
 
 import icon from "@/public/bloomicon.jpg";
 
-import SignUp from '@/components/signUp';
-import SignIn from '@/components/signIn';
-import Forgot from '@/components/forgot'
+import { SignIn, SignUp, Forgot } from '@/components/auth';
+
+import { login, signup } from './actions'
 
 export default function Auth() {
   const [formType, setFormType] = useState('LOGIN');
-  const supabase = createClientComponentClient()
-  const router = useRouter()
+  const supabase = createClient();
 
   useEffect(() => {
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) { // Can't access this page if you're logged in
-        router.push('/')
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) { // Can't access this page if you're logged in
+        redirect('/')
       }
     })
 
@@ -29,11 +28,11 @@ export default function Auth() {
         console.log(event)
       }
       if (event == "PASSWORD_RECOVERY") {
-        router.push("/auth/reset")
+        redirect("/auth/reset")
       }
 
     })
-  }, [router, supabase])
+  }, [supabase])
 
   return (
     <section className="bg-white">
@@ -68,10 +67,10 @@ export default function Auth() {
               Your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like.
             </p>
             {formType === 'LOGIN' && (
-              <SignIn stateSync={setFormType} />
+              <SignIn stateSync={setFormType} handler={login} />
             )}
             {formType === 'SIGNUP' && (
-              <SignUp stateSync={setFormType} />
+              <SignUp stateSync={setFormType} handler={signup} />
             )}
             {formType === 'FORGOT' && (
               <Forgot stateSync={setFormType} />

@@ -1,6 +1,3 @@
-import { Session } from "@supabase/supabase-js";
-import { getId } from "./supabase";
-
 const defaultMessage: Message = {
   text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
@@ -105,12 +102,6 @@ export class API {
     this.url = url;
     this.userId = userId;
   }
-
-  // static async create(url: string) {
-  //   const { userId } = await getId();
-  //   const api = new API({ url, userId });
-  //   return api;
-  // }
 
   async new() {
     const req = await fetch(
