@@ -4,34 +4,25 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-let sentryRate = 0.1;
-
-if (process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT !== "production") {
-  sentryRate = 1;
-}
-
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: "https://736480aca394efabfb1249779653c026@o4505873635606528.ingest.us.sentry.io/4505905019682816",
 
-  // Adjust this value in production, or use tracesSampler for greater control
-  tracesSampleRate: sentryRate,
+  // Add optional integrations for additional features
+  integrations: [
+    Sentry.replayIntegration(),
+  ],
+
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,
+
+  // Define how likely Replay events are sampled.
+  // This sets the sample rate to be 10%. You may want this to be 100% while
+  // in development and sample at a lower rate in production
+  replaysSessionSampleRate: 0.1,
+
+  // Define how likely Replay events are sampled when an error occurs.
+  replaysOnErrorSampleRate: 1.0,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
-
-  replaysOnErrorSampleRate: sentryRate,
-
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: sentryRate,
-  environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
-
-  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
-  integrations: [
-    new Sentry.Replay({
-      // Additional Replay configuration goes in here, for example:
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
 });
