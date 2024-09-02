@@ -36,3 +36,12 @@ next-env.d.ts
 
 # Sentry Auth Token
 .sentryclirc
+
+# million
+.million
+
+# yarn
+.yarn
+
+# Sentry Config File
+.env.sentry-build-plugin

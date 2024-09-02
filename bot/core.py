@@ -1,17 +1,65 @@
 # core functionality
 
 import discord
-import os
-from __main__ import (
-    CACHE,
-    LOCK,
-    THOUGHT_CHANNEL,
-)
+from __main__ import THOUGHT_CHANNEL, honcho, app
 from discord.ext import commands
 from typing import Optional
-from agent.chain import BloomChain
-from langchain.schema import AIMessage
+
+from agent.chain import ThinkCall, RespondCall
+from honcho.types.apps import User
+from honcho.types.apps.users import Session
+
 import sentry_sdk
+
+
+def chat(message: str, user: User, session: Session):
+    thought: str = (
+        ThinkCall(
+            user_input=message,
+            app_id=app.id,
+            user_id=user.id,
+            session_id=session.id,
+            honcho=honcho,
+        )
+        .call()
+        .content
+    )
+    yield thought
+    response = (
+        RespondCall(
+            user_input=message,
+            thought=thought,
+            app_id=app.id,
+            user_id=user.id,
+            session_id=session.id,
+            honcho=honcho,
+        )
+        .call()
+        .content
+    )
+    yield response
+    new_message = honcho.apps.users.sessions.messages.create(
+        is_user=True,
+        session_id=session.id,
+        app_id=app.id,
+        user_id=user.id,
+        content=message,
+    )
+    honcho.apps.users.sessions.metamessages.create(
+        app_id=app.id,
+        session_id=session.id,
+        user_id=user.id,
+        message_id=new_message.id,
+        metamessage_type="thought",
+        content=thought,
+    )
+    honcho.apps.users.sessions.messages.create(
+        is_user=False,
+        session_id=session.id,
+        app_id=app.id,
+        user_id=user.id,
+        content=response,
+    )
 
 
 class Core(commands.Cog):
@@ -51,11 +99,45 @@ class Core(commands.Cog):
                 return
 
             user_id = f"discord_{str(message.author.id)}"
+            user = honcho.apps.users.get_or_create(name=user_id, app_id=app.id)
             # Get cache for conversation
-            async with LOCK:
-                CONVERSATION = CACHE.get_or_create(
-                    location_id=str(message.channel.id), user_id=user_id
+            # async with LOCK:
+            #     CONVERSATION = CACHE.get_or_create(
+            #         location_id=str(message.channel.id), user_id=user_id
+            #     )
+
+            # Use the channel ID as the location_id (for DMs, this will be unique to the user)
+            location_id = str(message.channel.id)
+
+            sessions_iter = honcho.apps.users.sessions.list(
+                app_id=app.id, user_id=user.id, reverse=True
+            )
+            sessions = list(sessions_iter)
+            session = None
+            if sessions:
+                # find the right session
+                for s in sessions:
+                    if s.metadata.get("location_id") == location_id:
+                        session = s
+                        print(session.id)
+                        break
+                # if no session is found after the for loop, create a new one
+                if not session:
+                    print("No session found amongst existing ones, creating new one")
+                    session = honcho.apps.users.sessions.create(
+                        user_id=user.id,
+                        app_id=app.id,
+                        metadata={"location_id": location_id},
+                    )
+                    print(session.id)
+            else:
+                print("No active session found")
+                session = honcho.apps.users.sessions.create(
+                    user_id=user.id,
+                    app_id=app.id,
+                    metadata={"location_id": location_id},
                 )
+                print(session.id)
 
             # Get the message content but remove any mentions
             inp = message.content.replace(str("<@" + str(self.bot.user.id) + ">"), "")
@@ -64,21 +146,9 @@ class Core(commands.Cog):
             async def respond(reply=True, forward_thought=True):
                 "Generate response too user"
                 async with message.channel.typing():
-                    # thought = ""
-                    # response = ""
-                    # if (CONVERSATION.metadata is not None and "A/B" in CONVERSATION.metadata and CONVERSATION.metadata["A/B"] == True):
-                    #     async with httpx.AsyncClient() as client:
-                    #         response = await client.post(f'{os.environ["HONCHO_URL"]}/chat', json={
-                    #             "user_id": CONVERSATION.user_id,
-                    #             "conversation_id": CONVERSATION.conversation_id,
-                    #             "message": inp
-                    #         }, timeout=None)
-                    #     response_text = response.json()
-                    #     thought = response_text["thought"]
-                    #     response = response_text["response"]
-                    # else:
-                    thought, response = await BloomChain.chat(CONVERSATION, inp)
+                    turn = chat(inp, user, session)
 
+                    thought = next(turn)
                     # sanitize thought by adding zero width spaces to triple backticks
                     thought = thought.replace("```", "`\u200b`\u200b`")
 
@@ -100,6 +170,8 @@ class Core(commands.Cog):
                                 f"{link}\n```\nThought: {thought}\n```"
                             )
 
+                    response = next(turn)
+
                     # Response Forwarding
                     if len(response) > n:
                         chunks = [
@@ -117,16 +189,16 @@ class Core(commands.Cog):
                             await message.channel.send(response)
 
             # if the message came from a DM channel...
-            if isinstance(message.channel, discord.channel.DMChannel):
+            if isinstance(message.channel, discord.DMChannel):
                 await respond(reply=False, forward_thought=False)
 
             # If the bot was mentioned in the message
-            if not isinstance(message.channel, discord.channel.DMChannel):
+            if not isinstance(message.channel, discord.DMChannel):
                 if str(self.bot.user.id) in message.content:
                     await respond(forward_thought=True)
 
             # If the bot was replied to in the message
-            if not isinstance(message.channel, discord.channel.DMChannel):
+            if not isinstance(message.channel, discord.DMChannel):
                 if message.reference is not None:
                     reply_msg = await self.bot.get_channel(
                         message.channel.id
@@ -182,19 +254,28 @@ If you're still having trouble, drop a message in https://discord.com/channels/1
             Args:
                 ctx: context, necessary for bot commands
             """
-            async with LOCK:
-                CONVERSATION = CACHE.get_or_create(
-                    location_id=str(ctx.channel_id),
-                    user_id=f"discord_{str(ctx.author.id)}",
-                    restart=True,
-                )
+            user_id = f"discord_{str(ctx.author.id)}"
+            user = honcho.apps.users.get_or_create(name=user_id, app_id=app.id)
+            location_id = str(ctx.channel_id)
 
-            if respond:
-                msg = "Great! The conversation has been restarted. What would you like to talk about?"
-                CONVERSATION.add_message("response", AIMessage(content=msg))
-                await ctx.respond(msg)
+            sessions = honcho.apps.users.sessions.list(
+                app_id=app.id, user_id=user.id, reverse=True
+            )
+
+            sessions_list = list(sessions)
+            if sessions_list:
+                # find the right session to delete
+                for session in sessions_list:
+                    if session.metadata.get("location_id") == location_id:
+                        honcho.apps.users.sessions.delete(
+                            app_id=app.id, user_id=user.id, session_id=session.id
+                        )
+                        break
+                msg = "The conversation has been restarted."
             else:
-                return
+                msg = "No active conversation found to restart."
+
+            await ctx.respond(msg)
 
 
 def setup(bot):

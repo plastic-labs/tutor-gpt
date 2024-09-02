@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
-import Reset from '@/components/reset'
+import Reset from '@/components/auth/reset'
 
 export default function ResetPage() {
 

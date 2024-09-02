@@ -1,14 +1,12 @@
 import { GrClose } from "react-icons/gr";
 import { Conversation, API } from "@/utils/api";
-import { signOut } from "@/utils/supabase";
+import { createClient } from "@/utils/supabase/client";
 
 import { usePostHog } from "posthog-js/react";
 import Swal from "sweetalert2";
-import Link from "next/link";
-import { Session } from "@supabase/supabase-js";
 import { ConversationTab } from "./conversationtab";
 
-const URL = process.env.NEXT_PUBLIC_API_URL;
+// const URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Sidebar({
   conversations,
@@ -18,7 +16,6 @@ export default function Sidebar({
   isSidebarOpen,
   setIsSidebarOpen,
   api,
-  session,
 }: {
   conversations: Conversation[];
   mutateConversations: Function;
@@ -27,9 +24,9 @@ export default function Sidebar({
   isSidebarOpen: boolean;
   setIsSidebarOpen: Function;
   api: API | undefined;
-  session: Session | null;
 }) {
   const postHog = usePostHog();
+  const supabase = createClient();
 
   async function editConversation(cur: Conversation) {
     const { value: newName } = await Swal.fire({
@@ -38,6 +35,8 @@ export default function Sidebar({
       inputLabel: "Conversation Name",
       inputValue: cur.name,
       showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
       inputValidator: (value) => {
         if (!value) {
           return "You need to write something!";
@@ -141,47 +140,39 @@ export default function Sidebar({
 
         {/* Section 2: Scrollable items */}
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
-  {
-    conversations.length > 0
-      ? conversations.map((cur, i) => (
-        <ConversationTab
-          conversation={cur}
-          select={() => setConversationId(cur.conversationId)}
-          selected={conversationId === cur.conversationId}
-          edit={() => editConversation(cur)}
-          del={() => deleteConversation(cur)}
-          key={i}
-        />
-      ))
-      : Array.from({ length: 5 }).map((_, i) => (
-        <ConversationTab loading key={i} />
-      ))
-  }
+          {
+            conversations.length > 0
+              ? conversations.map((cur, i) => (
+                <ConversationTab
+                  conversation={cur}
+                  select={() => setConversationId(cur.conversationId)}
+                  selected={conversationId === cur.conversationId}
+                  edit={() => editConversation(cur)}
+                  del={() => deleteConversation(cur)}
+                  key={i}
+                />
+              ))
+              : Array.from({ length: 5 }).map((_, i) => (
+                <ConversationTab loading key={i} />
+              ))
+          }
         </div >
 
-    {/* Section 3: Authentication information */ }
-    < div className = "border-t border-gray-300 dark:border-gray-700 p-4 w-full" >
-      {/* Replace this with your authentication information */ }
-  {
-    session ? (
-      <button
-        className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
-        onClick={async () => {
-          await signOut();
-          location.reload();
-        }}
-      >
-        Sign Out
-      </button>
-    ) : (
-      <Link href={"/auth"}>
-        <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
-              Sign In
-            </button>
-          </Link>
-          )}
+        {/* Section 3: Authentication information */}
+        < div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full" >
+          {/* Replace this with your authentication information */}
+          <button
+            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              location.reload();
+            }}
+          >
+            Sign Out
+          </button>
+
         </div>
       </div >
     </div >
   );
-  }
+}

@@ -1,18 +1,19 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+'use client';
 import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Swal from 'sweetalert2'
 
 export default function Forgot(props: any) {
   const [password, setPassword] = useState('');
 
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { // Can't access this page if you're not logged in
-        router.push('/')
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { // Can't access this page if you're not logged in
+        router.push('/auth')
       }
     })
   }, [supabase, router])

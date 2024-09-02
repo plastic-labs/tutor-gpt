@@ -1,11 +1,13 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+'use client'
+// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from "@/utils/supabase/client";
 import { useState } from "react";
 import Swal from 'sweetalert2'
 
 export default function Forgot(props: any) {
   const { stateSync } = props
   const [email, setEmail] = useState('')
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const handleForgotPassword = async (e: any) => {
     e.preventDefault();

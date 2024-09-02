@@ -2,32 +2,31 @@
 import Image from "next/image";
 import useSWR from "swr";
 
+import dynamic from "next/dynamic";
+
 import banner from "@/public/bloom2x1.svg";
 import darkBanner from "@/public/bloom2x1dark.svg";
 import MessageBox from "@/components/messagebox";
-import Thoughts from "@/components/thoughts";
+// import Thoughts from "@/components/thoughts";
 import Sidebar from "@/components/sidebar";
-
-import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
-import { useRef, useEffect, useState, ElementRef } from "react";
-
-import Swal from "sweetalert2";
-import { useRouter } from "next/navigation";
-import { usePostHog } from "posthog-js/react";
-
-import Link from "next/link";
 import MarkdownWrapper from "@/components/markdownWrapper";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
-import { Message, Conversation, API } from "@/utils/api";
-import { getId } from "@/utils/supabase";
-import { data } from "autoprefixer";
-import { Session } from "@supabase/supabase-js";
+import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
+import Swal from "sweetalert2";
+
+import { useRef, useEffect, useState, ElementRef } from "react";
+import { redirect } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
+
+import { API } from "@/utils/api";
+import { createClient } from "@/utils/supabase/client";
+
+const Thoughts = dynamic(() => import("@/components/thoughts"));
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Home() {
   const [userId, setUserId] = useState<string>();
-  const [session, setSession] = useState<Session | null>(null);
 
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -37,7 +36,7 @@ export default function Home() {
 
   const [conversationId, setConversationId] = useState<string>();
 
-  const router = useRouter();
+  const supabase = createClient();
   const posthog = usePostHog();
   const input = useRef<ElementRef<"textarea">>(null);
   //const input = useRef<ElementRef<"input">>(null);
@@ -51,23 +50,21 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      const { userId, session } = await getId();
-      setUserId(userId);
-      setSession(session);
-      setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
-      if (!session) {
-        Swal.fire({
+      const { data: { user }, error } = await supabase.auth.getUser();
+      // Check for an error or no user
+      if (!user || error) {
+        await Swal.fire({
           title: "Notice: Bloombot now requires signing in for usage",
           text: "Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom",
           icon: "warning",
           confirmButtonColor: "#3085d6",
           confirmButtonText: "Sign In",
-        }).then((res) => {
-          router.push("/auth");
-        });
-      } else {
-        posthog?.identify(userId, { email: session.user.email });
+        })
+        redirect("/auth");
       }
+      setUserId(user.id);
+      setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
+      posthog?.identify(userId, { email: user.email });
     })();
   }, []);
 
@@ -230,7 +227,7 @@ export default function Home() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         api={new API({ url: URL!, userId: userId! })}
-        session={session}
+      // session={session}
       />
       <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
         <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
