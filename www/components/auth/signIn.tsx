@@ -1,6 +1,8 @@
 'use client';
 import { useState, useRef } from "react";
 import Swal from 'sweetalert2'
+import GoogleSignIn from './google'
+import DiscordSignIn from './discord'
 
 export default function SignIn(props: any) {
   const { stateSync, handler } = props
@@ -34,6 +36,7 @@ export default function SignIn(props: any) {
   };
 
   return (
+    <>
     <form action="#" ref={formRef} onSubmit={handleSignIn} className="mt-8 grid grid-cols-6 gap-6">
 
       <div className="col-span-6">
@@ -92,5 +95,10 @@ export default function SignIn(props: any) {
         </p>
       </div>
     </form>
+    <div className="mt-6 space-y-4">
+      <GoogleSignIn />
+      <DiscordSignIn />
+    </div>
+    </>
   )
 }
