@@ -35,6 +35,8 @@ export default function Sidebar({
       inputLabel: "Conversation Name",
       inputValue: cur.name,
       showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
       inputValidator: (value) => {
         if (!value) {
           return "You need to write something!";

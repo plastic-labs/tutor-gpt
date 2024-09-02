@@ -27,8 +27,7 @@
     "sharp": "^0.32.6",
     "sweetalert2": "^11.12.4",
     "sweetalert2-react-content": "^5.0.7",
-    "swr": "^2.2.5",
-    "uuid": "^9.0.1"
+    "swr": "^2.2.5"
   },
   "devDependencies": {
     "@types/node": "20.5.4",
