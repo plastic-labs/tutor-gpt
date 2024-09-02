@@ -1,4 +1,5 @@
-import { useState } from "react";
+'use client';
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import Swal from 'sweetalert2'
@@ -10,65 +11,58 @@ export default function SignUp(props: any) {
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [opt, setOpt] = useState<boolean>(true)
   const [age, setAge] = useState<boolean>(false)
-  const router = useRouter();
-  // const supabase = createClientComponentClient()
+  const formRef = useRef<HTMLFormElement>(null);
 
-  // const handleSignUp = async (e: any) => {
-  //   e.preventDefault();
-  //   if (!age) {
-  //     await Swal.fire({
-  //       title: "Age Verification Required",
-  //       icon: 'error',
-  //       text: 'Please confirm that you are 13 years or older',
-  //     })
-  //     return
-  //   }
-  //   if (password !== passwordConfirmation) {
-  //     await Swal.fire({
-  //       title: "Passwords don't match",
-  //       icon: 'error',
-  //       text: 'Re-confirm you password and try again',
-  //     })
-  //     return
-  //   }
-  //   if (password.length < 6) {
-  //     await Swal.fire({
-  //       title: "Insufficient Password",
-  //       icon: 'error',
-  //       text: 'Make sure the password is atleast 6 characters long',
-  //     })
-  //     return
-  //   }
-  //   const { error } = await supabase.auth.signUp(
-  //     {
-  //       email,
-  //       password,
-  //       options: {
-  //         emailRedirectTo: `${location.origin}/`,
-  //         data: {
-  //           dataOptIn: opt,
-  //           ageVerification: age
-  //         }
-  //       }
-  //     });
-  //   if (error) {
-  //     Swal.fire({
-  //       title: "Something went wrong",
-  //       icon: "error",
-  //       text: "Please try again and make sure the password is atleast 6 characters long",
-  //     })
-  //     console.error(error);
-  //   } else {
-  //     Swal.fire({
-  //       title: "Success",
-  //       icon: "success",
-  //       text: "Please check your email for a verification link"
-  //     })
-  //   }
-  // };
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!formRef.current) return;
+    const formData = new FormData(formRef.current);
+    if (!age) {
+      await Swal.fire({
+        title: "Age Verification Required",
+        icon: 'error',
+        text: 'Please confirm that you are 13 years or older',
+      })
+      return
+    }
+    console.log(password, passwordConfirmation)
+    if (password !== passwordConfirmation) {
+      await Swal.fire({
+        title: "Passwords don't match",
+        icon: 'error',
+        text: 'Re-confirm you password and try again',
+      })
+      return
+    }
+    if (password.length < 6) {
+      await Swal.fire({
+        title: "Insufficient Password",
+        icon: 'error',
+        text: 'Make sure the password is atleast 6 characters long',
+      })
+      return
+    }
+
+    const error = await handler(formData);
+    if (error) {
+      Swal.fire({
+        title: "Something went wrong",
+        icon: "error",
+        text: "Please try again and make sure the password is atleast 6 characters long",
+      })
+      console.error(error);
+    } else {
+      Swal.fire({
+        title: "Success",
+        icon: "success",
+        text: "Please check your email for a verification link"
+      })
+    }
+  }
+
 
   return (
-    <form action="#" className="mt-8 grid grid-cols-6 gap-6">
+    <form action="#" ref={formRef} onSubmit={handleSignUp} className="mt-8 grid grid-cols-6 gap-6">
 
       <div className="col-span-6">
         <label htmlFor="Email" className="block text-sm font-medium text-gray-700">
@@ -169,7 +163,6 @@ export default function SignUp(props: any) {
       <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
         <button
           className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
-          formAction={handler}
         >
           Create an account
         </button>

@@ -1,6 +1,6 @@
 'use client'
 import { createClient } from '@/utils/supabase/client'
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import Image from "next/image";
@@ -23,19 +23,10 @@ export default function Auth() {
       }
     })
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event != "INITIAL_SESSION") {
-        console.log(event)
-      }
-      if (event == "PASSWORD_RECOVERY") {
-        redirect("/auth/reset")
-      }
-
-    })
   }, [supabase])
 
   return (
-    <section className="bg-white">
+    <section className="bg-white" suppressHydrationWarning={true} >
       <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
         <aside
           className="relative block h-16 lg:order-last lg:col-span-5 lg:h-full xl:col-span-6"
@@ -56,7 +47,6 @@ export default function Auth() {
               <span className="sr-only">Home</span>
               <Image src={icon} alt="banner" className="h-10 sm:h-10 w-auto rounded-full" />
             </a>
-
             <h1
               className="mt-6 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl"
             >
@@ -66,15 +56,17 @@ export default function Auth() {
             <p className="mt-4 leading-relaxed text-gray-500">
               Your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like.
             </p>
-            {formType === 'LOGIN' && (
-              <SignIn stateSync={setFormType} handler={login} />
-            )}
-            {formType === 'SIGNUP' && (
-              <SignUp stateSync={setFormType} handler={signup} />
-            )}
-            {formType === 'FORGOT' && (
-              <Forgot stateSync={setFormType} />
-            )}
+              <div suppressHydrationWarning>
+                {formType === 'LOGIN' && (
+                  <SignIn stateSync={setFormType} handler={login} />
+                )}
+                {formType === 'SIGNUP' && (
+                  <SignUp stateSync={setFormType} handler={signup} />
+                )}
+                {formType === 'FORGOT' && (
+                  <Forgot stateSync={setFormType} />
+                )}
+              </div>
 
           </div>
         </main>

@@ -2,10 +2,12 @@
 import Image from "next/image";
 import useSWR from "swr";
 
+import dynamic from "next/dynamic";
+
 import banner from "@/public/bloom2x1.svg";
 import darkBanner from "@/public/bloom2x1dark.svg";
 import MessageBox from "@/components/messagebox";
-import Thoughts from "@/components/thoughts";
+// import Thoughts from "@/components/thoughts";
 import Sidebar from "@/components/sidebar";
 import MarkdownWrapper from "@/components/markdownWrapper";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
@@ -19,11 +21,12 @@ import { usePostHog } from "posthog-js/react";
 import { API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
 
+const Thoughts = dynamic(() => import("@/components/thoughts"));
+
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Home() {
   const [userId, setUserId] = useState<string>();
-  // const [session, setSession] = useState<Session | null>(null);
 
   const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
