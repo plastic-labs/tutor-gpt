@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sentry/nextjs": "^8.27.0",
+    "@stripe/stripe-js": "^4.4.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.3",
     "katex": "^0.16.11",
@@ -25,6 +26,7 @@
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "sharp": "^0.32.6",
+    "stripe": "^16.11.0",
     "sweetalert2": "^11.12.4",
     "sweetalert2-react-content": "^5.0.7",
     "swr": "^2.2.5"

@@ -1,6 +1,7 @@
 import { GrClose } from "react-icons/gr";
 import { Conversation, API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
+import Link from 'next/link';
 
 import { usePostHog } from "posthog-js/react";
 import Swal from "sweetalert2";
@@ -16,6 +17,7 @@ export default function Sidebar({
   isSidebarOpen,
   setIsSidebarOpen,
   api,
+  isSubscribed,
 }: {
   conversations: Conversation[];
   mutateConversations: Function;
@@ -24,6 +26,7 @@ export default function Sidebar({
   isSidebarOpen: boolean;
   setIsSidebarOpen: Function;
   api: API | undefined;
+  isSubscribed: boolean;
 }) {
   const postHog = usePostHog();
   const supabase = createClient();
@@ -159,8 +162,14 @@ export default function Sidebar({
         </div >
 
         {/* Section 3: Authentication information */}
-        < div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full" >
-          {/* Replace this with your authentication information */}
+        <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full">
+          {!isSubscribed && (
+            <Link href="/subscription" className="block mb-2">
+              <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
+                Subscribe
+              </button>
+            </Link>
+          )}
           <button
             className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
             onClick={async () => {
@@ -170,7 +179,6 @@ export default function Sidebar({
           >
             Sign Out
           </button>
-
         </div>
       </div >
     </div >
