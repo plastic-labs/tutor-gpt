@@ -18,6 +18,8 @@ import { useRef, useEffect, useState, ElementRef } from "react";
 import { redirect } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
+import { checkSubscription } from "@/utils/stripe/actions";
+
 import { API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
 
@@ -64,26 +66,29 @@ export default function Home() {
         })
         redirect("/auth");
       }
+      console.log(user);
       setUserId(user.id);
       setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
       posthog?.identify(userId, { email: user.email });
 
       // Check subscription status
-      checkSubscription();
-    })();
-  }, []);
+      const sub: boolean = await checkSubscription();
+      setIsSubscribed(sub);
 
-  const checkSubscription = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', user.id)
-        .single();
-      setIsSubscribed(subscription?.status === 'active');
-    }
-  };
+    })();
+  }, [supabase]);
+
+  // const checkSubscription = async () => {
+  //   const { data: { user } } = await supabase.auth.getUser();
+  //   if (user) {
+  //     const { data: subscription } = await supabase
+  //       .from('subscriptions')
+  //       .select('status')
+  //       .eq('user_id', user.id)
+  //       .single();
+  //     setIsSubscribed(subscription?.status === 'active');
+  //   }
+  // };
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -329,9 +334,8 @@ export default function Home() {
           <textarea
             ref={input}
             placeholder={isSubscribed ? "Type a message..." : "Subscribe to send messages"}
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
-              canSend && isSubscribed ? "border-green-200" : "border-red-200 opacity-50"
-            }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed ? "border-green-200" : "border-red-200 opacity-50"
+              }`}
             rows={1}
             disabled={!isSubscribed}
             onKeyDown={(e) => {

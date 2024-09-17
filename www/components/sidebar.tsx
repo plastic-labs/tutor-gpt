@@ -2,13 +2,12 @@ import { GrClose } from "react-icons/gr";
 import { Conversation, API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
 
 import { usePostHog } from "posthog-js/react";
 import Swal from "sweetalert2";
 import { ConversationTab } from "./conversationtab";
-
-// const URL = process.env.NEXT_PUBLIC_API_URL;
-
+import { useState } from "react";
 export default function Sidebar({
   conversations,
   mutateConversations,
@@ -30,6 +29,8 @@ export default function Sidebar({
 }) {
   const postHog = usePostHog();
   const supabase = createClient();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
 
   async function editConversation(cur: Conversation) {
     const { value: newName } = await Swal.fire({
@@ -130,6 +131,7 @@ export default function Sidebar({
           <button
             className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
             onClick={addChat}
+            disabled={!isSubscribed}
           >
             New Chat
           </button>
@@ -162,23 +164,42 @@ export default function Sidebar({
         </div >
 
         {/* Section 3: Authentication information */}
-        <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full">
-          {!isSubscribed && (
-            <Link href="/subscription" className="block mb-2">
-              <button className="bg-neon-green text-black rounded-lg px-4 py-2 w-full">
-                Subscribe
-              </button>
-            </Link>
-          )}
-          <button
-            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              location.reload();
-            }}
-          >
-            Sign Out
-          </button>
+        <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+            <span className="text-sm font-medium">User Name</span>
+          </div>
+          <div className="relative">
+            <button
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              </svg>
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
+                <button
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                  onClick={() => {
+                    router.push("/subscription");
+                  }}
+                >
+                  Manage Subscription
+                </button>
+                <button
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    location.reload();
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div >
     </div >

@@ -1,15 +1,53 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
+
+
+const supabase = createAdminClient();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-export async function POST(req: Request) {
-  console.log('Webhook received'); 
+async function updateSubscriptionStatus(userId: string, customerId: string, newStatus: string) {
+  try {
+    // First, check if the subscription exists
+    const { data: existingSubscription, error: fetchError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('customer_id', customerId)
+      .single()
 
+    if (fetchError) throw fetchError
+
+    if (!existingSubscription) {
+      return false
+    }
+
+    // If the subscription exists, update the status
+    const { data, error: updateError } = await supabase
+      .from('subscriptions')
+      .update({
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId)
+      .eq('customer_id', customerId)
+
+    if (updateError) throw updateError
+
+    console.log('Subscription updated successfully')
+    return true
+
+  } catch (error) {
+    console.error('Error updating subscription:', error.message)
+    return false
+  }
+}
+
+export async function POST(req: Request) {
   const body = await req.text();
   const signature = headers().get('Stripe-Signature') as string;
 
@@ -26,41 +64,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
-  const supabase = createClient();
-
-//   if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created') {
-//     const subscription = event.data.object as Stripe.Subscription;
-//     const userId = subscription.metadata.userId;
-
-//     await supabase.rpc('update_user_subscription', {
-//       p_user_id: userId,
-//       p_stripe_customer_id: subscription.customer as string,
-//       p_stripe_subscription_id: subscription.id,
-//       p_is_subscribed: subscription.status === 'active'
-//     });
-//   }
+  // let result;
 
   switch (event.type) {
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
       const subscription = event.data.object as Stripe.Subscription;
       const userId = subscription.metadata.userId;
-      console.log('Subscription:', subscription);
-      console.log('User ID:', userId);
-      await supabase.rpc('update_subscription_status', {
-        p_user_id: userId,
-        p_status: subscription.status,
-      });
+      await updateSubscriptionStatus(userId, subscription.customer, subscription.status)
       break;
     case 'customer.subscription.deleted':
       const deletedSubscription = event.data.object as Stripe.Subscription;
       const deletedUserId = deletedSubscription.metadata.userId;
-      console.log('Deleted Subscription:', deletedSubscription);
-      console.log('Deleted User ID:', deletedUserId);
-      await supabase.rpc('update_subscription_status', {
-        p_user_id: deletedUserId,
-        p_status: 'canceled',
-      });
+
+      await updateSubscriptionStatus(deletedUserId, deletedSubscription.customer, deletedSubscription.status)
       break;
   }
 
