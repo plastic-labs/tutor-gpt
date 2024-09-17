@@ -20,7 +20,7 @@ export default async function SubscriptionPage() {
   //   }
   // };
 
-  const isSubscribed = await checkSubscription();
+  const subStatus = await checkSubscription();
 
   if (!user) {
     redirect('/auth');
@@ -30,7 +30,7 @@ export default async function SubscriptionPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">Manage Your Subscription</h1>
-      <SubscriptionManager isSubscribed={isSubscribed} />
+      <SubscriptionManager subStatus={subStatus} />
     </div>
   );
 }

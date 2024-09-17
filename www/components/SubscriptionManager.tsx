@@ -5,14 +5,15 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useRouter } from 'next/navigation'
 
 import { createCheckoutSession, createPortalSession } from '@/utils/stripe/actions';
+import { SubscriptionStatus } from '@/utils/types';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface Props {
-  isSubscribed: boolean;
+  subStatus: SubscriptionStatus;
 }
 
-export default function SubscriptionManager({ isSubscribed }: Props) {
+export default function SubscriptionManager({ subStatus }: Props) {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter()
@@ -20,6 +21,7 @@ export default function SubscriptionManager({ isSubscribed }: Props) {
   const handleSubscription = async () => {
     setLoading(true);
     try {
+      // TODO use price_ids based on a fixture
       const session = await createCheckoutSession("price_1PzJaKGhsOL14iteeuZBzLpg");
       const stripe = await stripePromise;
       await stripe?.redirectToCheckout({ sessionId: session.id });
@@ -47,15 +49,15 @@ export default function SubscriptionManager({ isSubscribed }: Props) {
     <div className="mt-4">
       <h2 className="text-xl font-bold mb-2">Subscription Status</h2>
       <p className="mb-4">
-        {isSubscribed ? 'Active Subscription' : 'No Active Subscription'}
+        {subStatus === SubscriptionStatus.UNSUBSCRIBED ? 'No Active Subscription' : 'Active Subscription'}
       </p>
       <button
-        onClick={isSubscribed ? handleManage : handleSubscription}
+        onClick={subStatus === SubscriptionStatus.UNSUBSCRIBED ? handleSubscription : handleManage}
         disabled={loading}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
       >
 
-        {isSubscribed ? 'Manage Subscription' : 'Subscribe Now'}
+        {subStatus === SubscriptionStatus.UNSUBSCRIBED ? 'Subscribe Now' : 'Manage Subscription'}
       </button>
     </div>
   );

@@ -19,6 +19,7 @@ import { redirect } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
 import { checkSubscription } from "@/utils/stripe/actions";
+import { SubscriptionStatus } from "@/utils/types";
 
 import { API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
@@ -72,8 +73,8 @@ export default function Home() {
       posthog?.identify(userId, { email: user.email });
 
       // Check subscription status
-      const sub: boolean = await checkSubscription();
-      setIsSubscribed(sub);
+      const sub = await checkSubscription();
+      setIsSubscribed(sub === SubscriptionStatus.SUBSCRIBED);
 
     })();
   }, [supabase]);

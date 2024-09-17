@@ -3,6 +3,8 @@
 import { createClient } from '@/utils/supabase/server'
 import Stripe from 'stripe'
 
+import { SubscriptionStatus } from '@/utils/types'
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 })
@@ -50,7 +52,7 @@ async function createAndLinkStripeCustomer() {
   }
 }
 
-export async function checkSubscription(): Promise<boolean> {
+export async function checkSubscription(): Promise<SubscriptionStatus> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
@@ -61,18 +63,23 @@ export async function checkSubscription(): Promise<boolean> {
       .single();
     if (subscription) {
       switch (subscription?.status) {
-        case 'canceled':
+        case 'active':
         case 'trialing':
-          return true
+          return SubscriptionStatus.SUBSCRIBED
+        case 'incomplete':
+        case 'trialing':
+        case 'past_due':
+        case 'unpaid':
+        case 'paused':
+          return SubscriptionStatus.PENDING
         default:
-          return false
+          return SubscriptionStatus.UNSUBSCRIBED
       }
     } else {
-      await createAndLinkStripeCustomer()
-      return false
+      return SubscriptionStatus.UNSUBSCRIBED
     }
   }
-  return false
+  return SubscriptionStatus.UNSUBSCRIBED
 };
 
 export async function checkSubscriptionExists(): Promise<boolean> {
@@ -107,8 +114,6 @@ export async function createCheckoutSession(price_id: string): Promise<any> {
   // if (!user) {
   //   return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   // }
-
-  console.log(price_id)
 
   if (!user) {
     return
@@ -148,7 +153,6 @@ export async function createCheckoutSession(price_id: string): Promise<any> {
     },
   });
 
-  console.log(session)
 
   return session;
 }
@@ -178,6 +182,5 @@ export async function createPortalSession() {
     return_url: `${process.env.NEXT_PUBLIC_URL}/subscription`,
   });
 
-  console.log(portalSession)
   return portalSession;
 }
