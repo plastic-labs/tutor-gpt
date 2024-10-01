@@ -19,7 +19,6 @@ version = "0.6.0"
 source = { editable = "agent" }
 dependencies = [
     { name = "honcho-ai", marker = "python_full_version >= '3.12'" },
-    { name = "mirascope", marker = "python_full_version >= '3.12'" },
     { name = "openai", marker = "python_full_version >= '3.12'" },
     { name = "python-dotenv", marker = "python_full_version >= '3.12'" },
     { name = "sentry-sdk", marker = "python_full_version >= '3.12'" },
@@ -29,7 +28,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "honcho-ai", specifier = ">=0.0.14" },
-    { name = "mirascope", specifier = "==0.18.0" },
     { name = "openai", specifier = ">=1.3.8" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "sentry-sdk", specifier = ">=2.13.0" },
@@ -237,15 +235,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/37/7d/c871f55054e403fdfd6b8f65fd6d1c4e147ed100d3e9f9ba1fe695403939/dnspython-2.6.1.tar.gz", hash = "sha256:e8f0f9c23a7b7cb99ded64e6c3a6f3e701d78f50c55e002b839dea7225cff7cc", size = 332727 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/87/a1/8c5287991ddb8d3e4662f71356d9656d91ab3a36618c3dd11b280df0d255/dnspython-2.6.1-py3-none-any.whl", hash = "sha256:5ef3b9680161f6fa89daf8ad451b5f1a33b18ae8a1c6778cdf4b43f08c0a6e50", size = 307696 },
-]
-
-[[package]]
-name = "docstring-parser"
-version = "0.16"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/08/12/9c22a58c0b1e29271051222d8906257616da84135af9ed167c9e28f85cb3/docstring_parser-0.16.tar.gz", hash = "sha256:538beabd0af1e2db0146b6bd3caa526c35a34d61af9fd2887f3a8a27a739aa6e", size = 26565 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/7c/e9fcff7623954d86bdc17782036cbf715ecab1bec4847c008557affe1ca8/docstring_parser-0.16-py3-none-any.whl", hash = "sha256:bf0a1387354d3691d102edef7ec124f219ef639982d096e26e3b60aeffa90637", size = 36533 },
 ]
 
 [[package]]
@@ -522,21 +511,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mirascope"
-version = "0.18.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "docstring-parser", marker = "python_full_version >= '3.12'" },
-    { name = "openai", marker = "python_full_version >= '3.12'" },
-    { name = "pydantic", marker = "python_full_version >= '3.12'" },
-    { name = "tenacity", marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/3a/723d39e1e79c255dbbc16afb5e95416a8cd247fa0ba3baff8b984a8e3da6/mirascope-0.18.0.tar.gz", hash = "sha256:bc3e43a1f87fe384228e31d91646f88a31ec33dfc8661914dfc4bd138d6978fb", size = 85364 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/7c/56c5525ee74eb23d49692a02c1a805910e8c72225353e2d313d45fe432d6/mirascope-0.18.0-py3-none-any.whl", hash = "sha256:dfd7878c1d71408120c812954b67a56f816cf8c971d02787463886fbd81d0e26", size = 113615 },
-]
-
-[[package]]
 name = "multidict"
 version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -803,15 +777,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/13/aa/57975da16ca0c368bbb5687daa6ad79561c2328a44667a1d6802e94df3e5/starlette-0.38.5.tar.gz", hash = "sha256:04a92830a9b6eb1442c766199d62260c3d4dc9c4f9188360626b1e0273cb7077", size = 2569511 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/90/1a/8853ba4cea1ec99535ac9be5795a50ca92cddd04d57bbaa56e866cb7548c/starlette-0.38.5-py3-none-any.whl", hash = "sha256:632f420a9d13e3ee2a6f18f437b0a9f1faecb0bc42e1942aa2ea0e379a4c4206", size = 71447 },
-]
-
-[[package]]
-name = "tenacity"
-version = "8.5.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a3/4d/6a19536c50b849338fcbe9290d562b52cbdcf30d8963d3588a68a4107df1/tenacity-8.5.0.tar.gz", hash = "sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78", size = 47309 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/3f/8ba87d9e287b9d385a02a7114ddcef61b26f86411e121c9003eb509a1773/tenacity-8.5.0-py3-none-any.whl", hash = "sha256:b594c2a5945830c267ce6b79a166228323ed52718f30302c1359836112346687", size = 28165 },
 ]
 
 [[package]]

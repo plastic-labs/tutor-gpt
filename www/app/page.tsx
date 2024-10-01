@@ -73,8 +73,12 @@ export default function Home() {
       posthog?.identify(userId, { email: user.email });
 
       // Check subscription status
-      const sub = await checkSubscription();
-      setIsSubscribed(sub === SubscriptionStatus.SUBSCRIBED);
+      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === "false") {
+        setIsSubscribed(true);
+      } else {
+        const sub = await checkSubscription();
+        setIsSubscribed(sub === SubscriptionStatus.SUBSCRIBED);
+      }
 
     })();
   }, [supabase]);
@@ -211,6 +215,7 @@ export default function Home() {
           // setThought((prev) => prev + "\n" + value + "\n");
           continue;
         }
+        console.log(value)
         setThought((prev) => prev + value);
         // mutateMessages(newMessages, { revalidate: false });
       } else {
