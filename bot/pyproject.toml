@@ -3,7 +3,7 @@ name = "bot"
 version = "0.6.0"
 description = "Discord Bot implementation of Tutor-GPT"
 authors = [
-    {name = "Vineeth Voruganti", email = "13438633+VVoruganti@users.noreply.github.com"},
+    {name = "Plastic Labs", email = "hello@plasticlabs.ai"},
 ]
 readme = "README.md"
 requires-python = ">=3.11"

@@ -3,7 +3,7 @@ name = "agent"
 version = "0.6.0"
 description = "The LLM Engine behind Tutor-GPT"
 authors = [
-    {name = "Vineeth Voruganti", email = "13438633+VVoruganti@users.noreply.github.com"},
+    {name = "Plastic Labs", email = "hello@plasticlabs.ai"},
 ]
 requires-python = ">=3.11"
 dependencies = [
