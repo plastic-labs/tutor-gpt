@@ -44,27 +44,40 @@ async def stream(
             yield chunk.content
         yield "❀"
 
-        new_message = honcho.apps.users.sessions.messages.create(
+        honcho.apps.users.sessions.messages.create(
             is_user=True,
             session_id=str(inp.conversation_id),
             app_id=app.id,
             user_id=user.id,
             content=inp.message,
         )
-        honcho.apps.users.sessions.metamessages.create(
-            app_id=app.id,
-            session_id=str(inp.conversation_id),
-            user_id=user.id,
-            message_id=new_message.id,
-            metamessage_type="thought",
-            content=thought,
-        )
-        honcho.apps.users.sessions.messages.create(
+        new_ai_message = honcho.apps.users.sessions.messages.create(
             is_user=False,
             session_id=str(inp.conversation_id),
             app_id=app.id,
             user_id=user.id,
             content=response,
         )
-
+        honcho.apps.users.sessions.metamessages.create(
+            app_id=app.id,
+            session_id=str(inp.conversation_id),
+            user_id=user.id,
+            message_id=new_ai_message.id,
+            metamessage_type="thought",
+            content=thought,
+        )
     return StreamingResponse(convo_turn())
+
+@router.get("/thought/{message_id}")
+async def get_thought(conversation_id: str, message_id: str, user_id: str):
+    user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
+    thought = honcho.apps.users.sessions.metamessages.list(
+        session_id=conversation_id,
+        app_id=app.id,
+        user_id=user_id,
+        message_id=message_id,
+        metamessage_type="thought"
+    )
+    print('returning', thought)
+    # In practice, there should only be one thought per message
+    return {"thought": thought.items[0].content if thought.items else None}
