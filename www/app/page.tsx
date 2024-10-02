@@ -67,7 +67,6 @@ export default function Home() {
         })
         redirect("/auth");
       }
-      console.log(user);
       setUserId(user.id);
       setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
       posthog?.identify(userId, { email: user.email });
@@ -82,18 +81,6 @@ export default function Home() {
 
     })();
   }, [supabase]);
-
-  // const checkSubscription = async () => {
-  //   const { data: { user } } = await supabase.auth.getUser();
-  //   if (user) {
-  //     const { data: subscription } = await supabase
-  //       .from('subscriptions')
-  //       .select('status')
-  //       .eq('user_id', user.id)
-  //       .single();
-  //     setIsSubscribed(subscription?.status === 'active');
-  //   }
-  // };
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;

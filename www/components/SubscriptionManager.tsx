@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { useRouter } from 'next/navigation'
 
-import { createCheckoutSession, createPortalSession } from '@/utils/stripe/actions';
+import { createCheckoutSession, createStripePortal } from '@/utils/stripe/actions';
 import { SubscriptionStatus } from '@/utils/types';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -34,10 +34,10 @@ export default function SubscriptionManager({ subStatus }: Props) {
   const handleManage = async () => {
     setLoading(true);
     try {
-      const session = await createPortalSession();
+      const url: string = await createStripePortal();
       // const stripe = await stripePromise;
-      console.log(session)
-      router.push(session?.url);
+      console.log(url)
+      router.push(url);
       // await stripe?.redirectToCheckout({ sessionId: session.id });
     } catch (error) {
       console.error('Error:', error);
@@ -52,7 +52,8 @@ export default function SubscriptionManager({ subStatus }: Props) {
         {subStatus === SubscriptionStatus.UNSUBSCRIBED ? 'No Active Subscription' : 'Active Subscription'}
       </p>
       <button
-        onClick={subStatus === SubscriptionStatus.UNSUBSCRIBED ? handleSubscription : handleManage}
+        // onClick={subStatus === SubscriptionStatus.UNSUBSCRIBED ? handleSubscription : handleManage}
+        onClick={handleManage}
         disabled={loading}
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
       >

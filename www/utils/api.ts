@@ -145,7 +145,7 @@ export class API {
       })
     );
     const { messages: rawMessages } = await req.json();
-    console.log(rawMessages);
+    // console.log(rawMessages);
     if (!rawMessages) return [];
     const messages: Message[] = rawMessages.map((rawMessage: any) => {
       return {

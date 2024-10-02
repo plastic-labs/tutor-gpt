@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import SubscriptionManager from '@/components/SubscriptionManager';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 import { checkSubscription } from "@/utils/stripe/actions";
 
@@ -31,6 +32,7 @@ export default async function SubscriptionPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">Manage Your Subscription</h1>
       <SubscriptionManager subStatus={subStatus} />
+      <Link href="/"><button> Return Home</button></Link>
     </div>
   );
 }

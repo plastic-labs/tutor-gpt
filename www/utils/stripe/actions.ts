@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createOrRetrieveCustomer } from '@/utils/supabase/admin';
+
 import Stripe from 'stripe'
 
 import { SubscriptionStatus } from '@/utils/types'
@@ -8,6 +10,10 @@ import { SubscriptionStatus } from '@/utils/types'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 })
+
+// export async function checkoutWithStripe(
+//
+// )
 
 async function createAndLinkStripeCustomer() {
   const supabase = createClient()
@@ -156,6 +162,74 @@ export async function createCheckoutSession(price_id: string): Promise<any> {
 
   return session;
 }
+
+// TODO 
+// export async function createStripePortal(currentPath: string) {
+export async function createStripePortal() {
+  try {
+    const supabase = createClient();
+    const {
+      error,
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      if (error) {
+        console.error(error);
+      }
+      throw new Error('Could not get user session.');
+    }
+
+    let customer;
+    try {
+      customer = await createOrRetrieveCustomer({
+        uuid: user.id || '',
+        email: user.email || ''
+      });
+    } catch (err) {
+      console.error(err);
+      throw new Error('Unable to access customer record.');
+    }
+
+    if (!customer) {
+      throw new Error('Could not get customer.');
+    }
+
+    try {
+      const { url } = await stripe.billingPortal.sessions.create({
+        customer,
+        // TODO 
+        // return_url: getURL('/account')
+        return_url: `${process.env.NEXT_PUBLIC_URL}/subscription`,
+      });
+      if (!url) {
+        throw new Error('Could not create billing portal');
+      }
+      return url;
+    } catch (err) {
+      console.error(err);
+      throw new Error('Could not create billing portal');
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error);
+      // TODO 
+      // return getErrorRedirect(
+      //   currentPath,
+      //   error.message,
+      //   'Please try again later or contact a system administrator.'
+      // );
+    } else {
+      // TODO 
+      // return getErrorRedirect(
+      //   currentPath,
+      //   'An unknown error occurred.',
+      //   'Please try again later or contact a system administrator.'
+      // );
+    }
+  }
+}
+
 
 export async function createPortalSession() {
   const supabase = createClient();
