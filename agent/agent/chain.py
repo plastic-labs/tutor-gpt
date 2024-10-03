@@ -40,8 +40,8 @@ class ThinkCall(HonchoCall):
     SYSTEM:
     You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user’s mental state.
 
-    Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction 
-    
+    Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction
+
     previous commentary: {history}
 
     USER: {user_input}
@@ -67,11 +67,17 @@ class ThinkCall(HonchoCall):
         )
         past_thoughts = {m.message_id: m.content for m in meta_iter.items}
         for message in iter.items[::-1]:
-            if message.is_user:
-                history_list.append({"role": "user", "content": message.content})
-                history_list.append(
-                    {"role": "assistant", "content": past_thoughts[message.id]}
-                )
+            try:
+                if message.is_user:
+                    history_list.append({"role": "user", "content": message.content})
+                else:  # system message
+                    if message.id in past_thoughts:
+                        history_list.append({"role": "system", "content": past_thoughts[message.id]})
+            except AttributeError as e:
+                # Log the error and continue with the next message
+                print(f"Error processing message: {e}")
+                continue
+
         return history_list
 
 
