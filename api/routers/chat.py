@@ -74,10 +74,9 @@ async def get_thought(conversation_id: str, message_id: str, user_id: str):
     thought = honcho.apps.users.sessions.metamessages.list(
         session_id=conversation_id,
         app_id=app.id,
-        user_id=user_id,
+        user_id=user.id,
         message_id=message_id,
         metamessage_type="thought"
     )
-    print('returning', thought)
     # In practice, there should only be one thought per message
     return {"thought": thought.items[0].content if thought.items else None}

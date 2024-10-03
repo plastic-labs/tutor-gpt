@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
 import { FaLightbulb, FaThumbsDown, FaThumbsUp } from "react-icons/fa";
 import { API } from "@/utils/api";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 
 interface MessageBoxProps {
   isUser?: boolean;
@@ -36,6 +36,7 @@ export default function MessageBox({
   setThought,
 }: MessageBoxProps) {
   const [shouldFetch, setShouldFetch] = useState(false);
+  const shouldShowButtons = messageId !== "";
 
   const {
     data: thought,
@@ -48,6 +49,8 @@ export default function MessageBox({
     fetchThought,
     {
       revalidateOnFocus: false,
+      revalidateIfStale: false,
+      revalidateOnReconnect: false,
       onSuccess: (data) => {
         console.log(data);
         if (data) {
@@ -58,10 +61,13 @@ export default function MessageBox({
     },
   );
 
-  const handleFetchThought = () => {
+  const handleFetchThought = useCallback(() => {
     setShouldFetch(true);
-  };
-  if (error) console.log(error);
+    if (messageId && api) {
+      const key = `thought:${conversationId}:${messageId}:${api.userId}`;
+      mutate(key);
+    }
+  }, [messageId, api, conversationId]);
 
   return (
     <article
@@ -85,8 +91,8 @@ export default function MessageBox({
         ) : (
           <div className="message-content">{text}</div>
         )}
-        {!loading && !isUser && (
-          <div className="flex gap-2 mt-2">
+        {!loading && !isUser && shouldShowButtons && (
+          <div className="flex justify-center gap-2 mt-2">
             <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               <FaThumbsUp />
             </button>
@@ -104,12 +110,6 @@ export default function MessageBox({
         )}
         {isValidating && <p>Loading thought...</p>}
         {error && <p className="text-red-500">Error: {error.message}</p>}
-        {thought && (
-          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-            <h4 className="font-bold">Thought:</h4>
-            <p>{thought}</p>
-          </div>
-        )}
       </div>
     </article>
   );
