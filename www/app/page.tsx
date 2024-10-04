@@ -20,6 +20,7 @@ import { usePostHog } from "posthog-js/react";
 
 import { API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
+import { CookieConsentBanner } from "@/components/cookieConsentBanner";
 
 const Thoughts = dynamic(() => import("@/components/thoughts"));
 
@@ -42,6 +43,7 @@ export default function Home() {
   //const input = useRef<ElementRef<"input">>(null);
   const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<"section">>(null);
+  const [cookieConsent, setCookieConsent] = useState<boolean | null>(null);
 
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const toggleDarkMode = (checked: boolean) => {
@@ -50,7 +52,10 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       // Check for an error or no user
       if (!user || error) {
         await Swal.fire({
@@ -59,7 +64,7 @@ export default function Home() {
           icon: "warning",
           confirmButtonColor: "#3085d6",
           confirmButtonText: "Sign In",
-        })
+        });
         redirect("/auth");
       }
       setUserId(user.id);
@@ -75,7 +80,7 @@ export default function Home() {
     const func = () => {
       const val =
         Math.round(
-          messageContainer.scrollHeight - messageContainer.scrollTop
+          messageContainer.scrollHeight - messageContainer.scrollTop,
         ) === messageContainer.clientHeight;
       isAtBottom.current = val;
     };
@@ -118,6 +123,16 @@ export default function Home() {
     isLoading: messagesLoading,
     error: _,
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
+
+  const acceptCookies = () => {
+    setCookieConsent(true);
+    localStorage.setItem("cookieConsent", JSON.stringify(true));
+  };
+
+  const declineCookies = () => {
+    setCookieConsent(false);
+    localStorage.setItem("cookieConsent", JSON.stringify(false));
+  };
 
   async function chat() {
     const textbox = input.current!;
@@ -199,7 +214,7 @@ export default function Home() {
               isUser: false,
             },
           ],
-          { revalidate: false }
+          { revalidate: false },
         );
 
         if (isAtBottom.current) {
@@ -216,9 +231,11 @@ export default function Home() {
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? "dark" : ""
-        }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
+        isDarkMode ? "dark" : ""
+      }`}
     >
+      <CookieConsentBanner />
       <Sidebar
         conversations={conversations || []}
         mutateConversations={mutateConversations}
@@ -227,7 +244,7 @@ export default function Home() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         api={new API({ url: URL!, userId: userId! })}
-      // session={session}
+        // session={session}
       />
       <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
         <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
@@ -268,18 +285,16 @@ export default function Home() {
           className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
           ref={messageContainerRef}
         >
-          {
-            messagesLoading || messages === undefined ? (
-              <MessageBox loading />
-            ) : (
-              messages.map((message, i) => (
-                <MessageBox isUser={message.isUser} key={i}>
-                  <MarkdownWrapper text={message.text} />
-                </MessageBox>
-              ))
-            )
-          }
-        </section >
+          {messagesLoading || messages === undefined ? (
+            <MessageBox loading />
+          ) : (
+            messages.map((message, i) => (
+              <MessageBox isUser={message.isUser} key={i}>
+                <MarkdownWrapper text={message.text} />
+              </MessageBox>
+            ))
+          )}
+        </section>
         <form
           id="send"
           className="flex p-3 lg:p-5 gap-3 border-gray-300"
@@ -295,8 +310,9 @@ export default function Home() {
           <textarea
             ref={input}
             placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"
-              }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+              canSend ? " border-green-200" : "border-red-200 opacity-50"
+            }`}
             rows={1}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -316,12 +332,12 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
-      </div >
+      </div>
       <Thoughts
         thought={thought}
         setIsThoughtsOpen={setIsThoughtsOpen}
         isThoughtsOpen={isThoughtsOpen}
       />
-    </main >
+    </main>
   );
 }
