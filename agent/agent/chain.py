@@ -70,9 +70,9 @@ class ThinkCall(HonchoCall):
             try:
                 if message.is_user:
                     history_list.append({"role": "user", "content": message.content})
-                else:  # system message
+                else:
                     if message.id in past_thoughts:
-                        history_list.append({"role": "system", "content": past_thoughts[message.id]})
+                        history_list.append({"role": "assistant", "content": past_thoughts[message.id]})
             except AttributeError as e:
                 # Log the error and continue with the next message
                 print(f"Error processing message: {e}")

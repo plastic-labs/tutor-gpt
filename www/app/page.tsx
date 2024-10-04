@@ -69,7 +69,7 @@ export default function Home() {
       setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
       posthog?.identify(userId, { email: user.email });
     })();
-  });
+  }, [posthog, userId, supabase.auth]);
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -135,7 +135,7 @@ export default function Home() {
       {
         text: message,
         isUser: true,
-        id: "", // We'll fill this in after the API call
+        id: "",
       },
       {
         text: "",
@@ -190,6 +190,7 @@ export default function Home() {
             {
               text: currentModelOutput,
               isUser: false,
+              id: "",
             },
           ],
           { revalidate: false },
@@ -266,8 +267,9 @@ export default function Home() {
             <MessageBox
               key={i}
               isUser={message.isUser}
+              userId={userId}
+              URL={URL}
               messageId={message.id}
-              api={new API({ url: URL!, userId: userId! })}
               text={message.text}
               loading={messagesLoading}
               conversationId={conversationId}

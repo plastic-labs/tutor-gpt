@@ -1,17 +1,17 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
-import { FaLightbulb, FaThumbsDown, FaThumbsUp } from "react-icons/fa";
+import { FaLightbulb } from "react-icons/fa";
 import { API } from "@/utils/api";
-import useSWR, { mutate } from "swr";
 
 interface MessageBoxProps {
   isUser?: boolean;
+  userId?: string;
+  URL?: string;
   messageId?: string;
   conversationId?: string;
-  api?: API;
   text: string;
   loading?: boolean;
   isThoughtsOpen?: boolean;
@@ -19,55 +19,45 @@ interface MessageBoxProps {
   setThought: (thought: string) => void;
 }
 
-const fetchThought = async (key: string) => {
-  const [_, conversationId, messageId, userId] = key.split(":");
-  const api = new API({ url: process.env.NEXT_PUBLIC_API_URL!, userId });
-  return api.getThoughtById(conversationId, messageId);
-};
-
 export default function MessageBox({
   isUser,
+  userId,
+  URL,
   messageId,
-  api,
   text,
   loading = false,
   setIsThoughtsOpen,
   conversationId,
   setThought,
 }: MessageBoxProps) {
-  const [shouldFetch, setShouldFetch] = useState(false);
+  const [isThoughtLoading, setIsThoughtLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const shouldShowButtons = messageId !== "";
 
-  const {
-    data: thought,
-    error,
-    isValidating,
-  } = useSWR(
-    shouldFetch && messageId && api
-      ? `thought:${conversationId}:${messageId}:${api.userId}`
-      : null,
-    fetchThought,
-    {
-      revalidateOnFocus: false,
-      revalidateIfStale: false,
-      revalidateOnReconnect: false,
-      onSuccess: (data) => {
-        console.log(data);
-        if (data) {
-          setIsThoughtsOpen(true);
-          setThought(data);
-        }
-      },
-    },
-  );
+  const handleFetchThought = async () => {
+    if (!messageId || !conversationId || !userId || !URL) return;
 
-  const handleFetchThought = useCallback(() => {
-    setShouldFetch(true);
-    if (messageId && api) {
-      const key = `thought:${conversationId}:${messageId}:${api.userId}`;
-      mutate(key);
+    setIsThoughtLoading(true);
+    setError(null);
+
+    try {
+      const api = new API({ url: URL, userId });
+      const thought = await api.getThoughtById(conversationId, messageId);
+
+      if (thought) {
+        setIsThoughtsOpen(true);
+        setThought(thought);
+      } else {
+        setError("No thought found.");
+      }
+    } catch (err) {
+      setError("Failed to fetch thought.");
+      console.error(err);
+    } finally {
+      setIsThoughtLoading(false);
     }
-  }, [messageId, api, conversationId]);
+  };
 
   return (
     <article
@@ -93,23 +83,23 @@ export default function MessageBox({
         )}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-center gap-2 mt-2">
-            <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+            {/* <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               <FaThumbsUp />
             </button>
             <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               <FaThumbsDown />
-            </button>
+            </button> */}
             <button
               className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
               onClick={handleFetchThought}
-              disabled={isValidating}
+              disabled={isThoughtLoading}
             >
               <FaLightbulb />
             </button>
           </div>
         )}
-        {isValidating && <p>Loading thought...</p>}
-        {error && <p className="text-red-500">Error: {error.message}</p>}
+        {isThoughtLoading && <p>Loading thought...</p>}
+        {error && <p className="text-red-500">Error: {error}</p>}
       </div>
     </article>
   );
