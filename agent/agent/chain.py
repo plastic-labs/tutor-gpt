@@ -41,21 +41,20 @@ class HonchoCall:
 
 class ThinkCall(HonchoCall):
     def template(self) -> dict[str, str]:
-        system = (
-            {
-                "role": "system",
-                "content": f"""You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user’s mental state.
-    Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction
-    previous commentary: {self.history}""",
-            },
-        )
+        return {
+            "role": "system",
+            "content": f"""You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user's mental state.
+Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction
+previous commentary: {self.history}
 
-        return system[0]
+USER: {self.user_input}
+"""
+        }
 
     @property
     def history(self) -> str:
         """Get the conversation history from Honcho"""
-        history_str = ""
+        history_list = []
         iter = self.honcho.apps.users.sessions.messages.list(
             session_id=self.session_id,
             app_id=self.app_id,
@@ -71,10 +70,18 @@ class ThinkCall(HonchoCall):
         )
         past_thoughts = {m.message_id: m.content for m in meta_iter.items}
         for message in iter.items[::-1]:
-            if message.is_user:
-                history_str += f"USER: {message.content}\n"
-                history_str += f"THOUGHT: {past_thoughts[message.id]}\n"
-        return history_str
+            try:
+                if message.is_user:
+                    history_list.append({"role": "user", "content": message.content})
+                else:  # system message
+                    if message.id in past_thoughts:
+                        history_list.append({"role": "system", "content": past_thoughts[message.id]})
+            except AttributeError as e:
+                # Log the error and continue with the next message
+                print(f"Error processing message: {e}")
+                continue
+
+        return "\n".join([f"{item['role'].upper()}: {item['content']}" for item in history_list])
 
     def stream(self):
         completion = self.openai.chat.completions.create(
