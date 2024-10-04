@@ -37,7 +37,7 @@ the backend logic for different clients.
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
 
 Most of the project is developed using python with the exception of the NextJS
-application. For python `poetry` is used for dependency management and for the
+application. For python `uv` is used for dependency management and for the
 web interface `yarn` is used.
 
 ### Supabase
@@ -61,7 +61,7 @@ on the webui and then immediately sign in with it.
 ## Installation
 
 > NOTE: The project uses
-> [poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+> [uv](https://github.com/astral-sh/uv)
 > and [yarn](https://yarnpkg.com/getting-started/install) for package
 > management.
 
@@ -72,7 +72,7 @@ the project.
 ```bash
 git clone https://github.com/plastic-labs/tutor-gpt.git
 cd tutor-gpt
-poetry install # install Python dependencies
+uv pip install -e . # install python dependencies
 cd www/
 yarn install # install all NodeJS dependencies
 ```
@@ -100,35 +100,29 @@ Similarly, to build the web interface run the below commands
 cd tutor-gpt/www
 docker build -t tutor-gpt-web .
 ```
-
-> NOTE: for poetry usage
-
-This project uses [poetry](https://python-poetry.org/) to manage dependencies.
-To install dependencies locally run `poetry install`. Or alternatively run
-`poetry shell` to activate the virtual environment
-
-To activate the virtual environment within the same shell you can use the
-following one-liner:
-
+> NOTE: for `uv` usage
+This project uses [uv](https://github.com/astral-sh/uv) to manage dependencies.
+From the project root, run
 ```bash
-source $(poetry env info --path)/bin/activate
+pip install uv
+uv venv
+source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
 ```
+This will open the project in a virtual environment.
+*Hint*: You should see `(venv)` before your terminal prompt.
 
-On some systems this may not detect the proper virtual environment. You can
-diagnose this by running `poetry env info` directly to see if the virtualenv
-is defined.
-
-If using `pyenv` remember to set **prefer-active-python** to true. As per
-this section of the [documentation](https://python-poetry.org/docs/managing-environments/).
-
-Another workaround that may work if the above setting does not work is to
-continue directly with `poetry shell` or wrap the source command like below
-
+Then run
 ```bash
-poetry run source $(poetry env info --path)/bin/activate
+uv pip install -e .
 ```
+This will install the project and its dependencies for the `agent/`, `api/`, and `bot/` directories.
 
 ## Usage
+For running the FastAPI backend with uv:
+
+```bash
+uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
 
 This app requires you to have a few different environment variables set. Create
 a `.env` file from the `.env.template`. Depending on which interface you are
