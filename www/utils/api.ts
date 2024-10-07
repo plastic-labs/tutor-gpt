@@ -1,5 +1,7 @@
+import { Reaction } from "@/components/messagebox";
+
 const defaultMessage: Message = {
-  text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+  text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
 };
 
@@ -156,4 +158,97 @@ export class API {
 
     return [defaultMessage, ...messages];
   }
+<<<<<<< Updated upstream
+=======
+
+  async getThoughtById(
+    conversationId: string,
+    messageId: string,
+  ): Promise<string | null> {
+    try {
+      const response = await fetch(
+        `${this.url}/api/thought/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch thought");
+      }
+
+      const data = await response.json();
+      return data.thought;
+    } catch (error) {
+      console.error("Error fetching thought:", error);
+      return null;
+    }
+  }
+
+  async addReaction(
+    conversationId: string,
+    messageId: string,
+    reaction: Exclude<Reaction, null>,
+  ): Promise<{ status: string }> {
+    try {
+      const response = await fetch(
+        `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}&reaction=${reaction}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to add reaction");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error adding reaction:", error);
+      throw error;
+    }
+  }
+
+  async getReaction(
+    conversationId: string,
+    messageId: string,
+  ): Promise<{ reaction: Reaction }> {
+    try {
+      const response = await fetch(
+        `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to get reaction");
+      }
+
+      const data = await response.json();
+
+      // Validate the reaction
+      if (
+        data.reaction !== null &&
+        !["thumbs_up", "thumbs_down"].includes(data.reaction)
+      ) {
+        throw new Error("Invalid reaction received from server");
+      }
+
+      return data as { reaction: Reaction };
+    } catch (error) {
+      console.error("Error getting reaction:", error);
+      throw error;
+    }
+  }
+>>>>>>> Stashed changes
 }

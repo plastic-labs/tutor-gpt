@@ -1,7 +1,16 @@
+<<<<<<< Updated upstream
+=======
+import { useEffect, useState } from "react";
+>>>>>>> Stashed changes
 import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
+<<<<<<< Updated upstream
+=======
+import { FaLightbulb, FaThumbsDown, FaThumbsUp } from "react-icons/fa";
+import { API } from "@/utils/api";
+>>>>>>> Stashed changes
 
 interface MessageBoxRegularProps {
   children: React.ReactNode;
@@ -9,6 +18,7 @@ interface MessageBoxRegularProps {
   loading?: false;
 }
 
+<<<<<<< Updated upstream
 interface MessageBoxLoadingProps {
   children?: React.ReactNode;
   isUser?: boolean;
@@ -17,12 +27,92 @@ interface MessageBoxLoadingProps {
 
 // merge the two types
 type MessageBoxProps = MessageBoxRegularProps | MessageBoxLoadingProps;
+=======
+export type Reaction = "thumbs_up" | "thumbs_down" | null;
+>>>>>>> Stashed changes
 
 export default function MessageBox({
   children,
   isUser,
   loading,
 }: MessageBoxProps) {
+<<<<<<< Updated upstream
+=======
+  const [isThoughtLoading, setIsThoughtLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reaction, setReaction] = useState<Reaction | null>(null);
+  const [isReactionLoading, setIsReactionLoading] = useState<boolean>(false);
+  const [isReactionPending, setIsReactionPending] = useState<boolean>(false);
+  const shouldShowButtons = messageId !== "";
+
+  useEffect(() => {
+    if (shouldShowButtons && !isUser) {
+      fetchExistingReaction();
+    }
+  }, [messageId, conversationId, userId, URL]);
+
+  const fetchExistingReaction = async () => {
+    if (!messageId || !conversationId || !userId || !URL) return;
+
+    setIsReactionLoading(true);
+    try {
+      const api = new API({ url: URL, userId });
+      const { reaction: existingReaction } = await api.getReaction(
+        conversationId,
+        messageId,
+      );
+      setReaction(existingReaction);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch existing reaction.");
+    } finally {
+      setIsReactionLoading(false);
+    }
+  };
+
+  const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
+    if (!messageId || !conversationId || !userId || !URL) return;
+
+    setReaction(newReaction);
+    setIsReactionPending(true);
+
+    try {
+      const api = new API({ url: URL, userId });
+      await api.addReaction(conversationId, messageId, newReaction);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to add reaction.");
+      setReaction(null);
+    } finally {
+      setIsReactionPending(false);
+    }
+  };
+
+  const handleFetchThought = async () => {
+    if (!messageId || !conversationId || !userId || !URL) return;
+
+    setIsThoughtLoading(true);
+    setError(null);
+
+    try {
+      const api = new API({ url: URL, userId });
+      const thought = await api.getThoughtById(conversationId, messageId);
+
+      if (thought) {
+        setIsThoughtsOpen(true);
+        setThought(thought);
+      } else {
+        setError("No thought found.");
+      }
+    } catch (err) {
+      setError("Failed to fetch thought.");
+      console.error(err);
+    } finally {
+      setIsThoughtLoading(false);
+    }
+  };
+
+>>>>>>> Stashed changes
   return (
     <article
       className={
@@ -40,8 +130,58 @@ export default function MessageBox({
         />
       )}
       <div className="flex flex-col gap-2 w-full">
+<<<<<<< Updated upstream
         {loading ? <Skeleton count={4} /> : children}
         {/* <Skeleton count={3} className="" /> */}
+=======
+        {loading ? (
+          <Skeleton count={4} />
+        ) : (
+          <div className="message-content">{text}</div>
+        )}
+        {!loading && !isUser && shouldShowButtons && (
+          <div className="flex justify-center gap-2 mt-2">
+            <button
+              className={`p-2 rounded-full ${
+                reaction === "thumbs_up"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 dark:bg-gray-700"
+              } ${isReactionPending ? "opacity-50" : ""}`}
+              onClick={() => handleReaction("thumbs_up")}
+              disabled={
+                reaction !== null || isReactionLoading || isReactionPending
+              }
+            >
+              <FaThumbsUp />
+            </button>
+            <button
+              className={`p-2 rounded-full ${
+                reaction === "thumbs_down"
+                  ? "bg-red-500 text-white"
+                  : "bg-gray-200 dark:bg-gray-700"
+              } ${isReactionPending ? "opacity-50" : ""}`}
+              onClick={() => handleReaction("thumbs_down")}
+              disabled={
+                reaction !== null || isReactionLoading || isReactionPending
+              }
+            >
+              <FaThumbsDown />
+            </button>
+            <button
+              className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
+              onClick={handleFetchThought}
+              disabled={isThoughtLoading}
+            >
+              <FaLightbulb />
+            </button>
+          </div>
+        )}
+        {isReactionPending && (
+          <p className="text-sm text-gray-500">Saving reaction...</p>
+        )}
+        {isThoughtLoading && <p>Loading thought...</p>}
+        {error && <p className="text-red-500">Error: {error}</p>}
+>>>>>>> Stashed changes
       </div>
     </article>
   );
