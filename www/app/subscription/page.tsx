@@ -3,25 +3,14 @@ import SubscriptionManager from '@/components/SubscriptionManager';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-import { checkSubscription } from "@/utils/stripe/actions";
+import { getSubscription, getProducts } from '@/utils/supabase/queries';
 
 export default async function SubscriptionPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // const checkSubscription = async () => {
-  //   const { data: { user } } = await supabase.auth.getUser();
-  //   if (user) {
-  //     const { data: subscription } = await supabase
-  //       .from('subscriptions')
-  //       .select('status')
-  //       .eq('user_id', user.id)
-  //       .single();
-  //     return subscription?.status
-  //   }
-  // };
-
-  const subStatus = await checkSubscription();
+  const subscription = await getSubscription(supabase);
+  const products = await getProducts(supabase);
 
   if (!user) {
     redirect('/auth');
@@ -31,8 +20,10 @@ export default async function SubscriptionPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">Manage Your Subscription</h1>
-      <SubscriptionManager subStatus={subStatus} />
-      <Link href="/"><button> Return Home</button></Link>
+      <SubscriptionManager subscription={subscription} products={products} />
+      <Link href="/">
+        <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50" > Return Home</button>
+      </Link>
     </div>
   );
 }

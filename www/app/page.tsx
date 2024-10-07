@@ -18,7 +18,8 @@ import { useRef, useEffect, useState, ElementRef } from "react";
 import { redirect } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
-import { checkSubscription } from "@/utils/stripe/actions";
+// import { checkSubscription } from "@/utils/stripe/actions";
+import { getSubscription } from "@/utils/supabase/queries";
 import { SubscriptionStatus } from "@/utils/types";
 
 import { API } from "@/utils/api";
@@ -75,8 +76,8 @@ export default function Home() {
       if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === "false") {
         setIsSubscribed(true);
       } else {
-        const sub = await checkSubscription();
-        setIsSubscribed(sub === SubscriptionStatus.SUBSCRIBED);
+        const sub = await getSubscription(supabase);
+        setIsSubscribed(!!sub);
       }
 
     })();

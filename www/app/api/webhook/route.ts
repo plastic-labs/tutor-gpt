@@ -1,7 +1,5 @@
-// import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
-// import { createAdminClient } from '@/utils/supabase/admin';
 import {
   upsertProductRecord,
   upsertPriceRecord,
@@ -24,48 +22,9 @@ const relevantEvents = new Set([
   'customer.subscription.deleted'
 ]);
 
-// const supabase = createAdminClient();
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
-
-// async function updateSubscriptionStatus(userId: string, customerId: string, newStatus: string) {
-//   try {
-//     // First, check if the subscription exists
-//     const { data: existingSubscription, error: fetchError } = await supabase
-//       .from('subscriptions')
-//       .select('*')
-//       .eq('user_id', userId)
-//       .eq('customer_id', customerId)
-//       .single()
-//
-//     if (fetchError) throw fetchError
-//
-//     if (!existingSubscription) {
-//       return false
-//     }
-//
-//     // If the subscription exists, update the status
-//     const { data, error: updateError } = await supabase
-//       .from('subscriptions')
-//       .update({
-//         status: newStatus,
-//         updated_at: new Date().toISOString()
-//       })
-//       .eq('user_id', userId)
-//       .eq('customer_id', customerId)
-//
-//     if (updateError) throw updateError
-//
-//     console.log('Subscription updated successfully')
-//     return true
-//
-//   } catch (error) {
-//     // console.error('Error updating subscription:', error.message)
-//     return false
-//   }
-// }
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -73,6 +32,7 @@ export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event: Stripe.Event;
+
 
   try {
     if (!signature || !webhookSecret) {
@@ -89,15 +49,17 @@ export async function POST(req: Request) {
     // return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
-  if (!relevantEvents.has(event.type)) {
+  if (relevantEvents.has(event.type)) {
     try {
       switch (event.type) {
         case 'product.created':
         case 'product.updated':
+          console.log("Product")
           await upsertProductRecord(event.data.object as Stripe.Product);
           break;
         case 'price.created':
         case 'price.updated':
+          console.log("Price")
           await upsertPriceRecord(event.data.object as Stripe.Price);
           break;
         case 'price.deleted':
@@ -116,18 +78,6 @@ export async function POST(req: Request) {
             event.type === 'customer.subscription.created'
           );
           break;
-        // case 'customer.subscription.created':
-        // case 'customer.subscription.updated':
-        //   const subscription = event.data.object as Stripe.Subscription;
-        //   const userId = subscription.metadata.userId;
-        //   await updateSubscriptionStatus(userId, subscription.customer, subscription.status)
-        //   break;
-        // case 'customer.subscription.deleted':
-        //   const deletedSubscription = event.data.object as Stripe.Subscription;
-        //   const deletedUserId = deletedSubscription.metadata.userId;
-        //
-        //   await updateSubscriptionStatus(deletedUserId, deletedSubscription.customer, deletedSubscription.status)
-        //   break;
         case 'checkout.session.completed':
           const checkoutSession = event.data.object as Stripe.Checkout.Session
           if (checkoutSession.mode === 'subscription') {
@@ -140,7 +90,7 @@ export async function POST(req: Request) {
           }
           break;
         default:
-          throw new Error(`Unhandled relevant event type ${event.type}`)
+          console.error(`Unhandled relevant event type ${event.type}`)
       }
     } catch (error) {
       console.log(error);
