@@ -13,17 +13,20 @@ export function CookieConsentBanner() {
   const acceptCookies = () => {
     setIsVisible(false);
     localStorage.setItem("cookieConsent", JSON.stringify(true));
+    // TODO: Log file or sentry record
     // onAccept();
   };
 
   const declineCookies = () => {
     setIsVisible(false);
     localStorage.setItem("cookieConsent", JSON.stringify(false));
+    // Log file or sentry record
     // onDecline();
   };
 
   const closeBanner = () => {
     setIsVisible(false);
+    // TODO: Log file or sentry record
     // onDecline();
   };
 
@@ -51,7 +54,11 @@ export function CookieConsentBanner() {
         </div>
         <p className="text-sm dark:text-white mb-4">
           {`We use cookies to enhance your browsing experience and analyze our
-          traffic. By clicking "Accept All" you consent to our use of cookies.`}
+          traffic. By clicking "Accept All" you consent to our use of cookies. `}
+          {/* TODO: Add cookie policy link routing
+            <a href="/cookie-policy" className="text-blue-500 hover:underline">
+            Cookie Policy
+          </a> */}
         </p>
         <div className="flex flex-row gap-2">
           <button

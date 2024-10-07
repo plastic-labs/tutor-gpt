@@ -43,7 +43,6 @@ export default function Home() {
   //const input = useRef<ElementRef<"input">>(null);
   const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<"section">>(null);
-  const [cookieConsent, setCookieConsent] = useState<boolean | null>(null);
 
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const toggleDarkMode = (checked: boolean) => {
@@ -123,16 +122,6 @@ export default function Home() {
     isLoading: messagesLoading,
     error: _,
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
-
-  const acceptCookies = () => {
-    setCookieConsent(true);
-    localStorage.setItem("cookieConsent", JSON.stringify(true));
-  };
-
-  const declineCookies = () => {
-    setCookieConsent(false);
-    localStorage.setItem("cookieConsent", JSON.stringify(false));
-  };
 
   async function chat() {
     const textbox = input.current!;
