@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import { useRouter } from 'next/navigation'
 
 import { createStripePortal } from '@/utils/stripe/actions';
@@ -12,41 +11,27 @@ type Subscription = Tables<'subscriptions'>;
 type Product = Tables<'products'>;
 type Price = Tables<'prices'>;
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
 interface Props {
   subscription: Subscription | null;
-  products: Product[];
+  products: any[] | null;
 }
 
 export default function SubscriptionManager({ subscription, products }: Props) {
   const [loading, setLoading] = useState(false);
 
+  const prices = products?.[0]?.prices ?? [];
+
   const router = useRouter()
-
-  console.log(products)
-
-  const handleSubscription = async () => {
-    setLoading(true);
-    try {
-      // TODO use price_ids based on a fixture
-      // const session = await createCheckoutSession("price_1PzJaKGhsOL14iteeuZBzLpg");
-      // const stripe = await stripePromise;
-      // await stripe?.redirectToCheckout({ sessionId: session.id });
-    } catch (error) {
-      console.error('Error:', error);
-    }
-    setLoading(false);
-  };
 
   const handleManage = async () => {
     setLoading(true);
     try {
-      const url: string = await createStripePortal();
-      // const stripe = await stripePromise;
-      console.log(url)
-      router.push(url);
-      // await stripe?.redirectToCheckout({ sessionId: session.id });
+      const url = await createStripePortal();
+
+      if (url) {
+        console.log(url)
+        router.push(url);
+      }
     } catch (error) {
       console.error('Error:', error);
     }
@@ -62,17 +47,16 @@ export default function SubscriptionManager({ subscription, products }: Props) {
       {subscription ?
         (
           <button
-            onClick={subscription ? handleManage : handleSubscription}
+            onClick={handleManage}
             disabled={loading}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
           >
-
-            {subscription ? 'Manage Subscription' : 'Subscribe Now'}
+            Manage Subscription
           </button>
         ) : (
           <div className="flex flex-row gap-3">
             {
-              products[0]?.prices.map((price: Price, idx: number) => (
+              prices.map((price: Price, idx: number) => (
                 <PriceCard key={idx} price={price} />
               ))
             }

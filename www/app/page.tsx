@@ -81,7 +81,7 @@ export default function Home() {
       }
 
     })();
-  }, [supabase]);
+  }, [supabase, posthog, userId]);
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;

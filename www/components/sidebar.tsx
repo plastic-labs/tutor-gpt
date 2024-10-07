@@ -1,7 +1,6 @@
 import { GrClose } from "react-icons/gr";
 import { Conversation, API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
-import Link from 'next/link';
 import { useRouter } from "next/navigation";
 
 import { usePostHog } from "posthog-js/react";
@@ -88,25 +87,6 @@ export default function Sidebar({
         }
       }
       mutateConversations(newConversations);
-      // setConversations((oldConversations: Conversation[]) => {
-      //   const newConversations = oldConversations.filter(
-      //     (cur) => cur.conversationId != conversation.conversationId
-      //   );
-      //   console.log("check type", Array.isArray(newConversations));
-
-      //   // If it was the currentConversation, change the currentConversation to the next one in the list
-      //   if (conversation == currentConversation) {
-      //     if (newConversations.length > 1) {
-      //       setCurrentConversation(newConversations[0]);
-      //     } else {
-      //       // If there is no current conversation create a new one
-      //       const newConv = await api?.new();
-      //       setCurrentConversation(newConv);
-      //       return [newConv];
-      //     }
-      //   }
-      //   return newConversations;
-      // });
     }
   }
 
