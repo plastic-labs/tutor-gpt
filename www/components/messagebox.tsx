@@ -39,30 +39,32 @@ export default function MessageBox({
   const [isReactionPending, setIsReactionPending] = useState<boolean>(false);
 
   const shouldShowButtons = messageId !== "";
+
   useEffect(() => {
     if (shouldShowButtons && !isUser) {
+      const fetchExistingReaction = async () => {
+        if (!messageId || !conversationId || !userId || !URL) return;
+
+        setIsReactionLoading(true);
+        try {
+          const api = new API({ url: URL, userId });
+          const { reaction: existingReaction } = await api.getReaction(
+            conversationId,
+            messageId,
+          );
+          setReaction(existingReaction);
+        } catch (err) {
+          console.error(err);
+          setError("Failed to fetch existing reaction.");
+        } finally {
+          setIsReactionLoading(false);
+        }
+      };
       fetchExistingReaction();
     }
-  }, [messageId, conversationId, userId, URL]);
+  }, [messageId, conversationId, userId, URL, isUser, shouldShowButtons]);
 
-  const fetchExistingReaction = async () => {
-    if (!messageId || !conversationId || !userId || !URL) return;
 
-    setIsReactionLoading(true);
-    try {
-      const api = new API({ url: URL, userId });
-      const { reaction: existingReaction } = await api.getReaction(
-        conversationId,
-        messageId,
-      );
-      setReaction(existingReaction);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch existing reaction.");
-    } finally {
-      setIsReactionLoading(false);
-    }
-  };
 
   const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
     if (!messageId || !conversationId || !userId || !URL) return;
@@ -131,8 +133,8 @@ export default function MessageBox({
           <div className="flex justify-center gap-2 mt-2">
             <button
               className={`p-2 rounded-full ${reaction === "thumbs_up"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-700"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
                 } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
               disabled={
@@ -143,8 +145,8 @@ export default function MessageBox({
             </button>
             <button
               className={`p-2 rounded-full ${reaction === "thumbs_down"
-                  ? "bg-red-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-700"
+                ? "bg-red-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
                 } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
               disabled={
