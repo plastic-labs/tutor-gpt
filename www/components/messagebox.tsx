@@ -1,50 +1,44 @@
-<<<<<<< Updated upstream
-=======
 import { useEffect, useState } from "react";
->>>>>>> Stashed changes
 import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
-<<<<<<< Updated upstream
-=======
 import { FaLightbulb, FaThumbsDown, FaThumbsUp } from "react-icons/fa";
 import { API } from "@/utils/api";
->>>>>>> Stashed changes
 
-interface MessageBoxRegularProps {
-  children: React.ReactNode;
-  isUser?: boolean;
-  loading?: false;
-}
-
-<<<<<<< Updated upstream
-interface MessageBoxLoadingProps {
-  children?: React.ReactNode;
-  isUser?: boolean;
-  loading: true;
-}
-
-// merge the two types
-type MessageBoxProps = MessageBoxRegularProps | MessageBoxLoadingProps;
-=======
 export type Reaction = "thumbs_up" | "thumbs_down" | null;
->>>>>>> Stashed changes
+
+interface MessageBoxProps {
+  isUser?: boolean;
+  userId?: string;
+  URL?: string;
+  messageId?: string;
+  conversationId?: string;
+  text: string;
+  loading?: boolean;
+  isThoughtsOpen?: boolean;
+  setIsThoughtsOpen: (isOpen: boolean) => void;
+  setThought: (thought: string) => void;
+}
 
 export default function MessageBox({
-  children,
   isUser,
-  loading,
+  userId,
+  URL,
+  messageId,
+  text,
+  loading = false,
+  setIsThoughtsOpen,
+  conversationId,
+  setThought,
 }: MessageBoxProps) {
-<<<<<<< Updated upstream
-=======
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const [isReactionLoading, setIsReactionLoading] = useState<boolean>(false);
   const [isReactionPending, setIsReactionPending] = useState<boolean>(false);
-  const shouldShowButtons = messageId !== "";
 
+  const shouldShowButtons = messageId !== "";
   useEffect(() => {
     if (shouldShowButtons && !isUser) {
       fetchExistingReaction();
@@ -87,7 +81,6 @@ export default function MessageBox({
       setIsReactionPending(false);
     }
   };
-
   const handleFetchThought = async () => {
     if (!messageId || !conversationId || !userId || !URL) return;
 
@@ -112,7 +105,6 @@ export default function MessageBox({
     }
   };
 
->>>>>>> Stashed changes
   return (
     <article
       className={
@@ -128,12 +120,8 @@ export default function MessageBox({
           alt="icon"
           className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
         />
-      )}
+      )}``
       <div className="flex flex-col gap-2 w-full">
-<<<<<<< Updated upstream
-        {loading ? <Skeleton count={4} /> : children}
-        {/* <Skeleton count={3} className="" /> */}
-=======
         {loading ? (
           <Skeleton count={4} />
         ) : (
@@ -142,11 +130,10 @@ export default function MessageBox({
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-center gap-2 mt-2">
             <button
-              className={`p-2 rounded-full ${
-                reaction === "thumbs_up"
+              className={`p-2 rounded-full ${reaction === "thumbs_up"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-200 dark:bg-gray-700"
-              } ${isReactionPending ? "opacity-50" : ""}`}
+                } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
               disabled={
                 reaction !== null || isReactionLoading || isReactionPending
@@ -155,11 +142,10 @@ export default function MessageBox({
               <FaThumbsUp />
             </button>
             <button
-              className={`p-2 rounded-full ${
-                reaction === "thumbs_down"
+              className={`p-2 rounded-full ${reaction === "thumbs_down"
                   ? "bg-red-500 text-white"
                   : "bg-gray-200 dark:bg-gray-700"
-              } ${isReactionPending ? "opacity-50" : ""}`}
+                } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
               disabled={
                 reaction !== null || isReactionLoading || isReactionPending
@@ -181,8 +167,7 @@ export default function MessageBox({
         )}
         {isThoughtLoading && <p>Loading thought...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
->>>>>>> Stashed changes
       </div>
-    </article>
+    </article >
   );
 }

@@ -3,11 +3,13 @@ import { Reaction } from "@/components/messagebox";
 const defaultMessage: Message = {
   text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
+  id: "",
 };
 
 export interface Message {
   text: string;
   isUser: boolean;
+  id: string;
 }
 
 export class Conversation {
@@ -35,7 +37,7 @@ export class Conversation {
       new URLSearchParams({
         conversation_id: this.conversationId,
         user_id: this.api.userId,
-      })
+      }),
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);
@@ -44,6 +46,7 @@ export class Conversation {
       return {
         text: rawMessage.data.content,
         isUser: rawMessage.type === "human",
+        id: rawMessage.id,
       };
     });
 
@@ -69,7 +72,7 @@ export class Conversation {
 
   async delete() {
     await fetch(
-      `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
+      `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`,
     ).then((res) => res.json());
   }
 
@@ -107,7 +110,7 @@ export class API {
 
   async new() {
     const req = await fetch(
-      `${this.url}/api/conversations/insert?user_id=${this.userId}`
+      `${this.url}/api/conversations/insert?user_id=${this.userId}`,
     );
     const { conversation_id } = await req.json();
     return new Conversation({
@@ -119,7 +122,7 @@ export class API {
 
   async getConversations() {
     const req = await fetch(
-      `${this.url}/api/conversations/get?user_id=${this.userId}`
+      `${this.url}/api/conversations/get?user_id=${this.userId}`,
     );
     const { conversations }: { conversations: RawConversation[] } =
       await req.json();
@@ -127,24 +130,23 @@ export class API {
     if (conversations.length === 0) {
       return [await this.new()];
     }
-    // console.log(conversations)
     return conversations.map(
       (conversation) =>
         new Conversation({
           api: this,
           name: conversation.name,
           conversationId: conversation.conversation_id,
-        })
+        }),
     );
   }
 
-  async getMessages(conversationId: string) {
+  async getMessagesByConversation(conversationId: string) {
     const req = await fetch(
       `${this.url}/api/messages?` +
       new URLSearchParams({
         conversation_id: conversationId,
         user_id: this.userId,
-      })
+      }),
     );
     const { messages: rawMessages } = await req.json();
     console.log(rawMessages);
@@ -153,13 +155,12 @@ export class API {
       return {
         text: rawMessage.content,
         isUser: rawMessage.isUser,
+        id: rawMessage.id,
       };
     });
 
     return [defaultMessage, ...messages];
   }
-<<<<<<< Updated upstream
-=======
 
   async getThoughtById(
     conversationId: string,
@@ -250,5 +251,4 @@ export class API {
       throw error;
     }
   }
->>>>>>> Stashed changes
 }
