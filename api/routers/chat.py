@@ -120,4 +120,3 @@ async def get_reaction(conversation_id: str, message_id: str, user_id: str):
         return {"reaction": existing_reaction.items[0].content}
     else:
         return {"reaction": None}
->>>>>>> Stashed changes
