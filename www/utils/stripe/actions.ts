@@ -62,7 +62,7 @@ export async function checkoutWithStripe(
           quantity: 1
         }
       ],
-      cancel_url: getURL(),
+      cancel_url: getURL(redirectPath),
       success_url: getURL(redirectPath)
     };
 
@@ -124,8 +124,7 @@ export async function checkoutWithStripe(
   }
 }
 
-// TODO 
-// export async function createStripePortal(currentPath: string) {
+// export async function createStripePortal(currentPath: string = '/subscription') {
 export async function createStripePortal() {
   try {
     const supabase = createClient();
@@ -159,9 +158,7 @@ export async function createStripePortal() {
     try {
       const { url } = await stripe.billingPortal.sessions.create({
         customer,
-        // TODO 
-        // return_url: getURL('/account')
-        return_url: `${process.env.NEXT_PUBLIC_URL}/subscription`,
+        return_url: getURL('/subscription'),
       });
       if (!url) {
         throw new Error('Could not create billing portal');

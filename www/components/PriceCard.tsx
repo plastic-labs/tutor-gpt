@@ -6,7 +6,7 @@ import { loadStripe } from '@stripe/stripe-js';
 
 import { checkoutWithStripe } from '@/utils/stripe/actions';
 import { useRouter, usePathname } from "next/navigation";
-import { getErrorRedirect } from '@/utils/helpers';
+// import { getErrorRedirect } from '@/utils/helpers';
 
 type Price = Tables<'prices'>;
 
@@ -29,13 +29,15 @@ export default function PriceCard({ price }: PriceCardProps) {
     }
 
     if (!sessionId) {
-      return router.push(
-        getErrorRedirect(
-          currentPath,
-          'An unknown error occurred',
-          'Please try again later or contact a system administrator',
-        )
-      )
+      console.error("Error")
+      return
+      // return router.push(
+      //   getErrorRedirect(
+      //     currentPath,
+      //     'An unknown error occurred',
+      //     'Please try again later or contact a system administrator',
+      //   )
+      // )
     }
 
     const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)

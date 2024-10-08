@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import banner from "@/public/bloom2x1.svg";
 import darkBanner from "@/public/bloom2x1dark.svg";
 import MessageBox from "@/components/messagebox";
-// import Thoughts from "@/components/thoughts";
 import Sidebar from "@/components/sidebar";
 import MarkdownWrapper from "@/components/markdownWrapper";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
@@ -18,9 +17,7 @@ import { useRef, useEffect, useState, ElementRef } from "react";
 import { redirect } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
-// import { checkSubscription } from "@/utils/stripe/actions";
 import { getSubscription } from "@/utils/supabase/queries";
-import { SubscriptionStatus } from "@/utils/types";
 
 import { API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
