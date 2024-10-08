@@ -1,28 +1,64 @@
+import { useState } from "react";
 import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
+import { FaLightbulb } from "react-icons/fa";
+import { API } from "@/utils/api";
 
-interface MessageBoxRegularProps {
-  children: React.ReactNode;
+interface MessageBoxProps {
   isUser?: boolean;
-  loading?: false;
+  userId?: string;
+  URL?: string;
+  messageId?: string;
+  conversationId?: string;
+  text: string;
+  loading?: boolean;
+  isThoughtsOpen?: boolean;
+  setIsThoughtsOpen: (isOpen: boolean) => void;
+  setThought: (thought: string) => void;
 }
-
-interface MessageBoxLoadingProps {
-  children?: React.ReactNode;
-  isUser?: boolean;
-  loading: true;
-}
-
-// merge the two types
-type MessageBoxProps = MessageBoxRegularProps | MessageBoxLoadingProps;
 
 export default function MessageBox({
-  children,
   isUser,
-  loading,
+  userId,
+  URL,
+  messageId,
+  text,
+  loading = false,
+  setIsThoughtsOpen,
+  conversationId,
+  setThought,
 }: MessageBoxProps) {
+  const [isThoughtLoading, setIsThoughtLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const shouldShowButtons = messageId !== "";
+
+  const handleFetchThought = async () => {
+    if (!messageId || !conversationId || !userId || !URL) return;
+
+    setIsThoughtLoading(true);
+    setError(null);
+
+    try {
+      const api = new API({ url: URL, userId });
+      const thought = await api.getThoughtById(conversationId, messageId);
+
+      if (thought) {
+        setIsThoughtsOpen(true);
+        setThought(thought);
+      } else {
+        setError("No thought found.");
+      }
+    } catch (err) {
+      setError("Failed to fetch thought.");
+      console.error(err);
+    } finally {
+      setIsThoughtLoading(false);
+    }
+  };
+
   return (
     <article
       className={
@@ -40,8 +76,30 @@ export default function MessageBox({
         />
       )}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? <Skeleton count={4} /> : children}
-        {/* <Skeleton count={3} className="" /> */}
+        {loading ? (
+          <Skeleton count={4} />
+        ) : (
+          <div className="message-content">{text}</div>
+        )}
+        {!loading && !isUser && shouldShowButtons && (
+          <div className="flex justify-left gap-2 mt-2">
+            {/* <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+              <FaThumbsUp />
+            </button>
+            <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+              <FaThumbsDown />
+            </button> */}
+            <button
+              className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
+              onClick={handleFetchThought}
+              disabled={isThoughtLoading}
+            >
+              <FaLightbulb />
+            </button>
+          </div>
+        )}
+        {isThoughtLoading && <p>Loading thought...</p>}
+        {error && <p className="text-red-500">Error: {error}</p>}
       </div>
     </article>
   );

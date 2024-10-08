@@ -29,11 +29,11 @@ const URL = process.env.NEXT_PUBLIC_API_URL;
 export default function Home() {
   const [userId, setUserId] = useState<string>();
 
-  const [isThoughtsOpen, setIsThoughtsOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isThoughtsOpen, setIsThoughtsOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
-  const [thought, setThought] = useState("");
-  const [canSend, setCanSend] = useState(false);
+  const [thought, setThought] = useState<string>("");
+  const [canSend, setCanSend] = useState<boolean>(false);
 
   const [conversationId, setConversationId] = useState<string>();
 
@@ -53,7 +53,10 @@ export default function Home() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       // Check for an error or no user
       if (!user || error) {
         await Swal.fire({
@@ -62,7 +65,7 @@ export default function Home() {
           icon: "warning",
           confirmButtonColor: "#3085d6",
           confirmButtonText: "Sign In",
-        })
+        });
         redirect("/auth");
       }
       setUserId(user.id);
@@ -80,6 +83,7 @@ export default function Home() {
     })();
   }, [supabase, posthog, userId]);
 
+
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
     if (!messageContainer) return;
@@ -87,7 +91,7 @@ export default function Home() {
     const func = () => {
       const val =
         Math.round(
-          messageContainer.scrollHeight - messageContainer.scrollTop
+          messageContainer.scrollHeight - messageContainer.scrollTop,
         ) === messageContainer.clientHeight;
       isAtBottom.current = val;
     };
@@ -121,7 +125,7 @@ export default function Home() {
     if (!conversationId) return Promise.resolve([]);
 
     const api = new API({ url: URL!, userId });
-    return api.getMessages(conversationId);
+    return api.getMessagesByConversation(conversationId);
   };
 
   const {
@@ -160,10 +164,12 @@ export default function Home() {
       {
         text: message,
         isUser: true,
+        id: "",
       },
       {
         text: "",
         isUser: false,
+        id: "",
       },
     ];
     mutateMessages(newMessages, { revalidate: false });
@@ -171,7 +177,6 @@ export default function Home() {
     // sleep for 1 second to give the user the illusion of typing
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // const reader = await currentConversation!.chat(message);
     const reader = await conversations!
       .find((conversation) => conversation.conversationId === conversationId)!
       .chat(message);
@@ -197,26 +202,15 @@ export default function Home() {
         if (value.includes("❀")) {
           // a bloom delimiter
           isThinking = false;
-          // setThought((prev) => prev + "\n" + value + "\n");
           continue;
         }
         console.log(value)
         setThought((prev) => prev + value);
-        // mutateMessages(newMessages, { revalidate: false });
       } else {
-        // if (value.includes("❀Response❀")) {
-        //   // a bloom delimiter
-        //   isThinking = true;
-        //   continue;
-        // }
         if (value.includes("❀")) {
           setCanSend(true); // Bloom delimeter
           continue;
         }
-        // setMessages((prev) => {
-        //   prev[prev.length - 1].text += value;
-        //   return [...prev];
-        // });
 
         currentModelOutput += value;
 
@@ -226,9 +220,10 @@ export default function Home() {
             {
               text: currentModelOutput,
               isUser: false,
+              id: "",
             },
           ],
-          { revalidate: false }
+          { revalidate: false },
         );
 
         if (isAtBottom.current) {
@@ -245,8 +240,9 @@ export default function Home() {
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? "dark" : ""
-        }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
+        isDarkMode ? "dark" : ""
+      }`}
     >
       <Sidebar
         conversations={conversations || []}
@@ -256,8 +252,8 @@ export default function Home() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         api={new API({ url: URL!, userId: userId! })}
+        // session={session}
         isSubscribed={isSubscribed}
-      // session={session}
       />
       <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
         <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
@@ -298,18 +294,29 @@ export default function Home() {
           className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
           ref={messageContainerRef}
         >
-          {
-            messagesLoading || messages === undefined ? (
-              <MessageBox loading />
-            ) : (
-              messages.map((message, i) => (
-                <MessageBox isUser={message.isUser} key={i}>
-                  <MarkdownWrapper text={message.text} />
-                </MessageBox>
-              ))
-            )
-          }
-        </section >
+          {messages?.map((message, i) => (
+            <MessageBox
+              key={i}
+              isUser={message.isUser}
+              userId={userId}
+              URL={URL}
+              messageId={message.id}
+              text={message.text}
+              loading={messagesLoading}
+              conversationId={conversationId}
+              setThought={setThought}
+              setIsThoughtsOpen={setIsThoughtsOpen}
+            />
+          )) || (
+            <MessageBox
+              isUser={false}
+              text=""
+              loading={true}
+              setThought={setThought}
+              setIsThoughtsOpen={setIsThoughtsOpen}
+            />
+          )}
+        </section>
         <form
           id="send"
           className="flex p-3 lg:p-5 gap-3 border-gray-300"
@@ -347,12 +354,12 @@ export default function Home() {
             <FaPaperPlane className="inline" />
           </button>
         </form>
-      </div >
+      </div>
       <Thoughts
         thought={thought}
         setIsThoughtsOpen={setIsThoughtsOpen}
         isThoughtsOpen={isThoughtsOpen}
       />
-    </main >
+    </main>
   );
 }
