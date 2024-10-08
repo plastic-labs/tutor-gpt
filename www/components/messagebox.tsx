@@ -128,7 +128,7 @@ export default function MessageBox({
           <div className="message-content">{text}</div>
         )}
         {!loading && !isUser && shouldShowButtons && (
-          <div className="flex justify-center gap-2 mt-2">
+          <div className="flex justify-start gap-2 mt-2">
             <button
               className={`p-2 rounded-full ${
                 reaction === "thumbs_up"
