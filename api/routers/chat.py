@@ -58,6 +58,14 @@ async def stream(
             user_id=user.id,
             content=response,
         )
+        honcho.apps.users.sessions.metamessages.create(
+            app_id=app.id,
+            session_id=str(inp.conversation_id),
+            user_id=user.id,
+            message_id=new_ai_message.id,
+            metamessage_type="thought",
+            content=thought,
+        )
     return StreamingResponse(convo_turn())
 
 @router.get("/thought/{message_id}")

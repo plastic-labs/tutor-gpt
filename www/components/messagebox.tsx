@@ -121,7 +121,6 @@ export default function MessageBox({
           className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
         />
       )}
-      ``
       <div className="flex flex-col gap-2 w-full">
         {loading ? (
           <Skeleton count={4} />
