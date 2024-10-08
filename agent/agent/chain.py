@@ -71,9 +71,15 @@ class ThinkCall(HonchoCall):
         )
         past_thoughts = {m.message_id: m.content for m in meta_iter.items}
         for message in iter.items[::-1]:
-            if message.is_user:
-                history_str += f"USER: {message.content}\n"
-                history_str += f"THOUGHT: {past_thoughts[message.id]}\n"
+            try:
+                if message.is_user:
+                    history_str += f"USER: {message.content}\n"
+                if message.id in past_thoughts:
+                    history_str += f"THOUGHT: {past_thoughts[message.id]}\n"
+            except AttributeError as e:
+                # Log the error and continue with the next message
+                print(f"Error processing message: {e}")
+                continue
         return history_str
 
     def stream(self):
