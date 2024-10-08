@@ -12,6 +12,7 @@ __pycache__/
 *.pyc
 *.pyo
 .python-version
+api/api.egg-info/*
 
 # Visual Studio Code
 .vscode/
