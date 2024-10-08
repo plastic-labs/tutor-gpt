@@ -64,8 +64,6 @@ export default function MessageBox({
     }
   }, [messageId, conversationId, userId, URL, isUser, shouldShowButtons]);
 
-
-
   const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
     if (!messageId || !conversationId || !userId || !URL) return;
 
@@ -122,7 +120,8 @@ export default function MessageBox({
           alt="icon"
           className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
         />
-      )}``
+      )}
+      ``
       <div className="flex flex-col gap-2 w-full">
         {loading ? (
           <Skeleton count={4} />
@@ -132,10 +131,11 @@ export default function MessageBox({
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-center gap-2 mt-2">
             <button
-              className={`p-2 rounded-full ${reaction === "thumbs_up"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 dark:bg-gray-700"
-                } ${isReactionPending ? "opacity-50" : ""}`}
+              className={`p-2 rounded-full ${
+                reaction === "thumbs_up"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 dark:bg-gray-700"
+              } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
               disabled={
                 reaction !== null || isReactionLoading || isReactionPending
@@ -144,10 +144,11 @@ export default function MessageBox({
               <FaThumbsUp />
             </button>
             <button
-              className={`p-2 rounded-full ${reaction === "thumbs_down"
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 dark:bg-gray-700"
-                } ${isReactionPending ? "opacity-50" : ""}`}
+              className={`p-2 rounded-full ${
+                reaction === "thumbs_down"
+                  ? "bg-red-500 text-white"
+                  : "bg-gray-200 dark:bg-gray-700"
+              } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
               disabled={
                 reaction !== null || isReactionLoading || isReactionPending
@@ -170,6 +171,6 @@ export default function MessageBox({
         {isThoughtLoading && <p>Loading thought...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
       </div>
-    </article >
+    </article>
   );
 }
