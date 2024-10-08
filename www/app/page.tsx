@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import banner from "@/public/bloom2x1.svg";
 import darkBanner from "@/public/bloom2x1dark.svg";
 import MessageBox from "@/components/messagebox";
-// import Thoughts from "@/components/thoughts";
 import Sidebar from "@/components/sidebar";
 import MarkdownWrapper from "@/components/markdownWrapper";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
@@ -17,6 +16,8 @@ import Swal from "sweetalert2";
 import { useRef, useEffect, useState, ElementRef } from "react";
 import { redirect } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
+
+import { getSubscription } from "@/utils/supabase/queries";
 
 import { API } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
@@ -48,6 +49,8 @@ export default function Home() {
     setIsDarkMode(checked);
   };
 
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
   useEffect(() => {
     (async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -65,8 +68,17 @@ export default function Home() {
       setUserId(user.id);
       setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
       posthog?.identify(userId, { email: user.email });
+
+      // Check subscription status
+      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === "false") {
+        setIsSubscribed(true);
+      } else {
+        const sub = await getSubscription(supabase);
+        setIsSubscribed(!!sub);
+      }
+
     })();
-  }, []);
+  }, [supabase, posthog, userId]);
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -120,6 +132,22 @@ export default function Home() {
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
 
   async function chat() {
+    if (!isSubscribed) {
+      Swal.fire({
+        title: "Subscription Required",
+        text: "Please subscribe to send messages.",
+        icon: "warning",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "Subscribe",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Redirect to subscription page
+          window.location.href = "/subscription";
+        }
+      });
+      return;
+    }
+
     const textbox = input.current!;
     // process message to have double newline for markdown
     const message = textbox.value.replace(/\n/g, "\n\n");
@@ -172,6 +200,7 @@ export default function Home() {
           // setThought((prev) => prev + "\n" + value + "\n");
           continue;
         }
+        console.log(value)
         setThought((prev) => prev + value);
         // mutateMessages(newMessages, { revalidate: false });
       } else {
@@ -227,6 +256,7 @@ export default function Home() {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         api={new API({ url: URL!, userId: userId! })}
+        isSubscribed={isSubscribed}
       // session={session}
       />
       <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
@@ -285,7 +315,7 @@ export default function Home() {
           className="flex p-3 lg:p-5 gap-3 border-gray-300"
           onSubmit={(e) => {
             e.preventDefault();
-            if (canSend && input.current?.value) {
+            if (canSend && input.current?.value && isSubscribed) {
               posthog.capture("user_sent_message");
               chat();
             }
@@ -294,14 +324,15 @@ export default function Home() {
           {/* TODO: validate input */}
           <textarea
             ref={input}
-            placeholder="Type a message..."
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend ? " border-green-200" : "border-red-200 opacity-50"
+            placeholder={isSubscribed ? "Type a message..." : "Subscribe to send messages"}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed ? "border-green-200" : "border-red-200 opacity-50"
               }`}
             rows={1}
+            disabled={!isSubscribed}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                if (canSend && input.current?.value) {
+                if (canSend && input.current?.value && isSubscribed) {
                   posthog.capture("user_sent_message");
                   chat();
                 }
@@ -311,7 +342,7 @@ export default function Home() {
           <button
             className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
             type="submit"
-            disabled={!canSend}
+            disabled={!canSend || !isSubscribed}
           >
             <FaPaperPlane className="inline" />
           </button>
