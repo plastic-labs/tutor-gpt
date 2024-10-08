@@ -54,9 +54,9 @@ export default function MarkdownWrapper({ text }: { text: string }) {
       // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
       rehypePlugins={[rehypeKatex]}
       components={{
-        ol: ({ node, ...props }) => <ol className="list-decimal pl-6 space-y-2" {...props} />,
-        ul: ({ node, ...props }) => <ul className="list-disc pl-6 space-y-2" {...props} />,
-        li: ({ node, ...props }) => <li className="ml-2" {...props} />,
+        ol: ({ node, ordered, ...props }) => <ol className="list-decimal pl-6 space-y-2" {...props} />,
+        ul: ({ node, ordered, ...props }) => <ul className="list-disc pl-6 space-y-2" {...props} />,
+        li: ({ node, ordered, ...props }) => <li className="ml-2" {...props} />,
         code({ node, inline, className, children, ...props }) {
           const match = /language-(\w+)/.exec(className || "");
           return !inline && match ? (
