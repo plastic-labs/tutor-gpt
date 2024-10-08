@@ -53,34 +53,34 @@ class ThinkCall(HonchoCall):
         return system[0]
 
     @property
-def history(self) -> str:
-    """Get the conversation history from Honcho"""
-    history_str = ""
-    iter = self.honcho.apps.users.sessions.messages.list(
-        session_id=self.session_id,
-        app_id=self.app_id,
-        user_id=self.user_id,
-        reverse=True,
-    )
-    meta_iter = self.honcho.apps.users.sessions.metamessages.list(
-        session_id=self.session_id,
-        app_id=self.app_id,
-        user_id=self.user_id,
-        metamessage_type="thought",
-        reverse=True,
-    )
-    past_thoughts = {m.message_id: m.content for m in meta_iter.items}
-    for message in iter.items[::-1]:
-        try:
-            if message.is_user:
-                history_str += f"USER: {message.content}\n"
-            if message.id in past_thoughts:
-                history_str += f"THOUGHT: {past_thoughts[message.id]}\n"
-        except AttributeError as e:
-            # Log the error and continue with the next message
-            print(f"Error processing message: {e}")
-            continue
-    return history_str
+    def history(self) -> str:
+        """Get the conversation history from Honcho"""
+        history_str = ""
+        iter = self.honcho.apps.users.sessions.messages.list(
+            session_id=self.session_id,
+            app_id=self.app_id,
+            user_id=self.user_id,
+            reverse=True,
+        )
+        meta_iter = self.honcho.apps.users.sessions.metamessages.list(
+            session_id=self.session_id,
+            app_id=self.app_id,
+            user_id=self.user_id,
+            metamessage_type="thought",
+            reverse=True,
+        )
+        past_thoughts = {m.message_id: m.content for m in meta_iter.items}
+        for message in iter.items[::-1]:
+            try:
+                if message.is_user:
+                    history_str += f"USER: {message.content}\n"
+                if message.id in past_thoughts:
+                    history_str += f"THOUGHT: {past_thoughts[message.id]}\n"
+            except AttributeError as e:
+                # Log the error and continue with the next message
+                print(f"Error processing message: {e}")
+                continue
+        return history_str
 
     def stream(self):
         completion = self.openai.chat.completions.create(
