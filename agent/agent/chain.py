@@ -1,5 +1,6 @@
 from os import getenv
 from typing import List
+from api.utils.retry_utils import perform_openai_operation
 
 from openai import AzureOpenAI
 from dotenv import load_dotenv
@@ -76,7 +77,7 @@ class ThinkCall(HonchoCall):
                 history_str += f"THOUGHT: {past_thoughts[message.id]}\n"
         return history_str
 
-    def stream(self):
+    def _stream(self):
         completion = self.openai.chat.completions.create(
             model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
             messages=[self.template(), {"role": "user", "content": self.user_input}],
@@ -85,6 +86,10 @@ class ThinkCall(HonchoCall):
         for chunk in completion:
             if len(chunk.choices) > 0:
                 yield chunk.choices[0].delta.content or ""
+
+    def stream(self):
+        def stream(self):
+                return perform_openai_operation(self._stream)
 
 
 class RespondCall(HonchoCall):
@@ -121,7 +126,7 @@ class RespondCall(HonchoCall):
                 history_list.append({"role": "assistant", "content": message.content})
         return history_list
 
-    def stream(self):
+    def _stream(self):
         completion = self.openai.chat.completions.create(
             model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
             messages=self.template(),
@@ -130,3 +135,6 @@ class RespondCall(HonchoCall):
         for chunk in completion:
             if len(chunk.choices) > 0:
                 yield chunk.choices[0].delta.content or ""
+
+    def stream(self):
+        return perform_openai_operation(self._stream)
