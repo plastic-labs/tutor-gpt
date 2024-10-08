@@ -26,8 +26,8 @@ async def stream(
         ).stream()
         thought = ""
         for chunk in thought_stream:
-            thought += chunk.content
-            yield chunk.content
+            thought += chunk
+            yield chunk
 
         yield "❀"
         response_stream = RespondCall(
@@ -40,8 +40,8 @@ async def stream(
         ).stream()
         response = ""
         for chunk in response_stream:
-            response += chunk.content
-            yield chunk.content
+            response += chunk
+            yield chunk
         yield "❀"
 
         honcho.apps.users.sessions.messages.create(

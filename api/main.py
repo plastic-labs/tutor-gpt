@@ -8,10 +8,15 @@ from api.routers import conversation, chat, messages
 
 load_dotenv()
 
-rate = 0.2 if os.getenv("SENTRY_ENVIRONMENT") == "production" else 1.0
-sentry_sdk.init(
-    dsn=os.environ["SENTRY_DSN_API"], traces_sample_rate=rate, profiles_sample_rate=rate
-)
+SENTRY_DSN = os.getenv("SENTRY_DN")
+
+if SENTRY_DSN:
+    rate = 0.2 if os.getenv("SENTRY_ENVIRONMENT") == "production" else 1.0
+    sentry_sdk.init(
+        dsn=os.environ["SENTRY_DSN_API"],
+        traces_sample_rate=rate,
+        profiles_sample_rate=rate,
+    )
 
 app = FastAPI()
 
