@@ -88,26 +88,27 @@ async def add_reaction(conversation_id: str, message_id: str, user_id: str, reac
 
     user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
 
-    # Check if a reaction already exists
-    existing_reaction = honcho.apps.users.sessions.metamessages.list(
-        session_id=conversation_id,
+    # Update the message metadata with the reaction
+    message = honcho.apps.users.sessions.messages.get(
         app_id=app.id,
+        session_id=conversation_id,
         user_id=user.id,
-        message_id=message_id,
-        metamessage_type="reaction"
+        message_id=message_id
     )
 
-    if existing_reaction.items:
-        return {"status": "Reaction already exists"}
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
 
-    # Create new reaction
-    honcho.apps.users.sessions.metamessages.create(
+    # Update the metadata
+    metadata = message.metadata or {}
+    metadata['reaction'] = reaction
+
+    honcho.apps.users.sessions.messages.update(
         app_id=app.id,
         session_id=conversation_id,
         user_id=user.id,
         message_id=message_id,
-        metamessage_type="reaction",
-        content=reaction
+        metadata=metadata
     )
 
     return {"status": "Reaction added successfully"}
@@ -116,15 +117,15 @@ async def add_reaction(conversation_id: str, message_id: str, user_id: str, reac
 async def get_reaction(conversation_id: str, message_id: str, user_id: str):
     user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
 
-    existing_reaction = honcho.apps.users.sessions.metamessages.list(
-        session_id=conversation_id,
+    message = honcho.apps.users.sessions.messages.get(
         app_id=app.id,
+        session_id=conversation_id,
         user_id=user.id,
-        message_id=message_id,
-        metamessage_type="reaction"
+        message_id=message_id
     )
 
-    if existing_reaction.items:
-        return {"reaction": existing_reaction.items[0].content}
-    else:
-        return {"reaction": None}
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    reaction = message.metadata.get('reaction') if message.metadata else None
+    return {"reaction": reaction}

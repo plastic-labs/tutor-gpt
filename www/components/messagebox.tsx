@@ -4,7 +4,7 @@ import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
 import { FaLightbulb, FaThumbsDown, FaThumbsUp } from "react-icons/fa";
-import { API } from "@/utils/api";
+import { API, type Message } from "@/utils/api";
 
 export type Reaction = "thumbs_up" | "thumbs_down" | null;
 
@@ -12,75 +12,52 @@ interface MessageBoxProps {
   isUser?: boolean;
   userId?: string;
   URL?: string;
-  messageId?: string;
   conversationId?: string;
-  text: string;
+  message: Message;
   loading?: boolean;
   isThoughtsOpen?: boolean;
   setIsThoughtsOpen: (isOpen: boolean) => void;
   setThought: (thought: string) => void;
+  onReactionAdded: (
+    messageId: string,
+    reaction: Exclude<Reaction, null>,
+  ) => Promise<void>;
 }
 
 export default function MessageBox({
   isUser,
   userId,
   URL,
-  messageId,
-  text,
+  message,
   loading = false,
   setIsThoughtsOpen,
   conversationId,
+  onReactionAdded,
   setThought,
 }: MessageBoxProps) {
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [reaction, setReaction] = useState<Reaction | null>(null);
-  const [isReactionLoading, setIsReactionLoading] = useState<boolean>(false);
   const [isReactionPending, setIsReactionPending] = useState<boolean>(false);
 
+  const { id: messageId, text, metadata } = message;
+  const reaction = metadata?.reaction || null;
   const shouldShowButtons = messageId !== "";
-
-  useEffect(() => {
-    if (shouldShowButtons && !isUser) {
-      const fetchExistingReaction = async () => {
-        if (!messageId || !conversationId || !userId || !URL) return;
-
-        setIsReactionLoading(true);
-        try {
-          const api = new API({ url: URL, userId });
-          const { reaction: existingReaction } = await api.getReaction(
-            conversationId,
-            messageId,
-          );
-          setReaction(existingReaction);
-        } catch (err) {
-          console.error(err);
-          setError("Failed to fetch existing reaction.");
-        } finally {
-          setIsReactionLoading(false);
-        }
-      };
-      fetchExistingReaction();
-    }
-  }, [messageId, conversationId, userId, URL, isUser, shouldShowButtons]);
 
   const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
     if (!messageId || !conversationId || !userId || !URL) return;
 
-    setReaction(newReaction);
     setIsReactionPending(true);
 
     try {
-      const api = new API({ url: URL, userId });
-      await api.addReaction(conversationId, messageId, newReaction);
+      await onReactionAdded(messageId, newReaction);
     } catch (err) {
       console.error(err);
       setError("Failed to add reaction.");
-      setReaction(null);
     } finally {
       setIsReactionPending(false);
     }
   };
+
   const handleFetchThought = async () => {
     if (!messageId || !conversationId || !userId || !URL) return;
 
@@ -136,9 +113,7 @@ export default function MessageBox({
                   : "bg-gray-200 dark:bg-gray-700"
               } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
-              disabled={
-                reaction !== null || isReactionLoading || isReactionPending
-              }
+              disabled={reaction !== null || isReactionPending}
             >
               <FaThumbsUp />
             </button>
@@ -149,9 +124,7 @@ export default function MessageBox({
                   : "bg-gray-200 dark:bg-gray-700"
               } ${isReactionPending ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
-              disabled={
-                reaction !== null || isReactionLoading || isReactionPending
-              }
+              disabled={reaction !== null || isReactionPending}
             >
               <FaThumbsDown />
             </button>

@@ -1,4 +1,4 @@
-import { Reaction } from "@/components/messagebox";
+import { type Reaction } from "@/components/messagebox";
 
 const defaultMessage: Message = {
   text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
@@ -10,6 +10,7 @@ export interface Message {
   text: string;
   isUser: boolean;
   id: string;
+  metadata?: { reaction?: Reaction };
 }
 
 export class Conversation {
@@ -34,10 +35,10 @@ export class Conversation {
   async getMessages() {
     const req = await fetch(
       `${this.api.url}/api/messages?` +
-      new URLSearchParams({
-        conversation_id: this.conversationId,
-        user_id: this.api.userId,
-      }),
+        new URLSearchParams({
+          conversation_id: this.conversationId,
+          user_id: this.api.userId,
+        }),
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);
@@ -143,10 +144,10 @@ export class API {
   async getMessagesByConversation(conversationId: string) {
     const req = await fetch(
       `${this.url}/api/messages?` +
-      new URLSearchParams({
-        conversation_id: conversationId,
-        user_id: this.userId,
-      }),
+        new URLSearchParams({
+          conversation_id: conversationId,
+          user_id: this.userId,
+        }),
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);
@@ -156,6 +157,7 @@ export class API {
         text: rawMessage.content,
         isUser: rawMessage.isUser,
         id: rawMessage.id,
+        metadata: rawMessage.metadata,
       };
     });
 
@@ -195,6 +197,7 @@ export class API {
     reaction: Exclude<Reaction, null>,
   ): Promise<{ status: string }> {
     try {
+      console.log(`making request`);
       const response = await fetch(
         `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}&reaction=${reaction}`,
         {
@@ -204,7 +207,7 @@ export class API {
           },
         },
       );
-
+      console.log(`recv'd`, response);
       if (!response.ok) {
         throw new Error("Failed to add reaction");
       }

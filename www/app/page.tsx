@@ -6,9 +6,6 @@ import dynamic from "next/dynamic";
 
 import banner from "@/public/bloom2x1.svg";
 import darkBanner from "@/public/bloom2x1dark.svg";
-import MessageBox from "@/components/messagebox";
-import Sidebar from "@/components/sidebar";
-import MarkdownWrapper from "@/components/markdownWrapper";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -20,9 +17,19 @@ import { usePostHog } from "posthog-js/react";
 import { getSubscription } from "@/utils/supabase/queries";
 
 import { API } from "@/utils/api";
+import { Message } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
+import { Reaction } from "@/components/messagebox";
 
-const Thoughts = dynamic(() => import("@/components/thoughts"));
+const Thoughts = dynamic(() => import("@/components/thoughts"), {
+  ssr: false,
+});
+const MessageBox = dynamic(() => import("@/components/messagebox"), {
+  ssr: false,
+});
+const Sidebar = dynamic(() => import("@/components/sidebar"), {
+  ssr: false,
+});
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -79,10 +86,8 @@ export default function Home() {
         const sub = await getSubscription(supabase);
         setIsSubscribed(!!sub);
       }
-
     })();
   }, [supabase, posthog, userId]);
-
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -134,6 +139,44 @@ export default function Home() {
     isLoading: messagesLoading,
     error: _,
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
+
+  const handleReactionAdded = async (
+    messageId: string,
+    reaction: Exclude<Reaction, null>,
+  ) => {
+    if (!userId || !conversationId) return;
+
+    const api = new API({ url: URL!, userId });
+
+    try {
+      await api.addReaction(conversationId, messageId, reaction);
+
+      // Optimistically update the local data
+      mutateMessages((currentMessages) => {
+        if (!currentMessages) return currentMessages;
+        return currentMessages.map((msg) => {
+          console.log(`msgs: ${JSON.stringify(currentMessages)}`);
+          if (msg.id === messageId) {
+            return {
+              ...msg,
+              metadata: {
+                ...msg.metadata,
+                reaction,
+              },
+            };
+          }
+          console.log(`after update: ${JSON.stringify(currentMessages)}`);
+          return msg;
+        });
+      }, false); // Set to false to avoid revalidation immediately
+
+      // Trigger a revalidation to ensure data consistency
+      mutateMessages();
+    } catch (error) {
+      console.error("Failed to add reaction:", error);
+      // Optionally, you can show an error message to the user
+    }
+  };
 
   async function chat() {
     if (!isSubscribed) {
@@ -204,7 +247,6 @@ export default function Home() {
           isThinking = false;
           continue;
         }
-        console.log(value)
         setThought((prev) => prev + value);
       } else {
         if (value.includes("❀")) {
@@ -300,20 +342,29 @@ export default function Home() {
               isUser={message.isUser}
               userId={userId}
               URL={URL}
-              messageId={message.id}
-              text={message.text}
+              message={message}
               loading={messagesLoading}
               conversationId={conversationId}
               setThought={setThought}
               setIsThoughtsOpen={setIsThoughtsOpen}
+              onReactionAdded={handleReactionAdded}
             />
           )) || (
             <MessageBox
               isUser={false}
-              text=""
+              message={{
+                text: "",
+                id: "",
+                isUser: false,
+                metadata: { reaction: null },
+              }}
               loading={true}
               setThought={setThought}
               setIsThoughtsOpen={setIsThoughtsOpen}
+              onReactionAdded={handleReactionAdded}
+              userId={userId}
+              URL={URL}
+              conversationId={conversationId}
             />
           )}
         </section>
@@ -331,9 +382,14 @@ export default function Home() {
           {/* TODO: validate input */}
           <textarea
             ref={input}
-            placeholder={isSubscribed ? "Type a message..." : "Subscribe to send messages"}
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed ? "border-green-200" : "border-red-200 opacity-50"
-              }`}
+            placeholder={
+              isSubscribed ? "Type a message..." : "Subscribe to send messages"
+            }
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+              canSend && isSubscribed
+                ? "border-green-200"
+                : "border-red-200 opacity-50"
+            }`}
             rows={1}
             disabled={!isSubscribed}
             onKeyDown={(e) => {
