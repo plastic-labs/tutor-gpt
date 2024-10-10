@@ -10,21 +10,21 @@ interface MessageBoxProps {
   isUser?: boolean;
   userId?: string;
   URL?: string;
-  messageId?: string;
   conversationId?: string;
-  text: string;
+  message: { text: string; id: string };
   loading?: boolean;
   isThoughtsOpen?: boolean;
   setIsThoughtsOpen: (isOpen: boolean) => void;
   setThought: (thought: string) => void;
 }
 
+export type Reaction = "thumbs_up" | "thumbs_down" | null;
+
 export default function MessageBox({
   isUser,
   userId,
   URL,
-  messageId,
-  text,
+  message,
   loading = false,
   setIsThoughtsOpen,
   conversationId,
@@ -32,7 +32,7 @@ export default function MessageBox({
 }: MessageBoxProps) {
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const { id: messageId, text } = message;
   const shouldShowButtons = messageId !== "";
 
   const handleFetchThought = async () => {

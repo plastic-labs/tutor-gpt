@@ -1,4 +1,4 @@
-import { Reaction } from "@/components/messagebox";
+import { type Reaction } from "@/components/messagebox";
 import { retryDBOperation, retryOpenAIOperation } from "./retryUtils";
 
 const defaultMessage: Message = {
