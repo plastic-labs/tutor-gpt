@@ -1,6 +1,5 @@
 from os import getenv
 from typing import List
-from api.utils.retry_utils import perform_openai_operation
 
 from openai import AzureOpenAI
 from dotenv import load_dotenv
@@ -45,7 +44,7 @@ class ThinkCall(HonchoCall):
         system = (
             {
                 "role": "system",
-                "content": f"""You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user’s mental state.
+                "content": f"""You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user's mental state.
     Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction
     previous commentary: {self.history}""",
             },
@@ -83,7 +82,7 @@ class ThinkCall(HonchoCall):
                 continue
         return history_str
 
-    def _stream(self):
+    def stream(self):
         completion = self.openai.chat.completions.create(
             model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
             messages=[self.template(), {"role": "user", "content": self.user_input}],
@@ -92,10 +91,6 @@ class ThinkCall(HonchoCall):
         for chunk in completion:
             if len(chunk.choices) > 0:
                 yield chunk.choices[0].delta.content or ""
-
-    def stream(self):
-        def stream(self):
-                return perform_openai_operation(self._stream)
 
 
 class RespondCall(HonchoCall):
@@ -132,7 +127,7 @@ class RespondCall(HonchoCall):
                 history_list.append({"role": "assistant", "content": message.content})
         return history_list
 
-    def _stream(self):
+    def stream(self):
         completion = self.openai.chat.completions.create(
             model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
             messages=self.template(),
@@ -141,6 +136,3 @@ class RespondCall(HonchoCall):
         for chunk in completion:
             if len(chunk.choices) > 0:
                 yield chunk.choices[0].delta.content or ""
-
-    def stream(self):
-        return perform_openai_operation(self._stream)
