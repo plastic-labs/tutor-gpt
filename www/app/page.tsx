@@ -1,28 +1,28 @@
-"use client";
-import Image from "next/image";
-import useSWR from "swr";
+'use client';
+import Image from 'next/image';
+import useSWR from 'swr';
 
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 
-import banner from "@/public/bloom2x1.svg";
-import darkBanner from "@/public/bloom2x1dark.svg";
-import MessageBox from "@/components/messagebox";
-import Sidebar from "@/components/sidebar";
-import MarkdownWrapper from "@/components/markdownWrapper";
-import { DarkModeSwitch } from "react-toggle-dark-mode";
-import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
-import Swal from "sweetalert2";
+import banner from '@/public/bloom2x1.svg';
+import darkBanner from '@/public/bloom2x1dark.svg';
+import MessageBox from '@/components/messagebox';
+import Sidebar from '@/components/sidebar';
+import MarkdownWrapper from '@/components/markdownWrapper';
+import { DarkModeSwitch } from 'react-toggle-dark-mode';
+import { FaLightbulb, FaPaperPlane, FaBars } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
-import { useRef, useEffect, useState, ElementRef } from "react";
-import { redirect } from "next/navigation";
-import { usePostHog } from "posthog-js/react";
+import { useRef, useEffect, useState, ElementRef } from 'react';
+import { redirect } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
 
-import { getSubscription } from "@/utils/supabase/queries";
+import { getSubscription } from '@/utils/supabase/queries';
 
-import { API } from "@/utils/api";
-import { createClient } from "@/utils/supabase/client";
+import { API } from '@/utils/api';
+import { createClient } from '@/utils/supabase/client';
 
-const Thoughts = dynamic(() => import("@/components/thoughts"));
+const Thoughts = dynamic(() => import('@/components/thoughts'));
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -32,17 +32,17 @@ export default function Home() {
   const [isThoughtsOpen, setIsThoughtsOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
-  const [thought, setThought] = useState<string>("");
+  const [thought, setThought] = useState<string>('');
   const [canSend, setCanSend] = useState<boolean>(false);
 
   const [conversationId, setConversationId] = useState<string>();
 
   const supabase = createClient();
   const posthog = usePostHog();
-  const input = useRef<ElementRef<"textarea">>(null);
+  const input = useRef<ElementRef<'textarea'>>(null);
   //const input = useRef<ElementRef<"input">>(null);
   const isAtBottom = useRef(true);
-  const messageContainerRef = useRef<ElementRef<"section">>(null);
+  const messageContainerRef = useRef<ElementRef<'section'>>(null);
 
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const toggleDarkMode = (checked: boolean) => {
@@ -60,29 +60,27 @@ export default function Home() {
       // Check for an error or no user
       if (!user || error) {
         await Swal.fire({
-          title: "Notice: Bloombot now requires signing in for usage",
-          text: "Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom",
-          icon: "warning",
-          confirmButtonColor: "#3085d6",
-          confirmButtonText: "Sign In",
+          title: 'Notice: Bloombot now requires signing in for usage',
+          text: 'Due to surging demand for Bloom we are requiring users to stay signed in to user Bloom',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Sign In',
         });
-        redirect("/auth");
+        redirect('/auth');
       }
       setUserId(user.id);
-      setIsDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
+      setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
       posthog?.identify(userId, { email: user.email });
 
       // Check subscription status
-      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === "false") {
+      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
         setIsSubscribed(true);
       } else {
         const sub = await getSubscription(supabase);
         setIsSubscribed(!!sub);
       }
-
     })();
   }, [supabase, posthog, userId]);
-
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -91,15 +89,15 @@ export default function Home() {
     const func = () => {
       const val =
         Math.round(
-          messageContainer.scrollHeight - messageContainer.scrollTop,
+          messageContainer.scrollHeight - messageContainer.scrollTop
         ) === messageContainer.clientHeight;
       isAtBottom.current = val;
     };
 
-    messageContainer.addEventListener("scroll", func);
+    messageContainer.addEventListener('scroll', func);
 
     return () => {
-      messageContainer.removeEventListener("scroll", func);
+      messageContainer.removeEventListener('scroll', func);
     };
   }, []);
 
@@ -138,15 +136,15 @@ export default function Home() {
   async function chat() {
     if (!isSubscribed) {
       Swal.fire({
-        title: "Subscription Required",
-        text: "Please subscribe to send messages.",
-        icon: "warning",
-        confirmButtonColor: "#3085d6",
-        confirmButtonText: "Subscribe",
+        title: 'Subscription Required',
+        text: 'Please subscribe to send messages.',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Subscribe',
       }).then((result) => {
         if (result.isConfirmed) {
           // Redirect to subscription page
-          window.location.href = "/subscription";
+          window.location.href = '/subscription';
         }
       });
       return;
@@ -154,8 +152,8 @@ export default function Home() {
 
     const textbox = input.current!;
     // process message to have double newline for markdown
-    const message = textbox.value.replace(/\n/g, "\n\n");
-    textbox.value = "";
+    const message = textbox.value.replace(/\n/g, '\n\n');
+    textbox.value = '';
 
     setCanSend(false); // Disable sending more messages until the current generation is done
 
@@ -164,12 +162,12 @@ export default function Home() {
       {
         text: message,
         isUser: true,
-        id: "",
+        id: '',
       },
       {
-        text: "",
+        text: '',
         isUser: false,
-        id: "",
+        id: '',
       },
     ];
     mutateMessages(newMessages, { revalidate: false });
@@ -187,9 +185,9 @@ export default function Home() {
     }
 
     let isThinking = true;
-    setThought("");
+    setThought('');
 
-    let currentModelOutput = "";
+    let currentModelOutput = '';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -199,15 +197,15 @@ export default function Home() {
         break;
       }
       if (isThinking) {
-        if (value.includes("❀")) {
+        if (value.includes('❀')) {
           // a bloom delimiter
           isThinking = false;
           continue;
         }
-        console.log(value)
+        console.log(value);
         setThought((prev) => prev + value);
       } else {
-        if (value.includes("❀")) {
+        if (value.includes('❀')) {
           setCanSend(true); // Bloom delimeter
           continue;
         }
@@ -220,10 +218,10 @@ export default function Home() {
             {
               text: currentModelOutput,
               isUser: false,
-              id: "",
+              id: '',
             },
           ],
-          { revalidate: false },
+          { revalidate: false }
         );
 
         if (isAtBottom.current) {
@@ -240,9 +238,8 @@ export default function Home() {
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
-        isDarkMode ? "dark" : ""
-      }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? 'dark' : ''
+        }`}
     >
       <Sidebar
         conversations={conversations || []}
@@ -308,14 +305,14 @@ export default function Home() {
               setIsThoughtsOpen={setIsThoughtsOpen}
             />
           )) || (
-            <MessageBox
-              isUser={false}
-              text=""
-              loading={true}
-              setThought={setThought}
-              setIsThoughtsOpen={setIsThoughtsOpen}
-            />
-          )}
+              <MessageBox
+                isUser={false}
+                text=""
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+              />
+            )}
         </section>
         <form
           id="send"
@@ -323,7 +320,7 @@ export default function Home() {
           onSubmit={(e) => {
             e.preventDefault();
             if (canSend && input.current?.value && isSubscribed) {
-              posthog.capture("user_sent_message");
+              posthog.capture('user_sent_message');
               chat();
             }
           }}
@@ -331,16 +328,20 @@ export default function Home() {
           {/* TODO: validate input */}
           <textarea
             ref={input}
-            placeholder={isSubscribed ? "Type a message..." : "Subscribe to send messages"}
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed ? "border-green-200" : "border-red-200 opacity-50"
+            placeholder={
+              isSubscribed ? 'Type a message...' : 'Subscribe to send messages'
+            }
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
+              ? 'border-green-200'
+              : 'border-red-200 opacity-50'
               }`}
             rows={1}
             disabled={!isSubscribed}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 if (canSend && input.current?.value && isSubscribed) {
-                  posthog.capture("user_sent_message");
+                  posthog.capture('user_sent_message');
                   chat();
                 }
               }
