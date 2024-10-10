@@ -1,7 +1,7 @@
 // import MillionLint from '@million/lint';
 import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
-  // output: "standalone"
+  output: "standalone",
   //  rewrites: async () => {
   //    return [
   //      {

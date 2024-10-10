@@ -1,25 +1,74 @@
 # Tutor-GPT Web UI
 
-This directory contains the code for the web-ui of Tutor-GPT. It is developed
+This directory contains the code for the Web-UI of Tutor-GPT. It is developed
 using [Next.js](https://nextjs.org/) and [pnpm](https://pnpm.io).
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+The project uses [Supabase](https://supabase.com/) for authentication and managing users subscriptions
+with [stripe](https://stripe.com/)
 
-## Getting Started
+## Installation
 
-First, run the development server:
+Clone the repo and install the necessary NodeJS depenencies
 
 ```bash
-pnpm dev
+git clone https://github.com/plastic-labs/tutor-gpt.git && cd tutor-gpt/www
+pnpm install
+```
+
+Set up your [environment variables](#environment-variables) in a `.env.local`
+file. Then launch the development server.
+
+```bash
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Environment Variables
+
+This section goes over the various environment variables necessary to run the
+Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
+
+**Core**
+
+- `NEXT_PUBLIC_URL` — The URL that the Next.js application will run from. For
+  local development it will be `http://localhost:3000` by default.
+- `NEXT_PUBLIC_API_URL` — The URL that the FastAPI backend is running from.
+
+**Supabase**
+
+- `NEXT_PUBLIC_SUPABASE_URL` — The URL for your Supabase project.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — The public API key for your Supabase project.
+- `SUPABASE_SERVICE_ROLE_KEY` — The service key for the Supabase project.
+
+**Stripe**
+
+- `NEXT_PUBLIC_STRIPE_ENABLED` — A feature flag to enable or disable stripe. By
+  default, it is `false`
+- `STRIPE_SECRET_KEY` — The stripe secret key
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — The stripe public key
+- `STRIPE_WEBHOOK_SECRET` — The stripe webhook secret
+
+Below are several optional environment variables to enable error monitoring and
+analytics.
+
+**Sentry**
+
+- `NEXT_PUBLIC_SENTRY_DSN` — The Sentry DSN
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT` — The Sentry environment
+
+**Posthog**
+
+- `NEXT_PUBLIC_POSTHOG_KEY` — The Posthog project key
+- `NEXT_PUBLIC_POSTHOG_HOST` — The Posthog host
+
+## Supabase
+
 ### Supabase
 
-Additionally, this project uses supabase for managing different users,
-authentication, and as the database for holding message and conversation
-information. We recommend for testing and local development to use a local instance of supabase. The supabase-cli is the best way to do this.
+This project uses supabase for managing authentication and keeping track of
+stripe subscriptions.We recommend for testing and local development to use a
+local instance of supabase. The supabase-cli is the best way to do this.
 
 Follow the [Supabase Documentation](https://supabase.com/docs/guides/cli/local-development) for more information. The project contains a `supabase/` folder that contains the scaffolding SQL migrations necessary for setting up the necessary tables. Once you have the supabase cli installed you can simply run the below command in the `tutor-gpt` folder and a local instance of Supabase will start up.
 
@@ -33,15 +82,13 @@ Another, useful note about doing testing locally with supabase is that there is
 no need to verify an account when it is created so you can create a new account
 on the webui and then immediately sign in with it.
 
-## Supabase Setup
+### Authentication
 
 This application uses the new [Supabase SSR](https://supabase.com/docs/guides/auth/server-side) features and the PKCE authentication flow. So there are a
 few setup steps required before the app works with Supabase.
 
 The main change is that the email templates for authentication need to be
 modified to perform the token exchange
-
-### Email Templates
 
 Confirm Signup
 
@@ -121,15 +168,11 @@ Reset Password
 
 ## Docker
 
-## Environment Variables
+A `Dockerfile` is included for convenience in self hosting an local development.
+to build and run the image run the following commands
 
-The `NextJS` application in `www/` also has it's own environment variables which are usually held in the .env.local file. There is another `.env.template` file that you can use for getting started. These are explaing below.
-
-- **NEXT_PUBLIC_URL**: The url the web application will be accessible the default with `NextJS` is http://localhost:3000
-- **NEXT_PUBLIC_API_URL**: The url the api backend will be run from the default for `FastAPI is` http://localhost:8000
-- **NEXT_PUBLIC_SUPABASE_URL**: The url for your supabase project should be identical to the one used in the python backend
-- **NEXT_PUBLIC_SUPABASE_ANON_KEY**: The API key for supabase this time it is the anon key NOT the service key
-- **NEXT_PUBLIC_SENTRY_DSN**: Optional for sentry bug tracking
-- **NEXT_PUBLIC_SENTRY_ENVIRONMENT**: Optional for sentry bug tracking
-- **NEXT_PUBLIC_POSTHOG_KEY**: Optional Posthog event tracking
-- **NEXT_PUBLIC_POSTHOG_HOST**: Option for Posthog event tracking
+```bash
+cd tutor-gpt/www
+docker build -t tutor-gpt-web .
+docker run --env-file .env.local -p 3000:3000 tutor-gpt-web
+```

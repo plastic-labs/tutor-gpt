@@ -1,7 +1,7 @@
 from os import getenv
 from typing import List
 
-from openai import AzureOpenAI
+from openai import AzureOpenAI, completions
 from dotenv import load_dotenv
 
 from honcho import Honcho
@@ -82,6 +82,13 @@ class ThinkCall(HonchoCall):
                 continue
         return history_str
 
+    def call(self):
+        response = self.openai.chat.completions.create(
+            model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
+            messages=[self.template(), {"role": "user", "content": self.user_input}],
+        )
+        return response.choices[0].message
+
     def stream(self):
         completion = self.openai.chat.completions.create(
             model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
@@ -126,6 +133,13 @@ class RespondCall(HonchoCall):
             else:
                 history_list.append({"role": "assistant", "content": message.content})
         return history_list
+
+    def call(self):
+        response = self.openai.chat.completions.create(
+            model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
+            messages=self.template(),
+        )
+        return response.choices[0].message
 
     def stream(self):
         completion = self.openai.chat.completions.create(
