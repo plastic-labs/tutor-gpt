@@ -1,3 +1,8 @@
+# Tutor-GPT Web UI
+
+This directory contains the code for the web-ui of Tutor-GPT. It is developed
+using [Next.js](https://nextjs.org/) and [pnpm](https://pnpm.io).
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
@@ -5,33 +10,28 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 First, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Additionally, this project uses supabase for managing different users,
+authentication, and as the database for holding message and conversation
+information. We recommend for testing and local development to use a local instance of supabase. The supabase-cli is the best way to do this.
 
-## Learn More
+Follow the [Supabase Documentation](https://supabase.com/docs/guides/cli/local-development) for more information. The project contains a `supabase/` folder that contains the scaffolding SQL migrations necessary for setting up the necessary tables. Once you have the supabase cli installed you can simply run the below command in the `tutor-gpt` folder and a local instance of Supabase will start up.
 
-To learn more about Next.js, take a look at the following resources:
+> NOTE: Local Supabase relies on docker so ensure docker is also running before running the below command
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+supabase start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Another, useful note about doing testing locally with supabase is that there is
+no need to verify an account when it is created so you can create a new account
+on the webui and then immediately sign in with it.
 
 ## Supabase Setup
 
@@ -119,8 +119,17 @@ Reset Password
 </p>
 ```
 
-```
+## Docker
 
+## Environment Variables
 
+The `NextJS` application in `www/` also has it's own environment variables which are usually held in the .env.local file. There is another `.env.template` file that you can use for getting started. These are explaing below.
 
-```
+- **NEXT_PUBLIC_URL**: The url the web application will be accessible the default with `NextJS` is http://localhost:3000
+- **NEXT_PUBLIC_API_URL**: The url the api backend will be run from the default for `FastAPI is` http://localhost:8000
+- **NEXT_PUBLIC_SUPABASE_URL**: The url for your supabase project should be identical to the one used in the python backend
+- **NEXT_PUBLIC_SUPABASE_ANON_KEY**: The API key for supabase this time it is the anon key NOT the service key
+- **NEXT_PUBLIC_SENTRY_DSN**: Optional for sentry bug tracking
+- **NEXT_PUBLIC_SENTRY_ENVIRONMENT**: Optional for sentry bug tracking
+- **NEXT_PUBLIC_POSTHOG_KEY**: Optional Posthog event tracking
+- **NEXT_PUBLIC_POSTHOG_HOST**: Option for Posthog event tracking

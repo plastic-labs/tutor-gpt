@@ -1,4 +1,4 @@
-# tutor-gpt
+# Tutor-GPT
 
 ![Static Badge](https://img.shields.io/badge/Version-0.6.0-blue)
 [![Discord](https://img.shields.io/discord/1076192451997474938?logo=discord&logoColor=%23ffffff&label=Bloom&labelColor=%235865F2)](https://discord.gg/bloombotai)
@@ -7,7 +7,7 @@
 [![X (formerly Twitter) URL](https://img.shields.io/twitter/url?url=https%3A%2F%2Ftwitter.com%2FBloomBotAI&label=Twitter)](https://twitter.com/BloomBotAI)
 [![arXiv](https://img.shields.io/badge/arXiv-2310.06983-b31b1b.svg)](https://arxiv.org/abs/2310.06983)
 
-Tutor-GPT is a LangChain LLM application developed by [Plastic
+Tutor-GPT is a LLM application developed by [Plastic
 Labs](https://plasticlabs.ai). It dynamically reasons about your learning needs
 and _updates its own prompts_ to best serve you.
 
@@ -16,10 +16,7 @@ literacy tutor, it’s an expansive learning companion. Read more about how it
 works [here](https://blog.plasticlabs.ai/blog/Theory-of-Mind-Is-All-You-Need).
 
 The hosted version of `tutor-gpt` is called [Bloom](https://bloombot.ai) as a
-nod to Benjamin Bloom's Two Sigma Problem. You can try the web version at
-[chat.bloombot.ai](https://chat.bloombot.ai) or you can join our
-[Discord](https://discord.gg/bloombotai) to try out our implementation for free
-(while our OpenAI spend lasts 😄).
+nod to Benjamin Bloom's Two Sigma Problem.
 
 Alternatively, you can run your own instance of the bot by following the
 instructions below.
@@ -37,26 +34,13 @@ the backend logic for different clients.
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
 
 Most of the project is developed using python with the exception of the NextJS
-application. For python `poetry` is used for dependency management and for the
-web interface `yarn` is used.
+application. For python [`uv`](https://docs.astral.sh/uv/) is used for dependency management and for the
+web interface `pnpm` is used.
 
-### Supabase
-
-Additionally, this project uses supabase for managing different users,
-authentication, and as the database for holding message and conversation
-information. We recommend for testing and local development to use a local instance of supabase. The supabase-cli is the best way to do this.
-
-Follow the [Supabase Documentation](https://supabase.com/docs/guides/cli/local-development) for more information. The project contains a `supabase/` folder that contains the scaffolding SQL migrations necessary for setting up the necessary tables. Once you have the supabase cli installed you can simply run the below command in the `tutor-gpt` folder and a local instance of Supabase will start up.
-
-> NOTE: Local Supabase relies on docker so ensure docker is also running before running the below command
-
-```bash
-supabase start
-```
-
-Another, useful note about doing testing locally with supabase is that there is
-no need to verify an account when it is created so you can create a new account
-on the webui and then immediately sign in with it.
+> NOTE
+> More information about the web interface is available in
+> [www/README](./www/README.md) this README primarily contains information about
+> the backend of tutor-gpt and the core logic of the tutor
 
 ## Installation
 
@@ -156,21 +140,6 @@ below
 ### Web Only
 
 - **URL**: the URL that the web ui is running from by default this should be http://localhost:3000
-
-### Web UI Environment
-
-The `NextJS` application in `www/` also has it's own environment variables which are usually held in the .env.local file. There is another `.env.template` file that you can use for getting started. These are explaing below.
-
-- **NEXT_PUBLIC_URL**: The url the web application will be accessible the default with `NextJS` is http://localhost:3000
-- **NEXT_PUBLIC_API_URL**: The url the api backend will be run from the default for `FastAPI is` http://localhost:8000
-- **NEXT_PUBLIC_SUPABASE_URL**: The url for your supabase project should be identical to the one used in the python backend
-- **NEXT_PUBLIC_SUPABASE_ANON_KEY**: The API key for supabase this time it is the anon key NOT the service key
-- **NEXT_PUBLIC_SENTRY_DSN**: Optional for sentry bug tracking
-- **NEXT_PUBLIC_SENTRY_ENVIRONMENT**: Optional for sentry bug tracking
-- **NEXT_PUBLIC_POSTHOG_KEY**: Optional Posthog event tracking
-- **NEXT_PUBLIC_POSTHOG_HOST**: Option for Posthog event tracking
-
----
 
 ### Docker/Containerization
 
