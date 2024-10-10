@@ -1,18 +1,21 @@
 // app/providers.tsx
-'use client'
-import posthog from 'posthog-js'
-import { PostHogProvider } from 'posthog-js/react'
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+'use client';
+import posthog from 'posthog-js';
+import { PostHogProvider } from 'posthog-js/react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
-const posthogKey: string = process.env.NEXT_PUBLIC_POSTHOG_KEY || ""
-const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || ""
+const posthogKey: string = process.env.NEXT_PUBLIC_POSTHOG_KEY || '';
+const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || '';
 
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_URL != "http://localhost:3000") {
+if (
+  typeof window !== 'undefined' &&
+  process.env.NEXT_PUBLIC_URL != 'http://localhost:3000'
+) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
-    capture_pageview: false // Disable automatic pageview capture, as we capture manually
-  })
+    capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+  });
 }
 
 export function PostHogPageview(): JSX.Element {
@@ -25,7 +28,7 @@ export function PostHogPageview(): JSX.Element {
       if (searchParams && searchParams.toString()) {
         url = url + `?${searchParams.toString()}`;
       }
-      posthog.capture("$pageview", {
+      posthog.capture('$pageview', {
         $current_url: url,
       });
     }
@@ -34,10 +37,6 @@ export function PostHogPageview(): JSX.Element {
   return <></>;
 }
 
-export function PHProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return <PostHogProvider client={posthog}>{children}</PostHogProvider>
+export function PHProvider({ children }: { children: React.ReactNode }) {
+  return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
 }

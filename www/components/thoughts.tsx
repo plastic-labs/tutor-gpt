@@ -1,21 +1,28 @@
-import { GrClose } from "react-icons/gr";
-import ReactMarkdown from "react-markdown";
+import { GrClose } from 'react-icons/gr';
+import ReactMarkdown from 'react-markdown';
 
-export default function Thoughts({ thought, isThoughtsOpen, setIsThoughtsOpen }: { thought: string, isThoughtsOpen: boolean, setIsThoughtsOpen: Function }) {
+export default function Thoughts({
+  thought,
+  isThoughtsOpen,
+  setIsThoughtsOpen,
+}: {
+  thought: string;
+  isThoughtsOpen: boolean;
+  setIsThoughtsOpen: Function;
+}) {
   return (
     <section
       className={
-        "absolute h-[100dvh] flex flex-col lg:w-3/5 w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out " +
-        (isThoughtsOpen ? "translate-x-0 shadow-lg" : "translate-x-full")
+        'absolute h-[100dvh] flex flex-col lg:w-3/5 w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out ' +
+        (isThoughtsOpen ? 'translate-x-0 shadow-lg' : 'translate-x-full')
       }
     >
       <div className="flex flex-row-reverse p-4">
         <button
           className="text-dark-green text-xl"
           onClick={() => {
-            setIsThoughtsOpen(false)
-          }
-          }
+            setIsThoughtsOpen(false);
+          }}
         >
           <GrClose className="inline" />
         </button>
@@ -27,7 +34,8 @@ export default function Thoughts({ thought, isThoughtsOpen, setIsThoughtsOpen }:
           <button>
             View More <IoIosArrowDown />{" "}
           </button>
- */}       </div>
+ */}{' '}
+      </div>
     </section>
   );
 }

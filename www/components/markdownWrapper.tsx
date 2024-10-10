@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import Typing from "./typing";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
-import { FiCopy, FiCheck } from "react-icons/fi";
+import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import Typing from './typing';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+import { FiCopy, FiCheck } from 'react-icons/fi';
 
 function CopyButton({ text }: { text: string }) {
   const [isCopied, setIsCopied] = useState(false);
@@ -54,15 +54,25 @@ export default function MarkdownWrapper({ text }: { text: string }) {
       // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
       rehypePlugins={[rehypeKatex]}
       components={{
-        ol: ({ node, ordered, ...props }) => <ol className="list-decimal pl-6 space-y-2" {...props} />,
-        ul: ({ node, ordered, ...props }) => <ul className="list-disc pl-6 space-y-2" {...props} />,
+        ol: ({ node, ordered, ...props }) => (
+          <ol className="list-decimal pl-6 space-y-2" {...props} />
+        ),
+        ul: ({ node, ordered, ...props }) => (
+          <ul className="list-disc pl-6 space-y-2" {...props} />
+        ),
         li: ({ node, ordered, ...props }) => <li className="ml-2" {...props} />,
         code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || "");
+          const match = /language-(\w+)/.exec(className || '');
           return !inline && match ? (
-            <CodeBlock language={match[1]} value={String(children).replace(/\n$/, "")} />
+            <CodeBlock
+              language={match[1]}
+              value={String(children).replace(/\n$/, '')}
+            />
           ) : (
-            <code {...props} className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}>
+            <code
+              {...props}
+              className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
+            >
               {children}
             </code>
           );

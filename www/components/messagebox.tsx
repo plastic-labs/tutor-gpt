@@ -1,10 +1,10 @@
-import { useState } from "react";
-import Image from "next/image";
-import icon from "@/public/bloomicon.jpg";
-import usericon from "@/public/usericon.svg";
-import Skeleton from "react-loading-skeleton";
-import { FaLightbulb } from "react-icons/fa";
-import { API } from "@/utils/api";
+import { useState } from 'react';
+import Image from 'next/image';
+import icon from '@/public/bloomicon.jpg';
+import usericon from '@/public/usericon.svg';
+import Skeleton from 'react-loading-skeleton';
+import { FaLightbulb } from 'react-icons/fa';
+import { API } from '@/utils/api';
 
 interface MessageBoxProps {
   isUser?: boolean;
@@ -33,7 +33,7 @@ export default function MessageBox({
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const shouldShowButtons = messageId !== "";
+  const shouldShowButtons = messageId !== '';
 
   const handleFetchThought = async () => {
     if (!messageId || !conversationId || !userId || !URL) return;
@@ -49,10 +49,10 @@ export default function MessageBox({
         setIsThoughtsOpen(true);
         setThought(thought);
       } else {
-        setError("No thought found.");
+        setError('No thought found.');
       }
     } catch (err) {
-      setError("Failed to fetch thought.");
+      setError('Failed to fetch thought.');
       console.error(err);
     } finally {
       setIsThoughtLoading(false);
@@ -62,8 +62,8 @@ export default function MessageBox({
   return (
     <article
       className={
-        "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
-        (isUser ? "bg-gray-100 dark:bg-gray-800" : "")
+        'flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl ' +
+        (isUser ? 'bg-gray-100 dark:bg-gray-800' : '')
       }
     >
       {loading ? (
