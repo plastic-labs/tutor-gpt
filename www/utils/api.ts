@@ -197,7 +197,6 @@ export class API {
     reaction: Exclude<Reaction, null>,
   ): Promise<{ status: string }> {
     try {
-      console.log(`making request`);
       const response = await fetch(
         `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}&reaction=${reaction}`,
         {
@@ -207,7 +206,6 @@ export class API {
           },
         },
       );
-      console.log(`recv'd`, response);
       if (!response.ok) {
         throw new Error("Failed to add reaction");
       }
