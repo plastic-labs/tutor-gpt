@@ -10,7 +10,6 @@ dependencies = [
     "honcho-ai>=0.0.14",
     "python-dotenv>=1.0.1",
     "agent",
-    "tenacity>=8.2.0",
 ]
 
 [tool.uv.sources]
