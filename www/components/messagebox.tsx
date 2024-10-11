@@ -5,6 +5,7 @@ import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
 import { FaLightbulb, FaThumbsDown, FaThumbsUp } from "react-icons/fa";
 import { API, type Message } from "@/utils/api";
+import Spinner from "./spinner";
 
 export type Reaction = "thumbs_up" | "thumbs_down" | null;
 
@@ -36,8 +37,8 @@ export default function MessageBox({
   setThought,
 }: MessageBoxProps) {
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
+  const [pendingReaction, setPendingReaction] = useState<Reaction>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isReactionPending, setIsReactionPending] = useState<boolean>(false);
 
   const { id: messageId, text, metadata } = message;
   const reaction = metadata?.reaction || null;
@@ -46,7 +47,7 @@ export default function MessageBox({
   const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
     if (!messageId || !conversationId || !userId || !URL) return;
 
-    setIsReactionPending(true);
+    setPendingReaction(newReaction);
 
     try {
       await onReactionAdded(messageId, newReaction);
@@ -54,7 +55,7 @@ export default function MessageBox({
       console.error(err);
       setError("Failed to add reaction.");
     } finally {
-      setIsReactionPending(false);
+      setPendingReaction(null);
     }
   };
 
@@ -111,36 +112,46 @@ export default function MessageBox({
                 reaction === "thumbs_up"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-200 dark:bg-gray-700"
-              } ${isReactionPending ? "opacity-50" : ""}`}
+              } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
-              disabled={reaction !== null || isReactionPending}
+              disabled={reaction !== null || pendingReaction !== null}
             >
-              <FaThumbsUp />
+              <div className="w-5 h-5 flex items-center justify-center">
+                {pendingReaction === "thumbs_up" ? (
+                  <Spinner size={16} />
+                ) : (
+                  <FaThumbsUp />
+                )}
+              </div>
             </button>
             <button
               className={`p-2 rounded-full ${
                 reaction === "thumbs_down"
                   ? "bg-red-500 text-white"
                   : "bg-gray-200 dark:bg-gray-700"
-              } ${isReactionPending ? "opacity-50" : ""}`}
+              } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
-              disabled={reaction !== null || isReactionPending}
+              disabled={reaction !== null || pendingReaction !== null}
             >
-              <FaThumbsDown />
+              <div className="w-5 h-5 flex items-center justify-center">
+                {pendingReaction === "thumbs_down" ? (
+                  <Spinner size={16} />
+                ) : (
+                  <FaThumbsDown />
+                )}
+              </div>
             </button>
             <button
               className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >
-              <FaLightbulb />
+              <div className="w-5 h-5 flex items-center justify-center">
+                {isThoughtLoading ? <Spinner size={16} /> : <FaLightbulb />}
+              </div>
             </button>
           </div>
         )}
-        {isReactionPending && (
-          <p className="text-sm text-gray-500">Saving reaction...</p>
-        )}
-        {isThoughtLoading && <p>Loading thought...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
       </div>
     </article>
