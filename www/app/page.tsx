@@ -163,9 +163,7 @@ export default function Home() {
           }
           return msg;
         });
-      }, false);
-
-      mutateMessages();
+      }, true);
     } catch (error) {
       console.error("Failed to update reaction:", error);
     }

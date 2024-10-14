@@ -217,40 +217,4 @@ export class API {
       throw error;
     }
   }
-
-  async getReaction(
-    conversationId: string,
-    messageId: string,
-  ): Promise<{ reaction: Reaction }> {
-    try {
-      const response = await fetch(
-        `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to get reaction");
-      }
-
-      const data = await response.json();
-
-      // Validate the reaction
-      if (
-        data.reaction !== null &&
-        !["thumbs_up", "thumbs_down"].includes(data.reaction)
-      ) {
-        throw new Error("Invalid reaction received from server");
-      }
-
-      return data as { reaction: Reaction };
-    } catch (error) {
-      console.error("Error getting reaction:", error);
-      throw error;
-    }
-  }
 }

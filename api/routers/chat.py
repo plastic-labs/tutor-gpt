@@ -113,10 +113,8 @@ async def add_or_remove_reaction(
     metadata = message.metadata or {}
 
     if reaction is None:
-        # Remove the reaction
         metadata.pop('reaction', None)
     else:
-        # Set or update the reaction
         metadata['reaction'] = reaction
 
     honcho.apps.users.sessions.messages.update(
