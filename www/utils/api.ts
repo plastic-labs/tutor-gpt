@@ -191,28 +191,29 @@ export class API {
     }
   }
 
-  async addReaction(
+  async addOrRemoveReaction(
     conversationId: string,
     messageId: string,
-    reaction: Exclude<Reaction, null>,
+    reaction: Reaction,
   ): Promise<{ status: string }> {
     try {
       const response = await fetch(
-        `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}&reaction=${reaction}`,
+        `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({ reaction: reaction || undefined }),
         },
       );
       if (!response.ok) {
-        throw new Error("Failed to add reaction");
+        throw new Error("Failed to update reaction");
       }
 
       return await response.json();
     } catch (error) {
-      console.error("Error adding reaction:", error);
+      console.error("Error updating reaction:", error);
       throw error;
     }
   }

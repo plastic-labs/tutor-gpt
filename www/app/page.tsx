@@ -140,22 +140,18 @@ export default function Home() {
     error: _,
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
 
-  const handleReactionAdded = async (
-    messageId: string,
-    reaction: Exclude<Reaction, null>,
-  ) => {
+  const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
     if (!userId || !conversationId) return;
 
     const api = new API({ url: URL!, userId });
 
     try {
-      await api.addReaction(conversationId, messageId, reaction);
+      await api.addOrRemoveReaction(conversationId, messageId, reaction);
 
       // Optimistically update the local data
       mutateMessages((currentMessages) => {
         if (!currentMessages) return currentMessages;
         return currentMessages.map((msg) => {
-          console.log(`msgs: ${JSON.stringify(currentMessages)}`);
           if (msg.id === messageId) {
             return {
               ...msg,
@@ -165,16 +161,13 @@ export default function Home() {
               },
             };
           }
-          console.log(`after update: ${JSON.stringify(currentMessages)}`);
           return msg;
         });
-      }, false); // Set to false to avoid revalidation immediately
+      }, false);
 
-      // Trigger a revalidation to ensure data consistency
       mutateMessages();
     } catch (error) {
-      console.error("Failed to add reaction:", error);
-      // Optionally, you can show an error message to the user
+      console.error("Failed to update reaction:", error);
     }
   };
 

@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from api import schemas
 from api.dependencies import app, honcho
@@ -81,14 +83,23 @@ async def get_thought(conversation_id: str, message_id: str, user_id: str):
     # In practice, there should only be one thought per message
     return {"thought": thought.items[0].content if thought.items else None}
 
+class ReactionBody(BaseModel):
+    reaction: Optional[str] = None
+
 @router.post("/reaction/{message_id}")
-async def add_reaction(conversation_id: str, message_id: str, user_id: str, reaction: str):
-    if reaction not in ["thumbs_up", "thumbs_down"]:
+async def add_or_remove_reaction(
+    conversation_id: str,
+    message_id: str,
+    user_id: str,
+    body: ReactionBody
+):
+    reaction = body.reaction
+
+    if reaction is not None and reaction not in ["thumbs_up", "thumbs_down"]:
         raise HTTPException(status_code=400, detail="Invalid reaction type")
 
     user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
 
-    # Update the message metadata with the reaction
     message = honcho.apps.users.sessions.messages.get(
         app_id=app.id,
         session_id=conversation_id,
@@ -99,9 +110,14 @@ async def add_reaction(conversation_id: str, message_id: str, user_id: str, reac
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
-    # Update the metadata
     metadata = message.metadata or {}
-    metadata['reaction'] = reaction
+
+    if reaction is None:
+        # Remove the reaction
+        metadata.pop('reaction', None)
+    else:
+        # Set or update the reaction
+        metadata['reaction'] = reaction
 
     honcho.apps.users.sessions.messages.update(
         app_id=app.id,
@@ -111,7 +127,7 @@ async def add_reaction(conversation_id: str, message_id: str, user_id: str, reac
         metadata=metadata
     )
 
-    return {"status": "Reaction added successfully"}
+    return {"status": "Reaction updated successfully"}
 
 @router.get("/reaction/{message_id}")
 async def get_reaction(conversation_id: str, message_id: str, user_id: str):

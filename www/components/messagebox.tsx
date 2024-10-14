@@ -19,10 +19,7 @@ interface MessageBoxProps {
   isThoughtsOpen?: boolean;
   setIsThoughtsOpen: (isOpen: boolean) => void;
   setThought: (thought: string) => void;
-  onReactionAdded: (
-    messageId: string,
-    reaction: Exclude<Reaction, null>,
-  ) => Promise<void>;
+  onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
 
 export default function MessageBox({
@@ -50,10 +47,14 @@ export default function MessageBox({
     setPendingReaction(newReaction);
 
     try {
-      await onReactionAdded(messageId, newReaction);
+      const reactionToSend = reaction === newReaction ? null : newReaction;
+      await onReactionAdded(
+        messageId,
+        reactionToSend as Exclude<Reaction, null>,
+      );
     } catch (err) {
       console.error(err);
-      setError("Failed to add reaction.");
+      setError("Failed to update reaction.");
     } finally {
       setPendingReaction(null);
     }
@@ -114,7 +115,7 @@ export default function MessageBox({
                   : "bg-gray-200 dark:bg-gray-700"
               } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
-              disabled={reaction !== null || pendingReaction !== null}
+              disabled={pendingReaction !== null}
             >
               <div className="w-5 h-5 flex items-center justify-center">
                 {pendingReaction === "thumbs_up" ? (
@@ -131,7 +132,7 @@ export default function MessageBox({
                   : "bg-gray-200 dark:bg-gray-700"
               } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
-              disabled={reaction !== null || pendingReaction !== null}
+              disabled={pendingReaction !== null}
             >
               <div className="w-5 h-5 flex items-center justify-center">
                 {pendingReaction === "thumbs_down" ? (
