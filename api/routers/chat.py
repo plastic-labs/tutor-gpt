@@ -68,16 +68,18 @@ async def stream(inp: schemas.ConversationInput):
 
         return StreamingResponse(convo_turn())
     except Exception as e:
-        # Log the error here if needed
+        # Log the error here
+        import logging
+        logging.error("An error occurred: %s", str(e))
         if "rate limit" in str(e).lower():
             return JSONResponse(
                 status_code=429,
-                content={"error": "rate_limit_exceeded", "message": str(e)}
+                content={"error": "rate_limit_exceeded", "message": "Rate limit exceeded. Please try again later."}
             )
         else:
             return JSONResponse(
                 status_code=500,
-                content={"error": "internal_server_error", "message": str(e)}
+                content={"error": "internal_server_error", "message": "An internal server error has occurred."}
             )
 
 
@@ -95,8 +97,10 @@ async def get_thought(conversation_id: str, message_id: str, user_id: str):
         # In practice, there should only be one thought per message
         return {"thought": thought.items[0].content if thought.items else None}
     except Exception as e:
-        # Log the error here if needed
+        # Log the error here
+        import logging
+        logging.error("An error occurred: %s", str(e))
         return JSONResponse(
             status_code=500,
-            content={"error": "internal_server_error", "message": str(e)}
+            content={"error": "internal_server_error", "message": "An internal server error has occurred."}
         )
