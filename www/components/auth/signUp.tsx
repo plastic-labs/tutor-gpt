@@ -30,7 +30,6 @@ export default function SignUp(props: any) {
         });
         return;
       }
-      console.log(password, passwordConfirmation);
       if (password !== passwordConfirmation) {
         await Swal.fire({
           title: "Passwords don't match",
@@ -45,7 +44,7 @@ export default function SignUp(props: any) {
         await Swal.fire({
           title: 'Insufficient Password',
           icon: 'error',
-          text: 'Make sure the password is atleast 6 characters long',
+          text: 'Make sure the password is at least 6 characters long',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
         });
@@ -57,7 +56,7 @@ export default function SignUp(props: any) {
         Swal.fire({
           title: 'Something went wrong',
           icon: 'error',
-          text: 'Please try again and make sure the password is atleast 6 characters long',
+          text: 'Please try again and make sure the password is at least 6 characters long',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
         });

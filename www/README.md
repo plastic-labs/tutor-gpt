@@ -64,10 +64,10 @@ analytics.
 
 ## Supabase
 
-### Supabase
+### Setup
 
 This project uses supabase for managing authentication and keeping track of
-stripe subscriptions.We recommend for testing and local development to use a
+stripe subscriptions. We recommend for testing and local development to use a
 local instance of supabase. The supabase-cli is the best way to do this.
 
 Follow the [Supabase Documentation](https://supabase.com/docs/guides/cli/local-development) for more information. The project contains a `supabase/` folder that contains the scaffolding SQL migrations necessary for setting up the necessary tables. Once you have the supabase cli installed you can simply run the below command in the `tutor-gpt` folder and a local instance of Supabase will start up.

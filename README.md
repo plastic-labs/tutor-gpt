@@ -145,7 +145,7 @@ You can also optionally use the docker containers to run the application locally
 docker run --env-file .env tutor-gpt-core python bot/app.py
 ```
 
-To run the webui you need to run the backend `FastAPI` and the frontend `NexJS` containers separately. In two separate terminal instances run the following commands to have both applications run.
+To run the webui you need to run the backend `FastAPI` and the frontend `NextJS` containers separately. In two separate terminal instances run the following commands to have both applications run.
 The current behaviour will utilize the `.env` file in your local repository and
 run the bot.
 
