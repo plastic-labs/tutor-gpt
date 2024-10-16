@@ -34,7 +34,7 @@ export default function MessageBox({
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const shouldShowButtons = messageId !== "";
+  const shouldShowButtons = messageId !== '';
 
   const handleFetchThought = async () => {
     if (!messageId || !conversationId || !userId || !URL) return;
@@ -50,10 +50,10 @@ export default function MessageBox({
         setIsThoughtsOpen(true);
         setThought(thought);
       } else {
-        setError("No thought found.");
+        setError('No thought found.');
       }
     } catch (err) {
-      setError("Failed to fetch thought.");
+      setError('Failed to fetch thought.');
       console.error(err);
     } finally {
       setIsThoughtLoading(false);

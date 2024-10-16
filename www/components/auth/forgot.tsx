@@ -1,44 +1,44 @@
-'use client'
+'use client';
 // import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { createClient } from "@/utils/supabase/client";
-import { useState } from "react";
-import Swal from 'sweetalert2'
+import { createClient } from '@/utils/supabase/client';
+import { useState } from 'react';
+import Swal from 'sweetalert2';
 
 export default function Forgot(props: any) {
-  const { stateSync } = props
-  const [email, setEmail] = useState('')
-  const supabase = createClient()
+  const { stateSync } = props;
+  const [email, setEmail] = useState('');
+  const supabase = createClient();
 
   const handleForgotPassword = async (e: any) => {
     e.preventDefault();
-    const { error } = await supabase.auth.resetPasswordForEmail(email,
-      {
-        redirectTo: `${location.origin}/auth/reset`
-      }
-    );
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}/auth/reset`,
+    });
     if (error) {
       console.error(error);
       Swal.fire({
-        title: "Error!",
-        text: "Something went wrong",
-        icon: "error",
-        confirmButtonText: "Close"
-      })
-      return
+        title: 'Error!',
+        text: 'Something went wrong',
+        icon: 'error',
+        confirmButtonText: 'Close',
+      });
+      return;
     }
     Swal.fire({
-      title: "Success!",
-      text: "Please check your email for a password reset link",
-      icon: "success",
-      confirmButtonText: "Close"
-    })
-  }
+      title: 'Success!',
+      text: 'Please check your email for a password reset link',
+      icon: 'success',
+      confirmButtonText: 'Close',
+    });
+  };
 
   return (
     <form action="#" className="mt-8 grid grid-cols-6 gap-6">
-
       <div className="col-span-6">
-        <label htmlFor="Email" className="block text-sm font-medium text-gray-700">
+        <label
+          htmlFor="Email"
+          className="block text-sm font-medium text-gray-700"
+        >
           Email
         </label>
 
@@ -62,9 +62,16 @@ export default function Forgot(props: any) {
 
         <p className="mt-4 text-sm text-gray-500 sm:mt-0">
           Don&apos;t have an account?{' '}
-          <a href="#" onClick={() => stateSync("SIGNUP")} className="text-gray-700 underline">Sign up</a>.
+          <a
+            href="#"
+            onClick={() => stateSync('SIGNUP')}
+            className="text-gray-700 underline"
+          >
+            Sign up
+          </a>
+          .
         </p>
       </div>
     </form>
-  )
+  );
 }
