@@ -10,9 +10,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { SettingsForm } from "@/components/SettingsForm";
-import SubscriptionManager from "@/components/SubscriptionManager";
-import SupportForm from "@/components/SupportForm";
+import SubscriptionSettings from "@/components/settings/SubscriptionSettings";
+import { IntegrationsSettings } from "@/components/settings/IntegrationsSettings";
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
+import { AccountSettings } from "@/components/settings/AccountSettings";
+import { SupportSettings } from "@/components/settings/SupportSettings";
 
 export default function SettingsLayout({ user, subscription, products }) {
   const [activeTab, setActiveTab] = useState("account");
@@ -21,12 +23,12 @@ export default function SettingsLayout({ user, subscription, products }) {
     { id: "account", label: "Account" },
     { id: "security", label: "Security" },
     { id: "subscription", label: "Subscription" },
+    { id: "integrations", label: "Integrations" },
     { id: "support", label: "Support" },
   ];
 
   return (
     <div className="flex-1 flex flex-col bg-background text-foreground">
-      {/* Top Navigation */}
       <div className="p-4 border-b border-border">
         <Link href="/">
           <Button
@@ -39,7 +41,6 @@ export default function SettingsLayout({ user, subscription, products }) {
       </div>
 
       <div className="flex-1 flex">
-        {/* Left Navigation */}
         <nav className="w-64 bg-muted p-4">
           <h2 className="text-2xl font-bold mb-4 text-primary">Settings</h2>
           <ul>
@@ -59,44 +60,17 @@ export default function SettingsLayout({ user, subscription, products }) {
             ))}
           </ul>
         </nav>
-
-        {/* Main Content */}
         <div className="flex-1 p-8">
-          {activeTab === "account" && (
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold text-primary">
-                Account Settings
-              </h2>
-              <SettingsForm user={user} type="account" />
-            </div>
-          )}
-          {activeTab === "security" && (
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold text-primary">
-                Security Settings
-              </h2>
-              <SettingsForm user={user} type="security" />
-            </div>
-          )}
+          {activeTab === "account" && <AccountSettings user={user} />}
+          {activeTab === "security" && <SecuritySettings user={user} />}
           {activeTab === "subscription" && (
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold text-primary">
-                Subscription Management
-              </h2>
-              <SubscriptionManager
-                subscription={subscription}
-                products={products}
-              />
-            </div>
+            <SubscriptionSettings
+              subscription={subscription}
+              products={products}
+            />
           )}
-          {activeTab === "support" && (
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold text-primary">
-                Contact Support
-              </h2>
-              <SupportForm user={user} />
-            </div>
-          )}
+          {activeTab === "integrations" && <IntegrationsSettings user={user} />}
+          {activeTab === "support" && <SupportSettings user={user} />}
         </div>
       </div>
     </div>

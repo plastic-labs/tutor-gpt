@@ -19,7 +19,7 @@ interface SupportFormProps {
   };
 }
 
-export default function SupportForm({ user }: SupportFormProps) {
+function SupportForm({ user }: SupportFormProps) {
   const [message, setMessage] = useState("");
 
   const handleSubmit = () => {
@@ -53,5 +53,20 @@ export default function SupportForm({ user }: SupportFormProps) {
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+interface User {
+  id: string;
+  email: string;
+  // Add other user properties as needed
+}
+
+export function SupportSettings({ user }: { user: User }) {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-3xl font-bold text-primary">Contact Support</h2>
+      <SupportForm user={user} />
+    </div>
   );
 }

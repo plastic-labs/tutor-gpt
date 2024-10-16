@@ -5,6 +5,7 @@ import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
 import { FaLightbulb } from "react-icons/fa";
 import { API } from "@/utils/api";
+import MarkdownWrapper from "./markdownWrapper";
 
 interface MessageBoxProps {
   isUser?: boolean;
@@ -60,47 +61,49 @@ export default function MessageBox({
   };
 
   return (
-    <article
-      className={
-        "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
-        (isUser ? "bg-gray-100 dark:bg-gray-800" : "")
-      }
-    >
-      {loading ? (
-        <Skeleton circle={true} className="lg:!w-12 lg:!h-12 !w-6 !h-6 " />
-      ) : (
-        <Image
-          src={isUser ? usericon : icon}
-          alt="icon"
-          className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
-        />
-      )}
-      <div className="flex flex-col gap-2 w-full">
+    <MarkdownWrapper>
+      <article
+        className={
+          "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
+          (isUser ? "bg-gray-100 dark:bg-gray-800" : "")
+        }
+      >
         {loading ? (
-          <Skeleton count={4} />
+          <Skeleton circle={true} className="lg:!w-12 lg:!h-12 !w-6 !h-6 " />
         ) : (
-          <div className="message-content">{text}</div>
+          <Image
+            src={isUser ? usericon : icon}
+            alt="icon"
+            className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
+          />
         )}
-        {!loading && !isUser && shouldShowButtons && (
-          <div className="flex justify-left gap-2 mt-2">
-            {/* <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+        <div className="flex flex-col gap-2 w-full">
+          {loading ? (
+            <Skeleton count={4} />
+          ) : (
+            <div className="message-content">{text}</div>
+          )}
+          {!loading && !isUser && shouldShowButtons && (
+            <div className="flex justify-left gap-2 mt-2">
+              {/* <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               <FaThumbsUp />
             </button>
             <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
               <FaThumbsDown />
             </button> */}
-            <button
-              className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
-              onClick={handleFetchThought}
-              disabled={isThoughtLoading}
-            >
-              <FaLightbulb />
-            </button>
-          </div>
-        )}
-        {isThoughtLoading && <p>Loading thought...</p>}
-        {error && <p className="text-red-500">Error: {error}</p>}
-      </div>
-    </article>
+              <button
+                className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
+                onClick={handleFetchThought}
+                disabled={isThoughtLoading}
+              >
+                <FaLightbulb />
+              </button>
+            </div>
+          )}
+          {isThoughtLoading && <p>Loading thought...</p>}
+          {error && <p className="text-red-500">Error: {error}</p>}
+        </div>
+      </article>
+    </MarkdownWrapper>
   );
 }

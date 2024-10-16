@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import Swal from "sweetalert2";
 
 interface User {
   id: string;
@@ -30,14 +32,68 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleEmailChange = () => {
-    // Implement email change logic
-    console.log("Changing email to:", email);
+  const supabase = createClient();
+
+  const handleEmailChange = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.auth.updateUser(
+        { email: email },
+        {
+          emailRedirectTo: `${location.origin}/settings`,
+        },
+      );
+      if (error) throw error;
+      Swal.fire({
+        title: "Success!",
+        text: "Please check your new email for a confirmation link",
+        icon: "success",
+        confirmButtonText: "Close",
+      });
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        title: "Error!",
+        text: "Something went wrong while updating your email",
+        icon: "error",
+        confirmButtonText: "Close",
+      });
+    }
   };
 
-  const handlePasswordChange = () => {
-    // Implement password change logic
-    console.log("Changing password");
+  const handlePasswordChange = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      Swal.fire({
+        title: "Error!",
+        text: "Passwords do not match",
+        icon: "error",
+        confirmButtonText: "Close",
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) throw error;
+      Swal.fire({
+        title: "Success!",
+        text: "Your password has been updated",
+        icon: "success",
+        confirmButtonText: "Close",
+      });
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        title: "Error!",
+        text: "Something went wrong while updating your password",
+        icon: "error",
+        confirmButtonText: "Close",
+      });
+    }
   };
 
   return (
