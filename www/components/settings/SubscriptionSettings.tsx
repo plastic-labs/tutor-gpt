@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { createStripePortal } from "@/utils/stripe/actions";
-import { Tables } from "@/utils/database.types";
+import { createStripePortal } from '@/utils/stripe/actions';
+import { Tables } from '@/utils/database.types';
 
-import PriceCard from "@/components/PriceCard";
-type Subscription = Tables<"subscriptions">;
-type Product = Tables<"products">;
-type Price = Tables<"prices">;
+import PriceCard from '@/components/PriceCard';
+type Subscription = Tables<'subscriptions'>;
+type Product = Tables<'products'>;
+type Price = Tables<'prices'>;
 
 interface Props {
   subscription: Subscription | null;
@@ -33,7 +33,7 @@ export default function SubscriptionManager({ subscription, products }: Props) {
         router.push(url);
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error('Error:', error);
     }
     setLoading(false);
   };
@@ -46,7 +46,7 @@ export default function SubscriptionManager({ subscription, products }: Props) {
       <div className="mt-4">
         <h2 className="text-xl font-bold mb-2">Subscription Status</h2>
         <p className="mb-4">
-          {subscription ? "Active Subscription" : "No Active Subscription"}
+          {subscription ? 'Active Subscription' : 'No Active Subscription'}
         </p>
         {subscription ? (
           <button
