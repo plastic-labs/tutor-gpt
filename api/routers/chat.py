@@ -126,20 +126,3 @@ async def add_or_remove_reaction(
     )
 
     return {"status": "Reaction updated successfully"}
-
-@router.get("/reaction/{message_id}")
-async def get_reaction(conversation_id: str, message_id: str, user_id: str):
-    user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
-
-    message = honcho.apps.users.sessions.messages.get(
-        app_id=app.id,
-        session_id=conversation_id,
-        user_id=user.id,
-        message_id=message_id
-    )
-
-    if not message:
-        raise HTTPException(status_code=404, detail="Message not found")
-
-    reaction = message.metadata.get('reaction') if message.metadata else None
-    return {"reaction": reaction}
