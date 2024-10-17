@@ -6,8 +6,6 @@ import dynamic from 'next/dynamic';
 
 import banner from "@/public/bloom2x1.svg";
 import darkBanner from "@/public/bloom2x1dark.svg";
-import MessageBox from "@/components/messagebox";
-import Sidebar from "@/components/sidebar";
 import { DarkModeSwitch } from "react-toggle-dark-mode";
 import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -19,7 +17,6 @@ import { usePostHog } from 'posthog-js/react';
 import { getSubscription } from '@/utils/supabase/queries';
 
 import { API } from "@/utils/api";
-import { Message } from "@/utils/api";
 import { createClient } from "@/utils/supabase/client";
 import { Reaction } from "@/components/messagebox";
 
