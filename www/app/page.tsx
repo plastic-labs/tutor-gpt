@@ -4,14 +4,11 @@ import useSWR from 'swr';
 
 import dynamic from 'next/dynamic';
 
-import banner from '@/public/bloom2x1.svg';
-import darkBanner from '@/public/bloom2x1dark.svg';
-import MessageBox from '@/components/messagebox';
-import Sidebar from '@/components/sidebar';
-import MarkdownWrapper from '@/components/markdownWrapper';
-import { DarkModeSwitch } from 'react-toggle-dark-mode';
-import { FaLightbulb, FaPaperPlane, FaBars } from 'react-icons/fa';
-import Swal from 'sweetalert2';
+import banner from "@/public/bloom2x1.svg";
+import darkBanner from "@/public/bloom2x1dark.svg";
+import { DarkModeSwitch } from "react-toggle-dark-mode";
+import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 import { useRef, useEffect, useState, ElementRef } from 'react';
 import { redirect } from 'next/navigation';
@@ -19,10 +16,19 @@ import { usePostHog } from 'posthog-js/react';
 
 import { getSubscription } from '@/utils/supabase/queries';
 
-import { API } from '@/utils/api';
-import { createClient } from '@/utils/supabase/client';
+import { API } from "@/utils/api";
+import { createClient } from "@/utils/supabase/client";
+import { Reaction } from "@/components/messagebox";
 
-const Thoughts = dynamic(() => import('@/components/thoughts'));
+const Thoughts = dynamic(() => import("@/components/thoughts"), {
+  ssr: false,
+});
+const MessageBox = dynamic(() => import("@/components/messagebox"), {
+  ssr: false,
+});
+const Sidebar = dynamic(() => import("@/components/sidebar"), {
+  ssr: false,
+});
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -133,6 +139,35 @@ export default function Home() {
     error: _,
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
 
+  const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
+    if (!userId || !conversationId) return;
+
+    const api = new API({ url: URL!, userId });
+
+    try {
+      await api.addOrRemoveReaction(conversationId, messageId, reaction);
+
+      // Optimistically update the local data
+      mutateMessages((currentMessages) => {
+        if (!currentMessages) return currentMessages;
+        return currentMessages.map((msg) => {
+          if (msg.id === messageId) {
+            return {
+              ...msg,
+              metadata: {
+                ...msg.metadata,
+                reaction,
+              },
+            };
+          }
+          return msg;
+        });
+      }, true);
+    } catch (error) {
+      console.error("Failed to update reaction:", error);
+    }
+  };
+
   async function chat() {
     if (!isSubscribed) {
       Swal.fire({
@@ -202,7 +237,6 @@ export default function Home() {
           isThinking = false;
           continue;
         }
-        console.log(value);
         setThought((prev) => prev + value);
       } else {
         if (value.includes('❀')) {
@@ -297,20 +331,29 @@ export default function Home() {
               isUser={message.isUser}
               userId={userId}
               URL={URL}
-              messageId={message.id}
-              text={message.text}
+              message={message}
               loading={messagesLoading}
               conversationId={conversationId}
               setThought={setThought}
               setIsThoughtsOpen={setIsThoughtsOpen}
+              onReactionAdded={handleReactionAdded}
             />
           )) || (
               <MessageBox
                 isUser={false}
-                text=""
+                message={{
+                  text: "",
+                  id: "",
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
                 loading={true}
                 setThought={setThought}
                 setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                URL={URL}
+                conversationId={conversationId}
               />
             )}
         </section>

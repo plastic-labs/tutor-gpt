@@ -21,6 +21,7 @@ async def get_messages(user_id: str, conversation_id: uuid.UUID):
             "id": message.id,
             "content": message.content,
             "isUser": message.is_user,
+            "metadata": message.metadata,
         }
         for message in honcho.apps.users.sessions.messages.list(
             app_id=app.id, user_id=user.id, session_id=str(conversation_id)
