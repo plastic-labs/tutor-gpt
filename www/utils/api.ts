@@ -3,7 +3,7 @@ import { type Reaction } from "@/components/messagebox";
 const defaultMessage: Message = {
   text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
-  id: "",
+  id: '',
 };
 
 export interface Message {
@@ -38,7 +38,7 @@ export class Conversation {
         new URLSearchParams({
           conversation_id: this.conversationId,
           user_id: this.api.userId,
-        }),
+        })
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);
@@ -46,7 +46,7 @@ export class Conversation {
     const messages = rawMessages.map((rawMessage: any) => {
       return {
         text: rawMessage.data.content,
-        isUser: rawMessage.type === "human",
+        isUser: rawMessage.type === 'human',
         id: rawMessage.id,
       };
     });
@@ -58,14 +58,14 @@ export class Conversation {
     if (!name || name === this.name) return;
 
     await fetch(`${this.api.url}/api/conversations/update`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({
         conversation_id: this.conversationId,
         user_id: this.api.userId,
         name,
       }),
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
     this.name = name;
@@ -73,20 +73,20 @@ export class Conversation {
 
   async delete() {
     await fetch(
-      `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`,
+      `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
     ).then((res) => res.json());
   }
 
   async chat(message: string) {
     const req = await fetch(`${this.api.url}/api/stream`, {
-      method: "POST",
+      method: 'POST',
       body: JSON.stringify({
         conversation_id: this.conversationId,
         user_id: this.api.userId,
         message,
       }),
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
@@ -111,19 +111,19 @@ export class API {
 
   async new() {
     const req = await fetch(
-      `${this.url}/api/conversations/insert?user_id=${this.userId}`,
+      `${this.url}/api/conversations/insert?user_id=${this.userId}`
     );
     const { conversation_id } = await req.json();
     return new Conversation({
       api: this,
-      name: "",
+      name: '',
       conversationId: conversation_id,
     });
   }
 
   async getConversations() {
     const req = await fetch(
-      `${this.url}/api/conversations/get?user_id=${this.userId}`,
+      `${this.url}/api/conversations/get?user_id=${this.userId}`
     );
     const { conversations }: { conversations: RawConversation[] } =
       await req.json();
@@ -137,7 +137,7 @@ export class API {
           api: this,
           name: conversation.name,
           conversationId: conversation.conversation_id,
-        }),
+        })
     );
   }
 
@@ -147,7 +147,7 @@ export class API {
         new URLSearchParams({
           conversation_id: conversationId,
           user_id: this.userId,
-        }),
+        })
     );
     const { messages: rawMessages } = await req.json();
     // console.log(rawMessages);
@@ -166,27 +166,27 @@ export class API {
 
   async getThoughtById(
     conversationId: string,
-    messageId: string,
+    messageId: string
   ): Promise<string | null> {
     try {
       const response = await fetch(
         `${this.url}/api/thought/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
         {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-        },
+        }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch thought");
+        throw new Error('Failed to fetch thought');
       }
 
       const data = await response.json();
       return data.thought;
     } catch (error) {
-      console.error("Error fetching thought:", error);
+      console.error('Error fetching thought:', error);
       return null;
     }
   }

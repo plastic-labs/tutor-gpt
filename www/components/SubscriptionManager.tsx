@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
 
 import { createStripePortal } from '@/utils/stripe/actions';
 import { Tables } from '@/utils/database.types';
@@ -21,7 +21,7 @@ export default function SubscriptionManager({ subscription, products }: Props) {
 
   const prices = products?.[0]?.prices ?? [];
 
-  const router = useRouter()
+  const router = useRouter();
 
   const handleManage = async () => {
     setLoading(true);
@@ -29,14 +29,14 @@ export default function SubscriptionManager({ subscription, products }: Props) {
       const url = await createStripePortal();
 
       if (url) {
-        console.log(url)
+        console.log(url);
         router.push(url);
       }
     } catch (error) {
       console.error('Error:', error);
     }
     setLoading(false);
-  }
+  };
 
   return (
     <div className="mt-4">
@@ -44,27 +44,21 @@ export default function SubscriptionManager({ subscription, products }: Props) {
       <p className="mb-4">
         {subscription ? 'Active Subscription' : 'No Active Subscription'}
       </p>
-      {subscription ?
-        (
-          <button
-            onClick={handleManage}
-            disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-          >
-            Manage Subscription
-          </button>
-        ) : (
-          <div className="flex flex-row gap-3">
-            {
-              prices.map((price: Price, idx: number) => (
-                <PriceCard key={idx} price={price} />
-              ))
-            }
-          </div>
-        )
-      }
-
-
-    </div >
+      {subscription ? (
+        <button
+          onClick={handleManage}
+          disabled={loading}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+        >
+          Manage Subscription
+        </button>
+      ) : (
+        <div className="flex flex-row gap-3">
+          {prices.map((price: Price, idx: number) => (
+            <PriceCard key={idx} price={price} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

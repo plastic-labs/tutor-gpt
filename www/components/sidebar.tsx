@@ -1,12 +1,12 @@
-import { GrClose } from "react-icons/gr";
-import { Conversation, API } from "@/utils/api";
-import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
+import { GrClose } from 'react-icons/gr';
+import { Conversation, API } from '@/utils/api';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 
-import { usePostHog } from "posthog-js/react";
-import Swal from "sweetalert2";
-import { ConversationTab } from "./conversationtab";
-import { useState } from "react";
+import { usePostHog } from 'posthog-js/react';
+import Swal from 'sweetalert2';
+import { ConversationTab } from './conversationtab';
+import { useState } from 'react';
 export default function Sidebar({
   conversations,
   mutateConversations,
@@ -33,16 +33,16 @@ export default function Sidebar({
 
   async function editConversation(cur: Conversation) {
     const { value: newName } = await Swal.fire({
-      title: "Enter a new name for the conversation",
-      input: "text",
-      inputLabel: "Conversation Name",
+      title: 'Enter a new name for the conversation',
+      input: 'text',
+      inputLabel: 'Conversation Name',
       inputValue: cur.name,
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
       inputValidator: (value) => {
         if (!value) {
-          return "You need to write something!";
+          return 'You need to write something!';
         }
       },
     });
@@ -61,18 +61,18 @@ export default function Sidebar({
 
   async function deleteConversation(conversation: Conversation) {
     const { isConfirmed } = await Swal.fire({
-      title: "Are you sure you want to delete this conversation?",
+      title: 'Are you sure you want to delete this conversation?',
       text: "You won't be able to revert this!",
-      icon: "warning",
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
     });
 
     if (isConfirmed) {
       await conversation.delete();
-      postHog?.capture("user_deleted_conversation");
+      postHog?.capture('user_deleted_conversation');
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(
         (cur) => cur.conversationId != conversation.conversationId
@@ -92,19 +92,21 @@ export default function Sidebar({
 
   async function addChat() {
     const conversation = await api?.new();
-    postHog?.capture("user_created_conversation");
+    postHog?.capture('user_created_conversation');
     setConversationId(conversation?.conversationId);
     mutateConversations([conversation, ...conversations]);
   }
 
   return (
     <div
-      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${isSidebarOpen ? "" : "hidden"
-        }`}
+      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
+        isSidebarOpen ? '' : 'hidden'
+      }`}
     >
       <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? "fixed lg:static" : "sticky"
-          } top-0 left-0`}
+        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
+          isSidebarOpen ? 'fixed lg:static' : 'sticky'
+        } top-0 left-0`}
       >
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
@@ -125,9 +127,8 @@ export default function Sidebar({
 
         {/* Section 2: Scrollable items */}
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
-          {
-            conversations.length > 0
-              ? conversations.map((cur, i) => (
+          {conversations.length > 0
+            ? conversations.map((cur, i) => (
                 <ConversationTab
                   conversation={cur}
                   select={() => setConversationId(cur.conversationId)}
@@ -137,11 +138,10 @@ export default function Sidebar({
                   key={i}
                 />
               ))
-              : Array.from({ length: 5 }).map((_, i) => (
+            : Array.from({ length: 5 }).map((_, i) => (
                 <ConversationTab loading key={i} />
-              ))
-          }
-        </div >
+              ))}
+        </div>
 
         {/* Section 3: Authentication information */}
         <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full flex items-center justify-between">
@@ -154,8 +154,19 @@ export default function Sidebar({
               className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                />
               </svg>
             </button>
             {isMenuOpen && (
@@ -163,7 +174,7 @@ export default function Sidebar({
                 <button
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
                   onClick={() => {
-                    router.push("/subscription");
+                    router.push('/subscription');
                   }}
                 >
                   Manage Subscription
@@ -181,7 +192,7 @@ export default function Sidebar({
             )}
           </div>
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }

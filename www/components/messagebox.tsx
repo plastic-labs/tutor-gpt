@@ -74,10 +74,10 @@ export default function MessageBox({
         setIsThoughtsOpen(true);
         setThought(thought);
       } else {
-        setError("No thought found.");
+        setError('No thought found.');
       }
     } catch (err) {
-      setError("Failed to fetch thought.");
+      setError('Failed to fetch thought.');
       console.error(err);
     } finally {
       setIsThoughtLoading(false);
@@ -87,8 +87,8 @@ export default function MessageBox({
   return (
     <article
       className={
-        "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
-        (isUser ? "bg-gray-100 dark:bg-gray-800" : "")
+        'flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl ' +
+        (isUser ? 'bg-gray-100 dark:bg-gray-800' : '')
       }
     >
       {loading ? (
@@ -109,11 +109,10 @@ export default function MessageBox({
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button
-              className={`p-2 rounded-full ${
-                reaction === "thumbs_up"
+              className={`p-2 rounded-full ${reaction === "thumbs_up"
                   ? "bg-blue-500 text-white"
                   : "bg-gray-200 dark:bg-gray-700"
-              } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
+                } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
               disabled={pendingReaction !== null}
             >
@@ -126,11 +125,10 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${
-                reaction === "thumbs_down"
+              className={`p-2 rounded-full ${reaction === "thumbs_down"
                   ? "bg-red-500 text-white"
                   : "bg-gray-200 dark:bg-gray-700"
-              } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
+                } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
               disabled={pendingReaction !== null}
             >

@@ -1,52 +1,52 @@
 'use client';
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { useRouter } from "next/navigation";
-import Swal from 'sweetalert2'
+import { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import Swal from 'sweetalert2';
 
 export default function Forgot(props: any) {
   const [password, setPassword] = useState('');
 
-  const supabase = createClient()
-  const router = useRouter()
+  const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { // Can't access this page if you're not logged in
-        router.push('/auth')
+      if (!user) {
+        // Can't access this page if you're not logged in
+        router.push('/auth');
       }
-    })
-  }, [supabase, router])
+    });
+  }, [supabase, router]);
 
   const handleReset = async (e: any) => {
-    e.preventDefault()
-    const { data, error } = await supabase.auth.updateUser({ password })
+    e.preventDefault();
+    const { data, error } = await supabase.auth.updateUser({ password });
 
     if (error) {
       await Swal.fire({
         title: 'Error!',
-        text: "Something went wrong",
-        icon: "error",
-        confirmButtonText: "Close"
-      })
-      console.error(error)
-      return
+        text: 'Something went wrong',
+        icon: 'error',
+        confirmButtonText: 'Close',
+      });
+      console.error(error);
+      return;
     }
 
     if (data) {
       await Swal.fire({
-        title: "Success!",
-        text: "Password updated successfully",
-        icon: "success",
-        confirmButtonText: "Close"
-      })
-      router.push(`/`)
+        title: 'Success!',
+        text: 'Password updated successfully',
+        icon: 'success',
+        confirmButtonText: 'Close',
+      });
+      router.push(`/`);
     }
-  }
+  };
 
   return (
     <form action="#" className="mt-8 grid grid-cols-6 gap-6">
-
       <div className="col-span-6">
         <label
           htmlFor="Password"
@@ -72,8 +72,7 @@ export default function Forgot(props: any) {
         >
           Reset
         </button>
-
       </div>
     </form>
-  )
+  );
 }
