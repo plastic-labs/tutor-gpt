@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
@@ -110,8 +110,8 @@ export default function MessageBox({
           <div className="flex justify-start gap-2 mt-2">
             <button
               className={`p-2 rounded-full ${reaction === "thumbs_up"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-700"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
                 } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_up")}
               disabled={pendingReaction !== null}
@@ -126,8 +126,8 @@ export default function MessageBox({
             </button>
             <button
               className={`p-2 rounded-full ${reaction === "thumbs_down"
-                  ? "bg-red-500 text-white"
-                  : "bg-gray-200 dark:bg-gray-700"
+                ? "bg-red-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
                 } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
               onClick={() => handleReaction("thumbs_down")}
               disabled={pendingReaction !== null}
