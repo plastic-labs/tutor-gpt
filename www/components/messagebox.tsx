@@ -23,6 +23,8 @@ interface MessageBoxProps {
   onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
 
+export type Reaction = "thumbs_up" | "thumbs_down" | null;
+
 export default function MessageBox({
   isUser,
   userId,
