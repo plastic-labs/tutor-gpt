@@ -35,7 +35,11 @@ const URL = process.env.NEXT_PUBLIC_API_URL;
 export default function Home() {
   const [userId, setUserId] = useState<string>();
 
-  const [isThoughtsOpen, setIsThoughtsOpen] = useState<boolean>(false);
+  const [isThoughtsOpenState, setIsThoughtsOpenState] =
+    useState<boolean>(false);
+  const [openThoughtMessageId, setOpenThoughtMessageId] = useState<
+    string | null
+  >(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   const [thought, setThought] = useState<string>('');
@@ -56,6 +60,14 @@ export default function Home() {
   };
 
   const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const setIsThoughtsOpen = (
+    isOpen: boolean,
+    messageId: string | null = null
+  ) => {
+    setIsThoughtsOpenState(isOpen);
+    setOpenThoughtMessageId(isOpen ? messageId : null);
+  };
 
   useEffect(() => {
     (async () => {
@@ -112,17 +124,17 @@ export default function Home() {
     return api.getConversations();
   };
 
-  const {
-    data: conversations,
-    mutate: mutateConversations,
-    error,
-  } = useSWR(userId, conversationsFetcher, {
-    onSuccess: (conversations) => {
-      setConversationId(conversations[0].conversationId);
-      setCanSend(true);
-    },
-    revalidateOnFocus: false,
-  });
+  const { data: conversations, mutate: mutateConversations } = useSWR(
+    userId,
+    conversationsFetcher,
+    {
+      onSuccess: (conversations) => {
+        setConversationId(conversations[0].conversationId);
+        setCanSend(true);
+      },
+      revalidateOnFocus: false,
+    }
+  );
 
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
@@ -136,7 +148,6 @@ export default function Home() {
     data: messages,
     mutate: mutateMessages,
     isLoading: messagesLoading,
-    error: _,
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
 
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
@@ -148,21 +159,24 @@ export default function Home() {
       await api.addOrRemoveReaction(conversationId, messageId, reaction);
 
       // Optimistically update the local data
-      mutateMessages((currentMessages) => {
-        if (!currentMessages) return currentMessages;
-        return currentMessages.map((msg) => {
-          if (msg.id === messageId) {
-            return {
-              ...msg,
-              metadata: {
-                ...msg.metadata,
-                reaction,
-              },
-            };
-          }
-          return msg;
-        });
-      }, true);
+      mutateMessages(
+        (currentMessages) => {
+          if (!currentMessages) return currentMessages;
+          return currentMessages.map((msg) => {
+            if (msg.id === messageId) {
+              return {
+                ...msg,
+                metadata: {
+                  ...msg.metadata,
+                  reaction,
+                },
+              };
+            }
+            return msg;
+          });
+        },
+        { revalidate: false }
+      );
     } catch (error) {
       console.error('Failed to update reaction:', error);
     }
@@ -248,7 +262,7 @@ export default function Home() {
 
         mutateMessages(
           [
-            ...newMessages?.slice(0, -1)!,
+            ...(newMessages?.slice(0, -1) || []),
             {
               text: currentModelOutput,
               isUser: false,
@@ -336,7 +350,10 @@ export default function Home() {
               loading={messagesLoading}
               conversationId={conversationId}
               setThought={setThought}
-              setIsThoughtsOpen={setIsThoughtsOpen}
+              isThoughtOpen={openThoughtMessageId === message.id}
+              setIsThoughtsOpen={(isOpen) =>
+                setIsThoughtsOpen(isOpen, message.id)
+              }
               onReactionAdded={handleReactionAdded}
             />
           )) || (
@@ -403,8 +420,8 @@ export default function Home() {
       </div>
       <Thoughts
         thought={thought}
-        setIsThoughtsOpen={setIsThoughtsOpen}
-        isThoughtsOpen={isThoughtsOpen}
+        setIsThoughtsOpen={(isOpen: boolean) => setIsThoughtsOpen(isOpen, null)}
+        isThoughtsOpen={isThoughtsOpenState}
       />
     </main>
   );
