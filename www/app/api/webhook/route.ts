@@ -5,7 +5,7 @@ import {
   upsertPriceRecord,
   manageSubscriptionStatusChange,
   deleteProductRecord,
-  deletePriceRecord
+  deletePriceRecord,
 } from '@/utils/supabase/admin';
 
 // Stripe Webhook events we want to track and take action against
@@ -19,7 +19,7 @@ const relevantEvents = new Set([
   'checkout.session.completed',
   'customer.subscription.created',
   'customer.subscription.updated',
-  'customer.subscription.deleted'
+  'customer.subscription.deleted',
 ]);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -33,16 +33,11 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
 
-
   try {
     if (!signature || !webhookSecret) {
       return new Response('Webhook secret not found.', { status: 400 });
     }
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      webhookSecret
-    );
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err: any) {
     console.log('Webhook Error:', err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
@@ -54,12 +49,12 @@ export async function POST(req: Request) {
       switch (event.type) {
         case 'product.created':
         case 'product.updated':
-          console.log("Product")
+          console.log('Product');
           await upsertProductRecord(event.data.object as Stripe.Product);
           break;
         case 'price.created':
         case 'price.updated':
-          console.log("Price")
+          console.log('Price');
           await upsertPriceRecord(event.data.object as Stripe.Price);
           break;
         case 'price.deleted':
@@ -79,30 +74,32 @@ export async function POST(req: Request) {
           );
           break;
         case 'checkout.session.completed':
-          const checkoutSession = event.data.object as Stripe.Checkout.Session
+          const checkoutSession = event.data.object as Stripe.Checkout.Session;
           if (checkoutSession.mode === 'subscription') {
             const subscriptionId = checkoutSession.subscription;
             manageSubscriptionStatusChange(
               subscriptionId as string,
               checkoutSession.customer as string,
               true
-            )
+            );
           }
           break;
         default:
-          console.error(`Unhandled relevant event type ${event.type}`)
+          console.error(`Unhandled relevant event type ${event.type}`);
       }
     } catch (error) {
       console.log(error);
       return new Response(
         'Webhook handler failed, view your Next.js function logs.',
         {
-          status: 400
+          status: 400,
         }
-      )
+      );
     }
   } else {
-    return new Response(`Unhandled event type ${event.type}`, { status: 400 });
+    return new Response(`Unhandled event type ${event.type}`, {
+      status: 400,
+    });
   }
   return new Response(JSON.stringify({ received: true }));
 }

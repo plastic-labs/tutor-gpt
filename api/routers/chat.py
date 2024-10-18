@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 
 from api import schemas
@@ -59,15 +59,24 @@ async def stream(inp: schemas.ConversationInput):
         if "rate limit" in str(e).lower():
             return JSONResponse(
                 status_code=429,
-                content={"error": "rate_limit_exceeded", "message": "Rate limit exceeded. Please try again later."}
+                content={
+                    "error": "rate_limit_exceeded",
+                    "message": "Rate limit exceeded. Please try again later.",
+                },
             )
         else:
             return JSONResponse(
                 status_code=500,
-                content={"error": "internal_server_error", "message": "An internal server error has occurred."}
+                content={
+                    "error": "internal_server_error",
+                    "message": "An internal server error has occurred.",
+                },
             )
 
-async def create_messages_and_metamessages(app_id, user_id, conversation_id, user_message, thought, ai_response):
+
+async def create_messages_and_metamessages(
+    app_id, user_id, conversation_id, user_message, thought, ai_response
+):
     try:
         # These operations will use the DB layer's built-in retry logic
         await honcho.apps.users.sessions.messages.create(
@@ -114,5 +123,8 @@ async def get_thought(conversation_id: str, message_id: str, user_id: str):
         logging.error(f"An error occurred: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={"error": "internal_server_error", "message": "An internal server error has occurred."}
+            content={
+                "error": "internal_server_error",
+                "message": "An internal server error has occurred.",
+            },
         )

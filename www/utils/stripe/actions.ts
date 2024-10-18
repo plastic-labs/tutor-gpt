@@ -1,11 +1,15 @@
-'use server'
+'use server';
 
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/utils/supabase/server';
 import { createOrRetrieveCustomer } from '@/utils/supabase/admin';
 
-import { getURL, getErrorRedirect, calculateTrialEndUnixTimestamp } from '@/utils/helpers';
+import {
+  getURL,
+  getErrorRedirect,
+  calculateTrialEndUnixTimestamp,
+} from '@/utils/helpers';
 
-import Stripe from 'stripe'
+import Stripe from 'stripe';
 //
 import { Tables } from '@/utils/database.types';
 
@@ -13,7 +17,7 @@ type Price = Tables<'prices'>;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
-})
+});
 
 type CheckoutResponse = {
   errorRedirect?: string;
@@ -22,14 +26,14 @@ type CheckoutResponse = {
 
 export async function checkoutWithStripe(
   price: Price,
-  redirectPath: string = '/subscription',
+  redirectPath: string = '/subscription'
 ): Promise<CheckoutResponse> {
   try {
     // Get the user from Supabase auth
     const supabase = createClient();
     const {
       error,
-      data: { user }
+      data: { user },
     } = await supabase.auth.getUser();
 
     if (error || !user) {
@@ -42,7 +46,7 @@ export async function checkoutWithStripe(
     try {
       customer = await createOrRetrieveCustomer({
         uuid: user?.id || '',
-        email: user?.email || ''
+        email: user?.email || '',
       });
     } catch (err) {
       console.error(err);
@@ -54,16 +58,16 @@ export async function checkoutWithStripe(
       billing_address_collection: 'required',
       customer,
       customer_update: {
-        address: 'auto'
+        address: 'auto',
       },
       line_items: [
         {
           price: price.id,
-          quantity: 1
-        }
+          quantity: 1,
+        },
       ],
       cancel_url: getURL(redirectPath),
-      success_url: getURL(redirectPath)
+      success_url: getURL(redirectPath),
     };
 
     console.log(
@@ -76,13 +80,13 @@ export async function checkoutWithStripe(
         ...params,
         mode: 'subscription',
         subscription_data: {
-          trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days)
-        }
+          trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days),
+        },
       };
     } else if (price.type === 'one_time') {
       params = {
         ...params,
-        mode: 'payment'
+        mode: 'payment',
       };
     }
 
@@ -97,7 +101,7 @@ export async function checkoutWithStripe(
 
     // Instead of returning a Response, just return the data or error.
     if (session) {
-      console.log("It is working")
+      console.log('It is working');
       return { sessionId: session.id };
     } else {
       throw new Error('Unable to create checkout session.');
@@ -110,7 +114,7 @@ export async function checkoutWithStripe(
           redirectPath,
           error.message,
           'Please try again later or contact a system administrator.'
-        )
+        ),
       };
     } else {
       return {
@@ -118,7 +122,7 @@ export async function checkoutWithStripe(
           redirectPath,
           'An unknown error occurred.',
           'Please try again later or contact a system administrator.'
-        )
+        ),
       };
     }
   }
@@ -130,7 +134,7 @@ export async function createStripePortal() {
     const supabase = createClient();
     const {
       error,
-      data: { user }
+      data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
@@ -144,7 +148,7 @@ export async function createStripePortal() {
     try {
       customer = await createOrRetrieveCustomer({
         uuid: user.id || '',
-        email: user.email || ''
+        email: user.email || '',
       });
     } catch (err) {
       console.error(err);
@@ -171,14 +175,14 @@ export async function createStripePortal() {
   } catch (error) {
     if (error instanceof Error) {
       console.error(error);
-      // TODO 
+      // TODO
       // return getErrorRedirect(
       //   currentPath,
       //   error.message,
       //   'Please try again later or contact a system administrator.'
       // );
     } else {
-      // TODO 
+      // TODO
       // return getErrorRedirect(
       //   currentPath,
       //   'An unknown error occurred.',

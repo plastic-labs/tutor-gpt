@@ -1,7 +1,7 @@
 from os import getenv
 from typing import List
 
-from openai import AzureOpenAI
+from openai import OpenAI
 from dotenv import load_dotenv
 
 from honcho import Honcho
@@ -30,13 +30,9 @@ class HonchoCall:
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    openai = AzureOpenAI(
-        api_key=getenv("AZURE_OPENAI_API_KEY", "placeholder"),
-        azure_endpoint=getenv("AZURE_OPENAI_ENDPOINT", "placeholder"),
-        api_version=getenv("AZURE_OPENAI_API_VERSION", "2024-02-01"),
-    )
+    openai = OpenAI()
 
-    model = getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder")
+    model = "gpt-4o"
 
 
 class ThinkCall(HonchoCall):
@@ -82,9 +78,16 @@ class ThinkCall(HonchoCall):
                 continue
         return history_str
 
+    def call(self):
+        response = self.openai.chat.completions.create(
+            model=self.model,
+            messages=[self.template(), {"role": "user", "content": self.user_input}],
+        )
+        return response.choices[0].message
+
     def stream(self):
         completion = self.openai.chat.completions.create(
-            model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
+            model=self.model,
             messages=[self.template(), {"role": "user", "content": self.user_input}],
             stream=True,
         )
@@ -127,9 +130,16 @@ class RespondCall(HonchoCall):
                 history_list.append({"role": "assistant", "content": message.content})
         return history_list
 
+    def call(self):
+        response = self.openai.chat.completions.create(
+            model=self.model,
+            messages=self.template(),
+        )
+        return response.choices[0].message
+
     def stream(self):
         completion = self.openai.chat.completions.create(
-            model=getenv("AZURE_OPENAI_DEPLOYMENT", "placeholder"),
+            model=self.model,
             messages=self.template(),
             stream=True,
         )

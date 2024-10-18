@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import { Tables } from '@/utils/database.types'
+import { Tables } from '@/utils/database.types';
 
 import { loadStripe } from '@stripe/stripe-js';
 
 import { checkoutWithStripe } from '@/utils/stripe/actions';
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from 'next/navigation';
 // import { getErrorRedirect } from '@/utils/helpers';
 
 type Price = Tables<'prices'>;
 
 interface PriceCardProps {
-  price: Price
+  price: Price;
 }
 
 export default function PriceCard({ price }: PriceCardProps) {
@@ -19,18 +19,21 @@ export default function PriceCard({ price }: PriceCardProps) {
   const router = useRouter();
 
   const subscribe = async () => {
-    console.log("Subscribing")
-    const { errorRedirect, sessionId } = await checkoutWithStripe(price, currentPath);
+    console.log('Subscribing');
+    const { errorRedirect, sessionId } = await checkoutWithStripe(
+      price,
+      currentPath
+    );
 
-    console.log(sessionId)
+    console.log(sessionId);
 
     if (errorRedirect) {
-      return router.push(errorRedirect)
+      return router.push(errorRedirect);
     }
 
     if (!sessionId) {
-      console.error("Error")
-      return
+      console.error('Error');
+      return;
       // return router.push(
       //   getErrorRedirect(
       //     currentPath,
@@ -40,9 +43,11 @@ export default function PriceCard({ price }: PriceCardProps) {
       // )
     }
 
-    const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
-    stripe?.redirectToCheckout({ sessionId })
-  }
+    const stripe = await loadStripe(
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+    );
+    stripe?.redirectToCheckout({ sessionId });
+  };
 
   return (
     <div>
@@ -50,5 +55,5 @@ export default function PriceCard({ price }: PriceCardProps) {
       <p>{price.interval}</p>
       <button onClick={subscribe}>Subscribe</button>
     </div>
-  )
+  );
 }

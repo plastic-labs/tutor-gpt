@@ -6,20 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint components/ app/ utils/",
+    "pretty": "prettier --write components/ app/ utils/"
   },
   "dependencies": {
-    "@sentry/nextjs": "^8.30.0",
-    "@stripe/stripe-js": "^4.4.0",
+    "@sentry/nextjs": "^8.34.0",
+    "@stripe/stripe-js": "^4.8.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.4",
     "katex": "^0.16.11",
-    "next": "14.2.7",
-    "posthog-js": "^1.161.3",
+    "next": "^14.2.15",
+    "posthog-js": "^1.167.0",
     "react": "18.3.1",
     "react-dom": "18.2.0",
     "react-icons": "^4.12.0",
-    "react-loading-skeleton": "^3.4.0",
+    "react-loading-skeleton": "^3.5.0",
     "react-markdown": "^8.0.7",
     "react-syntax-highlighter": "^15.5.0",
     "react-toggle-dark-mode": "^1.1.1",
@@ -27,12 +28,13 @@
     "remark-math": "^6.0.0",
     "retry": "^0.13.1",
     "sharp": "^0.32.6",
-    "stripe": "^16.11.0",
-    "sweetalert2": "^11.14.0",
+    "stripe": "^16.12.0",
+    "sweetalert2": "^11.14.2",
     "sweetalert2-react-content": "^5.0.7",
     "swr": "^2.2.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.12.0",
     "@types/node": "20.5.4",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
@@ -41,13 +43,23 @@
     "@types/uuid": "^9.0.8",
     "autoprefixer": "10.4.15",
     "encoding": "^0.1.13",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^13.5.6",
+    "eslint": "^9.12.0",
+    "eslint-config-next": "^13.5.7",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.1",
+    "globals": "^15.11.0",
     "postcss": "8.4.28",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.5.14",
-    "supabase": ">=1.8.1",
+    "supabase": "^1.204.3",
     "tailwindcss": "3.3.3",
-    "typescript": "5.1.6"
+    "typescript": "5.1.6",
+    "typescript-eslint": "^8.8.1"
+  },
+  "prettier": {
+    "trailingComma": "es5",
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true
   }
 }

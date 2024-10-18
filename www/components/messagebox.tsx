@@ -3,19 +3,23 @@ import Image from "next/image";
 import icon from "@/public/bloomicon.jpg";
 import usericon from "@/public/usericon.svg";
 import Skeleton from "react-loading-skeleton";
-import { FaLightbulb } from "react-icons/fa";
-import { API } from "@/utils/api";
+import { FaLightbulb, FaThumbsDown, FaThumbsUp } from "react-icons/fa";
+import { API, type Message } from "@/utils/api";
+import Spinner from "./spinner";
+
+export type Reaction = "thumbs_up" | "thumbs_down" | null;
 
 interface MessageBoxProps {
   isUser?: boolean;
   userId?: string;
   URL?: string;
   conversationId?: string;
-  message: { text: string; id: string };
+  message: Message;
   loading?: boolean;
   isThoughtsOpen?: boolean;
   setIsThoughtsOpen: (isOpen: boolean) => void;
   setThought: (thought: string) => void;
+  onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
 
 export type Reaction = "thumbs_up" | "thumbs_down" | null;
@@ -28,12 +32,35 @@ export default function MessageBox({
   loading = false,
   setIsThoughtsOpen,
   conversationId,
+  onReactionAdded,
   setThought,
 }: MessageBoxProps) {
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
+  const [pendingReaction, setPendingReaction] = useState<Reaction>(null);
   const [error, setError] = useState<string | null>(null);
-  const { id: messageId, text } = message;
+
+  const { id: messageId, text, metadata } = message;
+  const reaction = metadata?.reaction || null;
   const shouldShowButtons = messageId !== "";
+
+  const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
+    if (!messageId || !conversationId || !userId || !URL) return;
+
+    setPendingReaction(newReaction);
+
+    try {
+      const reactionToSend = reaction === newReaction ? null : newReaction;
+      await onReactionAdded(
+        messageId,
+        reactionToSend as Exclude<Reaction, null>,
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update reaction.");
+    } finally {
+      setPendingReaction(null);
+    }
+  };
 
   const handleFetchThought = async () => {
     if (!messageId || !conversationId || !userId || !URL) return;
@@ -49,10 +76,10 @@ export default function MessageBox({
         setIsThoughtsOpen(true);
         setThought(thought);
       } else {
-        setError("No thought found.");
+        setError('No thought found.');
       }
     } catch (err) {
-      setError("Failed to fetch thought.");
+      setError('Failed to fetch thought.');
       console.error(err);
     } finally {
       setIsThoughtLoading(false);
@@ -62,8 +89,8 @@ export default function MessageBox({
   return (
     <article
       className={
-        "flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl " +
-        (isUser ? "bg-gray-100 dark:bg-gray-800" : "")
+        'flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl ' +
+        (isUser ? 'bg-gray-100 dark:bg-gray-800' : '')
       }
     >
       {loading ? (
@@ -82,23 +109,50 @@ export default function MessageBox({
           <div className="message-content">{text}</div>
         )}
         {!loading && !isUser && shouldShowButtons && (
-          <div className="flex justify-left gap-2 mt-2">
-            {/* <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
-              <FaThumbsUp />
+          <div className="flex justify-start gap-2 mt-2">
+            <button
+              className={`p-2 rounded-full ${reaction === "thumbs_up"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
+                } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
+              onClick={() => handleReaction("thumbs_up")}
+              disabled={pendingReaction !== null}
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                {pendingReaction === "thumbs_up" ? (
+                  <Spinner size={16} />
+                ) : (
+                  <FaThumbsUp />
+                )}
+              </div>
             </button>
-            <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
-              <FaThumbsDown />
-            </button> */}
+            <button
+              className={`p-2 rounded-full ${reaction === "thumbs_down"
+                ? "bg-red-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
+                } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
+              onClick={() => handleReaction("thumbs_down")}
+              disabled={pendingReaction !== null}
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                {pendingReaction === "thumbs_down" ? (
+                  <Spinner size={16} />
+                ) : (
+                  <FaThumbsDown />
+                )}
+              </div>
+            </button>
             <button
               className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >
-              <FaLightbulb />
+              <div className="w-5 h-5 flex items-center justify-center">
+                {isThoughtLoading ? <Spinner size={16} /> : <FaLightbulb />}
+              </div>
             </button>
           </div>
         )}
-        {isThoughtLoading && <p>Loading thought...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
       </div>
     </article>
