@@ -7,34 +7,59 @@ import { FaLightbulb } from 'react-icons/fa';
 import { API } from '@/utils/api';
 import MarkdownWrapper from './markdownWrapper';
 
+export type Reaction = "thumbs_up" | "thumbs_down" | null;
+
+
 interface MessageBoxProps {
   isUser?: boolean;
   userId?: string;
   URL?: string;
-  messageId?: string;
   conversationId?: string;
-  text: string;
+  message: Message;
   loading?: boolean;
   isThoughtsOpen?: boolean;
   setIsThoughtsOpen: (isOpen: boolean) => void;
   setThought: (thought: string) => void;
+  onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
 
 export default function MessageBox({
   isUser,
   userId,
   URL,
-  messageId,
-  text,
+  message,
   loading = false,
   setIsThoughtsOpen,
   conversationId,
+  onReactionAdded,
   setThought,
 }: MessageBoxProps) {
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
+  const [pendingReaction, setPendingReaction] = useState<Reaction>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const shouldShowButtons = messageId !== '';
+  const { id: messageId, text, metadata } = message;
+  const reaction = metadata?.reaction || null;
+  const shouldShowButtons = messageId !== "";
+
+  const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
+    if (!messageId || !conversationId || !userId || !URL) return;
+
+    setPendingReaction(newReaction);
+
+    try {
+      const reactionToSend = reaction === newReaction ? null : newReaction;
+      await onReactionAdded(
+        messageId,
+        reactionToSend as Exclude<Reaction, null>,
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update reaction.");
+    } finally {
+      setPendingReaction(null);
+    }
+  };
 
   const handleFetchThought = async () => {
     if (!messageId || !conversationId || !userId || !URL) return;
@@ -79,23 +104,50 @@ export default function MessageBox({
       <div className="flex flex-col gap-2 w-full">
         {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={text} />}
         {!loading && !isUser && shouldShowButtons && (
-          <div className="flex justify-left gap-2 mt-2">
-            {/* <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
-              <FaThumbsUp />
+          <div className="flex justify-start gap-2 mt-2">
+            <button
+              className={`p-2 rounded-full ${reaction === "thumbs_up"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
+                } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
+              onClick={() => handleReaction("thumbs_up")}
+              disabled={pendingReaction !== null}
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                {pendingReaction === "thumbs_up" ? (
+                  <Spinner size={16} />
+                ) : (
+                  <FaThumbsUp />
+                )}
+              </div>
             </button>
-            <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
-              <FaThumbsDown />
-            </button> */}
+            <button
+              className={`p-2 rounded-full ${reaction === "thumbs_down"
+                ? "bg-red-500 text-white"
+                : "bg-gray-200 dark:bg-gray-700"
+                } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
+              onClick={() => handleReaction("thumbs_down")}
+              disabled={pendingReaction !== null}
+            >
+              <div className="w-5 h-5 flex items-center justify-center">
+                {pendingReaction === "thumbs_down" ? (
+                  <Spinner size={16} />
+                ) : (
+                  <FaThumbsDown />
+                )}
+              </div>
+            </button>
             <button
               className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >
-              <FaLightbulb />
+              <div className="w-5 h-5 flex items-center justify-center">
+                {isThoughtLoading ? <Spinner size={16} /> : <FaLightbulb />}
+              </div>
             </button>
           </div>
         )}
-        {isThoughtLoading && <p>Loading thought...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
       </div>
     </article>
