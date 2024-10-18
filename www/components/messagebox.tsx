@@ -17,7 +17,7 @@ interface MessageBoxProps {
   conversationId?: string;
   message: Message;
   loading?: boolean;
-  isThoughtsOpen?: boolean;
+  isThoughtOpen?: boolean;
   setIsThoughtsOpen: (isOpen: boolean) => void;
   setThought: (thought: string) => void;
   onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
@@ -29,6 +29,7 @@ export default function MessageBox({
   URL,
   message,
   loading = false,
+  isThoughtOpen,
   setIsThoughtsOpen,
   conversationId,
   onReactionAdded,
@@ -49,10 +50,7 @@ export default function MessageBox({
 
     try {
       const reactionToSend = reaction === newReaction ? null : newReaction;
-      await onReactionAdded(
-        messageId,
-        reactionToSend as Exclude<Reaction, null>
-      );
+      await onReactionAdded(messageId, reactionToSend as Reaction);
     } catch (err) {
       console.error(err);
       setError('Failed to update reaction.');
@@ -63,7 +61,11 @@ export default function MessageBox({
 
   const handleFetchThought = async () => {
     if (!messageId || !conversationId || !userId || !URL) return;
-
+    if (isThoughtOpen) {
+      // If thought is already open, close it
+      setIsThoughtsOpen(false);
+      return;
+    }
     setIsThoughtLoading(true);
     setError(null);
 
@@ -140,7 +142,11 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className="p-2 rounded-full bg-gray-200 dark:bg-gray-700"
+              className={`p-2 rounded-full ${
+                isThoughtOpen
+                  ? 'bg-neon-green text-gray-800'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >

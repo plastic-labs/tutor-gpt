@@ -165,9 +165,11 @@ export class API {
       if (!rawMessages) return [];
       const messages: Message[] = rawMessages.map((rawMessage: any) => {
         return {
+          ...rawMessage,
           text: rawMessage.content,
           isUser: rawMessage.isUser,
           id: rawMessage.id,
+          metadata: rawMessage.metadata,
         };
       });
 
