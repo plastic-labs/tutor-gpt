@@ -1,5 +1,5 @@
-import retry from "retry";
-import { captureException, captureMessage } from "@sentry/nextjs";
+import retry from 'retry';
+import { captureException, captureMessage } from '@sentry/nextjs';
 
 interface RetryOptions {
   retries: number;
@@ -23,13 +23,13 @@ const openAIOptions: RetryOptions = {
 };
 
 function isRateLimitError(error: any): boolean {
-  return error?.response?.data?.error === "rate_limit_exceeded";
+  return error?.response?.data?.error === 'rate_limit_exceeded';
 }
 
 function retryOperation<T>(
   operation: () => Promise<T>,
   options: RetryOptions,
-  isOpenAI: boolean,
+  isOpenAI: boolean
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const retryOperation = retry.operation(options);
@@ -40,8 +40,8 @@ function retryOperation<T>(
         resolve(result);
       } catch (error: any) {
         if (isOpenAI && isRateLimitError(error)) {
-          captureMessage("OpenAI Rate Limit Hit", {
-            level: "warning",
+          captureMessage('OpenAI Rate Limit Hit', {
+            level: 'warning',
             extra: {
               attempt: currentAttempt,
               error: error.message,
@@ -66,7 +66,7 @@ export function retryDBOperation<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 export function retryOpenAIOperation<T>(
-  operation: () => Promise<T>,
+  operation: () => Promise<T>
 ): Promise<T> {
   return retryOperation(operation, openAIOptions, true);
 }

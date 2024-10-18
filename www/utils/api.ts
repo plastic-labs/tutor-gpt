@@ -1,5 +1,5 @@
-import { type Reaction } from "@/components/messagebox";
-import { retryDBOperation, retryOpenAIOperation } from "./retryUtils";
+import { type Reaction } from '@/components/messagebox';
+import { retryDBOperation, retryOpenAIOperation } from './retryUtils';
 
 const defaultMessage: Message = {
   text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
@@ -37,17 +37,17 @@ export class Conversation {
     return retryDBOperation(async () => {
       const req = await fetch(
         `${this.api.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: this.conversationId,
-          user_id: this.api.userId,
-        }),
+          new URLSearchParams({
+            conversation_id: this.conversationId,
+            user_id: this.api.userId,
+          })
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];
       const messages = rawMessages.map((rawMessage: any) => {
         return {
           text: rawMessage.data.content,
-          isUser: rawMessage.type === "human",
+          isUser: rawMessage.type === 'human',
           id: rawMessage.id,
         };
       });
@@ -61,14 +61,14 @@ export class Conversation {
 
     await retryDBOperation(async () => {
       await fetch(`${this.api.url}/api/conversations/update`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
           conversation_id: this.conversationId,
           user_id: this.api.userId,
           name,
         }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
       this.name = name;
@@ -78,7 +78,7 @@ export class Conversation {
   async delete() {
     await retryDBOperation(async () => {
       await fetch(
-        `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`,
+        `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
       ).then((res) => res.json());
     });
   }
@@ -86,14 +86,14 @@ export class Conversation {
   async chat(message: string) {
     return retryOpenAIOperation(async () => {
       const req = await fetch(`${this.api.url}/api/stream`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
           conversation_id: this.conversationId,
           user_id: this.api.userId,
           message,
         }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
@@ -119,12 +119,12 @@ export class API {
   async new() {
     return retryDBOperation(async () => {
       const req = await fetch(
-        `${this.url}/api/conversations/insert?user_id=${this.userId}`,
+        `${this.url}/api/conversations/insert?user_id=${this.userId}`
       );
       const { conversation_id } = await req.json();
       return new Conversation({
         api: this,
-        name: "",
+        name: '',
         conversationId: conversation_id,
       });
     });
@@ -133,7 +133,7 @@ export class API {
   async getConversations() {
     return retryDBOperation(async () => {
       const req = await fetch(
-        `${this.url}/api/conversations/get?user_id=${this.userId}`,
+        `${this.url}/api/conversations/get?user_id=${this.userId}`
       );
       const { conversations }: { conversations: RawConversation[] } =
         await req.json();
@@ -147,7 +147,7 @@ export class API {
             api: this,
             name: conversation.name,
             conversationId: conversation.conversation_id,
-          }),
+          })
       );
     });
   }
@@ -156,10 +156,10 @@ export class API {
     return retryDBOperation(async () => {
       const req = await fetch(
         `${this.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: conversationId,
-          user_id: this.userId,
-        }),
+          new URLSearchParams({
+            conversation_id: conversationId,
+            user_id: this.userId,
+          })
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];
@@ -184,21 +184,21 @@ export class API {
         const response = await fetch(
           `${this.url}/api/thought/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
           {
-            method: "GET",
+            method: 'GET',
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
-          },
+          }
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch thought");
+          throw new Error('Failed to fetch thought');
         }
 
         const data = await response.json();
         return data.thought;
       } catch (error) {
-        console.error("Error fetching thought:", error);
+        console.error('Error fetching thought:', error);
         return null;
       }
     });
@@ -207,27 +207,27 @@ export class API {
   async addReaction(
     conversationId: string,
     messageId: string,
-    reaction: Exclude<Reaction, null>,
+    reaction: Exclude<Reaction, null>
   ): Promise<{ status: string }> {
     return retryDBOperation(async () => {
       try {
         const response = await fetch(
           `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}&reaction=${reaction}`,
           {
-            method: "POST",
+            method: 'POST',
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
-          },
+          }
         );
 
         if (!response.ok) {
-          throw new Error("Failed to add reaction");
+          throw new Error('Failed to add reaction');
         }
 
         return await response.json();
       } catch (error) {
-        console.error("Error adding reaction:", error);
+        console.error('Error adding reaction:', error);
         throw error;
       }
     });
@@ -235,22 +235,22 @@ export class API {
 
   async getReaction(
     conversationId: string,
-    messageId: string,
+    messageId: string
   ): Promise<{ reaction: Reaction }> {
     return retryDBOperation(async () => {
       try {
         const response = await fetch(
           `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
           {
-            method: "GET",
+            method: 'GET',
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
-          },
+          }
         );
 
         if (!response.ok) {
-          throw new Error("Failed to get reaction");
+          throw new Error('Failed to get reaction');
         }
 
         const data = await response.json();
@@ -258,14 +258,14 @@ export class API {
         // Validate the reaction
         if (
           data.reaction !== null &&
-          !["thumbs_up", "thumbs_down"].includes(data.reaction)
+          !['thumbs_up', 'thumbs_down'].includes(data.reaction)
         ) {
-          throw new Error("Invalid reaction received from server");
+          throw new Error('Invalid reaction received from server');
         }
 
         return data as { reaction: Reaction };
       } catch (error) {
-        console.error("Error getting reaction:", error);
+        console.error('Error getting reaction:', error);
         throw error;
       }
     });
@@ -274,26 +274,26 @@ export class API {
   async addOrRemoveReaction(
     conversationId: string,
     messageId: string,
-    reaction: Reaction,
+    reaction: Reaction
   ): Promise<{ status: string }> {
     try {
       const response = await fetch(
         `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({ reaction: reaction || undefined }),
-        },
+        }
       );
       if (!response.ok) {
-        throw new Error("Failed to update reaction");
+        throw new Error('Failed to update reaction');
       }
 
       return await response.json();
     } catch (error) {
-      console.error("Error updating reaction:", error);
+      console.error('Error updating reaction:', error);
       throw error;
     }
   }

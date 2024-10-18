@@ -4,11 +4,11 @@ import useSWR from 'swr';
 
 import dynamic from 'next/dynamic';
 
-import banner from "@/public/bloom2x1.svg";
-import darkBanner from "@/public/bloom2x1dark.svg";
-import { DarkModeSwitch } from "react-toggle-dark-mode";
-import { FaLightbulb, FaPaperPlane, FaBars } from "react-icons/fa";
-import Swal from "sweetalert2";
+import banner from '@/public/bloom2x1.svg';
+import darkBanner from '@/public/bloom2x1dark.svg';
+import { DarkModeSwitch } from 'react-toggle-dark-mode';
+import { FaLightbulb, FaPaperPlane, FaBars } from 'react-icons/fa';
+import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef } from 'react';
 import { redirect } from 'next/navigation';
@@ -16,17 +16,17 @@ import { usePostHog } from 'posthog-js/react';
 
 import { getSubscription } from '@/utils/supabase/queries';
 
-import { API } from "@/utils/api";
-import { createClient } from "@/utils/supabase/client";
-import { Reaction } from "@/components/messagebox";
+import { API } from '@/utils/api';
+import { createClient } from '@/utils/supabase/client';
+import { Reaction } from '@/components/messagebox';
 
-const Thoughts = dynamic(() => import("@/components/thoughts"), {
+const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
-const MessageBox = dynamic(() => import("@/components/messagebox"), {
+const MessageBox = dynamic(() => import('@/components/messagebox'), {
   ssr: false,
 });
-const Sidebar = dynamic(() => import("@/components/sidebar"), {
+const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
 
@@ -164,7 +164,7 @@ export default function Home() {
         });
       }, true);
     } catch (error) {
-      console.error("Failed to update reaction:", error);
+      console.error('Failed to update reaction:', error);
     }
   };
 
@@ -272,8 +272,9 @@ export default function Home() {
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? 'dark' : ''
-        }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
+        isDarkMode ? 'dark' : ''
+      }`}
     >
       <Sidebar
         conversations={conversations || []}
@@ -339,23 +340,23 @@ export default function Home() {
               onReactionAdded={handleReactionAdded}
             />
           )) || (
-              <MessageBox
-                isUser={false}
-                message={{
-                  text: "",
-                  id: "",
-                  isUser: false,
-                  metadata: { reaction: null },
-                }}
-                loading={true}
-                setThought={setThought}
-                setIsThoughtsOpen={setIsThoughtsOpen}
-                onReactionAdded={handleReactionAdded}
-                userId={userId}
-                URL={URL}
-                conversationId={conversationId}
-              />
-            )}
+            <MessageBox
+              isUser={false}
+              message={{
+                text: '',
+                id: '',
+                isUser: false,
+                metadata: { reaction: null },
+              }}
+              loading={true}
+              setThought={setThought}
+              setIsThoughtsOpen={setIsThoughtsOpen}
+              onReactionAdded={handleReactionAdded}
+              userId={userId}
+              URL={URL}
+              conversationId={conversationId}
+            />
+          )}
         </section>
         <form
           id="send"
@@ -374,10 +375,11 @@ export default function Home() {
             placeholder={
               isSubscribed ? 'Type a message...' : 'Subscribe to send messages'
             }
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
-              ? 'border-green-200'
-              : 'border-red-200 opacity-50'
-              }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+              canSend && isSubscribed
+                ? 'border-green-200'
+                : 'border-red-200 opacity-50'
+            }`}
             rows={1}
             disabled={!isSubscribed}
             onKeyDown={(e) => {
