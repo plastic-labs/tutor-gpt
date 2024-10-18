@@ -12,12 +12,11 @@ router = APIRouter(prefix="/api", tags=["chat"])
 
 
 @router.post("/stream")
-async def stream(inp: schemas.ConversationInput, background_tasks: BackgroundTasks):
-    """Stream the response to the user, currently only used by the Web UI and has integration to be able to use Honcho if not anonymous"""
+async def stream(inp: schemas.ConversationInput):
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=inp.user_id)
 
-        def convo_turn():
+        async def convo_turn():
             thought = ""
             response = ""
             try:
@@ -50,8 +49,7 @@ async def stream(inp: schemas.ConversationInput, background_tasks: BackgroundTas
                 yield f"Error: {str(e)}"
                 return
 
-            background_tasks.add_task(
-                create_messages_and_metamessages,
+            await create_messages_and_metamessages(
                 app.id, user.id, inp.conversation_id, inp.message, thought, response
             )
 
@@ -68,6 +66,35 @@ async def stream(inp: schemas.ConversationInput, background_tasks: BackgroundTas
                 status_code=500,
                 content={"error": "internal_server_error", "message": "An internal server error has occurred."}
             )
+
+async def create_messages_and_metamessages(app_id, user_id, conversation_id, user_message, thought, ai_response):
+    try:
+        # These operations will use the DB layer's built-in retry logic
+        await honcho.apps.users.sessions.messages.create(
+            is_user=True,
+            session_id=str(conversation_id),
+            app_id=app_id,
+            user_id=user_id,
+            content=user_message,
+        )
+        new_ai_message = await honcho.apps.users.sessions.messages.create(
+            is_user=False,
+            session_id=str(conversation_id),
+            app_id=app_id,
+            user_id=user_id,
+            content=ai_response,
+        )
+        await honcho.apps.users.sessions.metamessages.create(
+            app_id=app_id,
+            session_id=str(conversation_id),
+            user_id=user_id,
+            message_id=new_ai_message.id,
+            metamessage_type="thought",
+            content=thought,
+        )
+    except Exception as e:
+        logging.error(f"Error in create_messages_and_metamessages: {str(e)}")
+        raise  # Re-raise the exception to be handled by the caller
 
 
 @router.get("/thought/{message_id}")
@@ -89,31 +116,3 @@ async def get_thought(conversation_id: str, message_id: str, user_id: str):
             status_code=500,
             content={"error": "internal_server_error", "message": "An internal server error has occurred."}
         )
-
-
-def create_messages_and_metamessages(app_id, user_id, conversation_id, user_message, thought, ai_response):
-    try:
-        honcho.apps.users.sessions.messages.create(
-            is_user=True,
-            session_id=str(conversation_id),
-            app_id=app_id,
-            user_id=user_id,
-            content=user_message,
-        )
-        new_ai_message = honcho.apps.users.sessions.messages.create(
-            is_user=False,
-            session_id=str(conversation_id),
-            app_id=app_id,
-            user_id=user_id,
-            content=ai_response,
-        )
-        honcho.apps.users.sessions.metamessages.create(
-            app_id=app_id,
-            session_id=str(conversation_id),
-            user_id=user_id,
-            message_id=new_ai_message.id,
-            metamessage_type="thought",
-            content=thought,
-        )
-    except Exception as e:
-        logging.error(f"Error in background task: {str(e)}")
