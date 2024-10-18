@@ -3,12 +3,12 @@ import Image from 'next/image';
 import icon from '@/public/bloomicon.jpg';
 import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
-import { FaLightbulb } from 'react-icons/fa';
-import { API } from '@/utils/api';
 import MarkdownWrapper from './markdownWrapper';
+import { FaLightbulb, FaThumbsDown, FaThumbsUp } from 'react-icons/fa';
+import { API, type Message } from '@/utils/api';
+import Spinner from './spinner';
 
-export type Reaction = "thumbs_up" | "thumbs_down" | null;
-
+export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
 
 interface MessageBoxProps {
   isUser?: boolean;
@@ -22,8 +22,6 @@ interface MessageBoxProps {
   setThought: (thought: string) => void;
   onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
-
-export type Reaction = "thumbs_up" | "thumbs_down" | null;
 
 export default function MessageBox({
   isUser,
@@ -42,7 +40,7 @@ export default function MessageBox({
 
   const { id: messageId, text, metadata } = message;
   const reaction = metadata?.reaction || null;
-  const shouldShowButtons = messageId !== "";
+  const shouldShowButtons = messageId !== '';
 
   const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
     if (!messageId || !conversationId || !userId || !URL) return;
@@ -53,11 +51,11 @@ export default function MessageBox({
       const reactionToSend = reaction === newReaction ? null : newReaction;
       await onReactionAdded(
         messageId,
-        reactionToSend as Exclude<Reaction, null>,
+        reactionToSend as Exclude<Reaction, null>
       );
     } catch (err) {
       console.error(err);
-      setError("Failed to update reaction.");
+      setError('Failed to update reaction.');
     } finally {
       setPendingReaction(null);
     }
@@ -108,15 +106,16 @@ export default function MessageBox({
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button
-              className={`p-2 rounded-full ${reaction === "thumbs_up"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 dark:bg-gray-700"
-                } ${pendingReaction === "thumbs_up" ? "opacity-50" : ""}`}
-              onClick={() => handleReaction("thumbs_up")}
+              className={`p-2 rounded-full ${
+                reaction === 'thumbs_up'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
+              onClick={() => handleReaction('thumbs_up')}
               disabled={pendingReaction !== null}
             >
               <div className="w-5 h-5 flex items-center justify-center">
-                {pendingReaction === "thumbs_up" ? (
+                {pendingReaction === 'thumbs_up' ? (
                   <Spinner size={16} />
                 ) : (
                   <FaThumbsUp />
@@ -124,15 +123,16 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${reaction === "thumbs_down"
-                ? "bg-red-500 text-white"
-                : "bg-gray-200 dark:bg-gray-700"
-                } ${pendingReaction === "thumbs_down" ? "opacity-50" : ""}`}
-              onClick={() => handleReaction("thumbs_down")}
+              className={`p-2 rounded-full ${
+                reaction === 'thumbs_down'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
+              onClick={() => handleReaction('thumbs_down')}
               disabled={pendingReaction !== null}
             >
               <div className="w-5 h-5 flex items-center justify-center">
-                {pendingReaction === "thumbs_down" ? (
+                {pendingReaction === 'thumbs_down' ? (
                   <Spinner size={16} />
                 ) : (
                   <FaThumbsDown />
