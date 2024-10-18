@@ -5,6 +5,7 @@ import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import { FaLightbulb } from 'react-icons/fa';
 import { API } from '@/utils/api';
+import MarkdownWrapper from './markdownWrapper';
 
 interface MessageBoxProps {
   isUser?: boolean;
@@ -76,11 +77,7 @@ export default function MessageBox({
         />
       )}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? (
-          <Skeleton count={4} />
-        ) : (
-          <div className="message-content">{text}</div>
-        )}
+        {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={text} />}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-left gap-2 mt-2">
             {/* <button className="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
