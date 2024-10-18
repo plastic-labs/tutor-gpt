@@ -1,15 +1,15 @@
-import React from "react";
-import { FaCircleNotch } from "react-icons/fa";
+import React from 'react';
+import { FaCircleNotch } from 'react-icons/fa';
 
-const Spinner = ({ size = 24, color = "#000000" }) => {
+const Spinner = ({ size = 24, color = '#000000' }) => {
   const spinnerStyle = {
-    animation: "spin 1s linear infinite",
+    animation: 'spin 1s linear infinite',
     color: color,
     fontSize: `${size}px`,
   };
 
   return (
-    <div style={{ display: "inline-block" }}>
+    <div style={{ display: 'inline-block' }}>
       <style>
         {`
           @keyframes spin {
