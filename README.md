@@ -180,9 +180,9 @@ Tutor-GPT is licensed under the GPL-3.0 License. Learn more at the [License file
   URL=http://localhost:3000
   HONCHO_URL=https://demo.honcho.dev
   HONCHO_APP_NAME=HONCHO
+- make sure you have a valid OpenAI API key
 
-  ### wwww/NextJS frontend:
-
+  ### wwww/NextJS frontend setup:
 - Follow all of the instructions in the wwww/readme
 - get your supabase account credentials including the anon key and update your .env file
 - you can run supbase commands using npx supabase <command>;
@@ -195,3 +195,8 @@ Tutor-GPT is licensed under the GPL-3.0 License. Learn more at the [License file
   Studio URL: http://127.0.0.1:54323
 - Update your www/.env file, specifically the supabase NEXT_PUBLIC_SUPABASE_URL with the API URL
 - start the frontend server (e.g. bun dev)
+
+### www/NextJS authentication:
+- if you get the nextJS web app running but authentication is failing, go to your supabase Studio URL and create a user
+- use this to login
+- the interface should work now. if you are getting promise/await error, it could be an issue with the main code base, check the team. make sure you've synced your fork with the latest upstream main.
