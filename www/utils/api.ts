@@ -1,5 +1,8 @@
+import { type Reaction } from '@/components/messagebox';
+import { retryDBOperation, retryOpenAIOperation } from './retryUtils';
+
 const defaultMessage: Message = {
-  text: `I&apos;m your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+  text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
   id: '',
 };
@@ -8,6 +11,7 @@ export interface Message {
   text: string;
   isUser: boolean;
   id: string;
+  metadata?: { reaction?: Reaction };
 }
 
 export class Conversation {
@@ -30,65 +34,71 @@ export class Conversation {
   }
 
   async getMessages() {
-    const req = await fetch(
-      `${this.api.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: this.conversationId,
-          user_id: this.api.userId,
-        })
-    );
-    const { messages: rawMessages } = await req.json();
-    // console.log(rawMessages);
-    if (!rawMessages) return [];
-    const messages = rawMessages.map((rawMessage: any) => {
-      return {
-        text: rawMessage.data.content,
-        isUser: rawMessage.type === 'human',
-        id: rawMessage.id,
-      };
-    });
+    return retryDBOperation(async () => {
+      const req = await fetch(
+        `${this.api.url}/api/messages?` +
+          new URLSearchParams({
+            conversation_id: this.conversationId,
+            user_id: this.api.userId,
+          })
+      );
+      const { messages: rawMessages } = await req.json();
+      if (!rawMessages) return [];
+      const messages = rawMessages.map((rawMessage: any) => {
+        return {
+          text: rawMessage.data.content,
+          isUser: rawMessage.type === 'human',
+          id: rawMessage.id,
+        };
+      });
 
-    return messages;
+      return messages;
+    });
   }
 
   async setName(name: string) {
     if (!name || name === this.name) return;
 
-    await fetch(`${this.api.url}/api/conversations/update`, {
-      method: 'POST',
-      body: JSON.stringify({
-        conversation_id: this.conversationId,
-        user_id: this.api.userId,
-        name,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    await retryDBOperation(async () => {
+      await fetch(`${this.api.url}/api/conversations/update`, {
+        method: 'POST',
+        body: JSON.stringify({
+          conversation_id: this.conversationId,
+          user_id: this.api.userId,
+          name,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      this.name = name;
     });
-    this.name = name;
   }
 
   async delete() {
-    await fetch(
-      `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
-    ).then((res) => res.json());
+    await retryDBOperation(async () => {
+      await fetch(
+        `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
+      ).then((res) => res.json());
+    });
   }
 
   async chat(message: string) {
-    const req = await fetch(`${this.api.url}/api/stream`, {
-      method: 'POST',
-      body: JSON.stringify({
-        conversation_id: this.conversationId,
-        user_id: this.api.userId,
-        message,
-      }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    return retryOpenAIOperation(async () => {
+      const req = await fetch(`${this.api.url}/api/stream`, {
+        method: 'POST',
+        body: JSON.stringify({
+          conversation_id: this.conversationId,
+          user_id: this.api.userId,
+          message,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const reader = req.body?.pipeThrough(new TextDecoderStream()).getReader()!;
-    return reader;
+      return req.body?.pipeThrough(new TextDecoderStream()).getReader()!;
+    });
   }
 }
 
@@ -107,83 +117,186 @@ export class API {
   }
 
   async new() {
-    const req = await fetch(
-      `${this.url}/api/conversations/insert?user_id=${this.userId}`
-    );
-    const { conversation_id } = await req.json();
-    return new Conversation({
-      api: this,
-      name: '',
-      conversationId: conversation_id,
+    return retryDBOperation(async () => {
+      const req = await fetch(
+        `${this.url}/api/conversations/insert?user_id=${this.userId}`
+      );
+      const { conversation_id } = await req.json();
+      return new Conversation({
+        api: this,
+        name: '',
+        conversationId: conversation_id,
+      });
     });
   }
 
   async getConversations() {
-    const req = await fetch(
-      `${this.url}/api/conversations/get?user_id=${this.userId}`
-    );
-    const { conversations }: { conversations: RawConversation[] } =
-      await req.json();
+    return retryDBOperation(async () => {
+      const req = await fetch(
+        `${this.url}/api/conversations/get?user_id=${this.userId}`
+      );
+      const { conversations }: { conversations: RawConversation[] } =
+        await req.json();
 
-    if (conversations.length === 0) {
-      return [await this.new()];
-    }
-    return conversations.map(
-      (conversation) =>
-        new Conversation({
-          api: this,
-          name: conversation.name,
-          conversationId: conversation.conversation_id,
-        })
-    );
+      if (conversations.length === 0) {
+        return [await this.new()];
+      }
+      return conversations.map(
+        (conversation) =>
+          new Conversation({
+            api: this,
+            name: conversation.name,
+            conversationId: conversation.conversation_id,
+          })
+      );
+    });
   }
 
   async getMessagesByConversation(conversationId: string) {
-    const req = await fetch(
-      `${this.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: conversationId,
-          user_id: this.userId,
-        })
-    );
-    const { messages: rawMessages } = await req.json();
-    // console.log(rawMessages);
-    if (!rawMessages) return [];
-    const messages: Message[] = rawMessages.map((rawMessage: any) => {
-      return {
-        text: rawMessage.content,
-        isUser: rawMessage.isUser,
-        id: rawMessage.id,
-      };
-    });
+    return retryDBOperation(async () => {
+      const req = await fetch(
+        `${this.url}/api/messages?` +
+          new URLSearchParams({
+            conversation_id: conversationId,
+            user_id: this.userId,
+          })
+      );
+      const { messages: rawMessages } = await req.json();
+      if (!rawMessages) return [];
+      const messages: Message[] = rawMessages.map((rawMessage: any) => {
+        return {
+          ...rawMessage,
+          text: rawMessage.content,
+          isUser: rawMessage.isUser,
+          id: rawMessage.id,
+          metadata: rawMessage.metadata,
+        };
+      });
 
-    return [defaultMessage, ...messages];
+      return [defaultMessage, ...messages];
+    });
   }
 
   async getThoughtById(
     conversationId: string,
     messageId: string
   ): Promise<string | null> {
+    return retryDBOperation(async () => {
+      try {
+        const response = await fetch(
+          `${this.url}/api/thought/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch thought');
+        }
+
+        const data = await response.json();
+        return data.thought;
+      } catch (error) {
+        console.error('Error fetching thought:', error);
+        return null;
+      }
+    });
+  }
+
+  async addReaction(
+    conversationId: string,
+    messageId: string,
+    reaction: Exclude<Reaction, null>
+  ): Promise<{ status: string }> {
+    return retryDBOperation(async () => {
+      try {
+        const response = await fetch(
+          `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}&reaction=${reaction}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to add reaction');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Error adding reaction:', error);
+        throw error;
+      }
+    });
+  }
+
+  async getReaction(
+    conversationId: string,
+    messageId: string
+  ): Promise<{ reaction: Reaction }> {
+    return retryDBOperation(async () => {
+      try {
+        const response = await fetch(
+          `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to get reaction');
+        }
+
+        const data = await response.json();
+
+        // Validate the reaction
+        if (
+          data.reaction !== null &&
+          !['thumbs_up', 'thumbs_down'].includes(data.reaction)
+        ) {
+          throw new Error('Invalid reaction received from server');
+        }
+
+        return data as { reaction: Reaction };
+      } catch (error) {
+        console.error('Error getting reaction:', error);
+        throw error;
+      }
+    });
+  }
+
+  async addOrRemoveReaction(
+    conversationId: string,
+    messageId: string,
+    reaction: Reaction
+  ): Promise<{ status: string }> {
     try {
       const response = await fetch(
-        `${this.url}/api/thought/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
+        `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
         {
-          method: 'GET',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ reaction: reaction || undefined }),
         }
       );
-
       if (!response.ok) {
-        throw new Error('Failed to fetch thought');
+        throw new Error('Failed to update reaction');
       }
 
-      const data = await response.json();
-      return data.thought;
+      return await response.json();
     } catch (error) {
-      console.error('Error fetching thought:', error);
-      return null;
+      console.error('Error updating reaction:', error);
+      throw error;
     }
   }
 }

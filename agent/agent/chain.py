@@ -40,7 +40,7 @@ class ThinkCall(HonchoCall):
         system = (
             {
                 "role": "system",
-                "content": f"""You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user’s mental state.
+                "content": f"""You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user's mental state.
     Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction
     previous commentary: {self.history}""",
             },
