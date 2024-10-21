@@ -167,3 +167,31 @@ Once your changes are accepted and merged into staging they will under go a peri
 ## License
 
 Tutor-GPT is licensed under the GPL-3.0 License. Learn more at the [License file](./LICENSE)
+
+## Malin's Notes:
+
+- always sync with the main project and pull the latest
+
+### FastAPI/Backend:
+
+- follow the instructions above to get the backend Fast API running and then use this command to creat the server:
+  python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+- make sure your .env file is setup correctly: the URL should be the nextJS URL # NextJS & fastAPI
+  URL=http://localhost:3000
+  HONCHO_URL=https://demo.honcho.dev
+  HONCHO_APP_NAME=HONCHO
+
+  ### wwww/NextJS frontend:
+
+- Follow all of the instructions in the wwww/readme
+- get your supabase account credentials including the anon key and update your .env file
+- you can run supbase commands using npx supabase <command>;
+- make sure you're in the correct directory. the README says "you can simply run the below command in the `tutor-gpt` folder and a local instance of Supabase will start up". but it's wrong. you should cd into wwww to run the supabase command. that is where the nextJS dockerfile is
+- supabase local instance should build and spit out lots of information about the development setup. e.g.
+  API URL: http://127.0.0.1:54321
+  GraphQL URL: http://127.0.0.1:54321/graphql/v1
+  S3 Storage URL: http://127.0.0.1:54321/storage/v1/s3
+  DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+  Studio URL: http://127.0.0.1:54323
+- Update your www/.env file, specifically the supabase NEXT_PUBLIC_SUPABASE_URL with the API URL
+- start the frontend server (e.g. bun dev)
