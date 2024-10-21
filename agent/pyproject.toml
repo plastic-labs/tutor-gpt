@@ -12,7 +12,6 @@ dependencies = [
     "validators>=0.20.0",
     "python-dotenv>=1.0.1",
     "sentry-sdk>=2.13.0",
-    "honeyhive>=0.2.20",
 ]
 
 [tool.hatch.build.targets.wheel]
