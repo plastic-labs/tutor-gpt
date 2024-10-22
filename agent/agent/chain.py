@@ -1,16 +1,12 @@
+import os
+import re
 from typing import List
 
-from openai import OpenAI
-from dotenv import load_dotenv
-
-from honcho import Honcho
-
-from pydantic import ConfigDict
-
-import json
-import re
-import os
 import sentry_sdk
+from dotenv import load_dotenv
+from honcho import Honcho
+from openai import OpenAI
+from pydantic import ConfigDict
 
 load_dotenv()
 
@@ -32,9 +28,7 @@ class HonchoCall:
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    openai = OpenAI(
-        base_url="https://openrouter.ai/api/v1"
-    )
+    openai = OpenAI(base_url="https://openrouter.ai/api/v1")
 
     model = "nousresearch/hermes-3-llama-3.1-405b:free"
     file_path = ""
@@ -67,7 +61,7 @@ class HonchoCall:
 
     def parse_xml_content(self, content: str, tag: str) -> str:
         """Parse content between specified XML tags from the input content."""
-        pattern = f'<{tag}>(.*?)</{tag}>'
+        pattern = f"<{tag}>(.*?)</{tag}>"
         match = re.search(pattern, content, re.DOTALL)
         return match.group(1).strip() if match else ""
 
@@ -96,40 +90,52 @@ class ThinkCall(HonchoCall):
     @property
     def most_recent_honcho_response(self) -> str:
         """Get the most recent honcho response from Honcho"""
-        most_recent_response_metamessage = self.honcho.apps.users.sessions.metamessages.list(
-            app_id=self.app_id,
-            user_id=self.user_id,
-            session_id=self.session_id,
-            metamessage_type="response",
-            filter={"type": "user"},
-            reverse=True,
-            size=1
+        most_recent_response_metamessage = (
+            self.honcho.apps.users.sessions.metamessages.list(
+                app_id=self.app_id,
+                user_id=self.user_id,
+                session_id=self.session_id,
+                metamessage_type="response",
+                filter={"type": "user"},
+                reverse=True,
+                size=1,
+            )
         )
         most_recent_response_metamessage = list(most_recent_response_metamessage)
         if most_recent_response_metamessage:
-            assert most_recent_response_metamessage[0].metadata.get("type") == "user", "some logic issue -- most recent response metamessage is not from the user"
-            most_recent_honcho_response = self.parse_xml_content(most_recent_response_metamessage[0].content, "honcho")
+            assert (
+                most_recent_response_metamessage[0].metadata.get("type") == "user"
+            ), "some logic issue -- most recent response metamessage is not from the user"
+            most_recent_honcho_response = self.parse_xml_content(
+                most_recent_response_metamessage[0].content, "honcho"
+            )
         else:
             most_recent_honcho_response = "None"
 
         return most_recent_honcho_response
-    
+
     @property
     def most_recent_bloom_response(self) -> str:
         """Get the most recent bloom response from Honcho"""
-        most_recent_response_metamessage = self.honcho.apps.users.sessions.metamessages.list(
-            app_id=self.app_id,
-            user_id=self.user_id,
-            session_id=self.session_id,
-            metamessage_type="response",
-            filter={"type": "user"},
-            reverse=True,
-            size=1
+        most_recent_response_metamessage = (
+            self.honcho.apps.users.sessions.metamessages.list(
+                app_id=self.app_id,
+                user_id=self.user_id,
+                session_id=self.session_id,
+                metamessage_type="response",
+                filter={"type": "user"},
+                reverse=True,
+                size=1,
+            )
         )
         most_recent_response_metamessage = list(most_recent_response_metamessage)
         if most_recent_response_metamessage:
-            assert most_recent_response_metamessage[0].metadata.get("type") == "user", "some logic issue -- most recent response metamessage is not from the user"
-            most_recent_bloom_response = self.parse_xml_content(most_recent_response_metamessage[0].content, "bloom")
+            assert (
+                most_recent_response_metamessage[0].metadata.get("type") == "user"
+            ), "some logic issue -- most recent response metamessage is not from the user"
+            most_recent_bloom_response = self.parse_xml_content(
+                most_recent_response_metamessage[0].content, "bloom"
+            )
         else:
             most_recent_bloom_response = "None"
 
@@ -140,8 +146,8 @@ class ThinkCall(HonchoCall):
             *self.get_prompt(),
             {
                 "role": "user",
-                "content": f"<honcho-response>{self.most_recent_honcho_response}<honcho-response>\n<bloom>{self.most_recent_bloom_response}</bloom>\n{self.user_input}"
-            }
+                "content": f"<honcho-response>{self.most_recent_honcho_response}<honcho-response>\n<bloom>{self.most_recent_bloom_response}</bloom>\n{self.user_input}",
+            },
         ]
         response = self.openai.chat.completions.create(
             model=self.model,
@@ -149,14 +155,13 @@ class ThinkCall(HonchoCall):
         )
         return response.choices[0].message
 
-
     def stream(self):
         messages = [
             *self.get_prompt(),
             {
                 "role": "user",
-                "content": f"<honcho-response>{self.most_recent_honcho_response}<honcho-response>\n<bloom>{self.most_recent_bloom_response}</bloom>\n{self.user_input}"
-            }
+                "content": f"<honcho-response>{self.most_recent_honcho_response}<honcho-response>\n<bloom>{self.most_recent_bloom_response}</bloom>\n{self.user_input}",
+            },
         ]
         completion = self.openai.chat.completions.create(
             model=self.model,
@@ -184,7 +189,7 @@ class RespondCall(HonchoCall):
             app_id=self.app_id,
             user_id=self.user_id,
             session_id=self.session_id,
-            metamessage_type="response"
+            metamessage_type="response",
         )
         for metamessage in iter:
             associated_message = self.honcho.apps.users.sessions.messages.get(
@@ -206,8 +211,8 @@ class RespondCall(HonchoCall):
                 *self.get_prompt(),
                 {
                     "role": "user",
-                    "content": f"<honcho-response>{self.honcho_content}</honcho-response>\n{self.user_input}"
-                }
+                    "content": f"<honcho-response>{self.honcho_content}</honcho-response>\n{self.user_input}",
+                },
             ],
         )
         return response.choices[0].message
@@ -217,8 +222,8 @@ class RespondCall(HonchoCall):
             *self.get_prompt(),
             {
                 "role": "user",
-                "content": f"<honcho-response>{self.honcho_content}</honcho-response>\n{self.user_input}"
-            }
+                "content": f"<honcho-response>{self.honcho_content}</honcho-response>\n{self.user_input}",
+            },
         ]
         completion = self.openai.chat.completions.create(
             model=self.model,

@@ -154,7 +154,7 @@ dependencies = [
 requires-dist = [
     { name = "agent", editable = "agent" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.112.2" },
-    { name = "honcho-ai", git = "https://github.com/plastic-labs/honcho-python/?branch=next" },
+    { name = "honcho-ai", specifier = ">=0.0.15" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "sentry-sdk", extras = ["fastapi"], specifier = ">=2.13.0" },
 ]
@@ -339,7 +339,7 @@ wheels = [
 [[package]]
 name = "honcho-ai"
 version = "0.0.15"
-source = { git = "https://github.com/plastic-labs/honcho-python/?branch=next#c553f23c909e548e9fb9373820350ebaaafbd5ba" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
     { name = "distro" },
@@ -347,6 +347,10 @@ dependencies = [
     { name = "pydantic" },
     { name = "sniffio" },
     { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fe/01/bfc8511d94d0b957a5f678970a33882008ae23e3e221d243623b6846df7e/honcho_ai-0.0.15.tar.gz", hash = "sha256:ff918fbd9595352fdd81792de5871756df36dabd6eb3ff3f84cad38d177059a0", size = 264291 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/f8/e685ddfde74e8f23b5ae8336fc9c27f58f7e046b43a9ccd26b1cd4ab9e3a/honcho_ai-0.0.15-py3-none-any.whl", hash = "sha256:83dc68685507a1c887abc35c02c5d2d87bdd07333681e5e7dc39595cd1304fd5", size = 109807 },
 ]
 
 [[package]]

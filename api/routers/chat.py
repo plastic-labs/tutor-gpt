@@ -63,7 +63,13 @@ async def stream(inp: schemas.ConversationInput):
                 return
 
             create_messages_and_metamessages(
-                app.id, user.id, inp.conversation_id, inp.message, thought, honcho_content, response
+                app.id,
+                user.id,
+                inp.conversation_id,
+                inp.message,
+                thought,
+                honcho_content,
+                response,
             )
 
         return StreamingResponse(convo_turn())
@@ -85,7 +91,8 @@ async def stream(inp: schemas.ConversationInput):
                     "message": "An internal server error has occurred.",
                 },
             )
-        
+
+
 def create_messages_and_metamessages(
     app_id, user_id, conversation_id, user_message, thought, honcho_content, ai_response
 ):
@@ -107,7 +114,7 @@ def create_messages_and_metamessages(
             message_id=new_user_message.id,
             metamessage_type="thought",
             content=thought_metamessage,
-            metadata={"type": "user"}
+            metadata={"type": "user"},
         )
         # save bloom's response
         new_ai_message = honcho.apps.users.sessions.messages.create(
@@ -125,10 +132,12 @@ def create_messages_and_metamessages(
             content=thought,
             message_id=new_ai_message.id,
             metamessage_type="thought",
-            metadata={"type": "assistant"}
+            metadata={"type": "assistant"},
         )
         # save constructed response as a metamessage
-        response_metamessage = f"""<honcho-response>{honcho_content}</honcho-response>\n{user_message}"""
+        response_metamessage = (
+            f"""<honcho-response>{honcho_content}</honcho-response>\n{user_message}"""
+        )
         honcho.apps.users.sessions.metamessages.create(
             app_id=app_id,
             user_id=user_id,
@@ -152,7 +161,7 @@ async def get_thought(conversation_id: str, message_id: str, user_id: str):
             user_id=user.id,
             message_id=message_id,
             metamessage_type="thought",
-            filter={"type": "assistant"}
+            filter={"type": "assistant"},
         )
         print(thought)
     except Exception as e:
