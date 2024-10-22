@@ -31,7 +31,7 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 
 **Core**
 
-- `NEXT_PUBLIC_URL` — The URL that the Next.js application will run from. For
+- `NEXT_PUBLIC_SITE_URL` — The URL that the Next.js application will run from. For
   local development it will be `http://localhost:3000` by default.
 - `NEXT_PUBLIC_API_URL` — The URL that the FastAPI backend is running from.
 
