@@ -77,6 +77,3 @@ www/next-env.d.ts
 .yarn/
 
 dist/
-
-# local
-supabase/
