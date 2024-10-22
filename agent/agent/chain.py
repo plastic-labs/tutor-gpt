@@ -11,7 +11,6 @@ import json
 import re
 import os
 import sentry_sdk
-from pprint import pprint
 
 load_dotenv()
 
@@ -85,7 +84,7 @@ class ThinkCall(HonchoCall):
             user_id=self.user_id,
             session_id=self.session_id,
             metamessage_type="thought",
-            filter=json.dumps({"type": "user"}),
+            filter={"type": "user"},
         )
         for metamessage in iter:
             if metamessage.metadata.get("type") == "user":
@@ -102,7 +101,7 @@ class ThinkCall(HonchoCall):
             user_id=self.user_id,
             session_id=self.session_id,
             metamessage_type="response",
-            filter=json.dumps({"type": "user"}),
+            filter={"type": "user"},
             reverse=True,
             size=1
         )
@@ -123,7 +122,7 @@ class ThinkCall(HonchoCall):
             user_id=self.user_id,
             session_id=self.session_id,
             metamessage_type="response",
-            filter=json.dumps({"type": "user"}),
+            filter={"type": "user"},
             reverse=True,
             size=1
         )
