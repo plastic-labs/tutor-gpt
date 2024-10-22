@@ -6,7 +6,10 @@ import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
 import { ConversationTab } from './conversationtab';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { User } from '@supabase/supabase-js';
+import { KeyedMutator } from 'swr';
+import { FaUser } from 'react-icons/fa';
 export default function Sidebar({
   conversations,
   mutateConversations,
@@ -18,17 +21,18 @@ export default function Sidebar({
   isSubscribed,
 }: {
   conversations: Conversation[];
-  mutateConversations: Function;
+  mutateConversations: KeyedMutator<Conversation[]>;
   conversationId: string | undefined;
-  setConversationId: Function;
+  setConversationId: (id: typeof conversationId) => void;
   isSidebarOpen: boolean;
-  setIsSidebarOpen: Function;
+  setIsSidebarOpen: (isOpen: boolean) => void;
   api: API | undefined;
   isSubscribed: boolean;
 }) {
   const postHog = usePostHog();
   const supabase = createClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   async function editConversation(cur: Conversation) {
@@ -54,8 +58,8 @@ export default function Sidebar({
       conversations.map((conversation) =>
         conversation.conversationId === cur.conversationId
           ? new Conversation({ ...conversation, name: newName })
-          : conversation,
-      ),
+          : conversation
+      )
     );
   }
 
@@ -75,7 +79,7 @@ export default function Sidebar({
       postHog?.capture('user_deleted_conversation');
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(
-        (cur) => cur.conversationId != conversation.conversationId,
+        (cur) => cur.conversationId != conversation.conversationId
       );
       if (conversation.conversationId == conversationId) {
         if (newConversations.length > 1) {
@@ -83,7 +87,7 @@ export default function Sidebar({
         } else {
           const newConv = await api?.new();
           setConversationId(newConv?.conversationId);
-          mutateConversations([newConv]);
+          mutateConversations([newConv!]);
         }
       }
       mutateConversations(newConversations);
@@ -94,17 +98,29 @@ export default function Sidebar({
     const conversation = await api?.new();
     postHog?.capture('user_created_conversation');
     setConversationId(conversation?.conversationId);
-    mutateConversations([conversation, ...conversations]);
+    mutateConversations([conversation!, ...conversations]);
   }
+
+  useEffect(() => {
+    async function fetchUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    }
+    fetchUser();
+  }, []);
 
   return (
     <div
-      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${isSidebarOpen ? '' : 'hidden'
-        }`}
+      className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
+        isSidebarOpen ? '' : 'hidden'
+      }`}
     >
       <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? 'fixed lg:static' : 'sticky'
-          } top-0 left-0`}
+        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
+          isSidebarOpen ? 'fixed lg:static' : 'sticky'
+        } top-0 left-0`}
       >
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
@@ -127,25 +143,37 @@ export default function Sidebar({
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
           {conversations.length > 0
             ? conversations.map((cur, i) => (
-              <ConversationTab
-                conversation={cur}
-                select={() => setConversationId(cur.conversationId)}
-                selected={conversationId === cur.conversationId}
-                edit={() => editConversation(cur)}
-                del={() => deleteConversation(cur)}
-                key={i}
-              />
-            ))
+                <ConversationTab
+                  conversation={cur}
+                  select={() => setConversationId(cur.conversationId)}
+                  selected={conversationId === cur.conversationId}
+                  edit={() => editConversation(cur)}
+                  del={() => deleteConversation(cur)}
+                  key={i}
+                />
+              ))
             : Array.from({ length: 5 }).map((_, i) => (
-              <ConversationTab loading key={i} />
-            ))}
+                <ConversationTab loading key={i} />
+              ))}
         </div>
 
         {/* Section 3: Authentication information */}
         <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-            <span className="text-sm font-medium">User Name</span>
+            {user?.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt="Profile"
+                className="w-8 h-8 rounded-full mr-2"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 flex items-center justify-center">
+                <FaUser className="w-5 h-5 text-gray-600" />
+              </div>
+            )}
+            <span className="text-sm font-medium">
+              {user?.user_metadata?.full_name || user?.email || 'User Name'}
+            </span>
           </div>
           <div className="relative">
             <button
