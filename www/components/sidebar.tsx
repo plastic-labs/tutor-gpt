@@ -95,6 +95,7 @@ export default function Sidebar({
     postHog?.capture('user_created_conversation');
     setConversationId(conversation?.conversationId);
     mutateConversations([conversation, ...conversations]);
+    console.log('conversationId', conversation?.conversationId);
   }
 
   return (

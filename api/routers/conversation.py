@@ -24,7 +24,7 @@ async def get_conversations(user_id: str):
     print(user)
     acc = []
     for convo in honcho.apps.users.sessions.list(
-        app_id=app.id, user_id=user.id, is_active=True
+        app_id=app.id, user_id=user.id, is_active=True, reverse=True
     ):
         instance = {}
         instance["conversation_id"] = convo.id
