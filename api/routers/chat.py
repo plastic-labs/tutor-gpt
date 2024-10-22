@@ -98,6 +98,7 @@ def create_messages_and_metamessages(
             user_id=user_id,
             content=user_message,
         )
+        # save constructed thought as a user metamessage
         thought_metamessage = f"""<honcho-response>{honcho_content}</honcho-response>\n<bloom>{ai_response}</bloom>\n{user_message}"""
         honcho.apps.users.sessions.metamessages.create(
             app_id=app_id,
@@ -108,16 +109,6 @@ def create_messages_and_metamessages(
             content=thought_metamessage,
             metadata={"type": "user"}
         )
-        # save thought (honcho query) as metamessage
-        honcho.apps.users.sessions.metamessages.create(
-            session_id=str(conversation_id),
-            app_id=app_id,
-            user_id=user_id,
-            content=f"<honcho>{thought}</honcho>",
-            message_id=new_user_message.id,
-            metamessage_type="thought",
-            metadata={"type": "assistant"}
-        )
         # save bloom's response
         new_ai_message = honcho.apps.users.sessions.messages.create(
             is_user=False,
@@ -126,6 +117,17 @@ def create_messages_and_metamessages(
             user_id=user_id,
             content=ai_response,
         )
+        # save thought (honcho query) as metamessage
+        honcho.apps.users.sessions.metamessages.create(
+            session_id=str(conversation_id),
+            app_id=app_id,
+            user_id=user_id,
+            content=thought,
+            message_id=new_ai_message.id,
+            metamessage_type="thought",
+            metadata={"type": "assistant"}
+        )
+        # save constructed response as a metamessage
         response_metamessage = f"""<honcho-response>{honcho_content}</honcho-response>\n{user_message}"""
         honcho.apps.users.sessions.metamessages.create(
             app_id=app_id,
@@ -143,13 +145,18 @@ def create_messages_and_metamessages(
 @router.get("/thought/{message_id}")
 async def get_thought(conversation_id: str, message_id: str, user_id: str):
     user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
-    thought = honcho.apps.users.sessions.metamessages.list(
-        session_id=conversation_id,
-        app_id=app.id,
-        user_id=user.id,
-        message_id=message_id,
-        metamessage_type="thought",
-        filter={"type": "assistant"}
-    )
+    try:
+        thought = honcho.apps.users.sessions.metamessages.list(
+            session_id=conversation_id,
+            app_id=app.id,
+            user_id=user.id,
+            message_id=message_id,
+            metamessage_type="thought",
+            filter={"type": "assistant"}
+        )
+        print(thought)
+    except Exception as e:
+        logging.error(f"Error in get_thought: {str(e)}")
+        raise  # Re-raise the exception to be handled by the caller
     # In practice, there should only be one thought per message
     return {"thought": thought.items[0].content if thought.items else None}
