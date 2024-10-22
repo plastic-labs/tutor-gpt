@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
 # from pydantic import BaseModel
-import uuid
 from api import schemas
 
 from api.dependencies import honcho, app
@@ -39,7 +38,7 @@ async def get_conversations(user_id: str):
 
 
 @router.get("/delete")
-async def delete_conversation(user_id: str, conversation_id: uuid.UUID):
+async def delete_conversation(user_id: str, conversation_id: str):
     # async with LOCK:
     # user = honcho.apps.users.get_or_create(user_id, app_id=app.id)
     # user = honcho.get_or_create_user(user_id)
