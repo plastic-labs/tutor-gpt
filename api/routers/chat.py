@@ -16,7 +16,8 @@ async def stream(inp: schemas.ConversationInput):
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=inp.user_id)
 
-        async def convo_turn():
+        # Make method synchronous so it does not await the end of the calls
+        def convo_turn():
             thought = ""
             response = ""
             try:
