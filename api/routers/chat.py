@@ -16,7 +16,8 @@ async def stream(inp: schemas.ConversationInput):
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=inp.user_id)
 
-        async def convo_turn():
+        # Make method synchronous so it does not await the end of the calls
+        def convo_turn():
             thought = ""
             response = ""
             try:
@@ -49,7 +50,7 @@ async def stream(inp: schemas.ConversationInput):
                 yield f"Error: {str(e)}"
                 return
 
-            await create_messages_and_metamessages(
+            create_messages_and_metamessages(
                 app.id, user.id, inp.conversation_id, inp.message, thought, response
             )
 
@@ -74,26 +75,26 @@ async def stream(inp: schemas.ConversationInput):
             )
 
 
-async def create_messages_and_metamessages(
+def create_messages_and_metamessages(
     app_id, user_id, conversation_id, user_message, thought, ai_response
 ):
     try:
         # These operations will use the DB layer's built-in retry logic
-        await honcho.apps.users.sessions.messages.create(
+        honcho.apps.users.sessions.messages.create(
             is_user=True,
             session_id=str(conversation_id),
             app_id=app_id,
             user_id=user_id,
             content=user_message,
         )
-        new_ai_message = await honcho.apps.users.sessions.messages.create(
+        new_ai_message = honcho.apps.users.sessions.messages.create(
             is_user=False,
             session_id=str(conversation_id),
             app_id=app_id,
             user_id=user_id,
             content=ai_response,
         )
-        await honcho.apps.users.sessions.metamessages.create(
+        honcho.apps.users.sessions.metamessages.create(
             app_id=app_id,
             session_id=str(conversation_id),
             user_id=user_id,
