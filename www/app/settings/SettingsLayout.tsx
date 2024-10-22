@@ -1,30 +1,23 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import SubscriptionSettings from "@/components/settings/SubscriptionSettings";
-import { IntegrationsSettings } from "@/components/settings/IntegrationsSettings";
-import { SecuritySettings } from "@/components/settings/SecuritySettings";
-import { AccountSettings } from "@/components/settings/AccountSettings";
-import { SupportSettings } from "@/components/settings/SupportSettings";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
+import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings';
+import { SecuritySettings } from '@/components/settings/SecuritySettings';
+import { AccountSettings } from '@/components/settings/AccountSettings';
+import { SupportSettings } from '@/components/settings/SupportSettings';
 
 export default function SettingsLayout({ user, subscription, products }) {
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState('account');
 
   const navItems = [
-    { id: "account", label: "Account" },
-    { id: "security", label: "Security" },
-    { id: "subscription", label: "Subscription" },
-    { id: "integrations", label: "Integrations" },
-    { id: "support", label: "Support" },
+    { id: 'account', label: 'Account' },
+    { id: 'security', label: 'Security' },
+    { id: 'subscription', label: 'Subscription' },
+    { id: 'integrations', label: 'Integrations' },
+    { id: 'support', label: 'Support' },
   ];
 
   return (
@@ -50,8 +43,8 @@ export default function SettingsLayout({ user, subscription, products }) {
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full text-left p-2 rounded ${
                     activeTab === item.id
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-accent hover:text-accent-foreground"
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground'
                   }`}
                 >
                   {item.label}
@@ -61,16 +54,16 @@ export default function SettingsLayout({ user, subscription, products }) {
           </ul>
         </nav>
         <div className="flex-1 p-8">
-          {activeTab === "account" && <AccountSettings user={user} />}
-          {activeTab === "security" && <SecuritySettings user={user} />}
-          {activeTab === "subscription" && (
+          {activeTab === 'account' && <AccountSettings user={user} />}
+          {activeTab === 'security' && <SecuritySettings user={user} />}
+          {activeTab === 'subscription' && (
             <SubscriptionSettings
               subscription={subscription}
               products={products}
             />
           )}
-          {activeTab === "integrations" && <IntegrationsSettings user={user} />}
-          {activeTab === "support" && <SupportSettings user={user} />}
+          {activeTab === 'integrations' && <IntegrationsSettings />}
+          {activeTab === 'support' && <SupportSettings />}
         </div>
       </div>
     </div>

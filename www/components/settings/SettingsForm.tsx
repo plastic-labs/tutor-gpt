@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -12,25 +12,24 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import Swal from "sweetalert2";
+} from '@/components/ui/card';
+import Swal from 'sweetalert2';
 
 interface User {
   id: string;
   email: string;
-  // Add other user properties as needed
 }
 
 interface SettingsFormProps {
   user: User;
-  type: "account" | "security";
+  type: 'account' | 'security';
 }
 
 export function SettingsForm({ user, type }: SettingsFormProps) {
   const [email, setEmail] = useState(user.email);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const supabase = createClient();
 
@@ -41,22 +40,22 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         { email: email },
         {
           emailRedirectTo: `${location.origin}/settings`,
-        },
+        }
       );
       if (error) throw error;
       Swal.fire({
-        title: "Success!",
-        text: "Please check your new email for a confirmation link",
-        icon: "success",
-        confirmButtonText: "Close",
+        title: 'Success!',
+        text: 'Please check your new email for a confirmation link',
+        icon: 'success',
+        confirmButtonText: 'Close',
       });
     } catch (error) {
       console.error(error);
       Swal.fire({
-        title: "Error!",
-        text: "Something went wrong while updating your email",
-        icon: "error",
-        confirmButtonText: "Close",
+        title: 'Error!',
+        text: 'Something went wrong while updating your email',
+        icon: 'error',
+        confirmButtonText: 'Close',
       });
     }
   };
@@ -65,10 +64,10 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       Swal.fire({
-        title: "Error!",
-        text: "Passwords do not match",
-        icon: "error",
-        confirmButtonText: "Close",
+        title: 'Error!',
+        text: 'Passwords do not match',
+        icon: 'error',
+        confirmButtonText: 'Close',
       });
       return;
     }
@@ -78,20 +77,20 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
       });
       if (error) throw error;
       Swal.fire({
-        title: "Success!",
-        text: "Your password has been updated",
-        icon: "success",
-        confirmButtonText: "Close",
+        title: 'Success!',
+        text: 'Your password has been updated',
+        icon: 'success',
+        confirmButtonText: 'Close',
       });
-      setNewPassword("");
-      setConfirmPassword("");
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error) {
       console.error(error);
       Swal.fire({
-        title: "Error!",
-        text: "Something went wrong while updating your password",
-        icon: "error",
-        confirmButtonText: "Close",
+        title: 'Error!',
+        text: 'Something went wrong while updating your password',
+        icon: 'error',
+        confirmButtonText: 'Close',
       });
     }
   };
@@ -100,16 +99,16 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
     <Card className="bg-card text-card-foreground">
       <CardHeader>
         <CardTitle className="text-primary">
-          {type === "account" ? "Account Information" : "Security Settings"}
+          {type === 'account' ? 'Account Information' : 'Security Settings'}
         </CardTitle>
         <CardDescription>
-          {type === "account"
-            ? "Update your account settings here."
-            : "Manage your security settings and change your password."}
+          {type === 'account'
+            ? 'Update your account settings here.'
+            : 'Manage your security settings and change your password.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {type === "account" && (
+        {type === 'account' && (
           <div className="space-y-2">
             <Label htmlFor="email" className="text-foreground">
               Email
@@ -123,7 +122,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
             />
           </div>
         )}
-        {type === "security" && (
+        {type === 'security' && (
           <>
             <div className="space-y-2">
               <Label htmlFor="currentPassword" className="text-foreground">
@@ -165,7 +164,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         )}
       </CardContent>
       <CardFooter className="flex justify-start border-t pt-6">
-        {type === "account" && (
+        {type === 'account' && (
           <Button
             onClick={handleEmailChange}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -173,7 +172,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
             Update Email
           </Button>
         )}
-        {type === "security" && (
+        {type === 'security' && (
           <Button
             onClick={handlePasswordChange}
             className="bg-primary text-primary-foreground hover:bg-primary/90"

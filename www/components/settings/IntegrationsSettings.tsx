@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { FaDiscord } from 'react-icons/fa';
 import { createClient } from '@/utils/supabase/client';
+import useSWR from 'swr';
 import {
   Card,
   CardContent,
@@ -17,32 +17,23 @@ interface User {
   email: string;
 }
 
-interface IntegrationsSettingsProps {
-  user: User;
-}
-
-export function IntegrationsSettings({ user }: IntegrationsSettingsProps) {
-  const [isDiscordConnected, setIsDiscordConnected] = useState(false);
-  const [discordTag, setDiscordTag] = useState<string | null>(null);
+const fetcher = async () => {
   const supabase = createClient();
-
-  useEffect(() => {
-    checkDiscordConnection();
-  }, [user.id]);
-
-  const checkDiscordConnection = async () => {
-    const {
-      data: { user: supabaseUser },
-    } = await supabase.auth.getUser();
-
-    if (supabaseUser?.app_metadata?.provider === 'discord') {
-      setIsDiscordConnected(true);
-      setDiscordTag(supabaseUser.user_metadata?.full_name || null);
-    } else {
-      setIsDiscordConnected(false);
-      setDiscordTag(null);
-    }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return {
+    isDiscordConnected: user?.app_metadata?.provider === 'discord',
+    discordTag:
+      user?.app_metadata?.provider === 'discord'
+        ? user.user_metadata?.full_name
+        : null,
   };
+};
+
+export function IntegrationsSettings() {
+  const { data, error, mutate } = useSWR('discordConnection', fetcher);
+  const supabase = createClient();
 
   const handleDiscordConnect = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -55,6 +46,8 @@ export function IntegrationsSettings({ user }: IntegrationsSettingsProps) {
 
     if (error) {
       console.error('Error connecting Discord:', error);
+    } else {
+      mutate(); // Revalidate the data after connecting
     }
   };
 
@@ -63,10 +56,12 @@ export function IntegrationsSettings({ user }: IntegrationsSettingsProps) {
     if (error) {
       console.error('Error disconnecting Discord:', error);
     } else {
-      setIsDiscordConnected(false);
-      setDiscordTag(null);
+      mutate(); // Revalidate the data after disconnecting
     }
   };
+
+  if (error) return <div>Failed to load</div>;
+  if (!data) return <div>Loading...</div>;
 
   return (
     <div className="space-y-4">
@@ -77,11 +72,11 @@ export function IntegrationsSettings({ user }: IntegrationsSettingsProps) {
           <CardDescription>Connect your Discord account</CardDescription>
         </CardHeader>
         <CardContent>
-          {isDiscordConnected ? (
+          {data.isDiscordConnected ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
                 Connected as:{' '}
-                <span className="font-semibold">{discordTag}</span>
+                <span className="font-semibold">{data.discordTag}</span>
               </p>
               <Button
                 onClick={handleDiscordDisconnect}

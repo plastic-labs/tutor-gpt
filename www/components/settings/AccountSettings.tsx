@@ -1,9 +1,8 @@
-import { SettingsForm } from "@/components/settings/SettingsForm";
+import { SettingsForm } from '@/components/settings/SettingsForm';
 
 interface User {
   id: string;
   email: string;
-  // Add other user properties as needed
 }
 
 export function AccountSettings({ user }: { user: User }) {

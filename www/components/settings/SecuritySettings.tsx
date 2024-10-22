@@ -1,9 +1,8 @@
-import { SettingsForm } from "./SettingsForm";
+import { SettingsForm } from './SettingsForm';
 
 interface User {
   id: string;
   email: string;
-  // Add other user properties as needed
 }
 
 export function SecuritySettings({ user }: { user: User }) {
