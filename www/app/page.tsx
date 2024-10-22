@@ -6,9 +6,6 @@ import dynamic from 'next/dynamic';
 
 import banner from '@/public/bloom2x1.svg';
 import darkBanner from '@/public/bloom2x1dark.svg';
-import MessageBox from '@/components/messagebox';
-import Sidebar from '@/components/sidebar';
-import MarkdownWrapper from '@/components/markdownWrapper';
 import { DarkModeSwitch } from 'react-toggle-dark-mode';
 import { FaLightbulb, FaPaperPlane, FaBars } from 'react-icons/fa';
 import Swal from 'sweetalert2';
@@ -21,15 +18,28 @@ import { getSubscription } from '@/utils/supabase/queries';
 
 import { API } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
+import { Reaction } from '@/components/messagebox';
 
-const Thoughts = dynamic(() => import('@/components/thoughts'));
+const Thoughts = dynamic(() => import('@/components/thoughts'), {
+  ssr: false,
+});
+const MessageBox = dynamic(() => import('@/components/messagebox'), {
+  ssr: false,
+});
+const Sidebar = dynamic(() => import('@/components/sidebar'), {
+  ssr: false,
+});
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Home() {
   const [userId, setUserId] = useState<string>();
 
-  const [isThoughtsOpen, setIsThoughtsOpen] = useState<boolean>(false);
+  const [isThoughtsOpenState, setIsThoughtsOpenState] =
+    useState<boolean>(false);
+  const [openThoughtMessageId, setOpenThoughtMessageId] = useState<
+    string | null
+  >(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   const [thought, setThought] = useState<string>('');
@@ -50,6 +60,14 @@ export default function Home() {
   };
 
   const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const setIsThoughtsOpen = (
+    isOpen: boolean,
+    messageId: string | null = null
+  ) => {
+    setIsThoughtsOpenState(isOpen);
+    setOpenThoughtMessageId(isOpen ? messageId : null);
+  };
 
   useEffect(() => {
     (async () => {
@@ -106,17 +124,17 @@ export default function Home() {
     return api.getConversations();
   };
 
-  const {
-    data: conversations,
-    mutate: mutateConversations,
-    error,
-  } = useSWR(userId, conversationsFetcher, {
-    onSuccess: (conversations) => {
-      setConversationId(conversations[0].conversationId);
-      setCanSend(true);
-    },
-    revalidateOnFocus: false,
-  });
+  const { data: conversations, mutate: mutateConversations } = useSWR(
+    userId,
+    conversationsFetcher,
+    {
+      onSuccess: (conversations) => {
+        setConversationId(conversations[0].conversationId);
+        setCanSend(true);
+      },
+      revalidateOnFocus: false,
+    }
+  );
 
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
@@ -130,8 +148,39 @@ export default function Home() {
     data: messages,
     mutate: mutateMessages,
     isLoading: messagesLoading,
-    error: _,
   } = useSWR(conversationId, messagesFetcher, { revalidateOnFocus: false });
+
+  const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
+    if (!userId || !conversationId) return;
+
+    const api = new API({ url: URL!, userId });
+
+    try {
+      await api.addOrRemoveReaction(conversationId, messageId, reaction);
+
+      // Optimistically update the local data
+      mutateMessages(
+        (currentMessages) => {
+          if (!currentMessages) return currentMessages;
+          return currentMessages.map((msg) => {
+            if (msg.id === messageId) {
+              return {
+                ...msg,
+                metadata: {
+                  ...msg.metadata,
+                  reaction,
+                },
+              };
+            }
+            return msg;
+          });
+        },
+        { revalidate: false }
+      );
+    } catch (error) {
+      console.error('Failed to update reaction:', error);
+    }
+  };
 
   async function chat() {
     if (!isSubscribed) {
@@ -202,7 +251,6 @@ export default function Home() {
           isThinking = false;
           continue;
         }
-        console.log(value);
         setThought((prev) => prev + value);
       } else {
         if (value.includes('❀')) {
@@ -214,7 +262,7 @@ export default function Home() {
 
         mutateMessages(
           [
-            ...newMessages?.slice(0, -1)!,
+            ...(newMessages?.slice(0, -1) || []),
             {
               text: currentModelOutput,
               isUser: false,
@@ -238,8 +286,9 @@ export default function Home() {
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? 'dark' : ''
-        }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
+        isDarkMode ? 'dark' : ''
+      }`}
     >
       <Sidebar
         conversations={conversations || []}
@@ -297,22 +346,34 @@ export default function Home() {
               isUser={message.isUser}
               userId={userId}
               URL={URL}
-              messageId={message.id}
-              text={message.text}
+              message={message}
               loading={messagesLoading}
               conversationId={conversationId}
               setThought={setThought}
-              setIsThoughtsOpen={setIsThoughtsOpen}
+              isThoughtOpen={openThoughtMessageId === message.id}
+              setIsThoughtsOpen={(isOpen) =>
+                setIsThoughtsOpen(isOpen, message.id)
+              }
+              onReactionAdded={handleReactionAdded}
             />
           )) || (
-              <MessageBox
-                isUser={false}
-                text=""
-                loading={true}
-                setThought={setThought}
-                setIsThoughtsOpen={setIsThoughtsOpen}
-              />
-            )}
+            <MessageBox
+              isUser={false}
+              message={{
+                text: '',
+                id: '',
+                isUser: false,
+                metadata: { reaction: null },
+              }}
+              loading={true}
+              setThought={setThought}
+              setIsThoughtsOpen={setIsThoughtsOpen}
+              onReactionAdded={handleReactionAdded}
+              userId={userId}
+              URL={URL}
+              conversationId={conversationId}
+            />
+          )}
         </section>
         <form
           id="send"
@@ -331,10 +392,11 @@ export default function Home() {
             placeholder={
               isSubscribed ? 'Type a message...' : 'Subscribe to send messages'
             }
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
-              ? 'border-green-200'
-              : 'border-red-200 opacity-50'
-              }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+              canSend && isSubscribed
+                ? 'border-green-200'
+                : 'border-red-200 opacity-50'
+            }`}
             rows={1}
             disabled={!isSubscribed}
             onKeyDown={(e) => {
@@ -358,8 +420,8 @@ export default function Home() {
       </div>
       <Thoughts
         thought={thought}
-        setIsThoughtsOpen={setIsThoughtsOpen}
-        isThoughtsOpen={isThoughtsOpen}
+        setIsThoughtsOpen={(isOpen: boolean) => setIsThoughtsOpen(isOpen, null)}
+        isThoughtsOpen={isThoughtsOpenState}
       />
     </main>
   );

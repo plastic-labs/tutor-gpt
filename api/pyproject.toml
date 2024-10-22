@@ -2,9 +2,7 @@
 name = "api"
 version = "0.6.0"
 description = "The REST API Implementation of Tutor-GPT"
-authors = [
-    {name = "Plastic Labs", email = "hello@plasticlabs.ai"},
-]
+authors = [{ name = "Plastic Labs", email = "hello@plasticlabs.ai" }]
 requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.112.2",
