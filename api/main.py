@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from api.routers import conversation, chat, messages
 
-load_dotenv()
+load_dotenv(override=True)
 
 SENTRY_DSN = os.getenv("SENTRY_DN")
 
@@ -20,9 +20,11 @@ if SENTRY_DSN:
 
 app = FastAPI()
 
+URL = os.getenv("URL", "http://localhost:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=os.environ["URL"],
+    allow_origin_regex=URL,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -10,7 +10,7 @@ jobs:
     name: Deploy Production App
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy -c fly.toml --app bloom-bot --remote-only
         env:
@@ -20,8 +20,8 @@ jobs:
     name: Deploy Staging App
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy -c fly.toml --app tutor-gpt --remote-only
+      - run: flyctl deploy -c fly.toml --app bloom-staging --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
