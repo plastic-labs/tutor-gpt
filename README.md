@@ -33,7 +33,6 @@ the backend logic for different clients.
 - `bot/` - this contains the discord bot implementation
 - `api/` - this contains a FastAPI API interface that exposes the `agent/` logic
 - `www/` - this contains a `NextJS` web front end that can connect to the API interface
-- `common/` - this contains common used in different interfaces
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
 
 Most of the project is developed using python with the exception of the NextJS

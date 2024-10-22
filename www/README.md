@@ -55,7 +55,8 @@ analytics.
 **Sentry**
 
 - `NEXT_PUBLIC_SENTRY_DSN` — The Sentry DSN
-- `NEXT_PUBLIC_SENTRY_ENVIRONMENT` — The Sentry environment
+- `SENTRY_ENVIRONMENT` — The Sentry environment
+- `SENTRY_RELEASE` — The Sentry release
 
 **Posthog**
 
