@@ -129,7 +129,12 @@ export default function Home() {
     conversationsFetcher,
     {
       onSuccess: (conversations) => {
-        setConversationId(conversations[0].conversationId);
+        if (
+          !conversationId ||
+          !conversations.find((c) => c.conversationId === conversationId)
+        ) {
+          setConversationId(conversations[0].conversationId);
+        }
         setCanSend(true);
       },
       revalidateOnFocus: false,
@@ -241,7 +246,6 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
-        console.log(thought);
         setCanSend(true);
         break;
       }

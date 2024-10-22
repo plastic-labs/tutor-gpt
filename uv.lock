@@ -27,7 +27,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "honcho-ai", specifier = ">=0.0.14" },
+    { name = "honcho-ai", specifier = ">=0.0.15" },
     { name = "openai", specifier = ">=1.3.8" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "sentry-sdk", specifier = ">=2.13.0" },
@@ -154,7 +154,7 @@ dependencies = [
 requires-dist = [
     { name = "agent", editable = "agent" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.112.2" },
-    { name = "honcho-ai", specifier = ">=0.0.14" },
+    { name = "honcho-ai", specifier = ">=0.0.15" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "sentry-sdk", extras = ["fastapi"], specifier = ">=2.13.0" },
 ]
@@ -174,18 +174,14 @@ version = "0.6.0"
 source = { virtual = "bot" }
 dependencies = [
     { name = "agent", marker = "python_full_version >= '3.12'" },
-    { name = "honcho-ai", marker = "python_full_version >= '3.12'" },
     { name = "py-cord", marker = "python_full_version >= '3.12'" },
-    { name = "python-dotenv", marker = "python_full_version >= '3.12'" },
     { name = "sentry-sdk", marker = "python_full_version >= '3.12'" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "agent", editable = "agent" },
-    { name = "honcho-ai", specifier = ">=0.0.14" },
     { name = "py-cord", specifier = ">=2.6.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "sentry-sdk", specifier = ">=2.13.0" },
 ]
 
@@ -342,7 +338,7 @@ wheels = [
 
 [[package]]
 name = "honcho-ai"
-version = "0.0.14"
+version = "0.0.15"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio", marker = "python_full_version >= '3.12'" },
@@ -352,9 +348,9 @@ dependencies = [
     { name = "sniffio", marker = "python_full_version >= '3.12'" },
     { name = "typing-extensions", marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/12/30aa9db7e494fbb67c405c71b297adcc0081524cbc977f2bed3e56fddd21/honcho_ai-0.0.14.tar.gz", hash = "sha256:59dc263166e88e73fcd066aca4f5bc948893d87977372b34e31793815adde681", size = 262711 }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/01/bfc8511d94d0b957a5f678970a33882008ae23e3e221d243623b6846df7e/honcho_ai-0.0.15.tar.gz", hash = "sha256:ff918fbd9595352fdd81792de5871756df36dabd6eb3ff3f84cad38d177059a0", size = 264291 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/97/c3cd1f4e1a70c640e1cc680562c0297785c5b0672a4ce6b95c1dd86a89a4/honcho_ai-0.0.14-py3-none-any.whl", hash = "sha256:94df69b8223c92bf0d62be628a65bab49e81ba2384951e2bd4947cdab9332451", size = 104575 },
+    { url = "https://files.pythonhosted.org/packages/45/f8/e685ddfde74e8f23b5ae8336fc9c27f58f7e046b43a9ccd26b1cd4ab9e3a/honcho_ai-0.0.15-py3-none-any.whl", hash = "sha256:83dc68685507a1c887abc35c02c5d2d87bdd07333681e5e7dc39595cd1304fd5", size = 109807 },
 ]
 
 [[package]]
@@ -795,6 +791,16 @@ wheels = [
 name = "tutor-gpt"
 version = "0.1.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "honcho-ai", marker = "python_full_version >= '3.12'" },
+    { name = "python-dotenv", marker = "python_full_version >= '3.12'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "honcho-ai", specifier = ">=0.0.15" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+]
 
 [[package]]
 name = "typer"

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-import uuid
 from honcho import NotFoundError
 
 from api.dependencies import honcho, app
@@ -8,7 +7,7 @@ router = APIRouter(prefix="/api/messages", tags=["conversations"])
 
 
 @router.get("")
-async def get_messages(user_id: str, conversation_id: uuid.UUID):
+async def get_messages(user_id: str, conversation_id: str):
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
         session = honcho.apps.users.sessions.get(
