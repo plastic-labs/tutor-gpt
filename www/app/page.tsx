@@ -17,7 +17,7 @@ import { usePostHog } from 'posthog-js/react';
 import { getSubscription } from '@/utils/supabase/queries';
 
 import { API } from '@/utils/api';
-import { createClient } from '@/utils/supabase/client';
+import { createClient, fetchWithAuth } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
@@ -86,6 +86,7 @@ export default function Home() {
         });
         redirect('/auth');
       }
+      fetchWithAuth('http://localhost:8000/api/test');
       setUserId(user.id);
       setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
       posthog?.identify(userId, { email: user.email });
