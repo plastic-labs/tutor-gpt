@@ -174,18 +174,14 @@ version = "0.6.0"
 source = { virtual = "bot" }
 dependencies = [
     { name = "agent", marker = "python_full_version >= '3.12'" },
-    { name = "honcho-ai", marker = "python_full_version >= '3.12'" },
     { name = "py-cord", marker = "python_full_version >= '3.12'" },
-    { name = "python-dotenv", marker = "python_full_version >= '3.12'" },
     { name = "sentry-sdk", marker = "python_full_version >= '3.12'" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "agent", editable = "agent" },
-    { name = "honcho-ai", specifier = ">=0.0.15" },
     { name = "py-cord", specifier = ">=2.6.0" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "sentry-sdk", specifier = ">=2.13.0" },
 ]
 
@@ -795,6 +791,16 @@ wheels = [
 name = "tutor-gpt"
 version = "0.1.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "honcho-ai", marker = "python_full_version >= '3.12'" },
+    { name = "python-dotenv", marker = "python_full_version >= '3.12'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "honcho-ai", specifier = ">=0.0.15" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+]
 
 [[package]]
 name = "typer"

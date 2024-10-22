@@ -21,7 +21,6 @@ if SENTRY_DSN:
 app = FastAPI()
 
 URL = os.getenv("URL", "http://localhost:3000")
-print("URL:", URL)
 
 app.add_middleware(
     CORSMiddleware,
