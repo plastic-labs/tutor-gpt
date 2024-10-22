@@ -133,7 +133,7 @@ export class API {
   async getConversations() {
     return retryDBOperation(async () => {
       const req = await fetch(
-        `${this.url}/api/conversations/get?user_id=${this.userId}`
+        `${this.url}/api/conversations/get?user_id=${this.userId}` //this calls out to the backend route /get found in conversations.
       );
       const { conversations }: { conversations: RawConversation[] } =
         await req.json();

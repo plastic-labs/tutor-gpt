@@ -23,9 +23,11 @@ async def get_conversations(user_id: str):
     user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
     print(user)
     acc = []
-    for convo in honcho.apps.users.sessions.list(
+    for (
+        convo
+    ) in honcho.apps.users.sessions.list(  # retrieves a list of user sessions/conversations from a db and narrows down the results based on params
         app_id=app.id, user_id=user.id, is_active=True, reverse=True
-    ):
+    ):  # and then for each conversation (convo), create the following instance and then append that instance to the array acc
         instance = {}
         instance["conversation_id"] = convo.id
         instance["name"] = ""
