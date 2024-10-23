@@ -13,20 +13,10 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UserIdentity } from '@supabase/supabase-js';
+import Swal from 'sweetalert2';
 
 const fetcher = async () => {
   const supabase = createClient();
-
-  // Get the user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) {
-    console.error('Error fetching user:', userError);
-    return { error: 'Failed to fetch user data' };
-  }
 
   // Get the user's identities
   const {
@@ -39,7 +29,6 @@ const fetcher = async () => {
     return { error: 'Failed to fetch user identities' };
   }
 
-  // Find the Discord identity
   const discordIdentity = identities?.find(
     (identity: UserIdentity) => identity.provider === 'discord'
   );
@@ -66,25 +55,32 @@ const fetcher = async () => {
 export function IntegrationsSettings() {
   const { data, error, mutate } = useSWR('discordConnection', fetcher);
   const [isLinking, setIsLinking] = useState(false);
-  const [message, setMessage] = useState('');
   const supabase = createClient();
 
   useEffect(() => {
     if (data) {
       if (data.authSuccess) {
-        setMessage('Discord account successfully linked!');
-        mutate(); // Refresh the data
+        Swal.fire({
+          title: 'Success!',
+          text: 'Discord account successfully linked!',
+          icon: 'success',
+          confirmButtonColor: '#3085d6',
+        });
+        mutate();
       } else if (data.error) {
-        setMessage(`Error: ${data.error}`);
+        Swal.fire({
+          title: 'Error',
+          text: `Error: ${data.error}`,
+          icon: 'error',
+          confirmButtonColor: '#3085d6',
+        });
       }
-      // Clear the URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [data, mutate]);
 
   const handleDiscordConnect = async () => {
     setIsLinking(true);
-    setMessage('');
     const { data: linkData, error: linkError } =
       await supabase.auth.linkIdentity({
         provider: 'discord',
@@ -95,12 +91,23 @@ export function IntegrationsSettings() {
 
     if (linkError) {
       console.error('Error connecting Discord:', linkError);
-      setMessage('Error connecting Discord. Please try again.');
+      Swal.fire({
+        title: 'Error',
+        text: 'Error connecting Discord. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
     } else if (linkData?.url) {
-      setMessage('Redirecting to Discord for authentication...');
-      setTimeout(() => {
+      Swal.fire({
+        title: 'Redirecting...',
+        text: 'Redirecting to Discord for authentication...',
+        icon: 'info',
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      }).then(() => {
         window.location.href = linkData.url;
-      }, 2000); // Short delay to show the message before redirecting
+      });
     }
     setIsLinking(false);
   };
@@ -111,13 +118,23 @@ export function IntegrationsSettings() {
 
     if (identitiesError) {
       console.error('Error fetching user identities:', identitiesError);
-      setMessage('Error disconnecting Discord. Please try again.');
+      Swal.fire({
+        title: 'Error',
+        text: 'Error disconnecting Discord. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
       return;
     }
 
     if (!identitiesData || !identitiesData.identities) {
       console.error('No identities found');
-      setMessage('No Discord connection found to disconnect.');
+      Swal.fire({
+        title: 'Error',
+        text: 'No Discord connection found to disconnect.',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6',
+      });
       return;
     }
 
@@ -127,7 +144,12 @@ export function IntegrationsSettings() {
 
     if (!discordIdentity) {
       console.error('Discord identity not found');
-      setMessage('No Discord connection found to disconnect.');
+      Swal.fire({
+        title: 'Error',
+        text: 'No Discord connection found to disconnect.',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6',
+      });
       return;
     }
 
@@ -135,9 +157,19 @@ export function IntegrationsSettings() {
       await supabase.auth.unlinkIdentity(discordIdentity);
     if (unlinkError) {
       console.error('Error disconnecting Discord:', unlinkError);
-      setMessage('Error disconnecting Discord. Please try again.');
+      Swal.fire({
+        title: 'Error',
+        text: 'Error disconnecting Discord. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
     } else {
-      setMessage('Discord account successfully disconnected.');
+      Swal.fire({
+        title: 'Success!',
+        text: 'Discord account successfully disconnected.',
+        icon: 'success',
+        confirmButtonColor: '#3085d6',
+      });
       mutate(); // Revalidate the data after disconnecting
     }
   };
@@ -154,13 +186,6 @@ export function IntegrationsSettings() {
           <CardDescription>Connect your Discord account</CardDescription>
         </CardHeader>
         <CardContent>
-          {message && (
-            <p
-              className={`text-sm mb-4 ${message.includes('error') ? 'text-red-600' : 'text-blue-600'}`}
-            >
-              {message}
-            </p>
-          )}
           {data.isDiscordConnected ? (
             <div className="space-y-4">
               <p className="text-sm dark:text-gray-300">
