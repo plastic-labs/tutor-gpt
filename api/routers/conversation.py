@@ -65,7 +65,6 @@ async def add_conversation(user_id: str, current_user=Depends(get_current_user))
         user = honcho.apps.users.get_or_create(name=user_id, app_id=app.id)
         session = honcho.apps.users.sessions.create(user_id=user.id, app_id=app.id)
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=404, detail="Item not found") from None
     return {"conversation_id": session.id}
 
