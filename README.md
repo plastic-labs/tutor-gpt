@@ -107,12 +107,9 @@ Below are more detailed explanations of environment variables
 
 ### Common
 
-**Azure Mirascope Keys**
-
-- `AZURE_OPENAI_ENDPOINT` — The endpoint for the Azure OpenAI service
-- `AZURE_OPENAI_API_KEY` — The API key for the Azure OpenAI service
-- `AZURE_OPENAI_API_VERSION` — The API version for the Azure OpenAI service
-- `AZURE_OPENAI_DEPLOYMENT` — The deployment name for the Azure OpenAI service
+- `OPENAI_API_KEY` — The API Key for Openrouter which uses an OpenAI compatibile
+  API
+- `MODEL` — The openrouter model to use
 
 ### FastAPI
 

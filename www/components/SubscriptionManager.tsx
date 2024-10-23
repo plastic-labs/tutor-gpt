@@ -23,9 +23,6 @@ export default function SubscriptionManager({ subscription, products }: Props) {
 
   const router = useRouter();
 
-  console.log(subscription)
-  console.log(prices)
-
   const handleManage = async () => {
     setLoading(true);
     try {
