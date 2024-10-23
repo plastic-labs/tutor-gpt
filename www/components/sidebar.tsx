@@ -6,9 +6,8 @@ import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
 import { ConversationTab } from './conversationtab';
-import { useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { KeyedMutator } from 'swr';
+import { useState } from 'react';
+import useSWR, { KeyedMutator } from 'swr';
 import { FaUser } from 'react-icons/fa';
 export default function Sidebar({
   conversations,
@@ -32,7 +31,6 @@ export default function Sidebar({
   const postHog = usePostHog();
   const supabase = createClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   async function editConversation(cur: Conversation) {
@@ -101,15 +99,18 @@ export default function Sidebar({
     mutateConversations([conversation!, ...conversations]);
   }
 
-  useEffect(() => {
-    async function fetchUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    }
-    fetchUser();
-  }, []);
+  const fetchUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  };
+
+  const {
+    data: user,
+    error: userError,
+    isLoading: isUserLoading,
+  } = useSWR('user', fetchUser);
 
   return (
     <div
@@ -160,7 +161,9 @@ export default function Sidebar({
         {/* Section 3: Authentication information */}
         <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full flex items-center justify-between">
           <div className="flex items-center">
-            {user?.user_metadata?.avatar_url ? (
+            {isUserLoading ? (
+              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 animate-pulse"></div>
+            ) : user?.user_metadata?.avatar_url ? (
               <img
                 src={user.user_metadata.avatar_url}
                 alt="Profile"
@@ -172,7 +175,9 @@ export default function Sidebar({
               </div>
             )}
             <span className="text-sm font-medium">
-              {user?.user_metadata?.full_name || user?.email || 'User Name'}
+              {isUserLoading
+                ? 'Loading...'
+                : user?.user_metadata?.full_name || user?.email || 'User Name'}
             </span>
           </div>
           <div className="relative">

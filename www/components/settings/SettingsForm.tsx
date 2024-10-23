@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,20 +18,38 @@ import Swal from 'sweetalert2';
 interface User {
   id: string;
   email: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+  };
 }
 
 interface SettingsFormProps {
-  user: User;
+  user: User | null | undefined;
   type: 'account' | 'security';
 }
 
 export function SettingsForm({ user, type }: SettingsFormProps) {
-  const [email, setEmail] = useState(user.email);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState<string>(user?.email || '');
+  const [displayName, setDisplayName] = useState<string>(
+    user?.user_metadata?.full_name || ''
+  );
+  const [avatarUrl, setAvatarUrl] = useState<string>(
+    user?.user_metadata?.avatar_url || ''
+  );
+  const [currentPassword, setCurrentPassword] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
 
   const supabase = createClient();
+
+  useEffect(() => {
+    if (user) {
+      setEmail(user.email || '');
+      setDisplayName(user.user_metadata?.full_name || '');
+      setAvatarUrl(user.user_metadata?.avatar_url || '');
+    }
+  }, [user]);
 
   const handleEmailChange = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,6 +72,30 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
       Swal.fire({
         title: 'Error!',
         text: 'Something went wrong while updating your email',
+        icon: 'error',
+        confirmButtonText: 'Close',
+      });
+    }
+  };
+
+  const handleProfileUpdate = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: displayName, avatar_url: avatarUrl },
+      });
+      if (error) throw error;
+      Swal.fire({
+        title: 'Success!',
+        text: 'Your profile has been updated',
+        icon: 'success',
+        confirmButtonText: 'Close',
+      });
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Something went wrong while updating your profile',
         icon: 'error',
         confirmButtonText: 'Close',
       });
@@ -109,18 +151,50 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {type === 'account' && (
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-foreground">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-input text-foreground flex-grow"
-            />
-          </div>
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="displayName" className="text-foreground">
+                Display Name
+              </Label>
+              <Input
+                id="displayName"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="bg-input text-foreground flex-grow"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="avatarUrl" className="text-foreground">
+                Avatar URL
+              </Label>
+              <Input
+                id="avatarUrl"
+                type="url"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                className="bg-input text-foreground flex-grow"
+              />
+              <Button
+                onClick={handleProfileUpdate}
+                className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
+              >
+                Save
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-input text-foreground flex-grow"
+              />
+            </div>
+          </>
         )}
         {type === 'security' && (
           <>
@@ -164,22 +238,14 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         )}
       </CardContent>
       <CardFooter className="flex justify-start border-t pt-6">
-        {type === 'account' && (
-          <Button
-            onClick={handleEmailChange}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Update Email
-          </Button>
-        )}
-        {type === 'security' && (
-          <Button
-            onClick={handlePasswordChange}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Change Password
-          </Button>
-        )}
+        <Button
+          onClick={
+            type === 'account' ? handleEmailChange : handlePasswordChange
+          }
+          className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
+        >
+          Save
+        </Button>
       </CardFooter>
     </Card>
   );

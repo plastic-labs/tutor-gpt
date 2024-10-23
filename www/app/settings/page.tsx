@@ -1,28 +1,43 @@
-import { Suspense } from "react";
-import SettingsLayout from "./SettingsLayout";
-import { createClient } from "@/utils/supabase/server";
-import { getSubscription, getProducts } from "@/utils/supabase/queries";
-import { redirect } from "next/navigation";
+'use client';
 
-export default async function SettingsPage() {
+import { useState, useEffect } from 'react';
+import SettingsLayout from './SettingsLayout';
+import { createClient } from '@/utils/supabase/client';
+import { getSubscription } from '@/utils/supabase/queries';
+import { User } from '@supabase/supabase-js';
+
+export default function SettingsPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const subscription = await getSubscription(supabase);
-  const products = await getProducts(supabase);
 
-  if (!user) {
-    redirect("/auth");
-  }
+  useEffect(() => {
+    const fetchData = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+
+      const sub = await getSubscription(supabase);
+      setSubscription(sub);
+
+      // Fetch products if needed
+      // const productsData = await fetchProducts();
+      // setProducts(productsData);
+    };
+
+    fetchData();
+  }, []);
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <div className={`min-h-screen`}>
       <SettingsLayout
         user={user}
         subscription={subscription}
         products={products}
       />
-    </Suspense>
+    </div>
   );
 }

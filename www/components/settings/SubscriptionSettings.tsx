@@ -8,11 +8,10 @@ import { Tables } from '@/utils/database.types';
 
 import PriceCard from '@/components/PriceCard';
 type Subscription = Tables<'subscriptions'>;
-type Product = Tables<'products'>;
 type Price = Tables<'prices'>;
 
 interface Props {
-  subscription: Subscription | null;
+  subscription?: Subscription | null;
   products: any[] | null;
 }
 

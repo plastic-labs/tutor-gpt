@@ -163,7 +163,7 @@ export function IntegrationsSettings() {
           )}
           {data.isDiscordConnected ? (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm dark:text-gray-300">
                 Connected as:{' '}
                 <span className="font-semibold">{data.discordTag}</span>
               </p>

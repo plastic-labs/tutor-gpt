@@ -23,6 +23,7 @@
     "katex": "^0.16.11",
     "lucide-react": "^0.452.0",
     "next": "^14.2.15",
+    "next-themes": "^0.3.0",
     "posthog-js": "^1.167.0",
     "react": "18.3.1",
     "react-dom": "18.2.0",
@@ -43,8 +44,8 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@shadcn/ui": "^0.0.4",
     "@eslint/js": "^9.12.0",
+    "@shadcn/ui": "^0.0.4",
     "@types/node": "20.5.4",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
