@@ -7,30 +7,28 @@ export function createClient() {
   );
 }
 
-export async function fetchWithAuth(url: string) {
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const supabase = createClient();
   const user = await supabase.auth.getUser();
   if (!user) {
-    return;
+    throw new Error('No user found');
   }
-  console.log(user);
+
+  console.log(user)
 
   const session = await supabase.auth.getSession();
 
-  if (!session) {
-    return;
+  if (!session.data.session?.access_token) {
+    throw new Error('No session found');
   }
 
   const authToken = session.data.session?.access_token;
 
-  console.log(authToken);
-  fetch(url, {
+  return fetch(url, {
+    ...options,
     headers: {
-      apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      ...options.headers,
       Authorization: `Bearer ${authToken}`,
     },
   })
-    .then((res) => res.json())
-    .then((data) => console.log(data))
-    .catch((err) => console.log(err));
 }

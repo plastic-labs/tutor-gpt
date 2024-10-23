@@ -1,5 +1,6 @@
 import { type Reaction } from '@/components/messagebox';
 import { retryDBOperation, retryOpenAIOperation } from './retryUtils';
+import { fetchWithAuth } from './supabase/client';
 
 const defaultMessage: Message = {
   text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
@@ -35,12 +36,12 @@ export class Conversation {
 
   async getMessages() {
     return retryDBOperation(async () => {
-      const req = await fetch(
+      const req = await fetchWithAuth(
         `${this.api.url}/api/messages?` +
-          new URLSearchParams({
-            conversation_id: this.conversationId,
-            user_id: this.api.userId,
-          })
+        new URLSearchParams({
+          conversation_id: this.conversationId,
+          user_id: this.api.userId,
+        })
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];
@@ -60,7 +61,7 @@ export class Conversation {
     if (!name || name === this.name) return;
 
     await retryDBOperation(async () => {
-      await fetch(`${this.api.url}/api/conversations/update`, {
+      await fetchWithAuth(`${this.api.url}/api/conversations/update`, {
         method: 'POST',
         body: JSON.stringify({
           conversation_id: this.conversationId,
@@ -77,7 +78,7 @@ export class Conversation {
 
   async delete() {
     await retryDBOperation(async () => {
-      await fetch(
+      await fetchWithAuth(
         `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
       ).then((res) => res.json());
     });
@@ -85,7 +86,7 @@ export class Conversation {
 
   async chat(message: string) {
     return retryOpenAIOperation(async () => {
-      const req = await fetch(`${this.api.url}/api/stream`, {
+      const req = await fetchWithAuth(`${this.api.url}/api/stream`, {
         method: 'POST',
         body: JSON.stringify({
           conversation_id: this.conversationId,
@@ -118,7 +119,7 @@ export class API {
 
   async new() {
     return retryDBOperation(async () => {
-      const req = await fetch(
+      const req = await fetchWithAuth(
         `${this.url}/api/conversations/insert?user_id=${this.userId}`
       );
       const { conversation_id } = await req.json();
@@ -132,7 +133,7 @@ export class API {
 
   async getConversations() {
     return retryDBOperation(async () => {
-      const req = await fetch(
+      const req = await fetchWithAuth(
         `${this.url}/api/conversations/get?user_id=${this.userId}`
       );
       const { conversations }: { conversations: RawConversation[] } =
@@ -154,12 +155,12 @@ export class API {
 
   async getMessagesByConversation(conversationId: string) {
     return retryDBOperation(async () => {
-      const req = await fetch(
+      const req = await fetchWithAuth(
         `${this.url}/api/messages?` +
-          new URLSearchParams({
-            conversation_id: conversationId,
-            user_id: this.userId,
-          })
+        new URLSearchParams({
+          conversation_id: conversationId,
+          user_id: this.userId,
+        })
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];
@@ -183,7 +184,7 @@ export class API {
   ): Promise<string | null> {
     return retryDBOperation(async () => {
       try {
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `${this.url}/api/thought/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
           {
             method: 'GET',
@@ -213,7 +214,7 @@ export class API {
   ): Promise<{ status: string }> {
     return retryDBOperation(async () => {
       try {
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}&reaction=${reaction}`,
           {
             method: 'POST',
@@ -241,7 +242,7 @@ export class API {
   ): Promise<{ reaction: Reaction }> {
     return retryDBOperation(async () => {
       try {
-        const response = await fetch(
+        const response = await fetchWithAuth(
           `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
           {
             method: 'GET',
@@ -279,7 +280,7 @@ export class API {
     reaction: Reaction
   ): Promise<{ status: string }> {
     try {
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${this.url}/api/reaction/${messageId}?user_id=${this.userId}&conversation_id=${conversationId}`,
         {
           method: 'POST',

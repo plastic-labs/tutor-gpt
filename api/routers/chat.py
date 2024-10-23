@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
 
 from api import schemas
 from api.dependencies import app, honcho
+from api.security import get_current_user
 
 from agent.chain import ThinkCall, RespondCall
 
@@ -12,7 +13,13 @@ router = APIRouter(prefix="/api", tags=["chat"])
 
 
 @router.post("/stream")
-async def stream(inp: schemas.ConversationInput):
+async def stream(
+    inp: schemas.ConversationInput, current_user=Depends(get_current_user)
+):
+    if current_user.id != inp.user_id:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to access this resource"
+        )
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=inp.user_id)
 
@@ -108,7 +115,16 @@ def create_messages_and_metamessages(
 
 
 @router.get("/thought/{message_id}")
-async def get_thought(conversation_id: str, message_id: str, user_id: str):
+async def get_thought(
+    conversation_id: str,
+    message_id: str,
+    user_id: str,
+    current_user=Depends(get_current_user),
+):
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to access this resource"
+        )
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
         thought = honcho.apps.users.sessions.metamessages.list(
