@@ -8,11 +8,10 @@ import { Tables } from '@/utils/database.types';
 
 import PriceCard from '@/components/PriceCard';
 type Subscription = Tables<'subscriptions'>;
-type Product = Tables<'products'>;
 type Price = Tables<'prices'>;
 
 interface Props {
-  subscription: Subscription | null;
+  subscription?: Subscription | null;
   products: any[] | null;
 }
 
@@ -39,26 +38,31 @@ export default function SubscriptionManager({ subscription, products }: Props) {
   };
 
   return (
-    <div className="mt-4">
-      <h2 className="text-xl font-bold mb-2">Subscription Status</h2>
-      <p className="mb-4">
-        {subscription ? 'Active Subscription' : 'No Active Subscription'}
-      </p>
-      {subscription ? (
-        <button
-          onClick={handleManage}
-          disabled={loading}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-        >
-          Manage Subscription
-        </button>
-      ) : (
-        <div className="flex flex-row gap-3">
-          {prices.map((price: Price, idx: number) => (
-            <PriceCard key={idx} price={price} />
-          ))}
-        </div>
-      )}
+    <div className="space-y-4">
+      <h2 className="text-3xl font-bold text-primary">
+        Subscription Management
+      </h2>
+      <div className="mt-4">
+        <h2 className="text-xl font-bold mb-2">Subscription Status</h2>
+        <p className="mb-4">
+          {subscription ? 'Active Subscription' : 'No Active Subscription'}
+        </p>
+        {subscription ? (
+          <button
+            onClick={handleManage}
+            disabled={loading}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            Manage Subscription
+          </button>
+        ) : (
+          <div className="flex flex-row gap-3">
+            {prices.map((price: Price, idx: number) => (
+              <PriceCard key={idx} price={price} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

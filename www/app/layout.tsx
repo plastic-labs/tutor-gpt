@@ -4,6 +4,8 @@ import type { Metadata } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import { PHProvider, PostHogPageview } from './providers';
 import { Suspense } from 'react';
+import { Header } from '@/components/header';
+import { ThemeProvider } from 'next-themes';
 
 const spacegrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -52,13 +54,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <Suspense>
-        <PostHogPageview />
-      </Suspense>
-      <PHProvider>
-        <body className={spacegrotesk.className}>{children}</body>
-      </PHProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={spacegrotesk.className}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Suspense>
+            <PostHogPageview />
+          </Suspense>
+          <PHProvider>
+            <div className="flex flex-col h-screen">
+              <Header />
+              <div className="flex-1 overflow-hidden">{children}</div>
+            </div>
+          </PHProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
