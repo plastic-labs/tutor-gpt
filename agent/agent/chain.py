@@ -1,14 +1,12 @@
-from os import getenv
+import os
+import re
 from typing import List
 
-from openai import OpenAI
-from dotenv import load_dotenv
-
-from honcho import Honcho
-
-from pydantic import ConfigDict
-
 import sentry_sdk
+from dotenv import load_dotenv
+from honcho import Honcho
+from openai import OpenAI
+from pydantic import ConfigDict
 
 load_dotenv()
 
@@ -30,65 +28,144 @@ class HonchoCall:
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    openai = OpenAI()
+    openai = OpenAI(base_url="https://openrouter.ai/api/v1")
 
-    model = "gpt-4o"
+    model = "nousresearch/hermes-3-llama-3.1-405b:free"
+    file_path = ""
+    history = []
+
+    def get_prompt(self) -> list[dict[str, str]]:
+        """Parse a markdown file into a list of messages."""
+        with open(self.file_path, "r") as f:
+            response_prompt = f.readlines()
+
+        messages = []
+        n = ""
+        content = ""
+
+        while len(response_prompt) > 0:
+            line = response_prompt.pop(0)
+            if line == "USER:\n":
+                n = "user"
+            elif line == "ASSISTANT:\n":
+                n = "assistant"
+            elif line == "" or line == "\n":
+                messages.append({"role": n, "content": content})
+                content = ""
+            elif line.startswith("MESSAGES:"):
+                messages.extend(self.history)
+            else:
+                content += line.strip()
+
+        return messages
+
+    def parse_xml_content(self, content: str, tag: str) -> str:
+        """Parse content between specified XML tags from the input content."""
+        pattern = f"<{tag}>(.*?)</{tag}>"
+        match = re.search(pattern, content, re.DOTALL)
+        return match.group(1).strip() if match else ""
 
 
 class ThinkCall(HonchoCall):
-    def template(self) -> dict[str, str]:
-        system = (
-            {
-                "role": "system",
-                "content": f"""You are Bloom, a subversive-minded learning companion. Your job is to employ your theory of mind skills to predict the user's mental state.
-    Generate a thought that makes a prediction about the user's needs given current dialogue and also lists other pieces of data that would help improve your prediction
-    previous commentary: {self.history}""",
-            },
-        )
-
-        return system[0]
+    file_path = os.path.join(os.path.dirname(__file__), "./prompts/thought.md")
 
     @property
-    def history(self) -> str:
-        """Get the conversation history from Honcho"""
-        history_str = ""
-        iter = self.honcho.apps.users.sessions.messages.list(
-            session_id=self.session_id,
+    def history(self) -> list[dict]:
+        """Get the thought history from Honcho"""
+        history = []
+        iter = self.honcho.apps.users.sessions.metamessages.list(
             app_id=self.app_id,
             user_id=self.user_id,
-            reverse=True,
-        )
-        meta_iter = self.honcho.apps.users.sessions.metamessages.list(
             session_id=self.session_id,
-            app_id=self.app_id,
-            user_id=self.user_id,
             metamessage_type="thought",
-            reverse=True,
+            filter={"type": "user"},
         )
-        past_thoughts = {m.message_id: m.content for m in meta_iter.items}
-        for message in iter.items[::-1]:
-            try:
-                if message.is_user:
-                    history_str += f"USER: {message.content}\n"
-                if message.id in past_thoughts:
-                    history_str += f"THOUGHT: {past_thoughts[message.id]}\n"
-            except AttributeError as e:
-                # Log the error and continue with the next message
-                print(f"Error processing message: {e}")
-                continue
-        return history_str
+        for metamessage in iter:
+            if metamessage.metadata.get("type") == "user":
+                history.append({"role": "user", "content": metamessage.content})
+            else:
+                history.append({"role": "assistant", "content": metamessage.content})
+        return history
+
+    @property
+    def most_recent_honcho_response(self) -> str:
+        """Get the most recent honcho response from Honcho"""
+        most_recent_response_metamessage = (
+            self.honcho.apps.users.sessions.metamessages.list(
+                app_id=self.app_id,
+                user_id=self.user_id,
+                session_id=self.session_id,
+                metamessage_type="response",
+                filter={"type": "user"},
+                reverse=True,
+                size=1,
+            )
+        )
+        most_recent_response_metamessage = list(most_recent_response_metamessage)
+        if most_recent_response_metamessage:
+            assert (
+                most_recent_response_metamessage[0].metadata.get("type") == "user"
+            ), "some logic issue -- most recent response metamessage is not from the user"
+            most_recent_honcho_response = self.parse_xml_content(
+                most_recent_response_metamessage[0].content, "honcho"
+            )
+        else:
+            most_recent_honcho_response = "None"
+
+        return most_recent_honcho_response
+
+    @property
+    def most_recent_bloom_response(self) -> str:
+        """Get the most recent bloom response from Honcho"""
+        most_recent_response_metamessage = (
+            self.honcho.apps.users.sessions.metamessages.list(
+                app_id=self.app_id,
+                user_id=self.user_id,
+                session_id=self.session_id,
+                metamessage_type="response",
+                filter={"type": "user"},
+                reverse=True,
+                size=1,
+            )
+        )
+        most_recent_response_metamessage = list(most_recent_response_metamessage)
+        if most_recent_response_metamessage:
+            assert (
+                most_recent_response_metamessage[0].metadata.get("type") == "user"
+            ), "some logic issue -- most recent response metamessage is not from the user"
+            most_recent_bloom_response = self.parse_xml_content(
+                most_recent_response_metamessage[0].content, "bloom"
+            )
+        else:
+            most_recent_bloom_response = "None"
+
+        return most_recent_bloom_response
 
     def call(self):
+        messages = [
+            *self.get_prompt(),
+            {
+                "role": "user",
+                "content": f"<honcho-response>{self.most_recent_honcho_response}<honcho-response>\n<bloom>{self.most_recent_bloom_response}</bloom>\n{self.user_input}",
+            },
+        ]
         response = self.openai.chat.completions.create(
             model=self.model,
-            messages=[self.template(), {"role": "user", "content": self.user_input}],
+            messages=messages,
         )
         return response.choices[0].message
 
     def stream(self):
+        messages = [
+            *self.get_prompt(),
+            {
+                "role": "user",
+                "content": f"<honcho-response>{self.most_recent_honcho_response}<honcho-response>\n<bloom>{self.most_recent_bloom_response}</bloom>\n{self.user_input}",
+            },
+        ]
         completion = self.openai.chat.completions.create(
             model=self.model,
-            messages=[self.template(), {"role": "user", "content": self.user_input}],
+            messages=messages,
             stream=True,
         )
         for chunk in completion:
@@ -97,50 +174,60 @@ class ThinkCall(HonchoCall):
 
 
 class RespondCall(HonchoCall):
-    def __init__(self, *args, thought, **kwargs):
+    file_path = os.path.join(os.path.dirname(__file__), "./prompts/response.md")
+
+    def __init__(self, *args, thought, honcho_content, **kwargs):
         self.thought = thought
+        self.honcho_content = honcho_content
         super().__init__(*args, **kwargs)
-
-    def template(self):
-        return [
-            {
-                "role": "system",
-                "content": f"""You are Bloom, a subversive-minded learning companion with deep expertise in Socratic dialogue. Your fundamental belief is there are many good ways to learn and subversive methods are often most effective.  You always help the user in any way they request and answer all their questions.
-
-            {self.thought}
-
-            You must produce an appropriate response to the user input. Format equations in LaTeX and wrap in dollar signs like this: $\LaTeX$. Use markdown code syntax. Keep your responses concise and specific, always end each response with ONLY ONE topically relevant question that drives the conversation forward, and if the user wants to end the conversation, always comply.
-            """,
-            },
-            *self.history,
-            {"role": "user", "content": self.user_input},
-        ]
 
     @property
     def history(self) -> List[dict]:
         """Get the conversation history from Honcho"""
-        history_list = []
-        iter = self.honcho.apps.users.sessions.messages.list(
-            session_id=self.session_id, app_id=self.app_id, user_id=self.user_id
+        history = []
+        iter = self.honcho.apps.users.sessions.metamessages.list(
+            app_id=self.app_id,
+            user_id=self.user_id,
+            session_id=self.session_id,
+            metamessage_type="response",
         )
-        for message in iter:
-            if message.is_user:
-                history_list.append({"role": "user", "content": message.content})
-            else:
-                history_list.append({"role": "assistant", "content": message.content})
-        return history_list
+        for metamessage in iter:
+            associated_message = self.honcho.apps.users.sessions.messages.get(
+                app_id=self.app_id,
+                user_id=self.user_id,
+                session_id=self.session_id,
+                message_id=metamessage.message_id,
+            )
+
+            history.append({"role": "user", "content": metamessage.content})
+            history.append({"role": "assistant", "content": associated_message.content})
+
+        return history
 
     def call(self):
         response = self.openai.chat.completions.create(
             model=self.model,
-            messages=self.template(),
+            messages=[
+                *self.get_prompt(),
+                {
+                    "role": "user",
+                    "content": f"<honcho-response>{self.honcho_content}</honcho-response>\n{self.user_input}",
+                },
+            ],
         )
         return response.choices[0].message
 
     def stream(self):
+        messages = [
+            *self.get_prompt(),
+            {
+                "role": "user",
+                "content": f"<honcho-response>{self.honcho_content}</honcho-response>\n{self.user_input}",
+            },
+        ]
         completion = self.openai.chat.completions.create(
             model=self.model,
-            messages=self.template(),
+            messages=messages,
             stream=True,
         )
         for chunk in completion:
