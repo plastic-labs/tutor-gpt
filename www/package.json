@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint components/ app/ utils/",
-    "pretty": "prettier --write components/ app/ utils/"
+    "pretty": "prettier --write components/ app/ utils/",
+    "sync-stripe": "node utils/stripe/sync.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^8.34.0",
@@ -42,6 +43,7 @@
     "@types/retry": "^0.12.5",
     "@types/uuid": "^9.0.8",
     "autoprefixer": "10.4.15",
+    "dotenv": "^16.4.5",
     "encoding": "^0.1.13",
     "eslint": "^9.12.0",
     "eslint-config-next": "^13.5.7",

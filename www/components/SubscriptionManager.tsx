@@ -44,7 +44,7 @@ export default function SubscriptionManager({ subscription, products }: Props) {
       <p className="mb-4">
         {subscription ? 'Active Subscription' : 'No Active Subscription'}
       </p>
-      {subscription ? (
+      {subscription != null ? (
         <button
           onClick={handleManage}
           disabled={loading}
