@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Request, Response, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import sentry_sdk
 

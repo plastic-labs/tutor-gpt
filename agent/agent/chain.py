@@ -2,7 +2,6 @@ import os
 import re
 from typing import List
 
-import sentry_sdk
 from dotenv import load_dotenv
 from honcho import Honcho
 from openai import OpenAI

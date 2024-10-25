@@ -14,8 +14,6 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
     throw new Error('No user found');
   }
 
-  console.log(user)
-
   const session = await supabase.auth.getSession();
 
   if (!session.data.session?.access_token) {

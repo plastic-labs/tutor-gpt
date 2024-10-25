@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 
 from api import schemas
 from api.dependencies import app, honcho
-from api.security import get_current_user
+from api.security import get_current_user, verify_auth
 
 from pydantic import BaseModel
 from typing import Optional
@@ -20,10 +20,7 @@ router = APIRouter(prefix="/api", tags=["chat"])
 async def stream(
     inp: schemas.ConversationInput, current_user=Depends(get_current_user)
 ):
-    if current_user.id != inp.user_id:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to access this resource"
-        )
+    verify_auth(current_user, inp.user_id, subscription_check=True)
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=inp.user_id)
 
@@ -167,10 +164,7 @@ async def get_thought(
     user_id: str,
     current_user=Depends(get_current_user),
 ):
-    if current_user.id != user_id:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to access this resource"
-        )
+    verify_auth(current_user, user_id)
     user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
     try:
         thought = honcho.apps.users.sessions.metamessages.list(
@@ -207,10 +201,7 @@ async def add_or_remove_reaction(
     body: ReactionBody,
     current_user=Depends(get_current_user),
 ):
-    if current_user.id != user_id:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to access this resource"
-        )
+    verify_auth(current_user, user_id)
     reaction = body.reaction
     if reaction is not None and reaction not in ["thumbs_up", "thumbs_down"]:
         raise HTTPException(status_code=400, detail="Invalid reaction type")

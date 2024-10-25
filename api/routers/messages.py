@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from honcho import NotFoundError
 
 from api.dependencies import honcho, app
-from api.security import get_current_user
+from api.security import get_current_user, verify_auth
 
 router = APIRouter(prefix="/api/messages", tags=["conversations"])
 
@@ -11,10 +11,7 @@ router = APIRouter(prefix="/api/messages", tags=["conversations"])
 async def get_messages(
     user_id: str, conversation_id: str, current_user=Depends(get_current_user)
 ):
-    if current_user.id != user_id:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to access this resource"
-        )
+    verify_auth(current_user, user_id)
 
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)

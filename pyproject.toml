@@ -9,6 +9,11 @@ dependencies = [
     "python-dotenv>=1.0.1",
 ]
 
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.7.1",
+]
+
 [tool.uv.sources]
 agent = { workspace = true }
 api = { workspace = true }
