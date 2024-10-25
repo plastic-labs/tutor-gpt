@@ -38,6 +38,7 @@ export function Header() {
             src={theme === 'dark' ? darkBanner : lightBanner}
             alt="Bloom Logo"
             className="h-10 w-auto cursor-pointer"
+            priority={true}
           />
         </Link>
         <div className="flex justify-between items-center gap-4">

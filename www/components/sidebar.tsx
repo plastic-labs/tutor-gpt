@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
 import { ConversationTab } from './conversationtab';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import useSWR, { KeyedMutator } from 'swr';
 import { FaUser } from 'react-icons/fa';
 export default function Sidebar({
@@ -112,6 +112,16 @@ export default function Sidebar({
     isLoading: isUserLoading,
   } = useSWR('user', fetchUser);
 
+
+  const memoizedConversations = useMemo(() => {
+    return conversations.map((cur, i) => (
+      <ConversationTab conversation={cur} select={() => setConversationId(cur.conversationId)} selected={conversationId === cur.conversationId} edit={() => editConversation(cur)} del={() => deleteConversation(cur)} key={i} />
+    ));
+  }, [conversations, conversationId]);
+
+  const memoizedGrClose = useMemo(() => <GrClose />, []);
+  const memoizedFaUser = useMemo(() => <FaUser className="w-5 h-5 text-gray-600" />, []);
+
   return (
     <div
       className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
@@ -136,23 +146,14 @@ export default function Sidebar({
             className="lg:hidden bg-neon-green text-black rounded-lg px-4 py-2 h-10"
             onClick={() => setIsSidebarOpen(false)}
           >
-            <GrClose />
+            {memoizedGrClose}
           </button>
         </div>
 
         {/* Section 2: Scrollable items */}
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
           {conversations.length > 0
-            ? conversations.map((cur, i) => (
-                <ConversationTab
-                  conversation={cur}
-                  select={() => setConversationId(cur.conversationId)}
-                  selected={conversationId === cur.conversationId}
-                  edit={() => editConversation(cur)}
-                  del={() => deleteConversation(cur)}
-                  key={i}
-                />
-              ))
+            ? memoizedConversations
             : Array.from({ length: 5 }).map((_, i) => (
                 <ConversationTab loading key={i} />
               ))}
@@ -171,7 +172,7 @@ export default function Sidebar({
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 flex items-center justify-center">
-                <FaUser className="w-5 h-5 text-gray-600" />
+                {memoizedFaUser}
               </div>
             )}
             <span className="text-sm font-medium">

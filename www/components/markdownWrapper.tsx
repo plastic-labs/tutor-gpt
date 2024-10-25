@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
+import Element from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Typing from './typing';
@@ -47,41 +48,48 @@ function CodeBlock({ language, value }: { language: string; value: string }) {
   );
 }
 
-export default function MarkdownWrapper({ text }: { text: string }) {
-  return text ? (
+const MarkdownWrapper = React.memo(({ text }: { text: string }) => {
+  const remarkPlugins = useMemo(() => [remarkMath], []);
+  const rehypePlugins = useMemo(() => [rehypeKatex], []);
+  const components = useMemo(() => ({
+    ol: ({ node, ordered, ...props }: { node: Element; ordered: boolean }) => (
+      <ol className="list-decimal pl-6 space-y-2" {...props} />
+    ),
+    ul: ({ node, ordered, ...props }: { node: Element; ordered: boolean }) => (
+      <ul className="list-disc pl-6 space-y-2" {...props} />
+    ),
+    li: ({ node, ordered, ...props }: { node: Element; ordered: boolean }) => <li className="ml-2" {...props} />,
+    code: ({ node, inline, className, children, ...props }: { node: Element; inline: boolean; className: string; children: string }) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline && match ? (
+        <CodeBlock
+          language={match[1]}
+          value={String(children).replace(/\n$/, '')}
+        />
+      ) : (
+        <code
+          {...props}
+          className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
+        >
+          {children}
+        </code>
+      );
+    },
+  }), []);
+
+  const markdownContent = useMemo(() => (
     <ReactMarkdown
-      remarkPlugins={[remarkMath]}
+      remarkPlugins={remarkPlugins}
       // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
-      rehypePlugins={[rehypeKatex]}
-      components={{
-        ol: ({ node, ordered, ...props }) => (
-          <ol className="list-decimal pl-6 space-y-2" {...props} />
-        ),
-        ul: ({ node, ordered, ...props }) => (
-          <ul className="list-disc pl-6 space-y-2" {...props} />
-        ),
-        li: ({ node, ordered, ...props }) => <li className="ml-2" {...props} />,
-        code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '');
-          return !inline && match ? (
-            <CodeBlock
-              language={match[1]}
-              value={String(children).replace(/\n$/, '')}
-            />
-          ) : (
-            <code
-              {...props}
-              className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
-            >
-              {children}
-            </code>
-          );
-        },
-      }}
+      rehypePlugins={rehypePlugins}
+      // @ts-expect-error
+      components={components}
     >
       {text}
     </ReactMarkdown>
-  ) : (
-    <Typing />
-  );
-}
+  ), [text, remarkPlugins, rehypePlugins, components]);
+
+  return text ? markdownContent : <Typing />;
+});
+
+export default MarkdownWrapper;
