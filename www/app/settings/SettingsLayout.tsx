@@ -10,8 +10,8 @@ import { User } from '@supabase/supabase-js';
 
 interface SettingsProps {
   user: User | null;
-  subscription?: any | null; // Change this to the correct type when available
-  products?: any[] | null; // Change this to the correct type when available
+  subscription?: unknown | null; // Change this to the correct type when available
+  products?: unknown[] | null; // Change this to the correct type when available
 }
 
 export default function SettingsLayout({
@@ -33,16 +33,17 @@ export default function SettingsLayout({
     <div className={`flex-1 flex flex-col bg-background text-foreground`}>
       <div className="flex-1 flex">
         <div className="py-4">
-          <nav className="w-64 bg-muted p-4">
+          <nav className="w-64 bg-gray-100 dark:bg-muted p-4 rounded-lg">
+            {' '}
             <ul>
               {navItems.map((item) => (
                 <li key={item.id} className="mb-2">
                   <button
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full text-left p-2 rounded ${
+                    className={`w-full text-left p-2 rounded transition-colors ${
                       activeTab === item.id
-                        ? 'bg-primary text-primary-foreground dark:bg-neon-green dark:text-black'
-                        : 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-neon-green/20'
+                        ? 'bg-gray-400 text-primary-foreground dark:bg-neon-green dark:text-black'
+                        : 'hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-neon-green/20 dark:hover:text-neon-green'
                     }`}
                   >
                     {item.label}

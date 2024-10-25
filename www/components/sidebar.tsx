@@ -114,7 +114,7 @@ export default function Sidebar({
 
   return (
     <div
-      className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
+      className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-200 dark:border-gray-700 ${
         isSidebarOpen ? '' : 'hidden'
       }`}
     >
@@ -124,7 +124,7 @@ export default function Sidebar({
         } top-0 left-0`}
       >
         {/* Section 1: Top buttons */}
-        <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
+        <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-200 dark:border-gray-700">
           <button
             className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
             onClick={addChat}
@@ -159,7 +159,7 @@ export default function Sidebar({
         </div>
 
         {/* Section 3: Authentication information */}
-        <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full flex items-center justify-between">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 w-full flex items-center justify-between">
           <div className="flex items-center">
             {isUserLoading ? (
               <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 animate-pulse"></div>

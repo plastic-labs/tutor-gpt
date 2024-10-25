@@ -218,28 +218,35 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         )}
       </CardContent>
       <CardFooter className="flex justify-start border-t pt-6">
-        {type === 'account' && (
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-foreground">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-input text-foreground flex-grow"
-            />
+        {type === 'account' ? (
+          <div className="w-full space-y-2">
+            <div className="space-y-1">
+              <Label htmlFor="email" className="text-foreground">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-input text-foreground w-full"
+              />
+            </div>
+            <Button
+              onClick={handleEmailChange}
+              className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
+            >
+              Save
+            </Button>
           </div>
+        ) : (
+          <Button
+            onClick={handlePasswordChange}
+            className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
+          >
+            Save Password
+          </Button>
         )}
-        <Button
-          onClick={
-            type === 'account' ? handleEmailChange : handlePasswordChange
-          }
-          className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
-        >
-          Save
-        </Button>
       </CardFooter>
     </Card>
   );
