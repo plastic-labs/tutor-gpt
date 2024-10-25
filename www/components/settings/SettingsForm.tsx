@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { User } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,15 +15,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import Swal from 'sweetalert2';
-
-interface User {
-  id: string;
-  email: string;
-  user_metadata?: {
-    full_name?: string;
-    avatar_url?: string;
-  };
-}
 
 interface SettingsFormProps {
   user: User | null | undefined;
@@ -182,18 +174,6 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
                 Save
               </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-input text-foreground flex-grow"
-              />
-            </div>
           </>
         )}
         {type === 'security' && (
@@ -238,6 +218,20 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         )}
       </CardContent>
       <CardFooter className="flex justify-start border-t pt-6">
+        {type === 'account' && (
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-foreground">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-input text-foreground flex-grow"
+            />
+          </div>
+        )}
         <Button
           onClick={
             type === 'account' ? handleEmailChange : handlePasswordChange

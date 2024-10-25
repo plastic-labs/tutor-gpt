@@ -7,7 +7,7 @@ import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef } from 'react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
 import { getSubscription } from '@/utils/supabase/queries';
@@ -43,6 +43,7 @@ export default function Home() {
 
   const [conversationId, setConversationId] = useState<string>();
 
+  const router = useRouter();
   const supabase = createClient();
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
@@ -75,17 +76,18 @@ export default function Home() {
           confirmButtonColor: '#3085d6',
           confirmButtonText: 'Sign In',
         });
-        redirect('/auth');
-      }
-      setUserId(user.id);
-      posthog?.identify(userId, { email: user.email });
-
-      // Check subscription status
-      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
-        setIsSubscribed(true);
+        router.push('/auth');
       } else {
-        const sub = await getSubscription(supabase);
-        setIsSubscribed(!!sub);
+        setUserId(user.id);
+        posthog?.identify(userId, { email: user.email });
+
+        // Check subscription status
+        if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
+          setIsSubscribed(true);
+        } else {
+          const sub = await getSubscription(supabase);
+          setIsSubscribed(!!sub);
+        }
       }
     })();
   }, [supabase, posthog, userId]);

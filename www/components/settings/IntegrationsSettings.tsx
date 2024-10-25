@@ -19,17 +19,20 @@ const fetcher = async () => {
   const supabase = createClient();
 
   // Get the user's identities
-  const {
-    data: { identities },
-    error: identitiesError,
-  } = await supabase.auth.getUserIdentities();
+  const { data, error: identitiesError } =
+    await supabase.auth.getUserIdentities();
+
+  if (!data || !data.identities) {
+    console.error('No identities found');
+    return { error: 'No identities found' };
+  }
 
   if (identitiesError) {
     console.error('Error fetching user identities:', identitiesError);
     return { error: 'Failed to fetch user identities' };
   }
 
-  const discordIdentity = identities?.find(
+  const discordIdentity = data.identities.find(
     (identity: UserIdentity) => identity.provider === 'discord'
   );
 
@@ -39,14 +42,12 @@ const fetcher = async () => {
 
   return {
     isDiscordConnected: !!discordIdentity,
-    discordTag: discordIdentity
-      ? discordIdentity.identity_data.global_name ||
-        discordIdentity.identity_data.name
-      : null,
-    discordAvatar: discordIdentity
-      ? discordIdentity.identity_data.avatar_url
-      : null,
-    discordEmail: discordIdentity ? discordIdentity.identity_data.email : null,
+    discordTag:
+      discordIdentity?.identity_data?.global_name ||
+      discordIdentity?.identity_data?.name ||
+      null,
+    discordAvatar: discordIdentity?.identity_data?.avatar_url || null,
+    discordEmail: discordIdentity?.identity_data?.email || null,
     authSuccess,
     error,
   };

@@ -9,9 +9,9 @@ import { SupportSettings } from '@/components/settings/SupportSettings';
 import { User } from '@supabase/supabase-js';
 
 interface SettingsProps {
-  user?: User | null;
-  subscription?: any; // Change this to the correct type when available
-  products?: any[]; // Change this to the correct type when available
+  user: User | null;
+  subscription?: any | null; // Change this to the correct type when available
+  products?: any[] | null; // Change this to the correct type when available
 }
 
 export default function SettingsLayout({
@@ -57,8 +57,8 @@ export default function SettingsLayout({
           {activeTab === 'security' && <SecuritySettings user={user} />}
           {activeTab === 'subscription' && (
             <SubscriptionSettings
-              subscription={subscription}
-              products={products}
+              subscription={subscription ?? null}
+              products={products ?? null}
             />
           )}
           {activeTab === 'integrations' && <IntegrationsSettings />}

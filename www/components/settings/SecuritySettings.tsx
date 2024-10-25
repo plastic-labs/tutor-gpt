@@ -1,11 +1,12 @@
+import { User } from '@supabase/supabase-js';
 import { SettingsForm } from './SettingsForm';
 
-interface User {
-  id: string;
-  email: string;
+interface SecuritySettingsProps {
+  user: User | null;
 }
 
-export function SecuritySettings({ user }: { user: User }) {
+export function SecuritySettings({ user }: SecuritySettingsProps) {
+  if (!user) return <div>Please log in to view security settings.</div>;
   return (
     <div className="space-y-4">
       <h2 className="text-3xl font-bold text-primary">Security Settings</h2>
