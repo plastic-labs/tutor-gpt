@@ -110,7 +110,7 @@ export default function Sidebar({
 
   return (
     <div
-      className={`absolute lg:relative top-0 left-0 z-40 h-full w-64 sm:w-3/5 lg:w-80 transition-transform ${
+      className={`absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}
     >
