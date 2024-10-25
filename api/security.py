@@ -1,6 +1,7 @@
 from os import getenv
 from typing import Optional
 
+from functools import lru_cache
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -24,6 +25,11 @@ class User(BaseModel):
     email: Optional[str]
 
 
+@lru_cache(maxsize=50)
+def validate_user(token: str):
+    return supabase.auth.get_user(token)
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
@@ -35,7 +41,7 @@ async def get_current_user(
         token = credentials.credentials
 
         # Verify with Supabase
-        user = supabase.auth.get_user(token)
+        user = validate_user(token)
 
         if not user:
             raise HTTPException(
