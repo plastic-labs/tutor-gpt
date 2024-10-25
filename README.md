@@ -33,7 +33,6 @@ the backend logic for different clients.
 - `bot/` - this contains the discord bot implementation
 - `api/` - this contains a FastAPI API interface that exposes the `agent/` logic
 - `www/` - this contains a `NextJS` web front end that can connect to the API interface
-- `common/` - this contains common used in different interfaces
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
 
 Most of the project is developed using python with the exception of the NextJS
@@ -108,12 +107,9 @@ Below are more detailed explanations of environment variables
 
 ### Common
 
-**Azure Mirascope Keys**
-
-- `AZURE_OPENAI_ENDPOINT` — The endpoint for the Azure OpenAI service
-- `AZURE_OPENAI_API_KEY` — The API key for the Azure OpenAI service
-- `AZURE_OPENAI_API_VERSION` — The API version for the Azure OpenAI service
-- `AZURE_OPENAI_DEPLOYMENT` — The deployment name for the Azure OpenAI service
+- `OPENAI_API_KEY` — The API Key for Openrouter which uses an OpenAI compatibile
+  API
+- `MODEL` — The openrouter model to use
 
 ### FastAPI
 

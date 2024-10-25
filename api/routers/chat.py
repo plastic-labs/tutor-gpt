@@ -1,12 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 
 from api import schemas
 from api.dependencies import app, honcho
 
+from pydantic import BaseModel
+from typing import Optional
+
 from agent.chain import ThinkCall, RespondCall
 
-import os
 import logging
 
 
@@ -166,6 +168,47 @@ async def get_thought(conversation_id: str, message_id: str, user_id: str):
         print(thought)
     except Exception as e:
         logging.error(f"Error in get_thought: {str(e)}")
-        raise  # Re-raise the exception to be handled by the caller
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "internal_server_error",
+                "message": "An internal server error has occurred.",
+            },
+        )
     # In practice, there should only be one thought per message
     return {"thought": thought.items[0].content if thought.items else None}
+
+
+class ReactionBody(BaseModel):
+    reaction: Optional[str] = None
+
+
+@router.post("/reaction/{message_id}")
+async def add_or_remove_reaction(
+    conversation_id: str, message_id: str, user_id: str, body: ReactionBody
+):
+    reaction = body.reaction
+    if reaction is not None and reaction not in ["thumbs_up", "thumbs_down"]:
+        raise HTTPException(status_code=400, detail="Invalid reaction type")
+    user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
+    message = honcho.apps.users.sessions.messages.get(
+        app_id=app.id,
+        session_id=conversation_id,
+        user_id=user.id,
+        message_id=message_id,
+    )
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    metadata = message.metadata or {}
+    if reaction is None:
+        metadata.pop("reaction", None)
+    else:
+        metadata["reaction"] = reaction
+    honcho.apps.users.sessions.messages.update(
+        app_id=app.id,
+        session_id=conversation_id,
+        user_id=user.id,
+        message_id=message_id,
+        metadata=metadata,
+    )
+    return {"status": "Reaction updated successfully"}

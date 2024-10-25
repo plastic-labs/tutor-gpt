@@ -30,7 +30,7 @@ class HonchoCall:
 
     openai = OpenAI(base_url="https://openrouter.ai/api/v1")
 
-    model = "nousresearch/hermes-3-llama-3.1-405b:free"
+    model = os.getenv("MODEL", "")
     file_path = ""
     history = []
 

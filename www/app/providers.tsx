@@ -10,7 +10,7 @@ const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || '';
 
 if (
   typeof window !== 'undefined' &&
-  process.env.NEXT_PUBLIC_URL != 'http://localhost:3000'
+  process.env.NEXT_PUBLIC_SITE_URL != 'http://localhost:3000'
 ) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
