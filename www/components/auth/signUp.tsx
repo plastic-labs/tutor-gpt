@@ -178,7 +178,7 @@ export default function SignUp(props: any) {
           <a
             href="https://app.termly.io/document/terms-of-service/ba5ac452-fdd6-4746-8b31-973351d05008"
             target="_blank"
-            className="text-gray-700 underline"
+            className="text-gray-700 underline" rel="noreferrer"
           >
             Terms and Conditions
           </a>{' '}
@@ -186,7 +186,7 @@ export default function SignUp(props: any) {
           <a
             href="https://app.termly.io/document/privacy-policy/29672110-b634-40ae-854d-ebaf55e8fa75"
             target="_blank"
-            className="text-gray-700 underline"
+            className="text-gray-700 underline" rel="noreferrer"
           >
             Privacy Policy
           </a>

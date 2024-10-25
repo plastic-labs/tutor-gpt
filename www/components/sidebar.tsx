@@ -15,7 +15,7 @@ export default function Sidebar({
   conversationId,
   setConversationId,
   isSidebarOpen,
-  setIsSidebarOpen,
+  toggleSidebar,
   api,
   isSubscribed,
 }: {
@@ -24,7 +24,7 @@ export default function Sidebar({
   conversationId: string | undefined;
   setConversationId: (id: typeof conversationId) => void;
   isSidebarOpen: boolean;
-  setIsSidebarOpen: (isOpen: boolean) => void;
+  toggleSidebar: () => void;
   api: API | undefined;
   isSubscribed: boolean;
 }) {
@@ -106,23 +106,15 @@ export default function Sidebar({
     return user;
   };
 
-  const {
-    data: user,
-    error: userError,
-    isLoading: isUserLoading,
-  } = useSWR('user', fetchUser);
+  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
 
   return (
     <div
-      className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-200 dark:border-gray-700 ${
-        isSidebarOpen ? '' : 'hidden'
+      className={`absolute lg:relative top-0 left-0 z-40 h-full w-64 sm:w-3/5 lg:w-80 transition-transform ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}
     >
-      <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
-          isSidebarOpen ? 'fixed lg:static' : 'sticky'
-        } top-0 left-0`}
-      >
+      <div className="h-full overflow-hidden bg-white dark:bg-gray-950 dark:text-white flex flex-col border-gray-200 dark:border-gray-700 border-r">
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-200 dark:border-gray-700">
           <button
@@ -134,7 +126,7 @@ export default function Sidebar({
           </button>
           <button
             className="lg:hidden bg-neon-green text-black rounded-lg px-4 py-2 h-10"
-            onClick={() => setIsSidebarOpen(false)}
+            onClick={toggleSidebar}
           >
             <GrClose />
           </button>

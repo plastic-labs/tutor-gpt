@@ -15,6 +15,7 @@ import { getSubscription } from '@/utils/supabase/queries';
 import { API } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
+import { FiMenu } from 'react-icons/fi';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -281,115 +282,127 @@ export default function Home() {
   }
 
   return (
-    <main className="flex w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative h-full">
+    <main className="relative flex h-full overflow-hidden">
       <Sidebar
         conversations={conversations || []}
         mutateConversations={mutateConversations}
         conversationId={conversationId}
         setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         api={new API({ url: URL!, userId: userId! })}
         isSubscribed={isSubscribed}
       />
-      <div className="flex flex-col w-full h-full lg:pl-60 xl:pl-72 dark:bg-gray-900">
-        <section
-          className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
-          ref={messageContainerRef}
-        >
-          {messages?.map((message, i) => (
-            <MessageBox
-              key={i}
-              isUser={message.isUser}
-              userId={userId}
-              URL={URL}
-              message={message}
-              loading={messagesLoading}
-              conversationId={conversationId}
-              setThought={setThought}
-              isThoughtOpen={openThoughtMessageId === message.id}
-              setIsThoughtsOpen={(isOpen) =>
-                setIsThoughtsOpen(isOpen, message.id)
-              }
-              onReactionAdded={handleReactionAdded}
-            />
-          )) || (
-            <MessageBox
-              isUser={false}
-              message={{
-                text: '',
-                id: '',
-                isUser: false,
-                metadata: { reaction: null },
-              }}
-              loading={true}
-              setThought={setThought}
-              setIsThoughtsOpen={setIsThoughtsOpen}
-              onReactionAdded={handleReactionAdded}
-              userId={userId}
-              URL={URL}
-              conversationId={conversationId}
-            />
-          )}
-        </section>
-        <div className="p-3 lg:p-5">
-          <form
-            id="send"
-            className="flex p-3 lg:p-5 gap-3 border-gray-300"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (canSend && input.current?.value && isSubscribed) {
-                posthog.capture('user_sent_message');
-                chat();
-              }
-            }}
+      <div className="flex-1 flex flex-col flex-grow overflow-hidden">
+        {!isSidebarOpen && (
+          <button
+            className="absolute top-4 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2"
+            onClick={() => setIsSidebarOpen(true)}
           >
-            <textarea
-              ref={input}
-              placeholder={
-                isSubscribed
-                  ? 'Type a message...'
-                  : 'Subscribe to send messages'
-              }
-              className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
-                canSend && isSubscribed
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
-              }`}
-              rows={1}
-              disabled={!isSubscribed}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (canSend && input.current?.value && isSubscribed) {
-                    posthog.capture('user_sent_message');
-                    chat();
-                  }
+            <FiMenu size={24} />
+          </button>
+        )}
+        <div className="flex flex-col flex-grow overflow-hidden dark:bg-gray-900">
+          <section
+            className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
+            ref={messageContainerRef}
+          >
+            {messages?.map((message, i) => (
+              <MessageBox
+                key={i}
+                isUser={message.isUser}
+                userId={userId}
+                URL={URL}
+                message={message}
+                loading={messagesLoading}
+                conversationId={conversationId}
+                setThought={setThought}
+                isThoughtOpen={openThoughtMessageId === message.id}
+                setIsThoughtsOpen={(isOpen) =>
+                  setIsThoughtsOpen(isOpen, message.id)
+                }
+                onReactionAdded={handleReactionAdded}
+              />
+            )) || (
+              <MessageBox
+                isUser={false}
+                message={{
+                  text: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                URL={URL}
+                conversationId={conversationId}
+              />
+            )}
+          </section>
+          <div className="p-3 lg:p-5">
+            <form
+              id="send"
+              className="flex p-3 lg:p-5 gap-3 border-gray-300"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (canSend && input.current?.value && isSubscribed) {
+                  posthog.capture('user_sent_message');
+                  chat();
                 }
               }}
-            />
-            <button
-              className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-              type="submit"
-              disabled={!canSend || !isSubscribed}
             >
-              <FaPaperPlane className="inline" />
-            </button>
-            <button
-              className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-              onClick={() => setIsThoughtsOpen(true)}
-              type="button"
-            >
-              <FaLightbulb className="inline" />
-            </button>
-          </form>
+              <textarea
+                ref={input}
+                placeholder={
+                  isSubscribed
+                    ? 'Type a message...'
+                    : 'Subscribe to send messages'
+                }
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                  canSend && isSubscribed
+                    ? 'border-green-200'
+                    : 'border-red-200 opacity-50'
+                }`}
+                rows={1}
+                disabled={!isSubscribed}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (canSend && input.current?.value && isSubscribed) {
+                      posthog.capture('user_sent_message');
+                      chat();
+                    }
+                  }
+                }}
+              />
+              <button
+                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                type="submit"
+                disabled={!canSend || !isSubscribed}
+              >
+                <FaPaperPlane className="inline" />
+              </button>
+              <button
+                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                onClick={() => setIsThoughtsOpen(true)}
+                type="button"
+              >
+                <FaLightbulb className="inline" />
+              </button>
+            </form>
+          </div>
         </div>
+        <Thoughts
+          thought={thought}
+          setIsThoughtsOpen={(isOpen: boolean) =>
+            setIsThoughtsOpen(isOpen, null)
+          }
+          isThoughtsOpen={isThoughtsOpenState}
+        />
       </div>
-      <Thoughts
-        thought={thought}
-        setIsThoughtsOpen={(isOpen: boolean) => setIsThoughtsOpen(isOpen, null)}
-        isThoughtsOpen={isThoughtsOpenState}
-      />
     </main>
   );
 }
