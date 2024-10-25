@@ -6,11 +6,11 @@ import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
 import { SupportSettings } from '@/components/settings/SupportSettings';
-import { User } from '@supabase/supabase-js';
+import { Subscription, User } from '@supabase/supabase-js';
 
 interface SettingsProps {
   user: User | null;
-  subscription?: unknown | null; // Change this to the correct type when available
+  subscription?: Subscription | null; // Change this to the correct type when available
   products?: unknown[] | null; // Change this to the correct type when available
 }
 
