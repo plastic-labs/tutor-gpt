@@ -151,7 +151,17 @@ export class API {
       );
     });
   }
-
+//#region User Authentication System
+/* 
+  OVERVIEW: This module handles user authentication including:
+  - Login/logout functionality
+  - Password hashing
+  - Token management
+  - Session handling
+  
+  @author: YourName
+  @lastModified: 2024-10-26
+*/
   async getMessagesByConversation(conversationId: string) {
     return retryDBOperation(async () => {
       const req = await fetch(

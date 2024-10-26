@@ -20,6 +20,8 @@ import { API } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 
+import { getPromptFromURL } from './[url]/page';
+
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
@@ -31,6 +33,8 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
 });
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
+
+console.log(process.env.NEXT_PUBLIC_JINA_API)
 
 export default function Home() {
   const [userId, setUserId] = useState<string>();
@@ -60,6 +64,9 @@ export default function Home() {
   };
 
   const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const [websiteUrl, setWebsiteUrl] = useState<string>('');
+  const [isLoadingUrl, setIsLoadingUrl] = useState(false);
 
   const setIsThoughtsOpen = (
     isOpen: boolean,
@@ -218,12 +225,13 @@ export default function Home() {
         isUser: true,
         id: '',
       },
-      {
+      { // we need this to make it seem as if the AI is responding in real time
         text: '',
         isUser: false,
         id: '',
       },
     ];
+
     mutateMessages(newMessages, { revalidate: false });
 
     // sleep for 1 second to give the user the illusion of typing
@@ -244,38 +252,42 @@ export default function Home() {
     let currentModelOutput = '';
 
     while (true) {
-      const { done, value } = await reader.read();
+      // * When done is false, value contains the next piece of text
+      // * When done is true, value is undefined (there's no more data)
+      const { done, value } = await reader.read(); // this is a Readable Stream Reader
       if (done) {
-        setCanSend(true);
+        setCanSend(true); // enables the send button again once stream is complete
         break;
       }
+
       if (isThinking) {
         if (value.includes('❀')) {
           // a bloom delimiter
-          isThinking = false;
+          isThinking = false; //when we recieve the bloom delimiter, thinking is over
           continue;
         }
-        setThought((prev) => prev + value);
+        setThought((prev) => prev + value); //add to thought from stream reader
       } else {
         if (value.includes('❀')) {
           setCanSend(true); // Bloom delimeter
           continue;
         }
 
-        currentModelOutput += value;
+        currentModelOutput += value; // record the AIs response
 
         mutateMessages(
-          [
+          [ // take all the messages in the conversation except the last one
             ...(newMessages?.slice(0, -1) || []),
+            // Add the new message
             {
-              text: currentModelOutput,
+              text: currentModelOutput, // accumulated response of AI
               isUser: false,
               id: '',
             },
           ],
           { revalidate: false }
         );
-
+        // scroll to show the new content
         if (isAtBottom.current) {
           const messageContainer = messageContainerRef.current;
           if (messageContainer) {
@@ -285,14 +297,35 @@ export default function Home() {
       }
     }
 
-    mutateMessages();
+    mutateMessages(); // fetch the proper version of the response message
   }
+
+  // * This function handles URL submission to the reader
+  const handleUrlSubmit = async () => {
+    if (!websiteUrl) return;
+    setIsLoadingUrl(true);
+    try {
+      const { content } = await getPromptFromURL(websiteUrl)
+      console.log(content)
+
+      if (content) {
+        // Format the content as a prompt
+        const formattedContent = `Here's the content from ${websiteUrl}:\n\n${content}\n\nPlease read through this and help me understand it. Once you are ready to continue the conversation, please say 'Okay i'm ready to discuss this content with you.'`;
+        input.current!.value = formattedContent;
+        chat();
+      }
+    } catch (error) {
+      console.error('Error parsing URL:', error);
+    } finally {
+      setIsLoadingUrl(false);
+      setWebsiteUrl('');
+    }
+  };
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
-        isDarkMode ? 'dark' : ''
-      }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? 'dark' : ''
+        }`}
     >
       <Sidebar
         conversations={conversations || []}
@@ -328,6 +361,22 @@ export default function Home() {
             </button>
           </div>
         </nav>
+        <div className="flex gap-2 p-4 border-b border-gray-300 dark:border-gray-700">
+          <input
+            type="url"
+            value={websiteUrl}
+            onChange={(e) => setWebsiteUrl(e.target.value)}
+            placeholder="Enter website URL..."
+            className="flex-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg border-2"
+          />
+          <button
+            onClick={handleUrlSubmit}
+            disabled={isLoadingUrl}
+            className="bg-dark-green text-neon-green rounded-lg px-4 py-2"
+          >
+            {isLoadingUrl ? 'Loading...' : 'Add Context'}
+          </button>
+        </div>
         {/* <section className="bg-neon-green text-black text-center py-4"> */}
         {/*   <p> */}
         {/*     Help inform the future of Bloom by filling out this{" "} */}
@@ -361,23 +410,23 @@ export default function Home() {
               onReactionAdded={handleReactionAdded}
             />
           )) || (
-            <MessageBox
-              isUser={false}
-              message={{
-                text: '',
-                id: '',
-                isUser: false,
-                metadata: { reaction: null },
-              }}
-              loading={true}
-              setThought={setThought}
-              setIsThoughtsOpen={setIsThoughtsOpen}
-              onReactionAdded={handleReactionAdded}
-              userId={userId}
-              URL={URL}
-              conversationId={conversationId}
-            />
-          )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  text: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                URL={URL}
+                conversationId={conversationId}
+              />
+            )}
         </section>
         <form
           id="send"
@@ -396,11 +445,10 @@ export default function Home() {
             placeholder={
               isSubscribed ? 'Type a message...' : 'Subscribe to send messages'
             }
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
-              canSend && isSubscribed
-                ? 'border-green-200'
-                : 'border-red-200 opacity-50'
-            }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
+              ? 'border-green-200'
+              : 'border-red-200 opacity-50'
+              }`}
             rows={1}
             disabled={!isSubscribed}
             onKeyDown={(e) => {
