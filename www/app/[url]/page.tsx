@@ -2,11 +2,14 @@
 // as the first item of context in the conversation, with bloom ready to dive into the context/topic
 // Write a function that takes the url, serves it to r.jina.ai and receives back a JSON object with the parsed site contents.
 import fetch from 'node-fetch';
-import 'dotenv/config';
+import { config } from "dotenv";
+import path from 'path';
+
+config({ path: path.resolve(__dirname, "../../.env") });
 
 const token = process.env.JINA_API || '';
 
-type siteContents = {
+export type siteContents = {
   content: string
 }
 
@@ -21,4 +24,13 @@ const getPromptFromURL = async (url: string): Promise<siteContents> => {
   return { content: rawText };
 };
 
-getPromptFromURL("https://example.com/")
+// Replace the top-level await with an async function
+export default async function Page() {
+  const test = await getPromptFromURL("https://example.com/")
+  console.log(test)
+  return (
+    <div>{`Hello, let's explore this topic!`}</div>
+  )
+}
+
+Page();
