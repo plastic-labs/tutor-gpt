@@ -3,24 +3,41 @@ import { getPromptFromURL } from "@/utils/helpers";
 
 // ? per Next.js routing conventions on accessing dynamic route data
 export default async function Page({
-  params }: {
-    params: { url: string[] }
-  }) {
+  params,
+}: {
+  params: { url: string[] };
+}) {
   try {
-    // Decode and reconstruct the URL
-    const fullUrl = decodeURIComponent(params.url.join('/'));
+    // Handle the protocol separately
+    if (params.url.length < 2) {
+      throw new Error('Invalid URL format');
+    }
+    // Extract and fix the protocol
+    const protocol = params.url[0].replace('%3A', ':');
+    // Join the rest of the URL parts
+    const restOfUrl = params.url.slice(1).join('/');
+    // Construct the full URL with proper protocol separator
+    const fullUrl = `${protocol}//${restOfUrl}`;
     console.log(`Processing URL: ${fullUrl}`);
-
-    // Make sure it's a valid URL
-    if (!fullUrl.startsWith('http')) {
+    // Validate the URL starts with http or https
+    if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
       throw new Error('URL must start with http:// or https://');
     }
 
     const { parsedUrlContent } = await getPromptFromURL(fullUrl);
-    return <ChatInterface parsedUrlContent={parsedUrlContent} url={fullUrl} />;
+
+    return (
+      <ChatInterface
+        parsedUrlContent={parsedUrlContent}
+        url={fullUrl}
+      />
+    );
   } catch (error) {
-    // Handle the error appropriately
     console.error('Error processing URL:', error);
-    return <div>Invalid URL format. Please make sure the URL is properly formatted.</div>;
+    return (
+      <div className="p-4 text-red-600">
+        Error: {error instanceof Error ? error.message : 'Invalid URL format. Please make sure the URL is properly formatted.'}
+      </div>
+    );
   }
 }
