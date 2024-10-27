@@ -96,7 +96,8 @@ export class Conversation {
           'Content-Type': 'application/json',
         },
       });
-
+      // * Convert raw bytes coming from the server into readable text
+      // * Create reader that can read raw stream chunk by chunk
       return req.body?.pipeThrough(new TextDecoderStream()).getReader()!;
     });
   }
@@ -151,17 +152,13 @@ export class API {
       );
     });
   }
-//#region User Authentication System
-/* 
-  OVERVIEW: This module handles user authentication including:
-  - Login/logout functionality
-  - Password hashing
-  - Token management
-  - Session handling
-  
-  @author: YourName
-  @lastModified: 2024-10-26
-*/
+// * This will appear in green - use for highlights
+// ! This will appear in red - use for warnings/alerts
+// ? This will appear in blue - use for queries/questions
+// TODO: This will appear in orange - use for todos
+// NOTE: fkjdfjf
+
+
   async getMessagesByConversation(conversationId: string) {
     return retryDBOperation(async () => {
       const req = await fetch(

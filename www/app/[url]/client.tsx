@@ -1,4 +1,5 @@
 'use client';
+
 import Image from 'next/image';
 import useSWR from 'swr';
 
@@ -21,6 +22,11 @@ import { API } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 
+import { config } from "dotenv";
+import path from 'path';
+
+config({ path: path.resolve(__dirname, "../../.env") });
+
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
@@ -33,7 +39,16 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
-export default function Home() {
+
+// mimic the flow of the root page.tsx except it parses the prepended site's URL and uses it as context
+// as the first item of context in the conversation, with bloom ready to dive into the context/topic
+
+export default function ChatInterface({
+  url,
+  parsedUrlContent }: {
+    url: string;
+    parsedUrlContent: string
+  }) {
   const [userId, setUserId] = useState<string>();
 
   const [isThoughtsOpenState, setIsThoughtsOpenState] =
@@ -122,6 +137,21 @@ export default function Home() {
       messageContainer.removeEventListener('scroll', func);
     };
   }, []);
+
+  // ? This will run on page load and initiate a conversation with Bloom where the first message is the parsed URL content provided with an initiator prompt
+  useEffect(() => {
+    if (!url) return;
+    try {
+      if (parsedUrlContent) {
+        // Format the content as a prompt
+        const formattedInitialQuery = `Here's the content from ${url}:\n\n${parsedUrlContent}\n\nPlease read through this and prepare to discuss it. Once you are ready to continue the conversation, please say ONLY: 'Okay i'm ready to discuss this content with you.'`;
+        input.current!.value = formattedInitialQuery;
+        chat();
+      }
+    } catch (error) {
+      console.error('Error parsing URL:', error);
+    }
+  }, [url, parsedUrlContent])
 
   const conversationsFetcher = async (userId: string) => {
     const api = new API({ url: URL!, userId });
@@ -295,88 +325,6 @@ export default function Home() {
     }
 
     mutateMessages(); // fetch the proper version of the response message
-  }
-
-  async function chatWithContext(content: string, websiteUrl: string) {
-    if (!isSubscribed) {
-      Swal.fire({
-        title: 'Subscription Required',
-        text: 'Please subscribe to send messages.',
-        icon: 'warning',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'Subscribe',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          window.location.href = '/subscription';
-        }
-      });
-      return;
-    }
-
-    setCanSend(false);
-
-    // We don't show the website content in the messages
-    const newMessages = [
-      ...messages!,
-      {
-        text: `I'd like to discuss the content from ${websiteUrl}`,
-        isUser: true,
-        id: '',
-      },
-      {
-        text: '',
-        isUser: false,
-        id: '',
-      },
-    ];
-
-    mutateMessages(newMessages, { revalidate: false });
-
-    const reader = await conversations!
-      .find((conversation) => conversation.conversationId === conversationId)!
-      .chat(content); // Send the full content to backend
-
-    // Rest of the streaming logic remains the same
-    let isThinking = true;
-    setThought('');
-    let currentModelOutput = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        setCanSend(true);
-        break;
-      }
-
-      if (isThinking) {
-        if (value.includes('❀')) {
-          isThinking = false;
-          continue;
-        }
-        setThought((prev) => prev + value);
-      } else {
-        if (value.includes('❀')) {
-          setCanSend(true);
-          continue;
-        }
-
-        currentModelOutput += value;
-
-        mutateMessages(
-          [
-            ...(newMessages?.slice(0, -1) || []),
-            {
-              text: currentModelOutput,
-              isUser: false,
-              id: '',
-            },
-          ],
-          { revalidate: false }
-        );
-      }
-    }
-
-    mutateMessages();
   }
 
   // * This function handles URL submission to the reader
@@ -556,4 +504,3 @@ export default function Home() {
     </main>
   );
 }
-

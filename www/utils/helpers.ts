@@ -1,5 +1,5 @@
 export const toDateTime = (secs: number) => {
-  var t = new Date(+0); // Unix epoch start.
+  const t = new Date(+0); // Unix epoch start.
   t.setSeconds(secs);
   return t;
 };
@@ -110,3 +110,14 @@ export const getErrorRedirect = (
     disableButton,
     arbitraryParams
   );
+
+  export const getPromptFromURL = async (url: string): Promise<{parsedUrlContent: string}> => {
+    const response = await fetch(`https://r.jina.ai/${url}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_JINA_API}`
+      }
+    });
+  
+    const rawText = await response.text();
+    return { parsedUrlContent: rawText };
+  };
