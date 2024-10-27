@@ -9,6 +9,7 @@ export default async function Page({
   try {
     // Decode and reconstruct the URL
     const fullUrl = decodeURIComponent(params.url.join('/'));
+    console.log(`Processing URL: ${fullUrl}`);
 
     // Make sure it's a valid URL
     if (!fullUrl.startsWith('http')) {
