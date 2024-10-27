@@ -300,19 +300,99 @@ export default function Home() {
     mutateMessages(); // fetch the proper version of the response message
   }
 
+  async function chatWithContext(content: string, websiteUrl: string) {
+    if (!isSubscribed) {
+      Swal.fire({
+        title: 'Subscription Required',
+        text: 'Please subscribe to send messages.',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Subscribe',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/subscription';
+        }
+      });
+      return;
+    }
+
+    setCanSend(false);
+
+    // We don't show the website content in the messages
+    const newMessages = [
+      ...messages!,
+      {
+        text: `I'd like to discuss the content from ${websiteUrl}`,
+        isUser: true,
+        id: '',
+      },
+      {
+        text: '',
+        isUser: false,
+        id: '',
+      },
+    ];
+
+    mutateMessages(newMessages, { revalidate: false });
+
+    const reader = await conversations!
+      .find((conversation) => conversation.conversationId === conversationId)!
+      .chat(content); // Send the full content to backend
+
+    // Rest of the streaming logic remains the same
+    let isThinking = true;
+    setThought('');
+    let currentModelOutput = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        setCanSend(true);
+        break;
+      }
+
+      if (isThinking) {
+        if (value.includes('❀')) {
+          isThinking = false;
+          continue;
+        }
+        setThought((prev) => prev + value);
+      } else {
+        if (value.includes('❀')) {
+          setCanSend(true);
+          continue;
+        }
+
+        currentModelOutput += value;
+
+        mutateMessages(
+          [
+            ...(newMessages?.slice(0, -1) || []),
+            {
+              text: currentModelOutput,
+              isUser: false,
+              id: '',
+            },
+          ],
+          { revalidate: false }
+        );
+      }
+    }
+
+    mutateMessages();
+  }
+
   // * This function handles URL submission to the reader
   const handleUrlSubmit = async () => {
     if (!websiteUrl) return;
     setIsLoadingUrl(true);
     try {
       const { content } = await getPromptFromURL(websiteUrl)
-      console.log(content)
-
       if (content) {
         // Format the content as a prompt
-        const formattedContent = `Here's the content from ${websiteUrl}:\n\n${content}\n\nPlease read through this and help me understand it. Once you are ready to continue the conversation, please say 'Okay i'm ready to discuss this content with you.'`;
+        const formattedContent = `Here's the content from ${websiteUrl}:\n\n${content}\n\nPlease read through this and prepare to discuss it. Once you are ready to continue the conversation, please say ONLY: 'Okay i'm ready to discuss this content with you.'`;
         input.current!.value = formattedContent;
-        chat();
+        chatWithContext(formattedContent, websiteUrl);
       }
     } catch (error) {
       console.error('Error parsing URL:', error);
