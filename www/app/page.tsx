@@ -34,8 +34,6 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
 
 const URL = process.env.NEXT_PUBLIC_API_URL;
 
-console.log(process.env.NEXT_PUBLIC_JINA_API)
-
 export default function Home() {
   const [userId, setUserId] = useState<string>();
 
@@ -392,7 +390,8 @@ export default function Home() {
         // Format the content as a prompt
         const formattedContent = `Here's the content from ${websiteUrl}:\n\n${content}\n\nPlease read through this and prepare to discuss it. Once you are ready to continue the conversation, please say ONLY: 'Okay i'm ready to discuss this content with you.'`;
         input.current!.value = formattedContent;
-        chatWithContext(formattedContent, websiteUrl);
+        //chatWithContext(formattedContent, websiteUrl);
+        chat();
       }
     } catch (error) {
       console.error('Error parsing URL:', error);

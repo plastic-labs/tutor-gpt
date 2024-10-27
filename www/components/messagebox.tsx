@@ -4,7 +4,7 @@ import icon from '@/public/bloomicon.jpg';
 import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import MarkdownWrapper from './markdownWrapper';
-import { FaLightbulb, FaThumbsDown, FaThumbsUp } from 'react-icons/fa';
+import { FaLightbulb, FaThumbsDown, FaThumbsUp, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { API, type Message } from '@/utils/api';
 import Spinner from './spinner';
 
@@ -22,6 +22,34 @@ interface MessageBoxProps {
   setThought: (thought: string) => void;
   onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
+
+const isUrlContent = (text: string) => {
+  return text.startsWith("Here's the content from");
+};
+
+const UrlContentMessage = ({ text }: { text: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const urlMatch = text.match(/Here's the content from (.*?):\n\n/);
+  const url = urlMatch?.[1] || '';
+  const content = text.replace(/Here's the content from .*?:\n\n/, '');
+
+  return (
+    <div className="w-full">
+      <button
+        className="w-full px-4 py-2 text-left flex justify-between items-center bg-gray-200 dark:bg-gray-700 rounded-lg"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <span className="font-medium">Here is content from: {url}</span>
+        {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
+      </button>
+      {isExpanded && (
+        <div className="mt-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <MarkdownWrapper text={content} />
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function MessageBox({
   isUser,
@@ -104,15 +132,20 @@ export default function MessageBox({
         />
       )}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={text} />}
+        {loading ? (
+          <Skeleton count={4} />
+        ) : isUser && isUrlContent(text) ? (
+          <UrlContentMessage text={text} />
+        ) : (
+          <MarkdownWrapper text={text} />
+        )}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button
-              className={`p-2 rounded-full ${
-                reaction === 'thumbs_up'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
+              className={`p-2 rounded-full ${reaction === 'thumbs_up'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 dark:bg-gray-700'
+                } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_up')}
               disabled={pendingReaction !== null}
             >
@@ -125,11 +158,10 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${
-                reaction === 'thumbs_down'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
+              className={`p-2 rounded-full ${reaction === 'thumbs_down'
+                ? 'bg-red-500 text-white'
+                : 'bg-gray-200 dark:bg-gray-700'
+                } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_down')}
               disabled={pendingReaction !== null}
             >
@@ -142,11 +174,10 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${
-                isThoughtOpen
-                  ? 'bg-neon-green text-gray-800'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              }`}
+              className={`p-2 rounded-full ${isThoughtOpen
+                ? 'bg-neon-green text-gray-800'
+                : 'bg-gray-200 dark:bg-gray-700'
+                }`}
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >
