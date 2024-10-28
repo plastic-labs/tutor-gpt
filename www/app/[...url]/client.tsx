@@ -22,11 +22,6 @@ import { API } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 
-import { config } from "dotenv";
-import path from 'path';
-
-config({ path: path.resolve(__dirname, "../../.env") });
-
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
@@ -49,7 +44,8 @@ export default function ChatInterface({
     url: string;
     parsedUrlContent: string
   }) {
-  console.log('from user:', url, parsedUrlContent)
+
+  const [parsedURLContentHasInitialised, setParsedURLContentHasInitialised] = useState(false);
   const [userId, setUserId] = useState<string>();
 
   const [isThoughtsOpenState, setIsThoughtsOpenState] =
@@ -138,21 +134,6 @@ export default function ChatInterface({
       messageContainer.removeEventListener('scroll', func);
     };
   }, []);
-
-  // ? This will run on page load and initiate a conversation with Bloom where the first message is the parsed URL content provided with an initiator prompt
-  useEffect(() => {
-    if (!url) return;
-    try {
-      if (parsedUrlContent) {
-        // Format the content as a prompt
-        const formattedInitialQuery = `Here's the content from ${url}:\n\n${parsedUrlContent}\n\nPlease read through this and prepare to discuss it. Once you are ready to continue the conversation, please say ONLY: 'Okay i'm ready to discuss this content with you.'`;
-        input.current!.value = formattedInitialQuery;
-        chat();
-      }
-    } catch (error) {
-      console.error('Error parsing URL:', error);
-    }
-  }, [url, parsedUrlContent])
 
   const conversationsFetcher = async (userId: string) => {
     const api = new API({ url: URL!, userId });
@@ -333,10 +314,10 @@ export default function ChatInterface({
     if (!websiteUrl) return;
     setIsLoadingUrl(true);
     try {
-      const { content } = await getPromptFromURL(websiteUrl)
-      if (content) {
+      const { parsedUrlContent } = await getPromptFromURL(websiteUrl)
+      if (parsedUrlContent) {
         // Format the content as a prompt
-        const formattedContent = `Here's the content from ${websiteUrl}:\n\n${content}\n\nPlease read through this and prepare to discuss it. Once you are ready to continue the conversation, please say ONLY: 'Okay i'm ready to discuss this content with you.'`;
+        const formattedContent = `Here's the content from ${websiteUrl}:\n\n${parsedUrlContent}\n\nPlease read through this and prepare to discuss it. Once you are ready to continue the conversation, please say ONLY: 'Okay i'm ready to discuss this content with you.'`;
         input.current!.value = formattedContent;
         //chatWithContext(formattedContent, websiteUrl);
         chat();
@@ -348,6 +329,26 @@ export default function ChatInterface({
       setWebsiteUrl('');
     }
   };
+
+  // ? This will run on page load and initiate a conversation with Bloom where the first message is the parsed URL content provided with an initiator prompt
+  useEffect(() => {
+    if (!url || !isSubscribed || parsedURLContentHasInitialised || !messages) return;
+    console.log('we have entered the useEffectHook with:', url, parsedUrlContent)
+
+    try {
+      if (parsedUrlContent) {
+        // Format the content as a prompt
+        const formattedInitialQuery = `Here's the content from ${url}:\n\n${parsedUrlContent}\n\nPlease read through this and prepare to discuss it. Once you are ready to continue the conversation, please say ONLY: 'Okay i'm ready to discuss this content with you.'`;
+        input.current!.value = formattedInitialQuery;
+        console.log('we got here')
+        chat();
+        console.log('but we didnt get here')
+        setParsedURLContentHasInitialised(true);
+      }
+    } catch (error) {
+      console.error('Error parsing URL:', error);
+    }
+  }, [url, parsedUrlContent, isSubscribed, parsedURLContentHasInitialised, chat])
 
   return (
     <main
