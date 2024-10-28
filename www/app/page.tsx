@@ -55,7 +55,7 @@ export default function Home() {
 
   const setIsThoughtsOpen = (
     isOpen: boolean,
-    messageId: string | null = null
+    messageId: string | null = null,
   ) => {
     setIsThoughtsOpenState(isOpen);
     setOpenThoughtMessageId(isOpen ? messageId : null);
@@ -99,7 +99,7 @@ export default function Home() {
     const func = () => {
       const val =
         Math.round(
-          messageContainer.scrollHeight - messageContainer.scrollTop
+          messageContainer.scrollHeight - messageContainer.scrollTop,
         ) === messageContainer.clientHeight;
       isAtBottom.current = val;
     };
@@ -130,7 +130,7 @@ export default function Home() {
         setCanSend(true);
       },
       revalidateOnFocus: false,
-    }
+    },
   );
 
   const messagesFetcher = async (conversationId: string) => {
@@ -172,7 +172,7 @@ export default function Home() {
             return msg;
           });
         },
-        { revalidate: false }
+        { revalidate: false },
       );
     } catch (error) {
       console.error('Failed to update reaction:', error);
@@ -265,7 +265,7 @@ export default function Home() {
               id: '',
             },
           ],
-          { revalidate: false }
+          { revalidate: false },
         );
 
         if (isAtBottom.current) {
@@ -281,7 +281,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative h-full">
+    <main className="relative flex h-full w-screen flex-col overflow-hidden pb-[env(keyboard-inset-height)] text-sm lg:text-base">
       <Sidebar
         conversations={conversations || []}
         mutateConversations={mutateConversations}
@@ -292,9 +292,9 @@ export default function Home() {
         api={new API({ url: URL!, userId: userId! })}
         isSubscribed={isSubscribed}
       />
-      <div className="flex flex-col w-full h-full lg:pl-60 xl:pl-72 dark:bg-gray-900">
+      <div className="flex h-full w-full flex-col dark:bg-gray-900 lg:pl-60 xl:pl-72">
         <section
-          className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
+          className="flex flex-1 flex-col overflow-y-auto dark:text-white lg:px-5"
           ref={messageContainerRef}
         >
           {messages?.map((message, i) => (
@@ -335,7 +335,7 @@ export default function Home() {
         <div className="p-3 lg:p-5">
           <form
             id="send"
-            className="flex p-3 lg:p-5 gap-3 border-gray-300"
+            className="flex gap-3 border-gray-300 p-3 lg:p-5"
             onSubmit={(e) => {
               e.preventDefault();
               if (canSend && input.current?.value && isSubscribed) {
@@ -351,7 +351,7 @@ export default function Home() {
                   ? 'Type a message...'
                   : 'Subscribe to send messages'
               }
-              className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+              className={`flex-1 resize-none rounded-2xl border-2 bg-gray-100 px-3 py-1 text-gray-400 dark:bg-gray-800 lg:px-5 lg:py-3 ${
                 canSend && isSubscribed
                   ? 'border-green-200'
                   : 'border-red-200 opacity-50'
@@ -369,14 +369,14 @@ export default function Home() {
               }}
             />
             <button
-              className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+              className="flex items-center justify-center gap-2 rounded-full bg-dark-green px-4 py-2 text-neon-green lg:px-7 lg:py-3"
               type="submit"
               disabled={!canSend || !isSubscribed}
             >
               <FaPaperPlane className="inline" />
             </button>
             <button
-              className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+              className="flex items-center justify-center gap-2 rounded-full bg-dark-green px-4 py-2 text-neon-green lg:px-7 lg:py-3"
               onClick={() => setIsThoughtsOpen(true)}
               type="button"
             >

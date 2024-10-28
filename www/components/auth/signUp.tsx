@@ -94,7 +94,7 @@ export default function SignUp(props: any) {
           type="email"
           id="Email"
           name="email"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className="mt-1 w-full rounded-md border-gray-200 bg-white p-2 text-sm text-gray-700 shadow-sm"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -112,7 +112,7 @@ export default function SignUp(props: any) {
           type="password"
           id="Password"
           name="password"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className="mt-1 w-full rounded-md border-gray-200 bg-white p-2 text-sm text-gray-700 shadow-sm"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -130,7 +130,7 @@ export default function SignUp(props: any) {
           type="password"
           id="PasswordConfirmation"
           name="password_confirmation"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className="mt-1 w-full rounded-md border-gray-200 bg-white p-2 text-sm text-gray-700 shadow-sm"
           value={passwordConfirmation}
           onChange={(e) => setPasswordConfirmation(e.target.value)}
         />
@@ -179,6 +179,7 @@ export default function SignUp(props: any) {
             href="https://app.termly.io/document/terms-of-service/ba5ac452-fdd6-4746-8b31-973351d05008"
             target="_blank"
             className="text-gray-700 underline"
+            rel="noreferrer"
           >
             Terms and Conditions
           </a>{' '}
@@ -187,6 +188,7 @@ export default function SignUp(props: any) {
             href="https://app.termly.io/document/privacy-policy/29672110-b634-40ae-854d-ebaf55e8fa75"
             target="_blank"
             className="text-gray-700 underline"
+            rel="noreferrer"
           >
             Privacy Policy
           </a>
@@ -197,7 +199,7 @@ export default function SignUp(props: any) {
       <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
         <button className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">
           {isLoading ? (
-            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
               <circle
                 className="opacity-25"
                 cx="12"

@@ -11,7 +11,9 @@ const spacegrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Bloombot - Learning. Reimagined.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  ),
   description:
     'Bloom is your always-on, always-engaged learning companion. You can chat with Bloom about any topic, whenever you want. It’s designed to help you build critical skills and follow your curiosity.',
   authors: [{ name: 'Plastic Labs', url: 'https://plasticlabs.ai' }],
@@ -61,7 +63,7 @@ export default function RootLayout({
             <PostHogPageview />
           </Suspense>
           <PHProvider>
-            <div className="flex flex-col h-screen">
+            <div className="flex h-screen flex-col">
               <Header />
               <div className="flex-1 overflow-hidden">{children}</div>
             </div>

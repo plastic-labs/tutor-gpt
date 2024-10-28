@@ -43,7 +43,7 @@ export default function SubscriptionManager({ subscription, products }: Props) {
         Subscription Management
       </h2>
       <div className="mt-4">
-        <h2 className="text-xl font-bold mb-2">Subscription Status</h2>
+        <h2 className="mb-2 text-xl font-bold">Subscription Status</h2>
         <p className="mb-4">
           {subscription ? 'Active Subscription' : 'No Active Subscription'}
         </p>
@@ -51,7 +51,7 @@ export default function SubscriptionManager({ subscription, products }: Props) {
           <button
             onClick={handleManage}
             disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:opacity-50"
           >
             Manage Subscription
           </button>

@@ -40,7 +40,7 @@ export class Conversation {
           new URLSearchParams({
             conversation_id: this.conversationId,
             user_id: this.api.userId,
-          })
+          }),
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];
@@ -78,7 +78,7 @@ export class Conversation {
   async delete() {
     await retryDBOperation(async () => {
       await fetch(
-        `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
+        `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`,
       ).then((res) => res.json());
     });
   }
@@ -119,7 +119,7 @@ export class API {
   async new() {
     return retryDBOperation(async () => {
       const req = await fetch(
-        `${this.url}/api/conversations/insert?user_id=${this.userId}`
+        `${this.url}/api/conversations/insert?user_id=${this.userId}`,
       );
       const { conversation_id } = await req.json();
       return new Conversation({
@@ -133,7 +133,7 @@ export class API {
   async getConversations() {
     return retryDBOperation(async () => {
       const req = await fetch(
-        `${this.url}/api/conversations/get?user_id=${this.userId}`
+        `${this.url}/api/conversations/get?user_id=${this.userId}`,
       );
       const { conversations }: { conversations: RawConversation[] } =
         await req.json();
@@ -147,7 +147,7 @@ export class API {
             api: this,
             name: conversation.name,
             conversationId: conversation.conversation_id,
-          })
+          }),
       );
     });
   }
@@ -159,7 +159,7 @@ export class API {
           new URLSearchParams({
             conversation_id: conversationId,
             user_id: this.userId,
-          })
+          }),
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];
@@ -179,7 +179,7 @@ export class API {
 
   async getThoughtById(
     conversationId: string,
-    messageId: string
+    messageId: string,
   ): Promise<string | null> {
     return retryDBOperation(async () => {
       try {
@@ -190,7 +190,7 @@ export class API {
             headers: {
               'Content-Type': 'application/json',
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -209,7 +209,7 @@ export class API {
   async addReaction(
     conversationId: string,
     messageId: string,
-    reaction: Exclude<Reaction, null>
+    reaction: Exclude<Reaction, null>,
   ): Promise<{ status: string }> {
     return retryDBOperation(async () => {
       try {
@@ -220,7 +220,7 @@ export class API {
             headers: {
               'Content-Type': 'application/json',
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -237,7 +237,7 @@ export class API {
 
   async getReaction(
     conversationId: string,
-    messageId: string
+    messageId: string,
   ): Promise<{ reaction: Reaction }> {
     return retryDBOperation(async () => {
       try {
@@ -248,7 +248,7 @@ export class API {
             headers: {
               'Content-Type': 'application/json',
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -276,7 +276,7 @@ export class API {
   async addOrRemoveReaction(
     conversationId: string,
     messageId: string,
-    reaction: Reaction
+    reaction: Reaction,
   ): Promise<{ status: string }> {
     try {
       const response = await fetch(
@@ -287,7 +287,7 @@ export class API {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ reaction: reaction || undefined }),
-        }
+        },
       );
       if (!response.ok) {
         throw new Error('Failed to update reaction');

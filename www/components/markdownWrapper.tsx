@@ -21,7 +21,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={copyToClipboard}
-      className="absolute top-2 right-2 p-1 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+      className="absolute right-2 top-2 rounded-md bg-gray-700 p-1 transition-colors hover:bg-gray-600"
     >
       {isCopied ? (
         <FiCheck className="h-4 w-4 text-green-500" />
@@ -51,43 +51,77 @@ function CodeBlock({ language, value }: { language: string; value: string }) {
 const MarkdownWrapper = React.memo(({ text }: { text: string }) => {
   const remarkPlugins = useMemo(() => [remarkMath], []);
   const rehypePlugins = useMemo(() => [rehypeKatex], []);
-  const components = useMemo(() => ({
-    ol: ({ node, ordered, ...props }: { node: Element; ordered: boolean }) => (
-      <ol className="list-decimal pl-6 space-y-2" {...props} />
-    ),
-    ul: ({ node, ordered, ...props }: { node: Element; ordered: boolean }) => (
-      <ul className="list-disc pl-6 space-y-2" {...props} />
-    ),
-    li: ({ node, ordered, ...props }: { node: Element; ordered: boolean }) => <li className="ml-2" {...props} />,
-    code: ({ node, inline, className, children, ...props }: { node: Element; inline: boolean; className: string; children: string }) => {
-      const match = /language-(\w+)/.exec(className || '');
-      return !inline && match ? (
-        <CodeBlock
-          language={match[1]}
-          value={String(children).replace(/\n$/, '')}
-        />
-      ) : (
-        <code
-          {...props}
-          className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
-        >
-          {children}
-        </code>
-      );
-    },
-  }), []);
+  const components = useMemo(
+    () => ({
+      ol: ({
+        node,
+        ordered,
+        ...props
+      }: {
+        node: Element;
+        ordered: boolean;
+      }) => <ol className="list-decimal space-y-2 pl-6" {...props} />,
+      ul: ({
+        node,
+        ordered,
+        ...props
+      }: {
+        node: Element;
+        ordered: boolean;
+      }) => <ul className="list-disc space-y-2 pl-6" {...props} />,
+      li: ({
+        node,
+        ordered,
+        ...props
+      }: {
+        node: Element;
+        ordered: boolean;
+      }) => <li className="ml-2" {...props} />,
+      code: ({
+        node,
+        inline,
+        className,
+        children,
+        ...props
+      }: {
+        node: Element;
+        inline: boolean;
+        className: string;
+        children: string;
+      }) => {
+        const match = /language-(\w+)/.exec(className || '');
+        return !inline && match ? (
+          <CodeBlock
+            language={match[1]}
+            value={String(children).replace(/\n$/, '')}
+          />
+        ) : (
+          <code
+            {...props}
+            className={`${className} rounded bg-gray-100 px-1 dark:bg-gray-800`}
+          >
+            {children}
+          </code>
+        );
+      },
+    }),
+    [],
+  );
 
-  const markdownContent = useMemo(() => (
-    <ReactMarkdown
-      remarkPlugins={remarkPlugins}
-      // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
-      rehypePlugins={rehypePlugins}
-      // @ts-expect-error
-      components={components}
-    >
-      {text}
-    </ReactMarkdown>
-  ), [text, remarkPlugins, rehypePlugins, components]);
+  const markdownContent = useMemo(
+    () => (
+      <ReactMarkdown
+        remarkPlugins={remarkPlugins}
+        // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
+        rehypePlugins={rehypePlugins}
+        // @ts-expect-error
+        components={components}
+      >
+        {text}
+      </ReactMarkdown>
+    ),
+    [text, remarkPlugins, rehypePlugins, components],
+  );
 
   return text ? markdownContent : <Typing />;
 });

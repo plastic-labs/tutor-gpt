@@ -90,32 +90,33 @@ export default function MessageBox({
   return (
     <article
       className={
-        'flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl ' +
+        'flex gap-2 p-5 lg:gap-5 lg:rounded-2xl lg:p-8 ' +
         (isUser ? 'bg-gray-100 dark:bg-gray-800' : '')
       }
     >
       {loading ? (
-        <Skeleton circle={true} className="lg:!w-12 lg:!h-12 !w-6 !h-6 " />
+        <Skeleton circle={true} className="!h-6 !w-6 lg:!h-12 lg:!w-12 " />
       ) : (
         <Image
           src={isUser ? usericon : icon}
           alt="icon"
-          className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
+          className="h-6 w-6 rounded-full lg:h-12 lg:w-12"
         />
       )}
-      <div className="flex flex-col gap-2 w-full">
+      <div className="flex w-full flex-col gap-2">
         {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={text} />}
         {!loading && !isUser && shouldShowButtons && (
-          <div className="flex justify-start gap-2 mt-2">
+          <div className="mt-2 flex justify-start gap-2">
             <button
-              className={`p-2 rounded-full ${reaction === 'thumbs_up'
+              className={`rounded-full p-2 ${
+                reaction === 'thumbs_up'
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 dark:bg-gray-700'
-                } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
+              } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_up')}
               disabled={pendingReaction !== null}
             >
-              <div className="w-5 h-5 flex items-center justify-center">
+              <div className="flex h-5 w-5 items-center justify-center">
                 {pendingReaction === 'thumbs_up' ? (
                   <Spinner size={16} />
                 ) : (
@@ -124,14 +125,15 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${reaction === 'thumbs_down'
+              className={`rounded-full p-2 ${
+                reaction === 'thumbs_down'
                   ? 'bg-red-500 text-white'
                   : 'bg-gray-200 dark:bg-gray-700'
-                } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
+              } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_down')}
               disabled={pendingReaction !== null}
             >
-              <div className="w-5 h-5 flex items-center justify-center">
+              <div className="flex h-5 w-5 items-center justify-center">
                 {pendingReaction === 'thumbs_down' ? (
                   <Spinner size={16} />
                 ) : (
@@ -140,14 +142,15 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${isThoughtOpen
+              className={`rounded-full p-2 ${
+                isThoughtOpen
                   ? 'bg-neon-green text-gray-800'
                   : 'bg-gray-200 dark:bg-gray-700'
-                }`}
+              }`}
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >
-              <div className="w-5 h-5 flex items-center justify-center">
+              <div className="flex h-5 w-5 items-center justify-center">
                 {isThoughtLoading ? <Spinner size={16} /> : <FaLightbulb />}
               </div>
             </button>

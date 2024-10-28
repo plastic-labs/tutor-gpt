@@ -28,13 +28,13 @@ export async function GET(request: Request) {
     } else {
       console.error('Error exchanging code for session:', error);
       return NextResponse.redirect(
-        `${origin}/auth?error=Authentication failed: ${error.message}`
+        `${origin}/auth?error=Authentication failed: ${error.message}`,
       );
     }
   }
 
   // If no code is present in the URL
   return NextResponse.redirect(
-    `${origin}/auth?error=No authentication code provided`
+    `${origin}/auth?error=No authentication code provided`,
   );
 }

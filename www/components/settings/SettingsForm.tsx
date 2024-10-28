@@ -24,10 +24,10 @@ interface SettingsFormProps {
 export function SettingsForm({ user, type }: SettingsFormProps) {
   const [email, setEmail] = useState<string>(user?.email || '');
   const [displayName, setDisplayName] = useState<string>(
-    user?.user_metadata?.full_name || ''
+    user?.user_metadata?.full_name || '',
   );
   const [avatarUrl, setAvatarUrl] = useState<string>(
-    user?.user_metadata?.avatar_url || ''
+    user?.user_metadata?.avatar_url || '',
   );
   const [currentPassword, setCurrentPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
@@ -50,7 +50,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         { email: email },
         {
           emailRedirectTo: `${location.origin}/settings`,
-        }
+        },
       );
       if (error) throw error;
       Swal.fire({
@@ -153,7 +153,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="bg-input text-foreground flex-grow"
+                className="flex-grow bg-input text-foreground"
               />
             </div>
             <div className="space-y-2">
@@ -165,11 +165,11 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
                 type="url"
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
-                className="bg-input text-foreground flex-grow"
+                className="flex-grow bg-input text-foreground"
               />
               <Button
                 onClick={handleProfileUpdate}
-                className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
+                className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-neon-green dark:text-dark-green dark:hover:bg-neon-green/90"
               >
                 Save
               </Button>
@@ -228,7 +228,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-input text-foreground flex-grow"
+              className="flex-grow bg-input text-foreground"
             />
           </div>
         )}
@@ -236,7 +236,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
           onClick={
             type === 'account' ? handleEmailChange : handlePasswordChange
           }
-          className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
+          className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-neon-green dark:text-dark-green dark:hover:bg-neon-green/90"
         >
           Save
         </Button>

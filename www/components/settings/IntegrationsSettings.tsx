@@ -33,7 +33,7 @@ const fetcher = async () => {
   }
 
   const discordIdentity = data.identities.find(
-    (identity: UserIdentity) => identity.provider === 'discord'
+    (identity: UserIdentity) => identity.provider === 'discord',
   );
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -140,7 +140,7 @@ export function IntegrationsSettings() {
     }
 
     const discordIdentity = identitiesData.identities.find(
-      (identity: UserIdentity) => identity.provider === 'discord'
+      (identity: UserIdentity) => identity.provider === 'discord',
     );
 
     if (!discordIdentity) {
@@ -195,7 +195,7 @@ export function IntegrationsSettings() {
               </p>
               <Button
                 onClick={handleDiscordDisconnect}
-                className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors duration-300"
+                className="flex w-full items-center justify-center rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors duration-300 hover:bg-red-600"
               >
                 <FaDiscord className="mr-2 h-4 w-4" />
                 Disconnect Discord Account
@@ -205,7 +205,7 @@ export function IntegrationsSettings() {
             <Button
               onClick={handleDiscordConnect}
               disabled={isLinking}
-              className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-[#5865F2] hover:bg-[#4752C4] rounded-md transition-colors duration-300"
+              className="flex w-full items-center justify-center rounded-md bg-[#5865F2] px-4 py-2 text-sm font-medium text-white transition-colors duration-300 hover:bg-[#4752C4]"
             >
               {isLinking ? (
                 <span>Connecting...</span>

@@ -29,7 +29,7 @@ function isRateLimitError(error: any): boolean {
 function retryOperation<T>(
   operation: () => Promise<T>,
   options: RetryOptions,
-  isOpenAI: boolean
+  isOpenAI: boolean,
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const retryOperation = retry.operation(options);
@@ -66,7 +66,7 @@ export function retryDBOperation<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 export function retryOpenAIOperation<T>(
-  operation: () => Promise<T>
+  operation: () => Promise<T>,
 ): Promise<T> {
   return retryOperation(operation, openAIOptions, true);
 }

@@ -46,7 +46,7 @@ export default function Forgot(props: any) {
           type="email"
           id="Email"
           name="email"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className="mt-1 w-full rounded-md border-gray-200 bg-white p-2 text-sm text-gray-700 shadow-sm"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />

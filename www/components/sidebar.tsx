@@ -56,8 +56,8 @@ export default function Sidebar({
       conversations.map((conversation) =>
         conversation.conversationId === cur.conversationId
           ? new Conversation({ ...conversation, name: newName })
-          : conversation
-      )
+          : conversation,
+      ),
     );
   }
 
@@ -77,7 +77,7 @@ export default function Sidebar({
       postHog?.capture('user_deleted_conversation');
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(
-        (cur) => cur.conversationId != conversation.conversationId
+        (cur) => cur.conversationId != conversation.conversationId,
       );
       if (conversation.conversationId == conversationId) {
         if (newConversations.length > 1) {
@@ -112,38 +112,47 @@ export default function Sidebar({
     isLoading: isUserLoading,
   } = useSWR('user', fetchUser);
 
-
   const memoizedConversations = useMemo(() => {
     return conversations.map((cur, i) => (
-      <ConversationTab conversation={cur} select={() => setConversationId(cur.conversationId)} selected={conversationId === cur.conversationId} edit={() => editConversation(cur)} del={() => deleteConversation(cur)} key={i} />
+      <ConversationTab
+        conversation={cur}
+        select={() => setConversationId(cur.conversationId)}
+        selected={conversationId === cur.conversationId}
+        edit={() => editConversation(cur)}
+        del={() => deleteConversation(cur)}
+        key={i}
+      />
     ));
   }, [conversations, conversationId]);
 
   const memoizedGrClose = useMemo(() => <GrClose />, []);
-  const memoizedFaUser = useMemo(() => <FaUser className="w-5 h-5 text-gray-600" />, []);
+  const memoizedFaUser = useMemo(
+    () => <FaUser className="h-5 w-5 text-gray-600" />,
+    [],
+  );
 
   return (
     <div
-      className={`fixed z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
+      className={`fixed inset-0 z-20 h-full w-full flex-none border-r border-gray-300 dark:border-gray-700 lg:absolute lg:block lg:h-auto lg:w-60 lg:overflow-visible lg:pt-0 lg:shadow-lg xl:w-72 ${
         isSidebarOpen ? '' : 'hidden'
       }`}
     >
       <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
+        className={`scrollbar-trigger flex h-full w-4/5 flex-col overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 lg:w-full ${
           isSidebarOpen ? 'fixed lg:static' : 'sticky'
-        } top-0 left-0`}
+        } left-0 top-0`}
       >
         {/* Section 1: Top buttons */}
-        <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
+        <div className="flex items-center justify-between gap-2 border-b border-gray-300 p-4 dark:border-gray-700">
           <button
-            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
+            className="h-10 w-full rounded-lg bg-neon-green px-4 py-2 text-black lg:w-full"
             onClick={addChat}
             disabled={!isSubscribed}
           >
             New Chat
           </button>
           <button
-            className="lg:hidden bg-neon-green text-black rounded-lg px-4 py-2 h-10"
+            className="h-10 rounded-lg bg-neon-green px-4 py-2 text-black lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           >
             {memoizedGrClose}
@@ -151,7 +160,7 @@ export default function Sidebar({
         </div>
 
         {/* Section 2: Scrollable items */}
-        <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
+        <div className="flex flex-1 flex-col divide-y divide-gray-300 overflow-y-auto dark:divide-gray-700">
           {conversations.length > 0
             ? memoizedConversations
             : Array.from({ length: 5 }).map((_, i) => (
@@ -160,18 +169,18 @@ export default function Sidebar({
         </div>
 
         {/* Section 3: Authentication information */}
-        <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full flex items-center justify-between">
+        <div className="flex w-full items-center justify-between border-t border-gray-300 p-4 dark:border-gray-700">
           <div className="flex items-center">
             {isUserLoading ? (
-              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 animate-pulse"></div>
+              <div className="mr-2 h-8 w-8 animate-pulse rounded-full bg-gray-300"></div>
             ) : user?.user_metadata?.avatar_url ? (
               <img
                 src={user.user_metadata.avatar_url}
                 alt="Profile"
-                className="w-8 h-8 rounded-full mr-2"
+                className="mr-2 h-8 w-8 rounded-full"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 flex items-center justify-center">
+              <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-300">
                 {memoizedFaUser}
               </div>
             )}
@@ -183,11 +192,11 @@ export default function Sidebar({
           </div>
           <div className="relative">
             <button
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <svg
-                className="w-6 h-6"
+                className="h-6 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -202,9 +211,9 @@ export default function Sidebar({
               </svg>
             </button>
             {isMenuOpen && (
-              <div className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
+              <div className="absolute bottom-full right-0 z-10 mb-2 w-48 rounded-md bg-white py-1 shadow-lg dark:bg-gray-800">
                 <button
-                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                   onClick={() => {
                     router.push('/settings');
                   }}
@@ -212,7 +221,7 @@ export default function Sidebar({
                   Account Settings
                 </button>
                 <button
-                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                  className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
                   onClick={async () => {
                     await supabase.auth.signOut();
                     location.reload();

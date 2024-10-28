@@ -2,6 +2,9 @@
 import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
   output: "standalone",
+  eslint: {
+    ignoreDuringBuilds: false, // This ensures ESLint runs during build
+  },
   //  rewrites: async () => {
   //    return [
   //      {

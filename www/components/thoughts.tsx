@@ -13,13 +13,13 @@ export default function Thoughts({
   return (
     <section
       className={
-        'absolute h-[100dvh] flex flex-col lg:w-3/5 w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out ' +
+        'absolute right-0 top-0 flex h-[100dvh] w-4/5 flex-col bg-neon-green transition-all duration-300 ease-in-out lg:w-3/5 ' +
         (isThoughtsOpen ? 'translate-x-0 shadow-lg' : 'translate-x-full')
       }
     >
       <div className="flex flex-row-reverse p-4">
         <button
-          className="text-dark-green text-xl"
+          className="text-xl text-dark-green"
           onClick={() => {
             setIsThoughtsOpen(false);
           }}
@@ -27,7 +27,7 @@ export default function Thoughts({
           <GrClose className="inline" />
         </button>
       </div>
-      <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4">
         <h1 className="text-2xl font-bold">Thoughts</h1>
         <ReactMarkdown>{thought}</ReactMarkdown>
         {/*

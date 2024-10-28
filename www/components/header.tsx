@@ -21,18 +21,18 @@ export function Header() {
 
   if (!mounted) {
     return (
-      <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow">
-        <nav className="flex justify-between items-center p-4">
-          <div className="h-10 w-40 bg-gray-200 animate-pulse"></div>
-          <div className="h-6 w-6 bg-gray-200 animate-pulse rounded-full"></div>
+      <header className="sticky top-0 z-10 bg-white shadow dark:bg-gray-800">
+        <nav className="flex items-center justify-between p-4">
+          <div className="h-10 w-40 animate-pulse bg-gray-200"></div>
+          <div className="h-6 w-6 animate-pulse rounded-full bg-gray-200"></div>
         </nav>
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow">
-      <nav className="flex justify-between items-center p-4">
+    <header className="sticky top-0 z-10 bg-white shadow dark:bg-gray-800">
+      <nav className="flex items-center justify-between p-4">
         <Link href="/" passHref>
           <Image
             src={theme === 'dark' ? darkBanner : lightBanner}
@@ -41,7 +41,7 @@ export function Header() {
             priority={true}
           />
         </Link>
-        <div className="flex justify-between items-center gap-4">
+        <div className="flex items-center justify-between gap-4">
           <DarkModeSwitch
             checked={theme === 'dark'}
             onChange={toggleDarkMode}

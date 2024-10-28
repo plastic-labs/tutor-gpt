@@ -55,7 +55,7 @@ export default function SignIn(props: any) {
             type="email"
             id="email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md bg-white text-sm text-gray-700 shadow-sm ${error ? 'border-2 border-red-500' : 'border-gray-200'}`}
+            className={`mt-1 w-full rounded-md bg-white p-2 text-sm text-gray-700 shadow-sm ${error ? 'border-2 border-red-500' : 'border-gray-200'}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -73,7 +73,7 @@ export default function SignIn(props: any) {
             type="password"
             id="password"
             name="password"
-            className={`p-2 mt-1 w-full rounded-md bg-white text-sm text-gray-700 shadow-sm ${error ? 'border-2 border-red-500' : 'border-gray-200'}`}
+            className={`mt-1 w-full rounded-md bg-white p-2 text-sm text-gray-700 shadow-sm ${error ? 'border-2 border-red-500' : 'border-gray-200'}`}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -83,7 +83,7 @@ export default function SignIn(props: any) {
           <button className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">
             {isLoading ? (
               <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
                   <circle
                     className="opacity-25"
                     cx="12"

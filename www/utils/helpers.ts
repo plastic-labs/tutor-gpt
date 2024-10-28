@@ -1,5 +1,5 @@
 export const toDateTime = (secs: number) => {
-  var t = new Date(+0); // Unix epoch start.
+  const t = new Date(+0); // Unix epoch start.
   t.setSeconds(secs);
   return t;
 };
@@ -29,7 +29,7 @@ export const getURL = (path: string = '') => {
 };
 
 export const calculateTrialEndUnixTimestamp = (
-  trialPeriodDays: number | null | undefined
+  trialPeriodDays: number | null | undefined,
 ) => {
   // Check if trialPeriodDays is null, undefined, or less than 2 days
   if (
@@ -42,7 +42,7 @@ export const calculateTrialEndUnixTimestamp = (
 
   const currentDate = new Date(); // Current date and time
   const trialEnd = new Date(
-    currentDate.getTime() + (trialPeriodDays + 1) * 24 * 60 * 60 * 1000
+    currentDate.getTime() + (trialPeriodDays + 1) * 24 * 60 * 60 * 1000,
   ); // Add trial days
   return Math.floor(trialEnd.getTime() / 1000); // Convert to Unix timestamp in seconds
 };
@@ -58,7 +58,7 @@ const getToastRedirect = (
   toastName: string,
   toastDescription: string = '',
   disableButton: boolean = false,
-  arbitraryParams: string = ''
+  arbitraryParams: string = '',
 ): string => {
   const [nameKey, descriptionKey] = toastKeyMap[toastType];
 
@@ -84,7 +84,7 @@ export const getStatusRedirect = (
   statusName: string,
   statusDescription: string = '',
   disableButton: boolean = false,
-  arbitraryParams: string = ''
+  arbitraryParams: string = '',
 ) =>
   getToastRedirect(
     path,
@@ -92,7 +92,7 @@ export const getStatusRedirect = (
     statusName,
     statusDescription,
     disableButton,
-    arbitraryParams
+    arbitraryParams,
   );
 
 export const getErrorRedirect = (
@@ -100,7 +100,7 @@ export const getErrorRedirect = (
   errorName: string,
   errorDescription: string = '',
   disableButton: boolean = false,
-  arbitraryParams: string = ''
+  arbitraryParams: string = '',
 ) =>
   getToastRedirect(
     path,
@@ -108,5 +108,5 @@ export const getErrorRedirect = (
     errorName,
     errorDescription,
     disableButton,
-    arbitraryParams
+    arbitraryParams,
   );

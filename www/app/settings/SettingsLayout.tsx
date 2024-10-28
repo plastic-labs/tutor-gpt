@@ -30,8 +30,8 @@ export default function SettingsLayout({
   ];
 
   return (
-    <div className={`flex-1 flex flex-col bg-background text-foreground`}>
-      <div className="flex-1 flex">
+    <div className={`flex flex-1 flex-col bg-background text-foreground`}>
+      <div className="flex flex-1">
         <div className="py-4">
           <nav className="w-64 bg-muted p-4">
             <ul>
@@ -39,7 +39,7 @@ export default function SettingsLayout({
                 <li key={item.id} className="mb-2">
                   <button
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full text-left p-2 rounded ${
+                    className={`w-full rounded p-2 text-left ${
                       activeTab === item.id
                         ? 'bg-primary text-primary-foreground dark:bg-neon-green dark:text-black'
                         : 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-neon-green/20'

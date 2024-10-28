@@ -26,7 +26,7 @@ type CheckoutResponse = {
 
 export async function checkoutWithStripe(
   price: Price,
-  redirectPath: string = '/subscription'
+  redirectPath: string = '/subscription',
 ): Promise<CheckoutResponse> {
   try {
     // Get the user from Supabase auth
@@ -72,7 +72,7 @@ export async function checkoutWithStripe(
 
     console.log(
       'Trial end:',
-      calculateTrialEndUnixTimestamp(price.trial_period_days)
+      calculateTrialEndUnixTimestamp(price.trial_period_days),
     );
 
     if (price.type === 'recurring') {
@@ -113,7 +113,7 @@ export async function checkoutWithStripe(
         errorRedirect: getErrorRedirect(
           redirectPath,
           error.message,
-          'Please try again later or contact a system administrator.'
+          'Please try again later or contact a system administrator.',
         ),
       };
     } else {
@@ -121,7 +121,7 @@ export async function checkoutWithStripe(
         errorRedirect: getErrorRedirect(
           redirectPath,
           'An unknown error occurred.',
-          'Please try again later or contact a system administrator.'
+          'Please try again later or contact a system administrator.',
         ),
       };
     }

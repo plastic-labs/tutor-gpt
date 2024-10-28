@@ -22,7 +22,7 @@ export default function PriceCard({ price }: PriceCardProps) {
     console.log('Subscribing');
     const { errorRedirect, sessionId } = await checkoutWithStripe(
       price,
-      currentPath
+      currentPath,
     );
 
     console.log(sessionId);
@@ -44,7 +44,7 @@ export default function PriceCard({ price }: PriceCardProps) {
     }
 
     const stripe = await loadStripe(
-      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
     );
     stripe?.redirectToCheckout({ sessionId });
   };

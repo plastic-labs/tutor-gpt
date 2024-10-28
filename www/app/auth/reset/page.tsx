@@ -24,7 +24,7 @@ export default function ResetPage() {
               <Image
                 src={icon}
                 alt="banner"
-                className="h-10 sm:h-10 w-auto rounded-full"
+                className="h-10 w-auto rounded-full sm:h-10"
               />
             </a>
 

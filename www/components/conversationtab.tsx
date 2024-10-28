@@ -34,7 +34,7 @@ export function ConversationTab({
 }: ConversationTabProps) {
   return (
     <div
-      className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 hover:dark:bg-gray-800  ${
+      className={`flex cursor-pointer items-center justify-between p-4 hover:bg-gray-200 hover:dark:bg-gray-800  ${
         selected ? 'bg-gray-200 dark:bg-gray-800' : ''
       }`}
       onClick={select}
@@ -46,11 +46,11 @@ export function ConversationTab({
       ) : (
         <>
           <div>
-            <h2 className="font-bold overflow-ellipsis overflow-hidden ">
+            <h2 className="overflow-hidden overflow-ellipsis font-bold ">
               {conversation.name || 'Untitled'}
             </h2>
           </div>
-          <div className="flex flex-row justify-end gap-2 items-center w-1/5">
+          <div className="flex w-1/5 flex-row items-center justify-end gap-2">
             <button className="text-gray-500" onClick={edit}>
               <FaEdit />
             </button>

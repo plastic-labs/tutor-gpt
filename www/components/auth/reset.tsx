@@ -59,7 +59,7 @@ export default function Forgot(props: any) {
           type="password"
           id="Password"
           name="password"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className="mt-1 w-full rounded-md border-gray-200 bg-white p-2 text-sm text-gray-700 shadow-sm"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />

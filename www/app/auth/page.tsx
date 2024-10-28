@@ -43,7 +43,7 @@ export default function Auth() {
               <Image
                 src={icon}
                 alt="banner"
-                className="h-10 sm:h-10 w-auto rounded-full"
+                className="h-10 w-auto rounded-full sm:h-10"
               />
             </a>
             <h1 className="mt-6 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">
