@@ -1,11 +1,9 @@
 'use client';
 import { createClient } from '@/utils/supabase/client';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
-
 import Image from 'next/image';
-
-import icon from '@/public/bloomicon.jpg';
+import { useTheme } from 'next-themes';
 
 import { SignIn, SignUp, Forgot } from '@/components/auth';
 
@@ -14,6 +12,7 @@ import { login, signup } from './actions';
 export default function Auth() {
   const [formType, setFormType] = useState('LOGIN');
   const supabase = createClient();
+  const { theme } = useTheme();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -25,7 +24,10 @@ export default function Auth() {
   }, [supabase]);
 
   return (
-    <section className="bg-white" suppressHydrationWarning={true}>
+    <section
+      className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}
+      suppressHydrationWarning={true}
+    >
       <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
         <aside className="relative block h-16 lg:order-last lg:col-span-5 lg:h-full xl:col-span-6">
           <Image
@@ -36,21 +38,29 @@ export default function Auth() {
           />
         </aside>
 
-        <main className="flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6">
+        <main
+          className={`flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+        >
           <div className="max-w-xl lg:max-w-3xl">
             <a className="block text-blue-600" href="/">
               <span className="sr-only">Home</span>
               <Image
-                src={icon}
+                src="/bloomicon.jpg"
                 alt="banner"
+                width={40}
+                height={40}
                 className="h-10 sm:h-10 w-auto rounded-full"
               />
             </a>
-            <h1 className="mt-6 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">
+            <h1
+              className={`mt-6 text-2xl font-bold sm:text-3xl md:text-4xl ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+            >
               Welcome to Bloom 🌱
             </h1>
 
-            <p className="mt-4 leading-relaxed text-gray-500">
+            <p
+              className={`mt-4 leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}
+            >
               Your Aristotelian learning companion — here to help you follow
               your curiosity in whatever direction you like.
             </p>

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { useTheme } from 'next-themes';
 import Swal from 'sweetalert2';
 import GoogleSignIn from './google';
 import DiscordSignIn from './discord';
@@ -11,6 +12,8 @@ export default function SignIn(props: any) {
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const { theme } = useTheme();
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,12 +44,12 @@ export default function SignIn(props: any) {
         action="#"
         ref={formRef}
         onSubmit={handleSignIn}
-        className="mt-8 grid grid-cols-6 gap-6"
+        className={`mt-8 grid grid-cols-6 gap-6 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}
       >
         <div className="col-span-6">
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700"
+            className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
           >
             Email
           </label>
@@ -55,7 +58,7 @@ export default function SignIn(props: any) {
             type="email"
             id="email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md bg-white text-sm text-gray-700 shadow-sm ${error ? 'border-2 border-red-500' : 'border-gray-200'}`}
+            className={`p-2 mt-1 w-full bg-white text-gray-700 rounded-md text-sm shadow-sm ${error ? 'border-2 border-red-500' : ''}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -64,7 +67,7 @@ export default function SignIn(props: any) {
         <div className="col-span-6">
           <label
             htmlFor="password"
-            className="block text-sm font-medium text-gray-700"
+            className={`block text-sm font-medium  ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
           >
             Password
           </label>
@@ -80,7 +83,13 @@ export default function SignIn(props: any) {
         </div>
 
         <div className="col-span-6 sm:flex sm:items-center sm:gap-3">
-          <button className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">
+          <button
+            className={`inline-block shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring ${
+              theme === 'dark'
+                ? 'border-neon-green bg-neon-green text-gray-800 hover:bg-transparent hover:text-neon-green'
+                : 'border-neon-green bg-neon-green text-white hover:bg-transparent hover:text-blue-600'
+            }`}
+          >
             {isLoading ? (
               <>
                 <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -104,12 +113,14 @@ export default function SignIn(props: any) {
             )}
           </button>
 
-          <p className="mt-4 text-sm text-gray-500 sm:mt-0">
+          <p
+            className={`mt-4 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} sm:mt-0`}
+          >
             Don&apos;t have an account?{' '}
             <a
               href="#"
               onClick={() => stateSync('SIGNUP')}
-              className="text-gray-700 underline"
+              className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
             >
               Sign Up Now
             </a>

@@ -14,25 +14,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { UserIdentity } from '@supabase/supabase-js';
 import Swal from 'sweetalert2';
+import { useRouter } from 'next/navigation';
 
 const fetcher = async () => {
   const supabase = createClient();
 
   // Get the user's identities
-  const { data, error: identitiesError } =
-    await supabase.auth.getUserIdentities();
+  const {
+    data: { user },
+    error: sessionError,
+  } = await supabase.auth.getUser();
 
-  if (!data || !data.identities) {
+  if (sessionError || !user) {
+    console.error('User session is invalid:', sessionError);
+    return { error: 'Invalid session', sessionInvalid: true };
+  }
+
+  if (!user.identities) {
     console.error('No identities found');
     return { error: 'No identities found' };
   }
 
-  if (identitiesError) {
-    console.error('Error fetching user identities:', identitiesError);
-    return { error: 'Failed to fetch user identities' };
-  }
-
-  const discordIdentity = data.identities.find(
+  const discordIdentity = user.identities.find(
     (identity: UserIdentity) => identity.provider === 'discord'
   );
 
@@ -57,9 +60,15 @@ export function IntegrationsSettings() {
   const { data, error, mutate } = useSWR('discordConnection', fetcher);
   const [isLinking, setIsLinking] = useState(false);
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     if (data) {
+      if (data.sessionInvalid) {
+        router.push('/auth');
+        return;
+      }
+
       if (data.authSuccess) {
         Swal.fire({
           title: 'Success!',
@@ -78,10 +87,39 @@ export function IntegrationsSettings() {
       }
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [data, mutate]);
+  }, [data, mutate, router]);
 
   const handleDiscordConnect = async () => {
     setIsLinking(true);
+
+    // Check if Discord account is already linked to another user
+    const { data: existingDiscordUsers, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('discord_id', 'NOT NULL');
+
+    if (checkError) {
+      console.error('Error checking existing Discord users:', checkError);
+      Swal.fire({
+        title: 'Error',
+        text: 'Unable to verify Discord account status. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
+      setIsLinking(false);
+      return;
+    }
+
+    if (existingDiscordUsers && existingDiscordUsers.length > 0) {
+      Swal.fire({
+        title: 'Error',
+        text: 'This Discord account is already linked to another user.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
+      setIsLinking(false);
+      return;
+    }
     const { data: linkData, error: linkError } =
       await supabase.auth.linkIdentity({
         provider: 'discord',

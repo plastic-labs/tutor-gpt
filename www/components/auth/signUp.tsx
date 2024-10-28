@@ -1,11 +1,14 @@
 'use client';
 import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-
+import { useTheme } from 'next-themes';
 import Swal from 'sweetalert2';
 
-export default function SignUp(props: any) {
+export default function SignUp(props: {
+  stateSync: (state: string) => void;
+  handler: (formData: FormData) => Promise<any>;
+}) {
   const { stateSync, handler } = props;
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
@@ -34,7 +37,7 @@ export default function SignUp(props: any) {
         await Swal.fire({
           title: "Passwords don't match",
           icon: 'error',
-          text: 'Re-confirm you password and try again',
+          text: 'Re-confirm your password and try again',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
         });
@@ -80,12 +83,12 @@ export default function SignUp(props: any) {
       action="#"
       ref={formRef}
       onSubmit={handleSignUp}
-      className="mt-8 grid grid-cols-6 gap-6"
+      className={`mt-8 grid grid-cols-6 gap-6 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}
     >
       <div className="col-span-6">
         <label
           htmlFor="Email"
-          className="block text-sm font-medium text-gray-700"
+          className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
         >
           Email
         </label>
@@ -94,7 +97,11 @@ export default function SignUp(props: any) {
           type="email"
           id="Email"
           name="email"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
+            theme === 'dark'
+              ? 'bg-gray-700 text-white border-gray-600'
+              : 'bg-white text-gray-700 border-gray-200'
+          }`}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -103,7 +110,7 @@ export default function SignUp(props: any) {
       <div className="col-span-6 sm:col-span-3">
         <label
           htmlFor="Password"
-          className="block text-sm font-medium text-gray-700"
+          className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
         >
           Password
         </label>
@@ -112,7 +119,11 @@ export default function SignUp(props: any) {
           type="password"
           id="Password"
           name="password"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
+            theme === 'dark'
+              ? 'bg-gray-700 text-white border-gray-600'
+              : 'bg-white text-gray-700 border-gray-200'
+          }`}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -121,7 +132,7 @@ export default function SignUp(props: any) {
       <div className="col-span-6 sm:col-span-3">
         <label
           htmlFor="PasswordConfirmation"
-          className="block text-sm font-medium text-gray-700"
+          className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
         >
           Password Confirmation
         </label>
@@ -130,7 +141,11 @@ export default function SignUp(props: any) {
           type="password"
           id="PasswordConfirmation"
           name="password_confirmation"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
+            theme === 'dark'
+              ? 'bg-gray-700 text-white border-gray-600'
+              : 'bg-white text-gray-700 border-gray-200'
+          }`}
           value={passwordConfirmation}
           onChange={(e) => setPasswordConfirmation(e.target.value)}
         />
@@ -142,12 +157,18 @@ export default function SignUp(props: any) {
             type="checkbox"
             id="MarketingAccept"
             name="marketing_accept"
-            className="h-5 w-5 rounded-md border-gray-200 bg-white shadow-sm"
+            className={`h-5 w-5 rounded-md shadow-sm ${
+              theme === 'dark'
+                ? 'bg-gray-700 border-gray-600'
+                : 'bg-white border-gray-200'
+            }`}
             checked={opt}
             onChange={(e) => setOpt(!opt)}
           />
 
-          <span className="text-sm text-gray-700">
+          <span
+            className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+          >
             I want to receive emails about events, product updates and company
             announcements.
           </span>
@@ -158,27 +179,36 @@ export default function SignUp(props: any) {
         <label htmlFor="AgeAccept" className="flex gap-4">
           <input
             type="checkbox"
-            id="MarketingAccept"
-            name="marketing_accept"
-            className="h-5 w-5 rounded-md border-gray-200 bg-white shadow-sm"
+            id="AgeAccept"
+            name="age_accept"
+            className={`h-5 w-5 rounded-md shadow-sm ${
+              theme === 'dark'
+                ? 'bg-gray-700 border-gray-600'
+                : 'bg-white border-gray-200'
+            }`}
             checked={age}
             onChange={(e) => setAge(!age)}
             required
           />
 
-          <span className="text-sm text-gray-700">
-            I am confirming that I am atleast 13 years old.
+          <span
+            className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+          >
+            I am confirming that I am at least 13 years old.
           </span>
         </label>
       </div>
 
       <div className="col-span-6">
-        <p className="text-sm text-gray-500">
+        <p
+          className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}
+        >
           By creating an account, you agree to our{' '}
           <a
             href="https://app.termly.io/document/terms-of-service/ba5ac452-fdd6-4746-8b31-973351d05008"
             target="_blank"
-            className="text-gray-700 underline" rel="noreferrer"
+            className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
+            rel="noreferrer"
           >
             Terms and Conditions
           </a>{' '}
@@ -186,7 +216,8 @@ export default function SignUp(props: any) {
           <a
             href="https://app.termly.io/document/privacy-policy/29672110-b634-40ae-854d-ebaf55e8fa75"
             target="_blank"
-            className="text-gray-700 underline" rel="noreferrer"
+            className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
+            rel="noreferrer"
           >
             Privacy Policy
           </a>
@@ -195,7 +226,13 @@ export default function SignUp(props: any) {
       </div>
 
       <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
-        <button className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">
+        <button
+          className={`inline-block shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring ${
+            theme === 'dark'
+              ? 'border-neon-green bg-neon-green text-gray-800 hover:bg-transparent hover:text-neon-green'
+              : 'border-neon-green bg-neon-green text-white hover:bg-transparent hover:text-blue-600'
+          }`}
+        >
           {isLoading ? (
             <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
               <circle
@@ -217,12 +254,14 @@ export default function SignUp(props: any) {
           )}
         </button>
 
-        <p className="mt-4 text-sm text-gray-500 sm:mt-0">
+        <p
+          className={`mt-4 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} sm:mt-0`}
+        >
           Already have an account?{' '}
           <a
             href="#"
             onClick={() => stateSync('LOGIN')}
-            className="text-gray-700 underline"
+            className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
           >
             Log in
           </a>
