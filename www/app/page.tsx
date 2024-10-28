@@ -17,7 +17,7 @@ import { usePostHog } from 'posthog-js/react';
 import { getSubscription } from '@/utils/supabase/queries';
 
 import { API } from '@/utils/api';
-import { createClient } from '@/utils/supabase/client';
+import { createClient, fetchWithAuth } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
@@ -290,9 +290,8 @@ export default function Home() {
 
   return (
     <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${
-        isDarkMode ? 'dark' : ''
-      }`}
+      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? 'dark' : ''
+        }`}
     >
       <Sidebar
         conversations={conversations || []}
@@ -361,23 +360,23 @@ export default function Home() {
               onReactionAdded={handleReactionAdded}
             />
           )) || (
-            <MessageBox
-              isUser={false}
-              message={{
-                text: '',
-                id: '',
-                isUser: false,
-                metadata: { reaction: null },
-              }}
-              loading={true}
-              setThought={setThought}
-              setIsThoughtsOpen={setIsThoughtsOpen}
-              onReactionAdded={handleReactionAdded}
-              userId={userId}
-              URL={URL}
-              conversationId={conversationId}
-            />
-          )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  text: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                URL={URL}
+                conversationId={conversationId}
+              />
+            )}
         </section>
         <form
           id="send"
@@ -396,11 +395,10 @@ export default function Home() {
             placeholder={
               isSubscribed ? 'Type a message...' : 'Subscribe to send messages'
             }
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
-              canSend && isSubscribed
-                ? 'border-green-200'
-                : 'border-red-200 opacity-50'
-            }`}
+            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
+              ? 'border-green-200'
+              : 'border-red-200 opacity-50'
+              }`}
             rows={1}
             disabled={!isSubscribed}
             onKeyDown={(e) => {

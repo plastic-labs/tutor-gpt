@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
 
 from api import schemas
 from api.dependencies import app, honcho
+from api.security import get_current_user, verify_auth
 
 from pydantic import BaseModel
 from typing import Optional
@@ -16,7 +17,10 @@ router = APIRouter(prefix="/api", tags=["chat"])
 
 
 @router.post("/stream")
-async def stream(inp: schemas.ConversationInput):
+async def stream(
+    inp: schemas.ConversationInput, current_user=Depends(get_current_user)
+):
+    verify_auth(current_user, inp.user_id, subscription_check=True)
     try:
         user = honcho.apps.users.get_or_create(app_id=app.id, name=inp.user_id)
 
@@ -154,7 +158,13 @@ def create_messages_and_metamessages(
 
 
 @router.get("/thought/{message_id}")
-async def get_thought(conversation_id: str, message_id: str, user_id: str):
+async def get_thought(
+    conversation_id: str,
+    message_id: str,
+    user_id: str,
+    current_user=Depends(get_current_user),
+):
+    verify_auth(current_user, user_id)
     user = honcho.apps.users.get_or_create(app_id=app.id, name=user_id)
     try:
         thought = honcho.apps.users.sessions.metamessages.list(
@@ -185,8 +195,13 @@ class ReactionBody(BaseModel):
 
 @router.post("/reaction/{message_id}")
 async def add_or_remove_reaction(
-    conversation_id: str, message_id: str, user_id: str, body: ReactionBody
+    conversation_id: str,
+    message_id: str,
+    user_id: str,
+    body: ReactionBody,
+    current_user=Depends(get_current_user),
 ):
+    verify_auth(current_user, user_id)
     reaction = body.reaction
     if reaction is not None and reaction not in ["thumbs_up", "thumbs_down"]:
         raise HTTPException(status_code=400, detail="Invalid reaction type")
