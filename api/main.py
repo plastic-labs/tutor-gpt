@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import sentry_sdk
 
 import os
 from dotenv import load_dotenv
 from api.routers import conversation, chat, messages
+from api.security import get_current_user
 
 load_dotenv(override=True)
 
@@ -30,11 +31,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(conversation.router)
-app.include_router(chat.router)
-app.include_router(messages.router)
+app.include_router(conversation.router, dependencies=[Depends(get_current_user)])
+app.include_router(chat.router, dependencies=[Depends(get_current_user)])
+app.include_router(messages.router, dependencies=[Depends(get_current_user)])
 
 
 @app.get("/api/test")
-async def test():
+async def test(credentials=Depends(get_current_user)):
     return {"test": "test"}
