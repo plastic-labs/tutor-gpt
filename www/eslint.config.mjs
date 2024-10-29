@@ -5,6 +5,12 @@ import pluginReact from "eslint-plugin-react";
 import eslintConfigPrettier from "eslint-config-prettier";
 import prettierPlugin from "eslint-plugin-prettier";
 import nextPlugin from "@next/eslint-plugin-next";
+import { fileURLToPath } from 'url'
+
+import path from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 export default [
   {
@@ -16,15 +22,28 @@ export default [
       '**/.next/**',
       'public/**',
       '**/*.css',
+      'README.md'
     ],
   },
   { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
-  { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
+  {
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true
+        }
+      }
+    }
+  },
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
     plugins: {
       '@next/next': nextPlugin,
     },
+
     rules: {
       ...nextPlugin.configs['core-web-vitals'].rules,
       // Next.js specific rules for core web vitals
@@ -41,13 +60,36 @@ export default [
   },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
-  pluginReact.configs.flat.recommended,
-  eslintConfigPrettier,
+
   {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      react: pluginReact.configs.flat.recommended,
+    },
+    // languageOptions: {
+    //   parser: typescriptParser,
+    //   parserOptions: {
+    //     project: './tsconfig.json',
+    //     ecmaVersion: 2024,
+    //     sourceType: 'module',
+    //     ecmaFeatures: {
+    //       jsx: true,
+    //     },
+    //   },
+    // },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+      next: {
+        rootDir: __dirname,
+      },
+    },
     rules: {
       "react/react-in-jsx-scope": "off",
-    },
+    }
   },
+  eslintConfigPrettier,
   {
     files: ['**/*.{js,jsx,ts,tsx,json,md}'],
     plugins: {

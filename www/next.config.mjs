@@ -4,6 +4,8 @@ const nextConfig = {
   output: "standalone",
   eslint: {
     ignoreDuringBuilds: false, // This ensures ESLint runs during build
+
+    dirs: ['apps', 'components', 'lib', 'utils']
   },
   //  rewrites: async () => {
   //    return [

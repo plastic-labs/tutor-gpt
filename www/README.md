@@ -115,7 +115,7 @@ Invite User
 </p>
 <p>
   <a
-    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/path-to-your-update-password-page"
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/auth/reset"
     >Accept the invite</a
   >
 </p>
