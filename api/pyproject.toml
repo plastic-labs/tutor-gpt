@@ -10,6 +10,7 @@ dependencies = [
     "agent",
     "python-dotenv>=1.0.1",
     "honcho-ai>=0.0.15",
+    "supabase>=2.9.1",
 ]
 
 [tool.uv.sources]
