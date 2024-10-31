@@ -59,7 +59,7 @@ export default function Auth() {
           router.push('/settings');
         } else {
           // Refresh the session to include the new Discord identity
-          const { _, error } = await supabase.auth.refreshSession();
+          const { error } = await supabase.auth.refreshSession();
           if (error) {
             console.error('Error refreshing session:', error);
             Swal.fire({
