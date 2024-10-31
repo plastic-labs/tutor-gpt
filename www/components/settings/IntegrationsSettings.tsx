@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FaDiscord } from 'react-icons/fa';
 import { createClient } from '@/utils/supabase/client';
 import useSWR from 'swr';
@@ -12,14 +12,24 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { UserIdentity } from '@supabase/supabase-js';
 import Swal from 'sweetalert2';
-import { useRouter } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+
+const RESEND_COOLDOWN = 60000;
 
 const fetcher = async () => {
   const supabase = createClient();
 
-  // Get the user's identities
   const {
     data: { user },
     error: sessionError,
@@ -39,10 +49,6 @@ const fetcher = async () => {
     (identity: UserIdentity) => identity.provider === 'discord'
   );
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const authSuccess = urlParams.get('auth') === 'success';
-  const error = urlParams.get('error');
-
   return {
     isDiscordConnected: !!discordIdentity,
     discordTag:
@@ -51,104 +57,190 @@ const fetcher = async () => {
       null,
     discordAvatar: discordIdentity?.identity_data?.avatar_url || null,
     discordEmail: discordIdentity?.identity_data?.email || null,
-    authSuccess,
-    error,
   };
 };
 
 export function IntegrationsSettings() {
   const { data, error, mutate } = useSWR('discordConnection', fetcher);
   const [isLinking, setIsLinking] = useState(false);
+  const [canDisconnect, setCanDisconnect] = useState(true);
+  const [showEmailSetup, setShowEmailSetup] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailSetupInitiated, setEmailSetupInitiated] = useState(false);
   const supabase = createClient();
-  const router = useRouter();
 
   useEffect(() => {
-    if (data) {
-      if (data.sessionInvalid) {
-        router.push('/auth');
-        return;
+    const checkEmailVerification = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (user) {
+        const hasEmailIdentity = user.identities?.some(
+          (identity) => identity.provider === 'email'
+        );
+        setCanDisconnect(hasEmailIdentity!);
+        if (!hasEmailIdentity && user.email) {
+          setEmail(user.email);
+        }
       }
+    };
+    checkEmailVerification();
 
-      if (data.authSuccess) {
-        Swal.fire({
-          title: 'Success!',
-          text: 'Discord account successfully linked!',
-          icon: 'success',
-          confirmButtonColor: '#3085d6',
-        });
-        mutate();
-      } else if (data.error) {
-        Swal.fire({
-          title: 'Error',
-          text: `Error: ${data.error}`,
-          icon: 'error',
-          confirmButtonColor: '#3085d6',
-        });
-      }
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [data, mutate, router]);
+    // Check if email setup has been initiated
+    const initiated = localStorage.getItem('emailSetupInitiated') === 'true';
+    setEmailSetupInitiated(initiated);
+  }, [supabase.auth]);
 
-  const handleDiscordConnect = async () => {
+  const handleSetupEmailPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLinking(true);
 
-    // Check if Discord account is already linked to another user
-    const { data: existingDiscordUsers, error: checkError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('discord_id', 'NOT NULL');
-
-    if (checkError) {
-      console.error('Error checking existing Discord users:', checkError);
-      Swal.fire({
-        title: 'Error',
-        text: 'Unable to verify Discord account status. Please try again.',
-        icon: 'error',
-        confirmButtonColor: '#3085d6',
-      });
-      setIsLinking(false);
-      return;
-    }
-
-    if (existingDiscordUsers && existingDiscordUsers.length > 0) {
-      Swal.fire({
-        title: 'Error',
-        text: 'This Discord account is already linked to another user.',
-        icon: 'error',
-        confirmButtonColor: '#3085d6',
-      });
-      setIsLinking(false);
-      return;
-    }
-    const { data: linkData, error: linkError } =
-      await supabase.auth.linkIdentity({
-        provider: 'discord',
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
         options: {
-          redirectTo: `${location.origin}/settings`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
-    if (linkError) {
-      console.error('Error connecting Discord:', linkError);
+      if (error) throw error;
+
+      setShowEmailSetup(false);
+      setEmailSetupInitiated(true);
+      localStorage.setItem('emailSetupInitiated', 'true');
+      await resendVerificationEmail();
+      Swal.fire({
+        title: 'Verification Email Sent',
+        text: 'Please check your email and click the verification link to complete the setup.',
+        icon: 'info',
+        confirmButtonColor: '#3085d6',
+      });
+    } catch (error) {
+      console.error('Error setting up email and password:', error);
       Swal.fire({
         title: 'Error',
-        text: 'Error connecting Discord. Please try again.',
+        text: 'Failed to set up email and password. Please try again.',
         icon: 'error',
         confirmButtonColor: '#3085d6',
       });
-    } else if (linkData?.url) {
+    } finally {
+      setIsLinking(false);
+    }
+  };
+
+  const resendVerificationEmail = async () => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) throw error;
+
       Swal.fire({
-        title: 'Redirecting...',
-        text: 'Redirecting to Discord for authentication...',
-        icon: 'info',
-        timer: 2000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-      }).then(() => {
-        window.location.href = linkData.url;
+        title: 'Email Sent',
+        text: 'Verification email has been resent. Please check your inbox.',
+        icon: 'success',
+        confirmButtonColor: '#3085d6',
+      });
+    } catch (error) {
+      console.error('Error resending verification email:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to resend verification email. Please try again later.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
       });
     }
-    setIsLinking(false);
+  };
+
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (user) {
+        const hasEmailIdentity = user.identities?.some(
+          (identity) => identity.provider === 'email'
+        );
+        setCanDisconnect(hasEmailIdentity!);
+        if (!hasEmailIdentity && user.email) {
+          setEmail(user.email);
+        }
+      }
+    };
+    checkEmailVerification();
+  }, [supabase.auth]);
+
+  useEffect(() => {
+    const checkIdentities = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (!error && user) {
+        const hasEmailIdentity = user.identities?.some(
+          (identity) => identity.provider === 'email'
+        );
+        setCanDisconnect(hasEmailIdentity!);
+        if (!hasEmailIdentity && user.email) {
+          setEmail(user.email);
+        }
+      }
+    };
+    checkIdentities();
+  }, [supabase.auth]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authSuccess = urlParams.get('discord_auth') === 'success';
+
+    if (authSuccess) {
+      console.log('Discord auth success detected');
+      Swal.fire({
+        title: 'Success!',
+        text: 'Discord account successfully linked!',
+        icon: 'success',
+        confirmButtonColor: '#3085d6',
+      });
+      mutate();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [mutate]);
+
+  const handleDiscordConnect = async () => {
+    console.log('Connecting Discord');
+    setIsLinking(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: `${location.origin}/auth?discord_auth=pending`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        console.log('Redirecting to Discord auth URL:', data.url);
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Error connecting Discord:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to connect Discord. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#3085d6',
+      });
+    } finally {
+      setIsLinking(false);
+    }
   };
 
   const handleDiscordDisconnect = async () => {
@@ -209,11 +301,14 @@ export function IntegrationsSettings() {
         icon: 'success',
         confirmButtonColor: '#3085d6',
       });
-      mutate(); // Revalidate the data after disconnecting
+      mutate();
     }
   };
 
-  if (error) return <div>Failed to load</div>;
+  if (error) {
+    console.log('SWR error:', error);
+    return <div>Failed to load</div>;
+  }
   if (!data) return <div>Loading...</div>;
 
   return (
@@ -231,13 +326,34 @@ export function IntegrationsSettings() {
                 Connected as:{' '}
                 <span className="font-semibold">{data.discordTag}</span>
               </p>
-              <Button
-                onClick={handleDiscordDisconnect}
-                className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors duration-300"
-              >
-                <FaDiscord className="mr-2 h-4 w-4" />
-                Disconnect Discord Account
-              </Button>
+              {canDisconnect ? (
+                <Button
+                  onClick={handleDiscordDisconnect}
+                  className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors duration-300"
+                >
+                  <FaDiscord className="mr-2 h-4 w-4" />
+                  Disconnect Discord Account
+                </Button>
+              ) : emailSetupInitiated ? (
+                <Button
+                  onClick={resendVerificationEmail}
+                  className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors duration-300"
+                >
+                  Resend Verification Email
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setShowEmailSetup(true)}
+                  className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md transition-colors duration-300"
+                >
+                  Set Up Email and Password
+                </Button>
+              )}
+              {!canDisconnect && (
+                <p className="text-sm text-yellow-500">
+                  To disconnect Discord, you need to verify your email address.
+                </p>
+              )}
             </div>
           ) : (
             <Button
@@ -257,6 +373,54 @@ export function IntegrationsSettings() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showEmailSetup} onOpenChange={setShowEmailSetup}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Up Email and Password</DialogTitle>
+            <DialogDescription>
+              Please set up an email and password to enable Discord
+              disconnection.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSetupEmailPassword}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="col-span-3"
+                  required
+                  disabled
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="password" className="text-right">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isLinking}>
+                {isLinking ? 'Setting Up...' : 'Set Up Email and Password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,31 +1,87 @@
 'use client';
 import { createClient } from '@/utils/supabase/client';
 import { useEffect, useState } from 'react';
-import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 
 import { SignIn, SignUp, Forgot } from '@/components/auth';
 
 import { login, signup } from './actions';
+import Swal from 'sweetalert2';
+import { useRouter } from 'next/navigation';
 
 export default function Auth() {
   const [formType, setFormType] = useState('LOGIN');
   const supabase = createClient();
   const { theme } = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         // Can't access this page if you're logged in
-        redirect('/');
+        router.push('/');
       }
     });
   }, [supabase]);
 
+  useEffect(() => {
+    const handleAuthResult = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const discordAuthPending = urlParams.get('discord_auth') === 'pending';
+      const errorMessage = urlParams.get('error_description');
+
+      if (errorMessage) {
+        console.error('Auth error:', errorMessage);
+        Swal.fire({
+          title: 'Error',
+          text: decodeURIComponent(errorMessage),
+          icon: 'error',
+          confirmButtonColor: '#3085d6',
+        });
+        router.push('/auth');
+        return;
+      }
+      if (discordAuthPending) {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+          console.error('Session error:', sessionError);
+          Swal.fire({
+            title: 'Error',
+            text: 'Authentication failed. Please try again.',
+            icon: 'error',
+            confirmButtonColor: '#3085d6',
+          });
+          router.push('/settings');
+        } else {
+          // Refresh the session to include the new Discord identity
+          const { _, error } = await supabase.auth.refreshSession();
+          if (error) {
+            console.error('Error refreshing session:', error);
+            Swal.fire({
+              title: 'Error',
+              text: 'Failed to update account. Please try again.',
+              icon: 'error',
+              confirmButtonColor: '#3085d6',
+            });
+            router.push('/settings');
+          } else {
+            router.push('/settings?discord_auth=success');
+          }
+        }
+      }
+    };
+
+    handleAuthResult();
+  }, [router, supabase.auth]);
+
   return (
     <section
-      className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-white'}`}
+      className={'dark:bg-gray bg-white'}
       suppressHydrationWarning={true}
     >
       <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
