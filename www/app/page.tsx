@@ -362,8 +362,8 @@ export default function Home() {
                     : 'Subscribe to send messages'
                 }
                 className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
-                    ? 'border-green-200'
-                    : 'border-red-200 opacity-50'
+                  ? 'border-green-200'
+                  : 'border-red-200 opacity-50'
                   }`}
                 rows={1}
                 disabled={!isSubscribed}

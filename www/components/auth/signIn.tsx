@@ -84,11 +84,10 @@ export default function SignIn(props: any) {
 
         <div className="col-span-6 sm:flex sm:items-center sm:gap-3">
           <button
-            className={`inline-block shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring ${
-              theme === 'dark'
-                ? 'border-neon-green bg-neon-green text-gray-800 hover:bg-transparent hover:text-neon-green'
-                : 'border-neon-green bg-neon-green text-white hover:bg-transparent hover:text-blue-600'
-            }`}
+            className={`inline-block shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-gray-800 ${theme === 'dark'
+              ? 'border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green'
+              : 'border-neon-green bg-neon-green hover:bg-transparent hover:text-blue-600'
+              }`}
           >
             {isLoading ? (
               <>
@@ -140,8 +139,8 @@ export default function SignIn(props: any) {
         </div>
       </form>
       <div className="mt-6 space-y-4">
-        <GoogleSignIn />
-        <DiscordSignIn />
+        <GoogleSignIn text="Sign In" />
+        <DiscordSignIn text="Sign In" />
       </div>
     </>
   );

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
-import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
 import { SupportSettings } from '@/components/settings/SupportSettings';
@@ -25,7 +24,6 @@ export default function SettingsLayout({
     { id: 'account', label: 'Account' },
     { id: 'security', label: 'Security' },
     { id: 'subscription', label: 'Subscription' },
-    { id: 'integrations', label: 'Integrations' },
     { id: 'support', label: 'Support' },
   ];
 
@@ -40,11 +38,10 @@ export default function SettingsLayout({
                 <li key={item.id} className="mb-2">
                   <button
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full text-left p-2 rounded transition-colors ${
-                      activeTab === item.id
-                        ? 'bg-gray-400 text-primary-foreground dark:bg-neon-green dark:text-black'
-                        : 'hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-neon-green/20 dark:hover:text-neon-green'
-                    }`}
+                    className={`w-full text-left p-2 rounded transition-colors ${activeTab === item.id
+                      ? 'bg-gray-400 text-primary-foreground dark:bg-neon-green dark:text-black'
+                      : 'hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-neon-green/20 dark:hover:text-neon-green'
+                      }`}
                   >
                     {item.label}
                   </button>
@@ -62,7 +59,6 @@ export default function SettingsLayout({
               products={products ?? null}
             />
           )}
-          {activeTab === 'integrations' && <IntegrationsSettings />}
           {activeTab === 'support' && <SupportSettings />}
         </div>
       </div>

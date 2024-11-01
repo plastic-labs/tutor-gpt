@@ -7,7 +7,6 @@ import { useTheme } from 'next-themes';
 import { SignIn, SignUp, Forgot } from '@/components/auth';
 
 import { login, signup } from './actions';
-import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
 
 export default function Auth() {
@@ -25,67 +24,14 @@ export default function Auth() {
     });
   }, [supabase]);
 
-  useEffect(() => {
-    const handleAuthResult = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const discordAuthPending = urlParams.get('discord_auth') === 'pending';
-      const errorMessage = urlParams.get('error_description');
-
-      if (errorMessage) {
-        console.error('Auth error:', errorMessage);
-        Swal.fire({
-          title: 'Error',
-          text: decodeURIComponent(errorMessage),
-          icon: 'error',
-          confirmButtonColor: '#3085d6',
-        });
-        router.push('/auth');
-        return;
-      }
-      if (discordAuthPending) {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError || !session) {
-          console.error('Session error:', sessionError);
-          Swal.fire({
-            title: 'Error',
-            text: 'Authentication failed. Please try again.',
-            icon: 'error',
-            confirmButtonColor: '#3085d6',
-          });
-          router.push('/settings');
-        } else {
-          // Refresh the session to include the new Discord identity
-          const { error } = await supabase.auth.refreshSession();
-          if (error) {
-            console.error('Error refreshing session:', error);
-            Swal.fire({
-              title: 'Error',
-              text: 'Failed to update account. Please try again.',
-              icon: 'error',
-              confirmButtonColor: '#3085d6',
-            });
-            router.push('/settings');
-          } else {
-            router.push('/settings?discord_auth=success');
-          }
-        }
-      }
-    };
-
-    handleAuthResult();
-  }, [router, supabase.auth]);
-
   return (
     <section
-      className={'dark:bg-gray bg-white'}
+      className={'dark:bg-gray bg-white overflow-y-auto'}
       suppressHydrationWarning={true}
     >
-      <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
-        <aside className="relative block h-16 lg:order-last lg:col-span-5 lg:h-full xl:col-span-6">
+      <div className="flex flex-col lg:flex-row min-h-screen w-full">
+        {/*<aside className="relative block h-16 lg:order-last lg:col-span-5 lg:h-full xl:col-span-6">*/}
+        <aside className="relative h-24 lg:h-auto lg:flex-1 lg:order-last">
           <Image
             alt="Pattern"
             src="/auth_banner.jpg"
@@ -94,10 +40,13 @@ export default function Auth() {
           />
         </aside>
 
+        {/*
         <main
           className={`flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-        >
-          <div className="max-w-xl lg:max-w-3xl">
+        >*/}
+        <main className={`flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          }`}>
+          <div className="w-full max-w-xl">
             <a className="block text-blue-600" href="/">
               <span className="sr-only">Home</span>
               <Image
