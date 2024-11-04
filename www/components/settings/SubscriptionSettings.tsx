@@ -7,11 +7,13 @@ import { createStripePortal } from '@/utils/stripe/actions';
 import { Tables } from '@/utils/database.types';
 
 import PriceCard from '@/components/PriceCard';
-import { Subscription } from '@supabase/supabase-js';
 type Price = Tables<'prices'>;
+// type Subscription = Tables<'subscriptions'>;
 
 interface Props {
-  subscription?: Subscription | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  subscription: any | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   products: any[] | null;
 }
 
@@ -28,7 +30,6 @@ export default function SubscriptionManager({ subscription, products }: Props) {
       const url = await createStripePortal();
 
       if (url) {
-        console.log(url);
         router.push(url);
       }
     } catch (error) {

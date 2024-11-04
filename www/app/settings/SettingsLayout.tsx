@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
-import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
 import { SupportSettings } from '@/components/settings/SupportSettings';
@@ -25,7 +24,6 @@ export default function SettingsLayout({
     { id: 'account', label: 'Account' },
     { id: 'security', label: 'Security' },
     { id: 'subscription', label: 'Subscription' },
-    { id: 'integrations', label: 'Integrations' },
     { id: 'support', label: 'Support' },
   ];
 
@@ -62,7 +60,6 @@ export default function SettingsLayout({
               products={products ?? null}
             />
           )}
-          {activeTab === 'integrations' && <IntegrationsSettings />}
           {activeTab === 'support' && <SupportSettings />}
         </div>
       </div>

@@ -191,7 +191,7 @@ export default function Home() {
       }).then((result) => {
         if (result.isConfirmed) {
           // Redirect to subscription page
-          window.location.href = '/subscription';
+          window.location.href = '/settings';
         }
       });
       return;
@@ -324,25 +324,25 @@ export default function Home() {
                 onReactionAdded={handleReactionAdded}
               />
             )) || (
-                <MessageBox
-                  isUser={false}
-                  message={{
-                    text: '',
-                    id: '',
-                    isUser: false,
-                    metadata: { reaction: null },
-                  }}
-                  loading={true}
-                  setThought={setThought}
-                  setIsThoughtsOpen={setIsThoughtsOpen}
-                  onReactionAdded={handleReactionAdded}
-                  userId={userId}
-                  URL={URL}
-                  conversationId={conversationId}
-                />
-              )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  text: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                URL={URL}
+                conversationId={conversationId}
+              />
+            )}
           </section>
-          <div className="p-3 lg:p-5">
+          <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
               id="send"
               className="flex p-3 lg:p-5 gap-3 border-gray-300"
@@ -361,10 +361,11 @@ export default function Home() {
                     ? 'Type a message...'
                     : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                  canSend && isSubscribed
                     ? 'border-green-200'
                     : 'border-red-200 opacity-50'
-                  }`}
+                }`}
                 rows={1}
                 disabled={!isSubscribed}
                 onKeyDown={(e) => {

@@ -26,9 +26,6 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
   const [displayName, setDisplayName] = useState<string>(
     user?.user_metadata?.full_name || ''
   );
-  const [avatarUrl, setAvatarUrl] = useState<string>(
-    user?.user_metadata?.avatar_url || ''
-  );
   const [currentPassword, setCurrentPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
@@ -39,7 +36,6 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
     if (user) {
       setEmail(user.email || '');
       setDisplayName(user.user_metadata?.full_name || '');
-      setAvatarUrl(user.user_metadata?.avatar_url || '');
     }
   }, [user]);
 
@@ -74,7 +70,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
     e.preventDefault();
     try {
       const { error } = await supabase.auth.updateUser({
-        data: { full_name: displayName, avatar_url: avatarUrl },
+        data: { full_name: displayName },
       });
       if (error) throw error;
       Swal.fire({
@@ -153,18 +149,6 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="bg-input text-foreground flex-grow"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="avatarUrl" className="text-foreground">
-                Avatar URL
-              </Label>
-              <Input
-                id="avatarUrl"
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
                 className="bg-input text-foreground flex-grow"
               />
               <Button

@@ -15,7 +15,7 @@ supabase_url = getenv("SUPABASE_URL", "")
 supabase_key = getenv("SUPABASE_KEY", "")
 supabase: Client = create_client(supabase_url, supabase_key)
 
-STRIPE_ENABLED = getenv("STRIPE_ENABLED")
+STRIPE_ENABLED = str(getenv("STRIPE_ENABLED")).lower() == "true"
 
 security = HTTPBearer()
 
@@ -59,11 +59,12 @@ def verify_auth(user: User, input_id: str, subscription_check: bool = False):
     Dependency factory to verify a resource belongs to the current user
     """
     if user.id != input_id:
+        print("Failing initially")
         raise HTTPException(
             status_code=403, detail="Not authorized to access this resource"
         )
 
-    if not subscription_check or not STRIPE_ENABLED:
+    if subscription_check is None or STRIPE_ENABLED is False:
         return
 
     sub = supabase.table("subscriptions").select("*").eq("user_id", user.id).execute()
