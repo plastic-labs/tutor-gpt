@@ -1,35 +1,17 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import SettingsLayout from './SettingsLayout';
-import { createClient } from '@/utils/supabase/client';
-import { getSubscription } from '@/utils/supabase/queries';
-import { User } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
+import { getSubscription, getProducts } from '@/utils/supabase/queries';
 
-export default function SettingsPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [subscription, setSubscription] = useState<any>(null);
-  const [products, setProducts] = useState<any[]>([]);
+export default async function SettingsPage() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-      const sub = await getSubscription(supabase);
-      setSubscription(sub);
-
-      // Fetch products if needed
-      // const productsData = await fetchProducts();
-      // setProducts(productsData);
-    };
-
-    fetchData();
-  }, []);
+  const subscription = await getSubscription(supabase);
+  const products = await getProducts(supabase);
 
   return (
     <div className={`min-h-screen`}>
