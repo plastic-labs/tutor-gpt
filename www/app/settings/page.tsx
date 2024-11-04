@@ -3,7 +3,6 @@ import { createClient } from '@/utils/supabase/server';
 import { getSubscription, getProducts } from '@/utils/supabase/queries';
 
 export default async function SettingsPage() {
-
   const supabase = createClient();
 
   const {

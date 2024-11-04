@@ -38,10 +38,11 @@ export default function SettingsLayout({
                 <li key={item.id} className="mb-2">
                   <button
                     onClick={() => setActiveTab(item.id)}
-                    className={`w-full text-left p-2 rounded transition-colors ${activeTab === item.id
-                      ? 'bg-gray-400 text-primary-foreground dark:bg-neon-green dark:text-black'
-                      : 'hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-neon-green/20 dark:hover:text-neon-green'
-                      }`}
+                    className={`w-full text-left p-2 rounded transition-colors ${
+                      activeTab === item.id
+                        ? 'bg-gray-400 text-primary-foreground dark:bg-neon-green dark:text-black'
+                        : 'hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-neon-green/20 dark:hover:text-neon-green'
+                    }`}
                   >
                     {item.label}
                   </button>

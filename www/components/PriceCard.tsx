@@ -7,7 +7,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { checkoutWithStripe } from '@/utils/stripe/actions';
 import { useRouter, usePathname } from 'next/navigation';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -15,7 +15,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from '@/components/ui/card';
 
 type Price = Tables<'prices'>;
 
@@ -51,15 +51,18 @@ export default function PriceCard({ price }: PriceCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className='text-center text-lg'>{price.interval == "month" ? "Monthly" : "Yearly"}</CardTitle>
+        <CardTitle className="text-center text-lg">
+          {price.interval == 'month' ? 'Monthly' : 'Yearly'}
+        </CardTitle>
       </CardHeader>
-      <CardContent className='text-center text-lg'>
+      <CardContent className="text-center text-lg">
         <h2>${price.unit_amount ? price.unit_amount / 100 : 0}</h2>
       </CardContent>
       <CardFooter>
         <Button
           className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
-          onClick={subscribe}>
+          onClick={subscribe}
+        >
           Subscribe
         </Button>
       </CardFooter>
