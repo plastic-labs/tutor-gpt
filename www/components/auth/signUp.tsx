@@ -86,9 +86,9 @@ export default function SignUp(props: {
         action="#"
         ref={formRef}
         onSubmit={handleSignUp}
-        className={`mt-8 grid grid-cols-6 gap-6 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}
+        className={`mt-8 space-y-6 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}
       >
-        <div className="col-span-6">
+        <div>
           <label
             htmlFor="Email"
             className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
@@ -100,67 +100,73 @@ export default function SignUp(props: {
             type="email"
             id="Email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${theme === 'dark'
-              ? 'bg-gray-700 text-white border-gray-600'
-              : 'bg-white text-gray-700 border-gray-200'
-              }`}
+            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
+              theme === 'dark'
+                ? 'bg-gray-700 text-white border-gray-600'
+                : 'bg-white text-gray-700 border-gray-200'
+            }`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        <div className="col-span-6 sm:col-span-3">
-          <label
-            htmlFor="Password"
-            className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
-          >
-            Password
-          </label>
+        <div className="flex flex-col sm:flex-row gap-6">
+          <div className="flex-1">
+            <label
+              htmlFor="Password"
+              className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+            >
+              Password
+            </label>
 
-          <input
-            type="password"
-            id="Password"
-            name="password"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${theme === 'dark'
-              ? 'bg-gray-700 text-white border-gray-600'
-              : 'bg-white text-gray-700 border-gray-200'
+            <input
+              type="password"
+              id="Password"
+              name="password"
+              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
+                theme === 'dark'
+                  ? 'bg-gray-700 text-white border-gray-600'
+                  : 'bg-white text-gray-700 border-gray-200'
               }`}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <div className="flex-1">
+            <label
+              htmlFor="PasswordConfirmation"
+              className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+            >
+              Password Confirmation
+            </label>
+
+            <input
+              type="password"
+              id="PasswordConfirmation"
+              name="password_confirmation"
+              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
+                theme === 'dark'
+                  ? 'bg-gray-700 text-white border-gray-600'
+                  : 'bg-white text-gray-700 border-gray-200'
+              }`}
+              value={passwordConfirmation}
+              onChange={(e) => setPasswordConfirmation(e.target.value)}
+            />
+          </div>
         </div>
 
-        <div className="col-span-6 sm:col-span-3">
-          <label
-            htmlFor="PasswordConfirmation"
-            className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
-          >
-            Password Confirmation
-          </label>
-
-          <input
-            type="password"
-            id="PasswordConfirmation"
-            name="password_confirmation"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${theme === 'dark'
-              ? 'bg-gray-700 text-white border-gray-600'
-              : 'bg-white text-gray-700 border-gray-200'
-              }`}
-            value={passwordConfirmation}
-            onChange={(e) => setPasswordConfirmation(e.target.value)}
-          />
-        </div>
-
-        <div className="col-span-6">
+        <div>
           <label htmlFor="MarketingAccept" className="flex gap-4">
             <input
               type="checkbox"
               id="MarketingAccept"
               name="marketing_accept"
-              className={`h-5 w-5 rounded-md shadow-sm ${theme === 'dark'
-                ? 'bg-gray-700 border-gray-600'
-                : 'bg-white border-gray-200'
-                }`}
+              className={`h-5 w-5 rounded-md shadow-sm ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600'
+                  : 'bg-white border-gray-200'
+              }`}
               checked={opt}
               onChange={(e) => setOpt(!opt)}
             />
@@ -174,16 +180,17 @@ export default function SignUp(props: {
           </label>
         </div>
 
-        <div className="col-span-6">
+        <div>
           <label htmlFor="AgeAccept" className="flex gap-4">
             <input
               type="checkbox"
               id="AgeAccept"
               name="age_accept"
-              className={`h-5 w-5 rounded-md shadow-sm ${theme === 'dark'
-                ? 'bg-gray-700 border-gray-600'
-                : 'bg-white border-gray-200'
-                }`}
+              className={`h-5 w-5 rounded-md shadow-sm ${
+                theme === 'dark'
+                  ? 'bg-gray-700 border-gray-600'
+                  : 'bg-white border-gray-200'
+              }`}
               checked={age}
               onChange={(e) => setAge(!age)}
               required
@@ -197,7 +204,7 @@ export default function SignUp(props: {
           </label>
         </div>
 
-        <div className="col-span-6">
+        <div>
           <p
             className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}
           >
@@ -223,15 +230,16 @@ export default function SignUp(props: {
           </p>
         </div>
 
-        <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
+        <div className="sm:flex sm:items-center sm:gap-4">
           <button
-            className={`inline-block shrink-0 rounded-md text-gray-800 border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring ${theme === 'dark'
-              ? 'border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green'
-              : 'border-neon-green bg-neon-green hover:bg-transparent hover:text-blue-600'
-              }`}
+            className={`inline-block w-full sm:w-auto shrink-0 rounded-md text-gray-800 border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring ${
+              theme === 'dark'
+                ? 'border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green'
+                : 'border-neon-green bg-neon-green hover:bg-transparent hover:text-blue-600'
+            }`}
           >
             {isLoading ? (
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -252,7 +260,7 @@ export default function SignUp(props: {
           </button>
 
           <p
-            className={`mt-4 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} sm:mt-0`}
+            className={`mt-4 text-sm text-center sm:text-left ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} sm:mt-0`}
           >
             Already have an account?{' '}
             <a
@@ -262,7 +270,6 @@ export default function SignUp(props: {
             >
               Log in
             </a>
-            .
           </p>
         </div>
       </form>

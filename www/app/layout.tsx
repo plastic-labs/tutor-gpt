@@ -63,9 +63,9 @@ export default function RootLayout({
             <PostHogPageview />
           </Suspense>
           <PHProvider>
-            <div className="flex flex-col h-screen">
+            <div className="h-screen flex flex-col">
               <Header />
-              <div className="flex-1 overflow-hidden">{children}</div>
+              <main className="flex-1 overflow-y-auto">{children}</main>
             </div>
           </PHProvider>
         </ThemeProvider>

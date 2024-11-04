@@ -7,7 +7,10 @@ export function createClient() {
   );
 }
 
-export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithAuth(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
   const supabase = createClient();
   const user = await supabase.auth.getUser();
   if (!user) {
@@ -28,5 +31,5 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}): Pro
       ...options.headers,
       Authorization: `Bearer ${authToken}`,
     },
-  })
+  });
 }

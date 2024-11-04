@@ -26,26 +26,25 @@ export default function Auth() {
 
   return (
     <section
-      className={'dark:bg-gray bg-white overflow-y-auto'}
+      className="h-[calc(100vh-72px)] w-full dark:bg-gray bg-white"
       suppressHydrationWarning={true}
     >
-      <div className="flex flex-col lg:flex-row min-h-screen w-full">
-        {/*<aside className="relative block h-16 lg:order-last lg:col-span-5 lg:h-full xl:col-span-6">*/}
-        <aside className="relative h-24 lg:h-auto lg:flex-1 lg:order-last">
+      <div className="flex flex-col lg:flex-row h-full w-full">
+        <aside className="h-48 lg:h-full lg:flex-1 lg:order-last relative">
           <Image
             alt="Pattern"
             src="/auth_banner.jpg"
             className="absolute inset-0 h-full w-full object-cover"
             fill={true}
+            priority
           />
         </aside>
 
-        {/*
         <main
-          className={`flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
-        >*/}
-        <main className={`flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-          }`}>
+          className={`flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+          }`}
+        >
           <div className="w-full max-w-xl">
             <a className="block text-blue-600" href="/">
               <span className="sr-only">Home</span>
