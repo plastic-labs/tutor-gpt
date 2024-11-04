@@ -7,22 +7,24 @@ import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
 import { ConversationTab } from './conversationtab';
 import { useState } from 'react';
+import useSWR, { KeyedMutator } from 'swr';
+import { FaUser } from 'react-icons/fa';
 export default function Sidebar({
   conversations,
   mutateConversations,
   conversationId,
   setConversationId,
   isSidebarOpen,
-  setIsSidebarOpen,
+  toggleSidebar,
   api,
   isSubscribed,
 }: {
   conversations: Conversation[];
-  mutateConversations: Function;
+  mutateConversations: KeyedMutator<Conversation[]>;
   conversationId: string | undefined;
-  setConversationId: Function;
+  setConversationId: (id: typeof conversationId) => void;
   isSidebarOpen: boolean;
-  setIsSidebarOpen: Function;
+  toggleSidebar: () => void;
   api: API | undefined;
   isSubscribed: boolean;
 }) {
@@ -83,7 +85,7 @@ export default function Sidebar({
         } else {
           const newConv = await api?.new();
           setConversationId(newConv?.conversationId);
-          mutateConversations([newConv]);
+          mutateConversations([newConv!]);
         }
       }
       mutateConversations(newConversations);
@@ -94,22 +96,27 @@ export default function Sidebar({
     const conversation = await api?.new();
     postHog?.capture('user_created_conversation');
     setConversationId(conversation?.conversationId);
-    mutateConversations([conversation, ...conversations]);
+    mutateConversations([conversation!, ...conversations]);
   }
+
+  const fetchUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  };
+
+  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
 
   return (
     <div
-      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${
-        isSidebarOpen ? '' : 'hidden'
+      className={`absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}
     >
-      <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${
-          isSidebarOpen ? 'fixed lg:static' : 'sticky'
-        } top-0 left-0`}
-      >
+      <div className="h-full overflow-hidden bg-white dark:bg-gray-950 dark:text-white flex flex-col border-gray-200 dark:border-gray-700 border-r">
         {/* Section 1: Top buttons */}
-        <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
+        <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-200 dark:border-gray-700">
           <button
             className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
             onClick={addChat}
@@ -119,7 +126,7 @@ export default function Sidebar({
           </button>
           <button
             className="lg:hidden bg-neon-green text-black rounded-lg px-4 py-2 h-10"
-            onClick={() => setIsSidebarOpen(false)}
+            onClick={toggleSidebar}
           >
             <GrClose />
           </button>
@@ -144,10 +151,26 @@ export default function Sidebar({
         </div>
 
         {/* Section 3: Authentication information */}
-        <div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full flex items-center justify-between">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 w-full flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-            <span className="text-sm font-medium">User Name</span>
+            {isUserLoading ? (
+              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 animate-pulse"></div>
+            ) : user?.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt="Profile"
+                className="w-8 h-8 rounded-full mr-2"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 flex items-center justify-center">
+                <FaUser className="w-5 h-5 text-gray-600" />
+              </div>
+            )}
+            <span className="text-sm font-medium">
+              {isUserLoading
+                ? 'Loading...'
+                : user?.user_metadata?.full_name || user?.email || 'User Name'}
+            </span>
           </div>
           <div className="relative">
             <button
@@ -174,10 +197,10 @@ export default function Sidebar({
                 <button
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
                   onClick={() => {
-                    router.push('/subscription');
+                    router.push('/settings');
                   }}
                 >
-                  Manage Subscription
+                  Account Settings
                 </button>
                 <button
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"

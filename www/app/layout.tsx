@@ -4,12 +4,16 @@ import type { Metadata } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import { PHProvider, PostHogPageview } from './providers';
 import { Suspense } from 'react';
+import { Header } from '@/components/header';
+import { ThemeProvider } from 'next-themes';
 
 const spacegrotesk = Space_Grotesk({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Bloombot - Learning. Reimagined.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  ),
   description:
     'Bloom is your always-on, always-engaged learning companion. You can chat with Bloom about any topic, whenever you want. It’s designed to help you build critical skills and follow your curiosity.',
   authors: [{ name: 'Plastic Labs', url: 'https://plasticlabs.ai' }],
@@ -52,13 +56,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <Suspense>
-        <PostHogPageview />
-      </Suspense>
-      <PHProvider>
-        <body className={spacegrotesk.className}>{children}</body>
-      </PHProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={spacegrotesk.className}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Suspense>
+            <PostHogPageview />
+          </Suspense>
+          <PHProvider>
+            <div className="h-screen flex flex-col">
+              <Header />
+              <main className="flex-1 overflow-y-auto">{children}</main>
+            </div>
+          </PHProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

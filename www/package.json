@@ -11,12 +11,20 @@
     "sync-stripe": "node utils/stripe/sync.ts"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-icons": "^1.3.0",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.1",
     "@sentry/nextjs": "^8.35.0",
     "@stripe/stripe-js": "^4.9.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.6",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "katex": "^0.16.11",
     "next": "^14.2.16",
+    "next-themes": "^0.3.0",
     "posthog-js": "^1.176.0",
     "react": "18.3.1",
     "react-dom": "18.2.0",
@@ -32,10 +40,13 @@
     "stripe": "^16.12.0",
     "sweetalert2": "^11.14.4",
     "sweetalert2-react-content": "^5.0.7",
-    "swr": "^2.2.5"
+    "swr": "^2.2.5",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@shadcn/ui": "^0.0.4",
     "@types/node": "20.5.4",
     "@types/react": "18.2.21",
     "@types/react-dom": "18.2.7",
