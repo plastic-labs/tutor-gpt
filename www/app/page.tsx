@@ -1,13 +1,8 @@
 'use client';
-import Image from 'next/image';
 import useSWR from 'swr';
 
 import dynamic from 'next/dynamic';
 
-import banner from '@/public/bloom2x1.svg';
-import darkBanner from '@/public/bloom2x1dark.svg';
-import { DarkModeSwitch } from 'react-toggle-dark-mode';
-import { FaLightbulb, FaPaperPlane, FaBars } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef } from 'react';
@@ -19,6 +14,7 @@ import { getSubscription } from '@/utils/supabase/queries';
 import { API } from '@/utils/api';
 import { createClient, fetchWithAuth } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
+import Link from 'next/link';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -54,11 +50,6 @@ export default function Home() {
   const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
 
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const toggleDarkMode = (checked: boolean) => {
-    setIsDarkMode(checked);
-  };
-
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [freeMessages, setFreeMessages] = useState<number>(0);
 
@@ -88,7 +79,6 @@ export default function Home() {
         redirect('/auth');
       }
       setUserId(user.id);
-      setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
       posthog?.identify(userId, { email: user.email });
 
       // Check subscription status and free messages
