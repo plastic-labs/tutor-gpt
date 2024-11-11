@@ -106,7 +106,8 @@ export default function Home() {
             setFreeMessages(messageCount);
           }
         }
-      })();
+      }
+    })();
   }, [supabase, posthog, userId]);
 
   useEffect(() => {
@@ -302,7 +303,7 @@ export default function Home() {
     }
     mutateMessages();
   }
-
+  const canUseApp = isSubscribed || freeMessages > 0
   return (
     <main className="relative flex h-full overflow-hidden">
       <Sidebar
@@ -318,11 +319,25 @@ export default function Home() {
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
         {!isSidebarOpen && (
           <button
-            className="absolute top-4 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2"
+            className={`absolute top-4 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2 border border-black`}
             onClick={() => setIsSidebarOpen(true)}
           >
             <FiMenu size={24} />
           </button>
+        )}
+        {!isSubscribed && (
+          <section className="h-16 w-full bg-neon-green text-black text-center py-4">
+            <p className='ml-10 text-medium'>
+              {freeMessages} free messages remaining.
+              <Link
+                className="cursor-pointer hover:cursor-pointer font-bold underline"
+                href="/subscription"
+              >
+                Subscribe now
+              </Link>
+              {" "}for unlimited access!
+            </p>
+          </section>
         )}
         <div className="flex flex-col flex-grow overflow-hidden dark:bg-gray-900">
           <section
@@ -370,7 +385,7 @@ export default function Home() {
               className="flex p-3 lg:p-5 gap-3 border-gray-300"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canSend && input.current?.value && isSubscribed) {
+                if (canSend && input.current?.value && canUseApp) {
                   posthog.capture('user_sent_message');
                   chat();
                 }
@@ -379,20 +394,20 @@ export default function Home() {
               <textarea
                 ref={input}
                 placeholder={
-                  isSubscribed
+                  canUseApp
                     ? 'Type a message...'
                     : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
-                    ? 'border-green-200'
-                    : 'border-red-200 opacity-50'
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
+                  ? 'border-green-200'
+                  : 'border-red-200 opacity-50'
                   }`}
                 rows={1}
-                disabled={!isSubscribed}
+                disabled={!canUseApp}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (canSend && input.current?.value && isSubscribed) {
+                    if (canSend && input.current?.value && canUseApp) {
                       posthog.capture('user_sent_message');
                       chat();
                     }
@@ -402,7 +417,7 @@ export default function Home() {
               <button
                 className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"
-                disabled={!canSend || !isSubscribed}
+                disabled={!canSend || !canUseApp}
               >
                 <FaPaperPlane className="inline" />
               </button>
