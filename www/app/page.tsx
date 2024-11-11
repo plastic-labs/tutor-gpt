@@ -60,6 +60,7 @@ export default function Home() {
   };
 
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [freeMessages, setFreeMessages] = useState<number>(0);
 
   const setIsThoughtsOpen = (
     isOpen: boolean,
@@ -90,12 +91,27 @@ export default function Home() {
       setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches);
       posthog?.identify(userId, { email: user.email });
 
-      // Check subscription status
+      // Check subscription status and free messages
       if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
         setIsSubscribed(true);
       } else {
         const sub = await getSubscription(supabase);
         setIsSubscribed(!!sub);
+
+        // Initialize or get free message count from user metadata
+        if (!sub) {
+          const { data: { user: currentUser }, error: updateError } = await supabase.auth.getUser();
+          let messageCount = currentUser?.user_metadata?.freeMessages;
+
+          if (messageCount === undefined) {
+            // Initialize free messages if not set
+            const { data, error: updateError } = await supabase.auth.updateUser({
+              data: { freeMessages: 50 }
+            });
+            messageCount = 50;
+          }
+          setFreeMessages(messageCount);
+        }
       }
     })();
   }, [supabase, posthog, userId]);
@@ -188,16 +204,15 @@ export default function Home() {
   };
 
   async function chat() {
-    if (!isSubscribed) {
+    if (!isSubscribed && freeMessages <= 0) {
       Swal.fire({
-        title: 'Subscription Required',
-        text: 'Please subscribe to send messages.',
+        title: 'Free Messages Depleted',
+        text: 'You have used all your free messages. Please subscribe to continue.',
         icon: 'warning',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Subscribe',
       }).then((result) => {
         if (result.isConfirmed) {
-          // Redirect to subscription page
           window.location.href = '/subscription';
         }
       });
@@ -284,7 +299,13 @@ export default function Home() {
         }
       }
     }
-
+    if (!isSubscribed) {
+      const newCount = freeMessages - 1;
+      setFreeMessages(newCount);
+      await supabase.auth.updateUser({
+        data: { freeMessages: newCount }
+      });
+    }
     mutateMessages();
   }
 
@@ -293,6 +314,19 @@ export default function Home() {
       className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? 'dark' : ''
         }`}
     >
+      {!isSubscribed && (
+        <section className="absolute top-0 w-full bg-neon-green text-black text-center py-4 z-40">
+          <p>
+            {freeMessages} free messages remaining. Subscribe for unlimited access!{" "}
+            <Link
+              className="cursor-pointer hover:cursor-pointer font-bold underline"
+              href="/subscription"
+            >
+              Subscribe now
+            </Link>
+          </p>
+        </section>
+      )}
       <Sidebar
         conversations={conversations || []}
         mutateConversations={mutateConversations}
@@ -304,127 +338,115 @@ export default function Home() {
         // session={session}
         isSubscribed={isSubscribed}
       />
-      <div className="flex flex-col w-full h-[100dvh] lg:pl-60 xl:pl-72 dark:bg-gray-900">
-        <nav className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700">
-          <FaBars
-            className="inline lg:hidden dark:text-white"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          />
-
-          <Image
-            src={isDarkMode ? darkBanner : banner}
-            alt="banner"
-            className="h-10  w-auto"
-          />
-          <div className="flex justify-between items-center gap-4">
-            <DarkModeSwitch checked={isDarkMode} onChange={toggleDarkMode} />
-            <button
-              className="bg-neon-green rounded-lg px-4 py-2 flex justify-center items-center gap-2"
-              onClick={() => setIsThoughtsOpen(true)}
-            >
-              See Thoughts
-              <FaLightbulb className="inline" />
-            </button>
-          </div>
-        </nav>
-        {/* <section className="bg-neon-green text-black text-center py-4"> */}
-        {/*   <p> */}
-        {/*     Help inform the future of Bloom by filling out this{" "} */}
-        {/*     <Link */}
-        {/*       className="cursor-pointer hover:cursor-pointer font-bold underline" */}
-        {/*       href={"https://form.typeform.com/to/se0tN3J6"} */}
-        {/*       target="_blank" */}
-        {/*     > */}
-        {/*       survey */}
-        {/*     </Link> */}
-        {/*   </p> */}
-        {/* </section> */}
-        <section
-          className="flex flex-col flex-1 overflow-y-auto lg:px-5 dark:text-white"
-          ref={messageContainerRef}
-        >
-          {messages?.map((message, i) => (
-            <MessageBox
-              key={i}
-              isUser={message.isUser}
-              userId={userId}
-              URL={URL}
-              message={message}
-              loading={messagesLoading}
-              conversationId={conversationId}
-              setThought={setThought}
-              isThoughtOpen={openThoughtMessageId === message.id}
-              setIsThoughtsOpen={(isOpen) =>
-                setIsThoughtsOpen(isOpen, message.id)
-              }
-              onReactionAdded={handleReactionAdded}
-            />
-          )) || (
+      <div className="flex-1 flex flex-col flex-grow overflow-hidden">
+        {!isSidebarOpen && (
+          <button
+            className="absolute top-4 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <FiMenu size={24} />
+          </button>
+        )}
+        <div className="flex flex-col flex-grow overflow-hidden dark:bg-gray-900">
+          <section
+            className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
+            ref={messageContainerRef}
+          >
+            {messages?.map((message, i) => (
               <MessageBox
-                isUser={false}
-                message={{
-                  text: '',
-                  id: '',
-                  isUser: false,
-                  metadata: { reaction: null },
-                }}
-                loading={true}
-                setThought={setThought}
-                setIsThoughtsOpen={setIsThoughtsOpen}
-                onReactionAdded={handleReactionAdded}
+                key={i}
+                isUser={message.isUser}
                 userId={userId}
                 URL={URL}
+                message={message}
+                loading={messagesLoading}
                 conversationId={conversationId}
+                setThought={setThought}
+                isThoughtOpen={openThoughtMessageId === message.id}
+                setIsThoughtsOpen={(isOpen) =>
+                  setIsThoughtsOpen(isOpen, message.id)
+                }
+                onReactionAdded={handleReactionAdded}
               />
-            )}
-        </section>
-        <form
-          id="send"
-          className="flex p-3 lg:p-5 gap-3 border-gray-300"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (canSend && input.current?.value && isSubscribed) {
-              posthog.capture('user_sent_message');
-              chat();
-            }
-          }}
-        >
-          {/* TODO: validate input */}
-          <textarea
-            ref={input}
-            placeholder={
-              isSubscribed ? 'Type a message...' : 'Subscribe to send messages'
-            }
-            className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
-              ? 'border-green-200'
-              : 'border-red-200 opacity-50'
-              }`}
-            rows={1}
-            disabled={!isSubscribed}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+            )) || (
+                <MessageBox
+                  isUser={false}
+                  message={{
+                    text: '',
+                    id: '',
+                    isUser: false,
+                    metadata: { reaction: null },
+                  }}
+                  loading={true}
+                  setThought={setThought}
+                  setIsThoughtsOpen={setIsThoughtsOpen}
+                  onReactionAdded={handleReactionAdded}
+                  userId={userId}
+                  URL={URL}
+                  conversationId={conversationId}
+                />
+              )}
+          </section>
+          <div className="p-3 lg:p-5">
+            <form
+              id="send"
+              className="flex p-3 lg:p-5 gap-3 border-gray-300"
+              onSubmit={(e) => {
                 e.preventDefault();
                 if (canSend && input.current?.value && isSubscribed) {
                   posthog.capture('user_sent_message');
                   chat();
                 }
-              }
-            }}
-          />
-          <button
-            className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-            type="submit"
-            disabled={!canSend || !isSubscribed}
-          >
-            <FaPaperPlane className="inline" />
-          </button>
-        </form>
+              }}
+            >
+              <textarea
+                ref={input}
+                placeholder={
+                  isSubscribed
+                    ? 'Type a message...'
+                    : 'Subscribe to send messages'
+                }
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
+                  ? 'border-green-200'
+                  : 'border-red-200 opacity-50'
+                  }`}
+                rows={1}
+                disabled={!isSubscribed}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (canSend && input.current?.value && isSubscribed) {
+                      posthog.capture('user_sent_message');
+                      chat();
+                    }
+                  }
+                }}
+              />
+              <button
+                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                type="submit"
+                disabled={!canSend || !isSubscribed}
+              >
+                <FaPaperPlane className="inline" />
+              </button>
+              <button
+                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                onClick={() => setIsThoughtsOpen(true)}
+                type="button"
+              >
+                <FaLightbulb className="inline" />
+              </button>
+            </form>
+          </div>
+        </div>
+        <Thoughts
+          thought={thought}
+          setIsThoughtsOpen={(isOpen: boolean) =>
+            setIsThoughtsOpen(isOpen, null)
+          }
+          isThoughtsOpen={isThoughtsOpenState}
+        />
       </div>
-      <Thoughts
-        thought={thought}
-        setIsThoughtsOpen={(isOpen: boolean) => setIsThoughtsOpen(isOpen, null)}
-        isThoughtsOpen={isThoughtsOpenState}
-      />
     </main>
   );
 }
