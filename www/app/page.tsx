@@ -3,10 +3,11 @@ import useSWR from 'swr';
 
 import dynamic from 'next/dynamic';
 
+import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef } from 'react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
 import { getSubscription } from '@/utils/supabase/queries';
@@ -14,6 +15,7 @@ import { getSubscription } from '@/utils/supabase/queries';
 import { API } from '@/utils/api';
 import { createClient, fetchWithAuth } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
+import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
@@ -43,6 +45,7 @@ export default function Home() {
 
   const [conversationId, setConversationId] = useState<string>();
 
+  const router = useRouter();
   const supabase = createClient();
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
@@ -76,34 +79,34 @@ export default function Home() {
           confirmButtonColor: '#3085d6',
           confirmButtonText: 'Sign In',
         });
-        redirect('/auth');
-      }
-      setUserId(user.id);
-      posthog?.identify(userId, { email: user.email });
-
-      // Check subscription status and free messages
-      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
-        setIsSubscribed(true);
+        router.push('/auth');
       } else {
-        const sub = await getSubscription(supabase);
-        setIsSubscribed(!!sub);
+        setUserId(user.id);
+        posthog?.identify(userId, { email: user.email });
 
-        // Initialize or get free message count from user metadata
-        if (!sub) {
-          const { data: { user: currentUser }, error: updateError } = await supabase.auth.getUser();
-          let messageCount = currentUser?.user_metadata?.freeMessages;
+        // Check subscription status and free messages
+        if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
+          setIsSubscribed(true);
+        } else {
+          const sub = await getSubscription(supabase);
+          setIsSubscribed(!!sub);
 
-          if (messageCount === undefined) {
-            // Initialize free messages if not set
-            const { data, error: updateError } = await supabase.auth.updateUser({
-              data: { freeMessages: 50 }
-            });
-            messageCount = 50;
+          // Initialize or get free message count from user metadata
+          if (!sub) {
+            const { data: { user: currentUser }, error: updateError } = await supabase.auth.getUser();
+            let messageCount = currentUser?.user_metadata?.freeMessages;
+
+            if (messageCount === undefined) {
+              // Initialize free messages if not set
+              const { data, error: updateError } = await supabase.auth.updateUser({
+                data: { freeMessages: 50 }
+              });
+              messageCount = 50;
+            }
+            setFreeMessages(messageCount);
           }
-          setFreeMessages(messageCount);
         }
-      }
-    })();
+      })();
   }, [supabase, posthog, userId]);
 
   useEffect(() => {
@@ -203,7 +206,8 @@ export default function Home() {
         confirmButtonText: 'Subscribe',
       }).then((result) => {
         if (result.isConfirmed) {
-          window.location.href = '/subscription';
+          // Redirect to subscription page
+          window.location.href = '/settings';
         }
       });
       return;
@@ -300,32 +304,15 @@ export default function Home() {
   }
 
   return (
-    <main
-      className={`flex h-[100dvh] w-screen flex-col pb-[env(keyboard-inset-height)] text-sm lg:text-base overflow-hidden relative ${isDarkMode ? 'dark' : ''
-        }`}
-    >
-      {!isSubscribed && (
-        <section className="absolute top-0 w-full bg-neon-green text-black text-center py-4 z-40">
-          <p>
-            {freeMessages} free messages remaining. Subscribe for unlimited access!{" "}
-            <Link
-              className="cursor-pointer hover:cursor-pointer font-bold underline"
-              href="/subscription"
-            >
-              Subscribe now
-            </Link>
-          </p>
-        </section>
-      )}
+    <main className="relative flex h-full overflow-hidden">
       <Sidebar
         conversations={conversations || []}
         mutateConversations={mutateConversations}
         conversationId={conversationId}
         setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         api={new API({ url: URL!, userId: userId! })}
-        // session={session}
         isSubscribed={isSubscribed}
       />
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
@@ -377,7 +364,7 @@ export default function Home() {
                 />
               )}
           </section>
-          <div className="p-3 lg:p-5">
+          <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
               id="send"
               className="flex p-3 lg:p-5 gap-3 border-gray-300"
@@ -397,8 +384,8 @@ export default function Home() {
                     : 'Subscribe to send messages'
                 }
                 className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && isSubscribed
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
+                    ? 'border-green-200'
+                    : 'border-red-200 opacity-50'
                   }`}
                 rows={1}
                 disabled={!isSubscribed}

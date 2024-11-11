@@ -1,5 +1,4 @@
 'use client';
-// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@/utils/supabase/client';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
@@ -33,8 +32,8 @@ export default function Forgot(props: any) {
   };
 
   return (
-    <form action="#" className="mt-8 grid grid-cols-6 gap-6">
-      <div className="col-span-6">
+    <form action="#" className="mt-8 space-y-6">
+      <div>
         <label
           htmlFor="Email"
           className="block text-sm font-medium text-gray-700"
@@ -52,9 +51,9 @@ export default function Forgot(props: any) {
         />
       </div>
 
-      <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
+      <div className="sm:flex sm:items-center sm:gap-4">
         <button
-          className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
+          className="inline-block w-full sm:w-auto shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
           onClick={handleForgotPassword}
         >
           Send Recovery Email
