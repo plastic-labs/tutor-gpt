@@ -328,14 +328,14 @@ export default function Home() {
         {!isSubscribed && (
           <section className="h-16 w-full bg-neon-green text-black text-center py-4">
             <p className='ml-10 text-medium'>
-              {freeMessages} free messages remaining.
+              {freeMessages === 0 ? "You've used all your free messages" : `${freeMessages} free messages remaining`}.{" "}
               <Link
                 className="cursor-pointer hover:cursor-pointer font-bold underline"
                 href="/subscription"
               >
                 Subscribe now
               </Link>
-              {" "}for unlimited access!
+              {" "}{freeMessages === 0 ? "to use Bloom!" : "for unlimited access!"}
             </p>
           </section>
         )}
