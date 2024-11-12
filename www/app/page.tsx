@@ -13,10 +13,11 @@ import { usePostHog } from 'posthog-js/react';
 import { getSubscription } from '@/utils/supabase/queries';
 
 import { API } from '@/utils/api';
-import { createClient, fetchWithAuth } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
+import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -70,7 +71,7 @@ export default function Home() {
         data: { user },
         error,
       } = await supabase.auth.getUser();
-      // Check for an error or no user
+
       if (!user || error) {
         await Swal.fire({
           title: 'Notice: Bloombot now requires signing in for usage',
@@ -80,35 +81,27 @@ export default function Home() {
           confirmButtonText: 'Sign In',
         });
         router.push('/auth');
-      } else {
-        setUserId(user.id);
-        posthog?.identify(userId, { email: user.email });
+        return;
+      }
 
-        // Check subscription status and free messages
-        if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
-          setIsSubscribed(true);
-        } else {
-          const sub = await getSubscription(supabase);
-          setIsSubscribed(!!sub);
+      setUserId(user.id);
+      posthog?.identify(user.id, { email: user.email });
 
-          // Initialize or get free message count from user metadata
-          if (!sub) {
-            const { data: { user: currentUser }, error: updateError } = await supabase.auth.getUser();
-            let messageCount = currentUser?.user_metadata?.freeMessages;
+      // Skip subscription check if Stripe is disabled
+      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
+        setIsSubscribed(true);
+        return;
+      }
 
-            if (messageCount === undefined) {
-              // Initialize free messages if not set
-              const { data, error: updateError } = await supabase.auth.updateUser({
-                data: { freeMessages: 50 }
-              });
-              messageCount = 50;
-            }
-            setFreeMessages(messageCount);
-          }
-        }
+      // Check subscription status
+      const sub = await getSubscription(supabase);
+      setIsSubscribed(!!sub);
+      if (!sub) {
+        const count = await getFreeMessageCount(user.id);
+        setFreeMessages(count);
       }
     })();
-  }, [supabase, posthog, userId]);
+  }, [supabase, posthog, router]);
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -198,20 +191,22 @@ export default function Home() {
   };
 
   async function chat() {
-    if (!isSubscribed && freeMessages <= 0) {
-      Swal.fire({
-        title: 'Free Messages Depleted',
-        text: 'You have used all your free messages. Please subscribe to continue.',
-        icon: 'warning',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'Subscribe',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Redirect to subscription page
-          window.location.href = '/settings';
-        }
-      });
-      return;
+    if (!userId) return;
+
+    // Check free message allotment upfront if not subscribed
+    if (!isSubscribed) {
+      const currentCount = await getFreeMessageCount(userId);
+      if (currentCount <= 0) {
+        Swal.fire({
+          title: 'Free Messages Depleted',
+          text: 'You have used all your free messages. Subscribe to continue using Bloom!',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Subscribe',
+          showCancelButton: true,
+        });
+        return;
+      }
     }
 
     const textbox = input.current!;
@@ -256,6 +251,14 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
+        // Only decrement free messages after successful completion
+        if (!isSubscribed) {
+          const success = await useFreeTrial(userId);
+          if (success) {
+            const newCount = await getFreeMessageCount(userId);
+            setFreeMessages(newCount);
+          }
+        }
         setCanSend(true);
         break;
       }
@@ -294,16 +297,12 @@ export default function Home() {
         }
       }
     }
-    if (!isSubscribed) {
-      const newCount = freeMessages - 1;
-      setFreeMessages(newCount);
-      await supabase.auth.updateUser({
-        data: { freeMessages: newCount }
-      });
-    }
+
     mutateMessages();
   }
+
   const canUseApp = isSubscribed || freeMessages > 0
+
   return (
     <main className="relative flex h-full overflow-hidden">
       <Sidebar
@@ -326,8 +325,8 @@ export default function Home() {
           </button>
         )}
         {!isSubscribed && (
-          <section className="h-16 w-full bg-neon-green text-black text-center py-4">
-            <p className='ml-10 text-medium'>
+          <section className="h-[186px] w-full bg-neon-green text-black text-center">
+            <p className='ml-10 pt-5 text-medium'>
               {freeMessages === 0 ? "You've used all your free messages" : `${freeMessages} free messages remaining`}.{" "}
               <Link
                 className="cursor-pointer hover:cursor-pointer font-bold underline"
