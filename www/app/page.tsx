@@ -95,8 +95,10 @@ export default function Home() {
 
       // Check subscription status
       const sub = await getSubscription(supabase);
-      setIsSubscribed(!!sub);
-      if (!sub) {
+      // Only consider active paid subscriptions, not trials
+      const isActivePaidSub = sub && sub.status === 'active' && !sub.trial_end;
+      setIsSubscribed(isActivePaidSub);
+      if (!isActivePaidSub) {
         const count = await getFreeMessageCount(user.id);
         setFreeMessages(count);
       }
@@ -325,12 +327,12 @@ export default function Home() {
           </button>
         )}
         {!isSubscribed && (
-          <section className="h-[186px] w-full bg-neon-green text-black text-center">
-            <p className='ml-10 pt-5 text-medium'>
+          <section className="h-16 lg:h-[72px] w-full bg-neon-green text-black text-center flex items-center justify-center flex-shrink-0">
+            <p className='lg:ml-0 ml-12'>
               {freeMessages === 0 ? "You've used all your free messages" : `${freeMessages} free messages remaining`}.{" "}
               <Link
                 className="cursor-pointer hover:cursor-pointer font-bold underline"
-                href="/subscription"
+                href="/settings"
               >
                 Subscribe now
               </Link>

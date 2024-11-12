@@ -11,7 +11,18 @@ type Price = Tables<'prices'>;
 const TRIAL_PERIOD_DAYS = 0;
 const FREE_MESSAGE_LIMIT = 50;
 
-// Add this new function to manage free trial subscriptions
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20',
+});
+
+// Note: supabaseAdmin uses the SERVICE_ROLE_KEY which you must only use in a secure server-side context
+// as it has admin privileges and overwrites RLS policies!
+const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
+
+// Trial membership
 const createOrRetrieveFreeTrialSubscription = async (userId: string) => {
   // Check for existing trial subscription
   const { data: existingSub, error: subError } = await supabaseAdmin
@@ -75,16 +86,6 @@ const decrementFreeMessages = async (userId: string) => {
   return true;
 };
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
-
-// Note: supabaseAdmin uses the SERVICE_ROLE_KEY which you must only use in a secure server-side context
-// as it has admin privileges and overwrites RLS policies!
-const supabaseAdmin = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
 
 // Upsert a product to the Database
 const upsertProductRecord = async (product: Stripe.Product) => {
