@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "honcho-ai>=0.0.15",
+    "honcho-ai>=0.0.17",
     "python-dotenv>=1.0.1",
 ]
 
