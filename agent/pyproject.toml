@@ -14,9 +14,15 @@ dependencies = [
     "honcho-ai>=0.0.17",
 ]
 
-[tool.hatch.build.targets.wheel]
-packages = ["agent"]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/plastic-labs/tutor-gpt"
+
+[tool.hatch.build]
+include = [
+    "agent/**/*.py",
+    "agent/**/*.md"
+]
