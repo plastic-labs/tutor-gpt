@@ -11,7 +11,7 @@ dependencies = [
     "validators>=0.20.0",
     "sentry-sdk>=2.13.0",
     "python-dotenv>=1.0.1",
-    "honcho-ai>=0.0.15",
+    "honcho-ai>=0.0.17",
 ]
 
 [tool.hatch.build.targets.wheel]

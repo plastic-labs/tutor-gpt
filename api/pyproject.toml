@@ -9,7 +9,7 @@ dependencies = [
     "sentry-sdk[fastapi]>=2.13.0",
     "agent",
     "python-dotenv>=1.0.1",
-    "honcho-ai>=0.0.15",
+    "honcho-ai>=0.0.17",
     "supabase>=2.9.1",
 ]
 
