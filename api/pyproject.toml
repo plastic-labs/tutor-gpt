@@ -15,3 +15,6 @@ dependencies = [
 
 [tool.uv.sources]
 agent = {workspace=true}
+
+[tool.uv.workspace]
+members = ["../agent"]
