@@ -15,7 +15,7 @@ export default async function Page({
 
   // Reconstruct the full URL from parts
   // Protocol comes as first parameter with encoded colon (e.g., "https%3A")
-  const protocol = params.url[0].replace('%3A', ':');
+  const protocol = params.url[0].replace(/%3A/g, ':');
   // Combine remaining parts with forward slashes
   const restOfUrl = params.url.slice(1).join('/');
   // Create properly formatted URL (e.g., "https://example.com/page")
