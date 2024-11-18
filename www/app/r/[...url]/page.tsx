@@ -12,7 +12,10 @@ export default async function Page({
   if (params.url.length < 2) {
     throw Error("Page not found");
   }
-
+  // Check for JINA API key
+  if (!process.env.NEXT_PUBLIC_JINA_API_KEY) {
+    throw new Error("JINA API key is not configured");
+  }
   // Reconstruct the full URL from parts
   // Protocol comes as first parameter with encoded colon (e.g., "https%3A")
   const protocol = params.url[0].replace(/%3A/g, ':');
