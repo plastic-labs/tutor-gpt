@@ -3,104 +3,104 @@ import { retryDBOperation, retryOpenAIOperation } from './retryUtils';
 import { fetchWithAuth } from './supabase/client';
 
 const defaultMessage: Message = {
-  text: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+  content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
   isUser: false,
   id: '',
 };
 
 export interface Message {
-  text: string;
+  content: string;
   isUser: boolean;
   id: string;
   metadata?: { reaction?: Reaction };
 }
 
 export class Conversation {
-  api: API;
+  // api: API;
   name: string;
   conversationId: string;
 
   constructor({
-    api,
+    // api,
     name,
     conversationId,
   }: {
-    api: API;
+    // api: API;
     name: string;
     conversationId: string;
   }) {
-    this.api = api;
+    // this.api = api;
     this.name = name;
     this.conversationId = conversationId;
   }
-
-  async getMessages() {
-    return retryDBOperation(async () => {
-      const req = await fetchWithAuth(
-        `${this.api.url}/api/messages?` +
-          new URLSearchParams({
-            conversation_id: this.conversationId,
-            user_id: this.api.userId,
-          })
-      );
-      const { messages: rawMessages } = await req.json();
-      if (!rawMessages) return [];
-      const messages = rawMessages.map((rawMessage: any) => {
-        return {
-          text: rawMessage.data.content,
-          isUser: rawMessage.type === 'human',
-          id: rawMessage.id,
-        };
-      });
-
-      return messages;
-    });
-  }
-
-  async setName(name: string) {
-    if (!name || name === this.name) return;
-
-    await retryDBOperation(async () => {
-      await fetchWithAuth(`${this.api.url}/api/conversations/update`, {
-        method: 'POST',
-        body: JSON.stringify({
-          conversation_id: this.conversationId,
-          user_id: this.api.userId,
-          name,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      this.name = name;
-    });
-  }
-
-  async delete() {
-    await retryDBOperation(async () => {
-      await fetchWithAuth(
-        `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
-      ).then((res) => res.json());
-    });
-  }
-
-  async chat(message: string) {
-    return retryOpenAIOperation(async () => {
-      const req = await fetchWithAuth(`${this.api.url}/api/stream`, {
-        method: 'POST',
-        body: JSON.stringify({
-          conversation_id: this.conversationId,
-          user_id: this.api.userId,
-          message,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      return req.body?.pipeThrough(new TextDecoderStream()).getReader()!;
-    });
-  }
+  //
+  // async getMessages() {
+  //   return retryDBOperation(async () => {
+  //     const req = await fetchWithAuth(
+  //       `${this.api.url}/api/messages?` +
+  //       new URLSearchParams({
+  //         conversation_id: this.conversationId,
+  //         user_id: this.api.userId,
+  //       })
+  //     );
+  //     const { messages: rawMessages } = await req.json();
+  //     if (!rawMessages) return [];
+  //     const messages = rawMessages.map((rawMessage: any) => {
+  //       return {
+  //         text: rawMessage.data.content,
+  //         isUser: rawMessage.type === 'human',
+  //         id: rawMessage.id,
+  //       };
+  //     });
+  //
+  //     return messages;
+  //   });
+  // }
+  //
+  // async setName(name: string) {
+  //   if (!name || name === this.name) return;
+  //
+  //   await retryDBOperation(async () => {
+  //     await fetchWithAuth(`${this.api.url}/api/conversations/update`, {
+  //       method: 'POST',
+  //       body: JSON.stringify({
+  //         conversation_id: this.conversationId,
+  //         user_id: this.api.userId,
+  //         name,
+  //       }),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+  //     this.name = name;
+  //   });
+  // }
+  //
+  // async delete() {
+  //   await retryDBOperation(async () => {
+  //     await fetchWithAuth(
+  //       `${this.api.url}/api/conversations/delete?user_id=${this.api.userId}&conversation_id=${this.conversationId}`
+  //     ).then((res) => res.json());
+  //   });
+  // }
+  //
+  // async chat(message: string) {
+  //   return retryOpenAIOperation(async () => {
+  //     const req = await fetchWithAuth(`${this.api.url}/api/stream`, {
+  //       method: 'POST',
+  //       body: JSON.stringify({
+  //         conversation_id: this.conversationId,
+  //         user_id: this.api.userId,
+  //         message,
+  //       }),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+  //
+  //     return req.body?.pipeThrough(new TextDecoderStream()).getReader()!;
+  //   });
+  // }
 }
 
 interface RawConversation {
@@ -157,10 +157,10 @@ export class API {
     return retryDBOperation(async () => {
       const req = await fetchWithAuth(
         `${this.url}/api/messages?` +
-          new URLSearchParams({
-            conversation_id: conversationId,
-            user_id: this.userId,
-          })
+        new URLSearchParams({
+          conversation_id: conversationId,
+          user_id: this.userId,
+        })
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];

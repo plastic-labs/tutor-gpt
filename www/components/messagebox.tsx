@@ -39,7 +39,7 @@ export default function MessageBox({
   const [pendingReaction, setPendingReaction] = useState<Reaction>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { id: messageId, text, metadata } = message;
+  const { id: messageId, content, metadata } = message;
   const reaction = metadata?.reaction || null;
   const shouldShowButtons = messageId !== '';
 
@@ -104,15 +104,14 @@ export default function MessageBox({
         />
       )}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={text} />}
+        {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={content} />}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button
-              className={`p-2 rounded-full ${
-                reaction === 'thumbs_up'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
+              className={`p-2 rounded-full ${reaction === 'thumbs_up'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 dark:bg-gray-700'
+                } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_up')}
               disabled={pendingReaction !== null}
             >
@@ -125,11 +124,10 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${
-                reaction === 'thumbs_down'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
+              className={`p-2 rounded-full ${reaction === 'thumbs_down'
+                ? 'bg-red-500 text-white'
+                : 'bg-gray-200 dark:bg-gray-700'
+                } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_down')}
               disabled={pendingReaction !== null}
             >
@@ -142,11 +140,10 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${
-                isThoughtOpen
-                  ? 'bg-neon-green text-gray-800'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              }`}
+              className={`p-2 rounded-full ${isThoughtOpen
+                ? 'bg-neon-green text-gray-800'
+                : 'bg-gray-200 dark:bg-gray-700'
+                }`}
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >

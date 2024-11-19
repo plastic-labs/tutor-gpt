@@ -1,5 +1,5 @@
 import { GrClose } from 'react-icons/gr';
-import { Conversation, API } from '@/utils/api';
+import { Conversation } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -9,6 +9,8 @@ import { ConversationTab } from './conversationtab';
 import { useState } from 'react';
 import useSWR, { KeyedMutator } from 'swr';
 import { FaUser } from 'react-icons/fa';
+import { createConversation, deleteConversation, updateConversation } from '@/app/actions/conversations';
+
 export default function Sidebar({
   conversations,
   mutateConversations,
@@ -16,7 +18,6 @@ export default function Sidebar({
   setConversationId,
   isSidebarOpen,
   toggleSidebar,
-  api,
   isSubscribed,
 }: {
   conversations: Conversation[];
@@ -25,7 +26,6 @@ export default function Sidebar({
   setConversationId: (id: typeof conversationId) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
-  api: API | undefined;
   isSubscribed: boolean;
 }) {
   const postHog = usePostHog();
@@ -49,7 +49,7 @@ export default function Sidebar({
       },
     });
 
-    await cur.setName(newName);
+    await updateConversation(cur.conversationId, newName as string);
 
     // Force a re-render by directly updating the state
     mutateConversations(
@@ -61,7 +61,7 @@ export default function Sidebar({
     );
   }
 
-  async function deleteConversation(conversation: Conversation) {
+  async function removeConversation(conversation: Conversation) {
     const { isConfirmed } = await Swal.fire({
       title: 'Are you sure you want to delete this conversation?',
       text: "You won't be able to revert this!",
@@ -73,17 +73,18 @@ export default function Sidebar({
     });
 
     if (isConfirmed) {
-      await conversation.delete();
+      await deleteConversation(conversation.conversationId);
+      // await conversation.delete();
       postHog?.capture('user_deleted_conversation');
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(
         (cur) => cur.conversationId != conversation.conversationId
       );
       if (conversation.conversationId == conversationId) {
-        if (newConversations.length > 1) {
+        if (newConversations.length >= 1) {
           setConversationId(newConversations[0].conversationId);
         } else {
-          const newConv = await api?.new();
+          const newConv = await createConversation();
           setConversationId(newConv?.conversationId);
           mutateConversations([newConv!]);
         }
@@ -93,7 +94,7 @@ export default function Sidebar({
   }
 
   async function addChat() {
-    const conversation = await api?.new();
+    const conversation = await createConversation();
     postHog?.capture('user_created_conversation');
     setConversationId(conversation?.conversationId);
     mutateConversations([conversation!, ...conversations]);
@@ -110,9 +111,8 @@ export default function Sidebar({
 
   return (
     <div
-      className={`absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      }`}
+      className={`absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
     >
       <div className="h-full overflow-hidden bg-white dark:bg-gray-950 dark:text-white flex flex-col border-gray-200 dark:border-gray-700 border-r">
         {/* Section 1: Top buttons */}
@@ -136,18 +136,18 @@ export default function Sidebar({
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
           {conversations.length > 0
             ? conversations.map((cur, i) => (
-                <ConversationTab
-                  conversation={cur}
-                  select={() => setConversationId(cur.conversationId)}
-                  selected={conversationId === cur.conversationId}
-                  edit={() => editConversation(cur)}
-                  del={() => deleteConversation(cur)}
-                  key={i}
-                />
-              ))
+              <ConversationTab
+                conversation={cur}
+                select={() => setConversationId(cur.conversationId)}
+                selected={conversationId === cur.conversationId}
+                edit={() => editConversation(cur)}
+                del={() => removeConversation(cur)}
+                key={i}
+              />
+            ))
             : Array.from({ length: 5 }).map((_, i) => (
-                <ConversationTab loading key={i} />
-              ))}
+              <ConversationTab loading key={i} />
+            ))}
         </div>
 
         {/* Section 3: Authentication information */}
