@@ -13,9 +13,11 @@ import { usePostHog } from 'posthog-js/react';
 import { getSubscription } from '@/utils/supabase/queries';
 
 import { API } from '@/utils/api';
-import { createClient, fetchWithAuth } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
+import Link from 'next/link';
+import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -53,6 +55,7 @@ export default function Home() {
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
 
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [freeMessages, setFreeMessages] = useState<number>(0);
 
   const setIsThoughtsOpen = (
     isOpen: boolean,
@@ -68,7 +71,7 @@ export default function Home() {
         data: { user },
         error,
       } = await supabase.auth.getUser();
-      // Check for an error or no user
+
       if (!user || error) {
         await Swal.fire({
           title: 'Notice: Bloombot now requires signing in for usage',
@@ -78,20 +81,29 @@ export default function Home() {
           confirmButtonText: 'Sign In',
         });
         router.push('/auth');
-      } else {
-        setUserId(user.id);
-        posthog?.identify(userId, { email: user.email });
+        return;
+      }
 
-        // Check subscription status
-        if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
-          setIsSubscribed(true);
-        } else {
-          const sub = await getSubscription(supabase);
-          setIsSubscribed(!!sub);
-        }
+      setUserId(user.id);
+      posthog?.identify(user.id, { email: user.email });
+
+      // Skip subscription check if Stripe is disabled
+      if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
+        setIsSubscribed(true);
+        return;
+      }
+
+      // Check subscription status
+      const sub = await getSubscription(supabase);
+      // Only consider active paid subscriptions, not trials
+      const isActivePaidSub = sub && sub.status === 'active' && !sub.trial_end;
+      setIsSubscribed(isActivePaidSub);
+      if (!isActivePaidSub) {
+        const count = await getFreeMessageCount(user.id);
+        setFreeMessages(count);
       }
     })();
-  }, [supabase, posthog, userId]);
+  }, [supabase, posthog, router]);
 
   useEffect(() => {
     const messageContainer = messageContainerRef.current;
@@ -181,20 +193,22 @@ export default function Home() {
   };
 
   async function chat() {
+    if (!userId) return;
+
+    // Check free message allotment upfront if not subscribed
     if (!isSubscribed) {
-      Swal.fire({
-        title: 'Subscription Required',
-        text: 'Please subscribe to send messages.',
-        icon: 'warning',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'Subscribe',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Redirect to subscription page
-          window.location.href = '/settings';
-        }
-      });
-      return;
+      const currentCount = await getFreeMessageCount(userId);
+      if (currentCount <= 0) {
+        Swal.fire({
+          title: 'Free Messages Depleted',
+          text: 'You have used all your free messages. Subscribe to continue using Bloom!',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Subscribe',
+          showCancelButton: true,
+        });
+        return;
+      }
     }
 
     const textbox = input.current!;
@@ -239,6 +253,14 @@ export default function Home() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
+        // Only decrement free messages after successful completion
+        if (!isSubscribed) {
+          const success = await useFreeTrial(userId);
+          if (success) {
+            const newCount = await getFreeMessageCount(userId);
+            setFreeMessages(newCount);
+          }
+        }
         setCanSend(true);
         break;
       }
@@ -281,6 +303,8 @@ export default function Home() {
     mutateMessages();
   }
 
+  const canUseApp = isSubscribed || freeMessages > 0;
+
   return (
     <main className="relative flex h-full overflow-hidden">
       <Sidebar
@@ -296,11 +320,28 @@ export default function Home() {
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
         {!isSidebarOpen && (
           <button
-            className="absolute top-4 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2"
+            className={`absolute top-4 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2 border border-black`}
             onClick={() => setIsSidebarOpen(true)}
           >
             <FiMenu size={24} />
           </button>
+        )}
+        {!isSubscribed && (
+          <section className="h-16 lg:h-[72px] w-full bg-neon-green text-black text-center flex items-center justify-center flex-shrink-0">
+            <p className="lg:ml-0 ml-12">
+              {freeMessages === 0
+                ? "You've used all your free messages"
+                : `${freeMessages} free messages remaining`}
+              .{' '}
+              <Link
+                className="cursor-pointer hover:cursor-pointer font-bold underline"
+                href="/settings"
+              >
+                Subscribe now
+              </Link>{' '}
+              {freeMessages === 0 ? 'to use Bloom!' : 'for unlimited access!'}
+            </p>
+          </section>
         )}
         <div className="flex flex-col flex-grow overflow-hidden dark:bg-gray-900">
           <section
@@ -348,7 +389,7 @@ export default function Home() {
               className="flex p-3 lg:p-5 gap-3 border-gray-300"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (canSend && input.current?.value && isSubscribed) {
+                if (canSend && input.current?.value && canUseApp) {
                   posthog.capture('user_sent_message');
                   chat();
                 }
@@ -357,21 +398,19 @@ export default function Home() {
               <textarea
                 ref={input}
                 placeholder={
-                  isSubscribed
-                    ? 'Type a message...'
-                    : 'Subscribe to send messages'
+                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
                 className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
-                  canSend && isSubscribed
+                  canSend && canUseApp
                     ? 'border-green-200'
                     : 'border-red-200 opacity-50'
                 }`}
                 rows={1}
-                disabled={!isSubscribed}
+                disabled={!canUseApp}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (canSend && input.current?.value && isSubscribed) {
+                    if (canSend && input.current?.value && canUseApp) {
                       posthog.capture('user_sent_message');
                       chat();
                     }
@@ -381,7 +420,7 @@ export default function Home() {
               <button
                 className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"
-                disabled={!canSend || !isSubscribed}
+                disabled={!canSend || !canUseApp}
               >
                 <FaPaperPlane className="inline" />
               </button>

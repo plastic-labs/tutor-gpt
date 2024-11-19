@@ -67,7 +67,16 @@ def verify_auth(user: User, input_id: str, subscription_check: bool = False):
     if subscription_check is None or STRIPE_ENABLED is False:
         return
 
-    sub = supabase.table("subscriptions").select("*").eq("user_id", user.id).execute()
+    sub = (
+        supabase.table("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .or_(
+            "status.eq.active,"  # Active subscriptions
+            "and(status.eq.trialing,trial_end.gte.now())"  # Valid trial subscriptions
+        )
+        .execute()
+    )
 
     if len(sub.data) != 1:
         raise HTTPException(

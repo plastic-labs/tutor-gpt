@@ -14,7 +14,7 @@ export default function Thoughts({
     <section
       className={
         'absolute h-[100dvh] flex flex-col lg:w-3/5 w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out text-black ' +
-        (isThoughtsOpen ? 'translate-x-0 shadow-lg' : 'translate-x-full')
+        (isThoughtsOpen ? 'translate-x-0 shadow-lg z-30' : 'translate-x-full')
       }
     >
       <div className="flex flex-row-reverse p-4">

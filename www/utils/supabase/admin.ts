@@ -9,6 +9,7 @@ type Price = Tables<'prices'>;
 
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
+const FREE_MESSAGE_LIMIT = 50;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
@@ -20,6 +21,84 @@ const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
+
+// Trial membership
+const createOrRetrieveFreeTrialSubscription = async (userId: string) => {
+  // Check for existing trial subscription
+  const { data: existingSub, error: subError } = await supabaseAdmin
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'trialing')
+    .maybeSingle();
+
+  if (subError)
+    throw new Error(`Subscription lookup failed: ${subError.message}`);
+
+  // If trial subscription exists, return it
+  if (existingSub) return existingSub;
+
+  // Create a new trial subscription
+  const subscriptionData: TablesInsert<'subscriptions'> = {
+    id: `free_trial_${userId}`,
+    user_id: userId,
+    status: 'trialing',
+    metadata: { freeMessages: FREE_MESSAGE_LIMIT },
+    price_id: null, // or your free tier price ID if you have one
+    quantity: 1,
+    cancel_at_period_end: false,
+    created: new Date().toISOString(),
+    current_period_start: new Date().toISOString(),
+    current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('T', ' ')
+      .replace('Z', ''), // 1 year
+    trial_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('T', ' ')
+      .replace('Z', ''), // 1 year
+  };
+
+  const { error: insertError } = await supabaseAdmin
+    .from('subscriptions')
+    .insert([subscriptionData]);
+
+  if (insertError)
+    throw new Error(
+      `Trial subscription creation failed: ${insertError.message}`
+    );
+
+  return subscriptionData;
+};
+
+// Add this function to decrement free messages
+const decrementFreeMessages = async (userId: string) => {
+  const { data: subscription, error: subError } = await supabaseAdmin
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'trialing')
+    .single();
+
+  if (subError)
+    throw new Error(`Subscription lookup failed: ${subError.message}`);
+
+  const currentCount =
+    (subscription.metadata as { freeMessages: number })?.freeMessages ?? 0;
+  if (currentCount <= 0) return false;
+
+  const { error: updateError } = await supabaseAdmin
+    .from('subscriptions')
+    .update({
+      metadata: { freeMessages: currentCount - 1 },
+    })
+    .eq('id', subscription.id);
+
+  // Check if any rows were affected
+  if (updateError)
+    throw new Error(`Free message update failed: ${updateError.message}`);
+  return true;
+};
 
 // Upsert a product to the Database
 const upsertProductRecord = async (product: Stripe.Product) => {
@@ -200,7 +279,7 @@ const createOrRetrieveCustomer = async ({
   }
 };
 
-// Copies the billing details from the payment metho to the customer object.
+// Copies the billing details from the payment method to the customer object.
 const copyBillingDetailsToCustomer = async (
   uuid: string,
   payment_method: Stripe.PaymentMethod
@@ -209,7 +288,7 @@ const copyBillingDetailsToCustomer = async (
   const customer = payment_method.customer as string;
   const { name, phone, address } = payment_method.billing_details;
   if (!name || !phone || !address) return;
-  //@ts-ignore
+  //@ts-expect-error address type string | null not assignable to type string | undefined
   await stripe.customers.update(customer, { name, phone, address });
   const { error: updateError } = await supabaseAdmin
     .from('users')
@@ -279,7 +358,7 @@ const manageSubscriptionStatusChange = async (
 
   const { error: upsertError } = await supabaseAdmin
     .from('subscriptions')
-    .upsert([subscriptionData]);
+    .upsert([subscriptionData], { onConflict: 'user_id' });
   if (upsertError)
     throw new Error(
       `Subscription insert/update failed: ${upsertError.message}`
@@ -305,4 +384,7 @@ export {
   deletePriceRecord,
   createOrRetrieveCustomer,
   manageSubscriptionStatusChange,
+  createOrRetrieveFreeTrialSubscription,
+  decrementFreeMessages,
+  FREE_MESSAGE_LIMIT,
 };

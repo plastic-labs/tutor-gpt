@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint components/ app/ utils/",
     "pretty": "prettier --write components/ app/ utils/",
-    "sync-stripe": "node utils/stripe/sync.ts"
+    "sync-stripe": "node scripts/stripeSync.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",
@@ -16,9 +16,9 @@
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.1",
-    "@sentry/nextjs": "^8.35.0",
+    "@sentry/nextjs": "^8.38.0",
     "@stripe/stripe-js": "^4.9.0",
-    "@supabase/ssr": "^0.5.1",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -38,7 +38,7 @@
     "retry": "^0.13.1",
     "sharp": "^0.32.6",
     "stripe": "^16.12.0",
-    "sweetalert2": "^11.14.4",
+    "sweetalert2": "^11.14.5",
     "sweetalert2-react-content": "^5.0.7",
     "swr": "^2.2.5",
     "tailwind-merge": "^2.5.4",
