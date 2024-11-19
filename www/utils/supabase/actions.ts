@@ -1,12 +1,15 @@
-'use server'  // This directive marks all exports as server actions
+'use server'; // This directive marks all exports as server actions
 
-import { createOrRetrieveFreeTrialSubscription, decrementFreeMessages } from '@/utils/supabase/admin';
+import {
+  createOrRetrieveFreeTrialSubscription,
+  decrementFreeMessages,
+} from '@/utils/supabase/admin';
 
 export async function getFreeMessageCount(userId: string) {
-    const subscription = await createOrRetrieveFreeTrialSubscription(userId);
-    return (subscription.metadata as { freeMessages: number })?.freeMessages ?? 0;
+  const subscription = await createOrRetrieveFreeTrialSubscription(userId);
+  return (subscription.metadata as { freeMessages: number })?.freeMessages ?? 0;
 }
 
 export async function useFreeTrial(userId: string) {
-    return decrementFreeMessages(userId);
+  return decrementFreeMessages(userId);
 }

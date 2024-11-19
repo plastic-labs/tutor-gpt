@@ -46,9 +46,11 @@ export default function SubscriptionManager({ subscription, products }: Props) {
       <div className="mt-4">
         <h2 className="text-xl font-bold mb-2">Subscription Status</h2>
         <p className="mb-4">
-          {subscription ? 'Active Subscription' : 'No Active Subscription'}
+          {subscription != null && subscription.status == 'active'
+            ? 'Active Subscription'
+            : 'No Active Subscription'}
         </p>
-        {subscription != null ? (
+        {subscription != null && subscription.status == 'active' ? (
           <button
             onClick={handleManage}
             disabled={loading}

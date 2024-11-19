@@ -303,7 +303,7 @@ export default function Home() {
     mutateMessages();
   }
 
-  const canUseApp = isSubscribed || freeMessages > 0
+  const canUseApp = isSubscribed || freeMessages > 0;
 
   return (
     <main className="relative flex h-full overflow-hidden">
@@ -328,15 +328,18 @@ export default function Home() {
         )}
         {!isSubscribed && (
           <section className="h-16 lg:h-[72px] w-full bg-neon-green text-black text-center flex items-center justify-center flex-shrink-0">
-            <p className='lg:ml-0 ml-12'>
-              {freeMessages === 0 ? "You've used all your free messages" : `${freeMessages} free messages remaining`}.{" "}
+            <p className="lg:ml-0 ml-12">
+              {freeMessages === 0
+                ? "You've used all your free messages"
+                : `${freeMessages} free messages remaining`}
+              .{' '}
               <Link
                 className="cursor-pointer hover:cursor-pointer font-bold underline"
                 href="/settings"
               >
                 Subscribe now
-              </Link>
-              {" "}{freeMessages === 0 ? "to use Bloom!" : "for unlimited access!"}
+              </Link>{' '}
+              {freeMessages === 0 ? 'to use Bloom!' : 'for unlimited access!'}
             </p>
           </section>
         )}
@@ -362,23 +365,23 @@ export default function Home() {
                 onReactionAdded={handleReactionAdded}
               />
             )) || (
-                <MessageBox
-                  isUser={false}
-                  message={{
-                    text: '',
-                    id: '',
-                    isUser: false,
-                    metadata: { reaction: null },
-                  }}
-                  loading={true}
-                  setThought={setThought}
-                  setIsThoughtsOpen={setIsThoughtsOpen}
-                  onReactionAdded={handleReactionAdded}
-                  userId={userId}
-                  URL={URL}
-                  conversationId={conversationId}
-                />
-              )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  text: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                URL={URL}
+                conversationId={conversationId}
+              />
+            )}
           </section>
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
@@ -395,14 +398,13 @@ export default function Home() {
               <textarea
                 ref={input}
                 placeholder={
-                  canUseApp
-                    ? 'Type a message...'
-                    : 'Subscribe to send messages'
+                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200'
+                    : 'border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
