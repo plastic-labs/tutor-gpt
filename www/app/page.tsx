@@ -30,7 +30,13 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
 
-async function fetchStream(type: 'thought' | 'response', message: string, conversationId: string, thought = '', honchoContent = '') {
+async function fetchStream(
+  type: 'thought' | 'response',
+  message: string,
+  conversationId: string,
+  thought = '',
+  honchoContent = ''
+) {
   console.log(`Starting ${type} stream request`);
 
   try {
@@ -53,7 +59,7 @@ async function fetchStream(type: 'thought' | 'response', message: string, conver
       console.error(`Stream error for ${type}:`, {
         status: response.status,
         statusText: response.statusText,
-        error: errorText
+        error: errorText,
       });
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
@@ -199,7 +205,6 @@ export default function Home() {
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
     if (!userId || !conversationId) return;
 
-
     try {
       await addOrRemoveReaction(conversationId, messageId, reaction);
 
@@ -275,7 +280,11 @@ export default function Home() {
 
     try {
       // Get thought stream
-      const thoughtStream = await fetchStream('thought', message, conversationId!);
+      const thoughtStream = await fetchStream(
+        'thought',
+        message,
+        conversationId!
+      );
       if (!thoughtStream) throw new Error('Failed to get thought stream');
 
       thoughtReader = thoughtStream.getReader();
@@ -296,14 +305,20 @@ export default function Home() {
       thoughtReader.releaseLock();
       thoughtReader = null;
 
-      console.log("Got to the response part")
+      console.log('Got to the response part');
 
-      console.log(thoughtReader)
+      console.log(thoughtReader);
 
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Get response stream using the thought
-      const responseStream = await fetchStream('response', message, conversationId!, thoughtText, '');
+      const responseStream = await fetchStream(
+        'response',
+        message,
+        conversationId!,
+        thoughtText,
+        ''
+      );
       if (!responseStream) throw new Error('Failed to get response stream');
 
       responseReader = responseStream.getReader();
@@ -349,9 +364,7 @@ export default function Home() {
       responseReader.releaseLock();
       responseReader = null;
 
-
       mutateMessages();
-
     } catch (error) {
       console.error('Chat error:', error);
       setCanSend(true);
@@ -434,22 +447,22 @@ export default function Home() {
                 onReactionAdded={handleReactionAdded}
               />
             )) || (
-                <MessageBox
-                  isUser={false}
-                  message={{
-                    content: '',
-                    id: '',
-                    isUser: false,
-                    metadata: { reaction: null },
-                  }}
-                  loading={true}
-                  setThought={setThought}
-                  setIsThoughtsOpen={setIsThoughtsOpen}
-                  onReactionAdded={handleReactionAdded}
-                  userId={userId}
-                  conversationId={conversationId}
-                />
-              )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  content: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                conversationId={conversationId}
+              />
+            )}
           </section>
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
@@ -468,10 +481,11 @@ export default function Home() {
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200'
+                    : 'border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {

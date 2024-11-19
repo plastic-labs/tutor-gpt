@@ -1,5 +1,5 @@
 import { type Reaction } from '@/components/messagebox';
-import { retryDBOperation, retryOpenAIOperation } from './retryUtils';
+import { retryDBOperation } from './retryUtils';
 import { fetchWithAuth } from './supabase/client';
 
 const defaultMessage: Message = {
@@ -124,7 +124,7 @@ export class API {
       );
       const { conversation_id } = await req.json();
       return new Conversation({
-        api: this,
+        // api: this,
         name: '',
         conversationId: conversation_id,
       });
@@ -145,7 +145,7 @@ export class API {
       return conversations.map(
         (conversation) =>
           new Conversation({
-            api: this,
+            // api: this,
             name: conversation.name,
             conversationId: conversation.conversation_id,
           })

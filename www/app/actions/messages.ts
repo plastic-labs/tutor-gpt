@@ -23,20 +23,28 @@ export async function getMessages(conversationId: string) {
     throw new Error('Unauthorized');
   }
   const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
-  const session = await honcho.apps.users.sessions.get(honchoApp.id, honchoUser.id, conversationId);
-  const messages = []
+  const session = await honcho.apps.users.sessions.get(
+    honchoApp.id,
+    honchoUser.id,
+    conversationId
+  );
+  const messages = [];
   // TODO check if empty params is necessary
-  for await (const message of honcho.apps.users.sessions.messages.list(honchoApp.id, honchoUser.id, session.id, {})) {
+  for await (const message of honcho.apps.users.sessions.messages.list(
+    honchoApp.id,
+    honchoUser.id,
+    session.id,
+    {}
+  )) {
     messages.push({
-      "id": message.id,
-      "content": message.content,
-      "isUser": message.is_user,
-      "metadata": message.metadata,
-    })
+      id: message.id,
+      content: message.content,
+      isUser: message.is_user,
+      metadata: message.metadata,
+    });
   }
 
   return [defaultMessage, ...messages];
-
 }
 
 export async function getThought(conversationId: string, messageId: string) {
@@ -62,7 +70,7 @@ export async function getThought(conversationId: string, messageId: string) {
       {
         message_id: messageId,
         metamessage_type: 'thought',
-        filter: { type: 'assistant' }
+        filter: { type: 'assistant' },
       }
     );
 
@@ -73,7 +81,11 @@ export async function getThought(conversationId: string, messageId: string) {
   }
 }
 
-export async function addOrRemoveReaction(conversationId: string, messageId: string, reaction: 'thumbs_up' | 'thumbs_down' | null) {
+export async function addOrRemoveReaction(
+  conversationId: string,
+  messageId: string,
+  reaction: 'thumbs_up' | 'thumbs_down' | null
+) {
   const supabase = createClient();
 
   const honchoApp = await getHonchoApp();

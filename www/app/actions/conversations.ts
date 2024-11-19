@@ -9,7 +9,7 @@ import { honcho, getHonchoApp } from '@/utils/honcho';
 type Conversation = {
   conversationId: string;
   name: string;
-}
+};
 
 export async function getConversations() {
   const supabase = createClient();
@@ -24,20 +24,22 @@ export async function getConversations() {
 
   const honchoApp = await getHonchoApp();
 
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id)
+  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
 
-  const acc = []
+  const acc = [];
   for await (const convo of honcho.apps.users.sessions.list(
-    honchoApp.id, honchoUser.id, { is_active: true, reverse: true }
+    honchoApp.id,
+    honchoUser.id,
+    { is_active: true, reverse: true }
   )) {
-    const name = convo.metadata?.name as string ?? 'Untitled'
+    const name = (convo.metadata?.name as string) ?? 'Untitled';
     const instance: Conversation = {
       conversationId: convo.id,
       name,
-    }
-    acc.push(instance)
+    };
+    acc.push(instance);
   }
-  return acc
+  return acc;
 }
 
 export async function createConversation() {
@@ -54,7 +56,11 @@ export async function createConversation() {
   const honchoApp = await getHonchoApp();
   const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
 
-  const session = await honcho.apps.users.sessions.create(honchoApp.id, honchoUser.id, {});
+  const session = await honcho.apps.users.sessions.create(
+    honchoApp.id,
+    honchoUser.id,
+    {}
+  );
 
   return { conversationId: session.id, name: 'Untitled' };
 }
@@ -73,7 +79,11 @@ export async function deleteConversation(conversationId: string) {
   const honchoApp = await getHonchoApp();
   const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
 
-  await honcho.apps.users.sessions.delete(honchoApp.id, honchoUser.id, conversationId);
+  await honcho.apps.users.sessions.delete(
+    honchoApp.id,
+    honchoUser.id,
+    conversationId
+  );
 
   return true;
 }
@@ -101,9 +111,3 @@ export async function updateConversation(conversationId: string, name: string) {
 
   return true;
 }
-
-
-
-
-
-

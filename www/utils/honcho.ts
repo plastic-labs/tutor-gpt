@@ -5,9 +5,7 @@ const honcho = new Honcho({
 });
 
 const getHonchoApp = async () => {
-  return await honcho.apps.getOrCreate(
-    process.env.HONCHO_APP_NAME!,
-  );
-}
+  return await honcho.apps.getOrCreate(process.env.HONCHO_APP_NAME!);
+};
 
-export { honcho, getHonchoApp }; 
+export { honcho, getHonchoApp };

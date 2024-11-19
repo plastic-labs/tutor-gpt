@@ -9,9 +9,9 @@ async function fetchOpenRouter(messages: any[]) {
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': "https://chat.bloombot.ai",
+      'HTTP-Referer': 'https://chat.bloombot.ai',
     },
     body: JSON.stringify({
       model: MODEL,
@@ -23,30 +23,30 @@ async function fetchOpenRouter(messages: any[]) {
   const stream = new TransformStream({
     async transform(chunk, controller) {
       const text = new TextDecoder().decode(chunk);
-      const lines = text.split("\n").filter((line) => line.trim() !== "");
+      const lines = text.split('\n').filter((line) => line.trim() !== '');
 
       for (const line of lines) {
-        if (line.startsWith("data: ")) {
+        if (line.startsWith('data: ')) {
           const data = line.slice(6);
-          if (data === "[DONE]") {
+          if (data === '[DONE]') {
             controller.terminate(); // Properly terminate when done
             return;
           }
           try {
             const parsed = JSON.parse(data);
-            const content = parsed.choices[0]?.delta?.content || "";
+            const content = parsed.choices[0]?.delta?.content || '';
             if (content) {
               controller.enqueue(content);
             }
           } catch (e) {
-            console.error("Error parsing JSON:", e);
+            console.error('Error parsing JSON:', e);
           }
         }
       }
     },
     flush(controller) {
       controller.terminate();
-    }
+    },
   });
 
   return response.body?.pipeThrough(stream);
@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const data = await req.json()
+  const data = await req.json();
 
-  console.log(data)
+  console.log(data);
 
   const { type, message, conversationId, thought, honchoContent } = data;
 
@@ -73,13 +73,20 @@ export async function POST(req: NextRequest) {
     let messages;
     if (type === 'thought') {
       messages = [
-        { role: 'system', content: 'You are an AI assistant that thinks carefully about how to respond.' },
-        { role: 'user', content: message }
+        {
+          role: 'system',
+          content:
+            'You are an AI assistant that thinks carefully about how to respond.',
+        },
+        { role: 'user', content: message },
       ];
     } else {
       messages = [
         { role: 'system', content: 'You are a helpful AI assistant.' },
-        { role: 'user', content: `Thought: ${thought}\nHoncho Content: ${honchoContent}\nUser Message: ${message}` }
+        {
+          role: 'user',
+          content: `Thought: ${thought}\nHoncho Content: ${honchoContent}\nUser Message: ${message}`,
+        },
       ];
 
       // Store user message for response type
@@ -105,12 +112,11 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     });
-
   } catch (error) {
     console.error('Stream error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
-} 
+}
