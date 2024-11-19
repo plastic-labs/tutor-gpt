@@ -32,7 +32,8 @@ const createOrRetrieveFreeTrialSubscription = async (userId: string) => {
     .eq('status', 'trialing')
     .maybeSingle();
 
-  if (subError) throw new Error(`Subscription lookup failed: ${subError.message}`);
+  if (subError)
+    throw new Error(`Subscription lookup failed: ${subError.message}`);
 
   // If trial subscription exists, return it
   if (existingSub) return existingSub;
@@ -48,15 +49,24 @@ const createOrRetrieveFreeTrialSubscription = async (userId: string) => {
     cancel_at_period_end: false,
     created: new Date().toISOString(),
     current_period_start: new Date().toISOString(),
-    current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').replace('Z', ''), // 1 year
-    trial_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').replace('Z', ''), // 1 year
+    current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('T', ' ')
+      .replace('Z', ''), // 1 year
+    trial_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .replace('T', ' ')
+      .replace('Z', ''), // 1 year
   };
 
   const { error: insertError } = await supabaseAdmin
     .from('subscriptions')
     .insert([subscriptionData]);
 
-  if (insertError) throw new Error(`Trial subscription creation failed: ${insertError.message}`);
+  if (insertError)
+    throw new Error(
+      `Trial subscription creation failed: ${insertError.message}`
+    );
 
   return subscriptionData;
 };
@@ -70,22 +80,25 @@ const decrementFreeMessages = async (userId: string) => {
     .eq('status', 'trialing')
     .single();
 
-  if (subError) throw new Error(`Subscription lookup failed: ${subError.message}`);
+  if (subError)
+    throw new Error(`Subscription lookup failed: ${subError.message}`);
 
-  const currentCount = (subscription.metadata as { freeMessages: number })?.freeMessages ?? 0;
+  const currentCount =
+    (subscription.metadata as { freeMessages: number })?.freeMessages ?? 0;
   if (currentCount <= 0) return false;
 
   const { error: updateError } = await supabaseAdmin
     .from('subscriptions')
     .update({
-      metadata: { freeMessages: currentCount - 1 }
+      metadata: { freeMessages: currentCount - 1 },
     })
     .eq('id', subscription.id);
 
-  if (updateError) throw new Error(`Free message update failed: ${updateError.message}`);
+  // Check if any rows were affected
+  if (updateError)
+    throw new Error(`Free message update failed: ${updateError.message}`);
   return true;
 };
-
 
 // Upsert a product to the Database
 const upsertProductRecord = async (product: Stripe.Product) => {
@@ -266,7 +279,7 @@ const createOrRetrieveCustomer = async ({
   }
 };
 
-// Copies the billing details from the payment metho to the customer object.
+// Copies the billing details from the payment method to the customer object.
 const copyBillingDetailsToCustomer = async (
   uuid: string,
   payment_method: Stripe.PaymentMethod
@@ -275,7 +288,7 @@ const copyBillingDetailsToCustomer = async (
   const customer = payment_method.customer as string;
   const { name, phone, address } = payment_method.billing_details;
   if (!name || !phone || !address) return;
-  //@ts-ignore
+  //@ts-expect-error address type string | null not assignable to type string | undefined
   await stripe.customers.update(customer, { name, phone, address });
   const { error: updateError } = await supabaseAdmin
     .from('users')
@@ -345,7 +358,7 @@ const manageSubscriptionStatusChange = async (
 
   const { error: upsertError } = await supabaseAdmin
     .from('subscriptions')
-    .upsert([subscriptionData]);
+    .upsert([subscriptionData], { onConflict: 'user_id' });
   if (upsertError)
     throw new Error(
       `Subscription insert/update failed: ${upsertError.message}`
@@ -373,5 +386,5 @@ export {
   manageSubscriptionStatusChange,
   createOrRetrieveFreeTrialSubscription,
   decrementFreeMessages,
-  FREE_MESSAGE_LIMIT
+  FREE_MESSAGE_LIMIT,
 };
