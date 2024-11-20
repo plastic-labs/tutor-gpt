@@ -157,10 +157,10 @@ export class API {
     return retryDBOperation(async () => {
       const req = await fetchWithAuth(
         `${this.url}/api/messages?` +
-        new URLSearchParams({
-          conversation_id: conversationId,
-          user_id: this.userId,
-        })
+          new URLSearchParams({
+            conversation_id: conversationId,
+            user_id: this.userId,
+          })
       );
       const { messages: rawMessages } = await req.json();
       if (!rawMessages) return [];
