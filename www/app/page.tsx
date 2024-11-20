@@ -17,7 +17,7 @@ import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
 import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
-import { getConversations } from './actions/conversations';
+import { getConversations, createConversation } from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
@@ -176,14 +176,21 @@ export default function Home() {
     userId,
     conversationsFetcher,
     {
-      onSuccess: (conversations) => {
-        if (
-          !conversationId ||
-          !conversations.find((c) => c.conversationId === conversationId)
-        ) {
-          setConversationId(conversations[0].conversationId);
+      onSuccess: async (conversations) => {
+        if (conversations.length) {
+          if (
+            !conversationId ||
+            !conversations.find((c) => c.conversationId === conversationId)
+          ) {
+            setConversationId(conversations[0].conversationId);
+          }
+          setCanSend(true);
+        } else {
+          const newConvo = await createConversation();
+          setConversationId(newConvo?.conversationId);
+          await mutateConversations();
         }
-        setCanSend(true);
+
       },
       revalidateOnFocus: false,
     }
@@ -398,7 +405,7 @@ export default function Home() {
         setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSubscribed={isSubscribed}
+        isSubscribed={canUseApp}
       />
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
         {!isSidebarOpen && (
@@ -447,22 +454,22 @@ export default function Home() {
                 onReactionAdded={handleReactionAdded}
               />
             )) || (
-              <MessageBox
-                isUser={false}
-                message={{
-                  content: '',
-                  id: '',
-                  isUser: false,
-                  metadata: { reaction: null },
-                }}
-                loading={true}
-                setThought={setThought}
-                setIsThoughtsOpen={setIsThoughtsOpen}
-                onReactionAdded={handleReactionAdded}
-                userId={userId}
-                conversationId={conversationId}
-              />
-            )}
+                <MessageBox
+                  isUser={false}
+                  message={{
+                    content: '',
+                    id: '',
+                    isUser: false,
+                    metadata: { reaction: null },
+                  }}
+                  loading={true}
+                  setThought={setThought}
+                  setIsThoughtsOpen={setIsThoughtsOpen}
+                  onReactionAdded={handleReactionAdded}
+                  userId={userId}
+                  conversationId={conversationId}
+                />
+              )}
           </section>
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
@@ -481,11 +488,10 @@ export default function Home() {
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200'
-                    : 'border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
+                  ? 'border-green-200'
+                  : 'border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
