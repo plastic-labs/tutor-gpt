@@ -8,7 +8,6 @@ export interface Message {
 }
 
 export interface Conversation {
-  // api: API;
   name: string;
   conversationId: string;
 }

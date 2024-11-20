@@ -5,7 +5,7 @@ import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import MarkdownWrapper from './markdownWrapper';
 import { FaLightbulb, FaThumbsDown, FaThumbsUp } from 'react-icons/fa';
-import { type Message } from '@/utils/api';
+import { type Message } from '@/utils/types';
 import { getThought } from '@/app/actions/messages';
 import Spinner from './spinner';
 

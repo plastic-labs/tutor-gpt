@@ -190,7 +190,6 @@ export default function Home() {
           setConversationId(newConvo?.conversationId);
           await mutateConversations();
         }
-
       },
       revalidateOnFocus: false,
     }
@@ -311,10 +310,6 @@ export default function Home() {
       // Cleanup thought stream
       thoughtReader.releaseLock();
       thoughtReader = null;
-
-      console.log('Got to the response part');
-
-      console.log(thoughtReader);
 
       await new Promise((resolve) => setTimeout(resolve, 5000));
 

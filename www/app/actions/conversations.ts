@@ -1,7 +1,6 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { revalidatePath } from 'next/cache';
 import { honcho, getHonchoApp } from '@/utils/honcho';
 
 // TODO add proper authorization check

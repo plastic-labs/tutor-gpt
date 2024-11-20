@@ -2,10 +2,11 @@ import { createClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { thinkCall, respondCall } from './actions';
 import { honcho, getHonchoApp } from '@/utils/honcho';
+import { streamText } from 'ai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 const OPENROUTER_API_KEY = process.env.OPENAI_API_KEY;
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const MODEL = process.env.MODEL;
+const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
 
 async function saveHistory({
   appId,
@@ -93,63 +94,32 @@ async function saveHistory({
 }
 
 async function fetchOpenRouter(type: string, messages: any[], payload: any) {
-  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-    method: 'POST',
+  const openrouter = createOpenRouter({
+    apiKey: OPENROUTER_API_KEY,
     headers: {
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
       'HTTP-Referer': 'https://chat.bloombot.ai',
+      'X-Title': 'Bloombot',
     },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: messages,
-      stream: true,
-    }),
   });
 
-  let acc = '';
-  let jsonBuffer = ''; // Buffer for incomplete JSON
-
-  const stream = new TransformStream({
-    async transform(chunk, controller) {
-      const text = new TextDecoder().decode(chunk);
-      const lines = text.split('\n').filter((line) => line.trim() !== '');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') {
-            if (type === 'response') {
-              const finalPayload = { ...payload, aiResponse: acc };
-              await saveHistory(finalPayload);
-            }
-            return;
-          }
-          jsonBuffer += data;
-          try {
-            const parsed = JSON.parse(jsonBuffer);
-            // If successful, clear the buffer
-            jsonBuffer = '';
-            const content = parsed.choices[0]?.delta?.content || '';
-            if (content) {
-              acc += content;
-              controller.enqueue(content);
-            }
-          } catch (e) {
-            console.error('Error parsing JSON:', e);
-            // If it fails to parse, keep the partial JSON in buffer
-            // and wait for next chunk
-            continue;
-          }
-        }
+  const result = streamText({
+    model: openrouter(MODEL),
+    messages,
+    onFinish: async (response) => {
+      if (type === 'response') {
+        const aiResponse = response.text;
+        const finalPayload = { ...payload, aiResponse };
+        await saveHistory(finalPayload);
       }
     },
-    // flush(controller) {
-    // controller.terminate();
-    // },
   });
-
-  return response.body?.pipeThrough(stream);
+  return result.toTextStreamResponse({
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -196,6 +166,7 @@ export async function POST(req: NextRequest) {
       );
       const honchoResponse = dialecticQuery.content;
 
+      // @ts-ignore
       honchoPayload['honchoContent'] = honchoResponse;
 
       messages = await respondCall({
@@ -213,13 +184,7 @@ export async function POST(req: NextRequest) {
       throw new Error('Failed to get stream');
     }
 
-    return new NextResponse(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    });
+    return stream;
   } catch (error) {
     console.error('Stream error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
