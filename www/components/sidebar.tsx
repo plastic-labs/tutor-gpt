@@ -1,5 +1,4 @@
 import { GrClose } from 'react-icons/gr';
-import { Conversation, API } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -9,6 +8,13 @@ import { ConversationTab } from './conversationtab';
 import { useState } from 'react';
 import useSWR, { KeyedMutator } from 'swr';
 import { FaUser } from 'react-icons/fa';
+import {
+  createConversation,
+  deleteConversation,
+  updateConversation,
+} from '@/app/actions/conversations';
+import { type Conversation } from '@/utils/types';
+
 export default function Sidebar({
   conversations,
   mutateConversations,
@@ -16,7 +22,6 @@ export default function Sidebar({
   setConversationId,
   isSidebarOpen,
   toggleSidebar,
-  api,
   isSubscribed,
 }: {
   conversations: Conversation[];
@@ -25,7 +30,6 @@ export default function Sidebar({
   setConversationId: (id: typeof conversationId) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
-  api: API | undefined;
   isSubscribed: boolean;
 }) {
   const postHog = usePostHog();
@@ -49,19 +53,19 @@ export default function Sidebar({
       },
     });
 
-    await cur.setName(newName);
+    await updateConversation(cur.conversationId, newName as string);
 
     // Force a re-render by directly updating the state
     mutateConversations(
       conversations.map((conversation) =>
         conversation.conversationId === cur.conversationId
-          ? new Conversation({ ...conversation, name: newName })
+          ? { ...conversation, name: newName }
           : conversation
       )
     );
   }
 
-  async function deleteConversation(conversation: Conversation) {
+  async function removeConversation(conversation: Conversation) {
     const { isConfirmed } = await Swal.fire({
       title: 'Are you sure you want to delete this conversation?',
       text: "You won't be able to revert this!",
@@ -73,17 +77,17 @@ export default function Sidebar({
     });
 
     if (isConfirmed) {
-      await conversation.delete();
+      await deleteConversation(conversation.conversationId);
       postHog?.capture('user_deleted_conversation');
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(
         (cur) => cur.conversationId != conversation.conversationId
       );
       if (conversation.conversationId == conversationId) {
-        if (newConversations.length > 1) {
+        if (newConversations.length >= 1) {
           setConversationId(newConversations[0].conversationId);
         } else {
-          const newConv = await api?.new();
+          const newConv = await createConversation();
           setConversationId(newConv?.conversationId);
           mutateConversations([newConv!]);
         }
@@ -93,7 +97,7 @@ export default function Sidebar({
   }
 
   async function addChat() {
-    const conversation = await api?.new();
+    const conversation = await createConversation();
     postHog?.capture('user_created_conversation');
     setConversationId(conversation?.conversationId);
     mutateConversations([conversation!, ...conversations]);
@@ -141,7 +145,7 @@ export default function Sidebar({
                   select={() => setConversationId(cur.conversationId)}
                   selected={conversationId === cur.conversationId}
                   edit={() => editConversation(cur)}
-                  del={() => deleteConversation(cur)}
+                  del={() => removeConversation(cur)}
                   key={i}
                 />
               ))

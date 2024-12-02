@@ -5,7 +5,8 @@ import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import MarkdownWrapper from './markdownWrapper';
 import { FaLightbulb, FaThumbsDown, FaThumbsUp } from 'react-icons/fa';
-import { API, type Message } from '@/utils/api';
+import { type Message } from '@/utils/types';
+import { getThought } from '@/app/actions/messages';
 import Spinner from './spinner';
 
 export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
@@ -13,7 +14,6 @@ export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
 interface MessageBoxProps {
   isUser?: boolean;
   userId?: string;
-  URL?: string;
   conversationId?: string;
   message: Message;
   loading?: boolean;
@@ -26,7 +26,7 @@ interface MessageBoxProps {
 export default function MessageBox({
   isUser,
   userId,
-  URL,
+  // URL,
   message,
   loading = false,
   isThoughtOpen,
@@ -39,12 +39,13 @@ export default function MessageBox({
   const [pendingReaction, setPendingReaction] = useState<Reaction>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { id: messageId, text, metadata } = message;
+  const { id: messageId, content, metadata } = message;
   const reaction = metadata?.reaction || null;
   const shouldShowButtons = messageId !== '';
 
   const handleReaction = async (newReaction: Exclude<Reaction, null>) => {
-    if (!messageId || !conversationId || !userId || !URL) return;
+    if (!messageId || !conversationId || !userId) return;
+    console.log('Reaction');
 
     setPendingReaction(newReaction);
 
@@ -60,7 +61,7 @@ export default function MessageBox({
   };
 
   const handleFetchThought = async () => {
-    if (!messageId || !conversationId || !userId || !URL) return;
+    if (!messageId || !conversationId || !userId) return;
     if (isThoughtOpen) {
       // If thought is already open, close it
       setIsThoughtsOpen(false);
@@ -70,8 +71,7 @@ export default function MessageBox({
     setError(null);
 
     try {
-      const api = new API({ url: URL, userId });
-      const thought = await api.getThoughtById(conversationId, messageId);
+      const thought = await getThought(conversationId, messageId);
 
       if (thought) {
         setIsThoughtsOpen(true);
@@ -104,7 +104,7 @@ export default function MessageBox({
         />
       )}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={text} />}
+        {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={content} />}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button

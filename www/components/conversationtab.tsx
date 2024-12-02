@@ -1,4 +1,4 @@
-import { Conversation } from '@/utils/api';
+import { Conversation } from '@/utils/types';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import Skeleton from 'react-loading-skeleton';
 

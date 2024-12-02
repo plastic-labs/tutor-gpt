@@ -1,3 +1,10 @@
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
 export const toDateTime = (secs: number) => {
   const t = new Date(+0); // Unix epoch start.
   t.setSeconds(secs);

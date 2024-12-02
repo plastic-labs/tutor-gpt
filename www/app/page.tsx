@@ -12,12 +12,13 @@ import { usePostHog } from 'posthog-js/react';
 
 import { getSubscription } from '@/utils/supabase/queries';
 
-import { API } from '@/utils/api';
 import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
 import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
+import { getConversations, createConversation } from './actions/conversations';
+import { getMessages, addOrRemoveReaction } from './actions/messages';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -29,7 +30,48 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
 
-const URL = process.env.NEXT_PUBLIC_API_URL;
+async function fetchStream(
+  type: 'thought' | 'response',
+  message: string,
+  conversationId: string,
+  thought = '',
+  honchoContent = ''
+) {
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type,
+        message,
+        conversationId,
+        thought,
+        honchoContent,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Stream error for ${type}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      });
+      throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
+    }
+
+    if (!response.body) {
+      throw new Error(`No response body for ${type} stream`);
+    }
+
+    return response.body;
+  } catch (error) {
+    console.error(`Error in fetchStream (${type}):`, error);
+    throw error;
+  }
+}
 
 export default function Home() {
   const [userId, setUserId] = useState<string>();
@@ -50,7 +92,6 @@ export default function Home() {
   const supabase = createClient();
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
-  //const input = useRef<ElementRef<"input">>(null);
   const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
 
@@ -124,23 +165,28 @@ export default function Home() {
     };
   }, []);
 
-  const conversationsFetcher = async (userId: string) => {
-    const api = new API({ url: URL!, userId });
-    return api.getConversations();
+  const conversationsFetcher = async () => {
+    return getConversations();
   };
 
   const { data: conversations, mutate: mutateConversations } = useSWR(
     userId,
     conversationsFetcher,
     {
-      onSuccess: (conversations) => {
-        if (
-          !conversationId ||
-          !conversations.find((c) => c.conversationId === conversationId)
-        ) {
-          setConversationId(conversations[0].conversationId);
+      onSuccess: async (conversations) => {
+        if (conversations.length) {
+          if (
+            !conversationId ||
+            !conversations.find((c) => c.conversationId === conversationId)
+          ) {
+            setConversationId(conversations[0].conversationId);
+          }
+          setCanSend(true);
+        } else {
+          const newConvo = await createConversation();
+          setConversationId(newConvo?.conversationId);
+          await mutateConversations();
         }
-        setCanSend(true);
       },
       revalidateOnFocus: false,
     }
@@ -150,8 +196,7 @@ export default function Home() {
     if (!userId) return Promise.resolve([]);
     if (!conversationId) return Promise.resolve([]);
 
-    const api = new API({ url: URL!, userId });
-    return api.getMessagesByConversation(conversationId);
+    return getMessages(conversationId);
   };
 
   const {
@@ -163,10 +208,8 @@ export default function Home() {
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
     if (!userId || !conversationId) return;
 
-    const api = new API({ url: URL!, userId });
-
     try {
-      await api.addOrRemoveReaction(conversationId, messageId, reaction);
+      await addOrRemoveReaction(conversationId, messageId, reaction);
 
       // Optimistically update the local data
       mutateMessages(
@@ -216,74 +259,92 @@ export default function Home() {
     const message = textbox.value.replace(/\n/g, '\n\n');
     textbox.value = '';
 
-    setCanSend(false); // Disable sending more messages until the current generation is done
+    setCanSend(false);
 
     const newMessages = [
       ...messages!,
       {
-        text: message,
+        content: message,
         isUser: true,
         id: '',
       },
       {
-        text: '',
+        content: '',
         isUser: false,
         id: '',
       },
     ];
     mutateMessages(newMessages, { revalidate: false });
 
-    // sleep for 1 second to give the user the illusion of typing
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const reader = await conversations!
-      .find((conversation) => conversation.conversationId === conversationId)!
-      .chat(message);
+    let thoughtReader: ReadableStreamDefaultReader | null = null;
+    let responseReader: ReadableStreamDefaultReader | null = null;
 
-    const messageContainer = messageContainerRef.current;
-    if (messageContainer) {
-      messageContainer.scrollTop = messageContainer.scrollHeight;
-    }
+    try {
+      // Get thought stream
+      const thoughtStream = await fetchStream(
+        'thought',
+        message,
+        conversationId!
+      );
+      if (!thoughtStream) throw new Error('Failed to get thought stream');
 
-    let isThinking = true;
-    setThought('');
+      thoughtReader = thoughtStream.getReader();
+      let thoughtText = '';
+      setThought('');
 
-    let currentModelOutput = '';
+      // Process thought stream
+      while (true) {
+        const { done, value } = await thoughtReader.read();
+        if (done) break;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        // Only decrement free messages after successful completion
-        if (!isSubscribed) {
-          const success = await useFreeTrial(userId);
-          if (success) {
-            const newCount = await getFreeMessageCount(userId);
-            setFreeMessages(newCount);
-          }
-        }
-        setCanSend(true);
-        break;
+        thoughtText += new TextDecoder().decode(value);
+
+        setThought(thoughtText);
       }
-      if (isThinking) {
-        if (value.includes('❀')) {
-          // a bloom delimiter
-          isThinking = false;
-          continue;
-        }
-        setThought((prev) => prev + value);
-      } else {
-        if (value.includes('❀')) {
-          setCanSend(true); // Bloom delimeter
-          continue;
+
+      // Cleanup thought stream
+      thoughtReader.releaseLock();
+      thoughtReader = null;
+
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      // Get response stream using the thought
+      const responseStream = await fetchStream(
+        'response',
+        message,
+        conversationId!,
+        thoughtText,
+        ''
+      );
+      if (!responseStream) throw new Error('Failed to get response stream');
+
+      responseReader = responseStream.getReader();
+      let currentModelOutput = '';
+
+      // Process response stream
+      while (true) {
+        const { done, value } = await responseReader.read();
+        if (done) {
+          if (!isSubscribed) {
+            const success = await useFreeTrial(userId);
+            if (success) {
+              const newCount = await getFreeMessageCount(userId);
+              setFreeMessages(newCount);
+            }
+          }
+          setCanSend(true);
+          break;
         }
 
-        currentModelOutput += value;
+        currentModelOutput += new TextDecoder().decode(value);
 
         mutateMessages(
           [
             ...(newMessages?.slice(0, -1) || []),
             {
-              text: currentModelOutput,
+              content: currentModelOutput,
               isUser: false,
               id: '',
             },
@@ -298,9 +359,31 @@ export default function Home() {
           }
         }
       }
-    }
 
-    mutateMessages();
+      responseReader.releaseLock();
+      responseReader = null;
+
+      mutateMessages();
+    } catch (error) {
+      console.error('Chat error:', error);
+      setCanSend(true);
+    } finally {
+      // Cleanup
+      if (thoughtReader) {
+        try {
+          thoughtReader.releaseLock();
+        } catch (e) {
+          console.error('Error releasing thought reader:', e);
+        }
+      }
+      if (responseReader) {
+        try {
+          responseReader.releaseLock();
+        } catch (e) {
+          console.error('Error releasing response reader:', e);
+        }
+      }
+    }
   }
 
   const canUseApp = isSubscribed || freeMessages > 0;
@@ -314,8 +397,7 @@ export default function Home() {
         setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        api={new API({ url: URL!, userId: userId! })}
-        isSubscribed={isSubscribed}
+        isSubscribed={canUseApp}
       />
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
         {!isSidebarOpen && (
@@ -353,7 +435,6 @@ export default function Home() {
                 key={i}
                 isUser={message.isUser}
                 userId={userId}
-                URL={URL}
                 message={message}
                 loading={messagesLoading}
                 conversationId={conversationId}
@@ -368,7 +449,7 @@ export default function Home() {
               <MessageBox
                 isUser={false}
                 message={{
-                  text: '',
+                  content: '',
                   id: '',
                   isUser: false,
                   metadata: { reaction: null },
@@ -378,7 +459,6 @@ export default function Home() {
                 setIsThoughtsOpen={setIsThoughtsOpen}
                 onReactionAdded={handleReactionAdded}
                 userId={userId}
-                URL={URL}
                 conversationId={conversationId}
               />
             )}

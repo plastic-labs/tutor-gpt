@@ -32,7 +32,7 @@ the backend logic for different clients.
 - `agent/` - this contains the core logic and prompting architecture
 - `bot/` - this contains the discord bot implementation
 - `api/` - this contains a FastAPI API interface that exposes the `agent/` logic
-- `www/` - this contains a `NextJS` web front end that can connect to the API interface
+- `www/` - this contains a FullStack `NextJS` version of Tutor-GPT
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
 
 Most of the project is developed using python with the exception of the NextJS
@@ -113,8 +113,6 @@ Below are more detailed explanations of environment variables
 
 ### FastAPI
 
-**NextJS & fastAPI**
-
 - `URL` — The URL endpoint for the frontend Next.js application
 - `HONCHO_URL` — The base URL for the instance of Honcho you are using
 - `HONCHO_APP_NAME` — The name of the honcho application to use for Tutor-GPT
@@ -147,7 +145,6 @@ run the bot.
 
 ```bash
 docker run -p 8000:8000 --env-file .env tutor-gpt-core python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 # FastAPI Backend
-docker run tutor-gpt-web
 ```
 
 > NOTE: the default run command in the docker file for the core runs the FastAPI backend so you could just run docker run --env-file .env tutor-gpt-core
