@@ -37,8 +37,6 @@ async function fetchStream(
   thought = '',
   honchoContent = ''
 ) {
-  console.log(`Starting ${type} stream request`);
-
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -68,7 +66,6 @@ async function fetchStream(
       throw new Error(`No response body for ${type} stream`);
     }
 
-    console.log(`${type} stream connected successfully`);
     return response.body;
   } catch (error) {
     console.error(`Error in fetchStream (${type}):`, error);
@@ -449,22 +446,22 @@ export default function Home() {
                 onReactionAdded={handleReactionAdded}
               />
             )) || (
-                <MessageBox
-                  isUser={false}
-                  message={{
-                    content: '',
-                    id: '',
-                    isUser: false,
-                    metadata: { reaction: null },
-                  }}
-                  loading={true}
-                  setThought={setThought}
-                  setIsThoughtsOpen={setIsThoughtsOpen}
-                  onReactionAdded={handleReactionAdded}
-                  userId={userId}
-                  conversationId={conversationId}
-                />
-              )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  content: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                conversationId={conversationId}
+              />
+            )}
           </section>
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
@@ -483,10 +480,11 @@ export default function Home() {
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200'
+                    : 'border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {

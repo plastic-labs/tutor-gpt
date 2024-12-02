@@ -1,5 +1,4 @@
 import { GrClose } from 'react-icons/gr';
-import { type Conversation } from '@/utils/types';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -14,6 +13,7 @@ import {
   deleteConversation,
   updateConversation,
 } from '@/app/actions/conversations';
+import { type Conversation } from '@/utils/types';
 
 export default function Sidebar({
   conversations,
@@ -36,12 +36,6 @@ export default function Sidebar({
   const supabase = createClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
-
-  // useEffect(async () => {
-  // const newConv = await createConversation();
-  // setConversationId(newConv?.conversationId);
-  // mutateConversations([newConv!]);
-  // }, [conversations]);
 
   async function editConversation(cur: Conversation) {
     const { value: newName } = await Swal.fire({
@@ -84,7 +78,6 @@ export default function Sidebar({
 
     if (isConfirmed) {
       await deleteConversation(conversation.conversationId);
-      // await conversation.delete();
       postHog?.capture('user_deleted_conversation');
       // Delete the conversation_id from the conversations state variable
       const newConversations = conversations.filter(

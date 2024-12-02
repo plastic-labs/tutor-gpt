@@ -1,6 +1,6 @@
 # Tutor-GPT Web UI
 
-This directory contains the code for the Web-UI of Tutor-GPT. It is developed
+This directory contains the code for the Full Stack Web-UI of Tutor-GPT. It is developed
 using [Next.js](https://nextjs.org/) and [pnpm](https://pnpm.io).
 
 The project uses [Supabase](https://supabase.com/) for authentication and managing users subscriptions
@@ -33,7 +33,13 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 
 - `NEXT_PUBLIC_SITE_URL` — The URL that the Next.js application will run from. For
   local development it will be `http://localhost:3000` by default.
-- `NEXT_PUBLIC_API_URL` — The URL that the FastAPI backend is running from.
+
+**Agent**
+
+- `MODEL` — The Openrouter model to use for generating responses.
+- `OPENAI_API_KEY` — The Openrouter API key to use
+- `HONCHO_URL` — The URL for the Honcho instance to use
+- `HONCHO_APP_NAME` — The name of the app in Honcho to use
 
 **Supabase**
 
