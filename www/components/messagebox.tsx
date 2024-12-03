@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import icon from '@/public/bloomicon.jpg';
 import usericon from '@/public/usericon.svg';
@@ -87,6 +87,16 @@ export default function MessageBox({
     }
   };
 
+  const memoizedImage = useMemo(() => (
+    <Image
+      src={isUser ? usericon : icon}
+      alt="icon"
+      className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
+    />
+  ), [isUser, usericon, icon]);
+
+  const memoizedSkeleton = useMemo(() => <Skeleton count={4} />, []);
+
   return (
     <article
       className={
@@ -95,16 +105,12 @@ export default function MessageBox({
       }
     >
       {loading ? (
-        <Skeleton circle={true} className="lg:!w-12 lg:!h-12 !w-6 !h-6 " />
+        memoizedSkeleton
       ) : (
-        <Image
-          src={isUser ? usericon : icon}
-          alt="icon"
-          className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
-        />
+        memoizedImage
       )}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? <Skeleton count={4} /> : <MarkdownWrapper text={content} />}
+        {loading ? memoizedSkeleton : <MarkdownWrapper text={content} />}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button

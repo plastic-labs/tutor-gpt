@@ -4,6 +4,10 @@ import { thinkCall, respondCall } from './actions';
 import { honcho, getHonchoApp } from '@/utils/honcho';
 import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import * as Sentry from '@sentry/nextjs';
+
+export const runtime = 'nodejs';
+export const maxDuration = 100;
 
 const OPENROUTER_API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
@@ -87,8 +91,10 @@ async function saveHistory({
         content: responseMetamessage,
       }
     );
+    console.log('Successfully Saved');
   } catch (error) {
     console.error('Error in saveHistory:', error);
+    Sentry.captureException(error);
     throw error; // Re-throw to be handled by caller
   }
 }
@@ -110,6 +116,7 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
         const aiResponse = response.text;
         const finalPayload = { ...payload, aiResponse };
         await saveHistory(finalPayload);
+        console.log();
       }
     },
   });

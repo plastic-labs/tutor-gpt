@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useState, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Typing from './typing';
@@ -8,14 +7,16 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { FiCopy, FiCheck } from 'react-icons/fi';
 
-function CopyButton({ text }: { text: string }) {
+const ReactMarkdown = lazy(() => import('react-markdown'));
+
+const CopyButton = memo(({ text }: { text: string }) => {
   const [isCopied, setIsCopied] = useState(false);
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = useCallback(async () => {
     await navigator.clipboard.writeText(text);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
-  };
+  }, [text]);
 
   return (
     <button
@@ -29,9 +30,9 @@ function CopyButton({ text }: { text: string }) {
       )}
     </button>
   );
-}
+});
 
-function CodeBlock({ language, value }: { language: string; value: string }) {
+const CodeBlock = memo(({ language, value }: { language: string; value: string }) => {
   return (
     <div className="relative">
       <SyntaxHighlighter
@@ -45,43 +46,65 @@ function CodeBlock({ language, value }: { language: string; value: string }) {
       <CopyButton text={value} />
     </div>
   );
-}
+})
 
-export default function MarkdownWrapper({ text }: { text: string }) {
-  return text ? (
-    <ReactMarkdown
-      remarkPlugins={[remarkMath]}
-      // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
-      rehypePlugins={[rehypeKatex]}
-      components={{
-        ol: ({ node, ordered, ...props }) => (
-          <ol className="list-decimal pl-6 space-y-2" {...props} />
-        ),
-        ul: ({ node, ordered, ...props }) => (
-          <ul className="list-disc pl-6 space-y-2" {...props} />
-        ),
-        li: ({ node, ordered, ...props }) => <li className="ml-2" {...props} />,
-        code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '');
-          return !inline && match ? (
-            <CodeBlock
-              language={match[1]}
-              value={String(children).replace(/\n$/, '')}
-            />
-          ) : (
-            <code
-              {...props}
-              className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
-            >
-              {children}
-            </code>
-          );
-        },
-      }}
-    >
-      {text}
-    </ReactMarkdown>
-  ) : (
-    <Typing />
+const MarkdownWrapper = memo(({ text }: { text: string }) => {
+  // Memoize components configuration
+  const components = useMemo(() => ({
+    ol: ({ ordered, ...props }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ol'>) => (
+      <ol className="list-decimal pl-6 space-y-2" {...props} />
+    ),
+    ul: ({ ordered, ...props }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ul'>) => (
+      <ul className="list-disc pl-6 space-y-2" {...props} />
+    ),
+    li: ({ ordered, ...props }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'li'>) => (
+      <li className="ml-2" {...props} />
+    ),
+    code: ({ inline, className, children, ...props }: {
+      inline?: boolean;
+      className?: string;
+      children: React.ReactNode;
+      [key: string]: any;
+    }) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline && match ? (
+        <CodeBlock
+          language={match[1]}
+          value={String(children).replace(/\n$/, '')}
+        />
+      ) : (
+        <code
+          {...props}
+          className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
+        >
+          {children}
+        </code>
+      );
+    },
+  }), []);
+
+  // Memoize plugins
+  const remarkPlugins = useMemo(() => [remarkMath], []);
+  const rehypePlugins = useMemo(() => [rehypeKatex], []);
+
+  if (!text) return <Typing />;
+
+  return (
+    <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>
+      <ReactMarkdown
+        remarkPlugins={remarkPlugins}
+        // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
+        rehypePlugins={rehypePlugins}
+        components={components}
+      >
+        {text}
+      </ReactMarkdown>
+    </Suspense>
   );
-}
+});
+
+CopyButton.displayName = 'CopyButton';
+CodeBlock.displayName = 'CodeBlock';
+MarkdownWrapper.displayName = 'MarkdownWrapper';
+
+export default MarkdownWrapper;

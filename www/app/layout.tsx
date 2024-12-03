@@ -1,13 +1,14 @@
 import './globals.css';
 import 'react-loading-skeleton/dist/skeleton.css';
 import type { Metadata } from 'next';
-import { Space_Grotesk } from 'next/font/google';
+import { Roboto_Mono } from 'next/font/google';
 import { PHProvider, PostHogPageview } from './providers';
 import { Suspense } from 'react';
 import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
-const spacegrotesk = Space_Grotesk({ subsets: ['latin'] });
+const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Bloombot - Learning. Reimagined.',
@@ -57,7 +58,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={spacegrotesk.className}>
+      <body className={roboto.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <Suspense>
             <PostHogPageview />
@@ -69,6 +70,7 @@ export default function RootLayout({
             </div>
           </PHProvider>
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );

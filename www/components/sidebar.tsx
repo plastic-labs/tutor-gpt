@@ -1,6 +1,7 @@
 import { GrClose } from 'react-icons/gr';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import localFont from 'next/font/local';
 
 import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
@@ -14,6 +15,10 @@ import {
   updateConversation,
 } from '@/app/actions/conversations';
 import { type Conversation } from '@/utils/types';
+
+const departureMono = localFont({
+  src: '../fonts/DepartureMono-Regular.woff2',
+});
 
 export default function Sidebar({
   conversations,
@@ -114,9 +119,8 @@ export default function Sidebar({
 
   return (
     <div
-      className={`absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      }`}
+      className={`${departureMono.className} absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
     >
       <div className="h-full overflow-hidden bg-white dark:bg-gray-950 dark:text-white flex flex-col border-gray-200 dark:border-gray-700 border-r">
         {/* Section 1: Top buttons */}
@@ -140,18 +144,18 @@ export default function Sidebar({
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
           {conversations.length > 0
             ? conversations.map((cur, i) => (
-                <ConversationTab
-                  conversation={cur}
-                  select={() => setConversationId(cur.conversationId)}
-                  selected={conversationId === cur.conversationId}
-                  edit={() => editConversation(cur)}
-                  del={() => removeConversation(cur)}
-                  key={i}
-                />
-              ))
+              <ConversationTab
+                conversation={cur}
+                select={() => setConversationId(cur.conversationId)}
+                selected={conversationId === cur.conversationId}
+                edit={() => editConversation(cur)}
+                del={() => removeConversation(cur)}
+                key={i}
+              />
+            ))
             : Array.from({ length: 5 }).map((_, i) => (
-                <ConversationTab loading key={i} />
-              ))}
+              <ConversationTab loading key={i} />
+            ))}
         </div>
 
         {/* Section 3: Authentication information */}
