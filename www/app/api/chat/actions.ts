@@ -12,7 +12,7 @@ function parsePrompt(filePath: string, history: Message[]): Message[] {
   // Read file as buffer
   const buffer = readFileSync(filePath);
 
-  // Decode the cuffer to s tring when needed
+  // Decode the buffer to string when needed
   const content = buffer.toString('utf-8');
   const lines = content.split('\n');
 

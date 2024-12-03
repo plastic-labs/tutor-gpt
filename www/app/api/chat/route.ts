@@ -4,7 +4,7 @@ import { thinkCall, respondCall } from './actions';
 import { honcho, getHonchoApp } from '@/utils/honcho';
 import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import * as Sentry from "@sentry/nextjs"
+import * as Sentry from '@sentry/nextjs';
 
 export const runtime = 'nodejs';
 export const maxDuration = 100;
@@ -91,7 +91,7 @@ async function saveHistory({
         content: responseMetamessage,
       }
     );
-    console.log("Successfully Saved")
+    console.log('Successfully Saved');
   } catch (error) {
     console.error('Error in saveHistory:', error);
     Sentry.captureException(error);
@@ -116,7 +116,7 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
         const aiResponse = response.text;
         const finalPayload = { ...payload, aiResponse };
         await saveHistory(finalPayload);
-        console.log()
+        console.log();
       }
     },
   });
