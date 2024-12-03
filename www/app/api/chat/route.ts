@@ -121,13 +121,7 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
         }
       },
     });
-    return result.toTextStreamResponse({
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    });
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error in fetchOpenRouter:', error);
     Sentry.captureException(error);
@@ -206,7 +200,15 @@ export async function POST(req: NextRequest) {
 
     console.log("Got the Stream")
 
-    return stream;
+    return new NextResponse(stream.body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      }
+    })
+
   } catch (error) {
     console.error('Stream error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
