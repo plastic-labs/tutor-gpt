@@ -53,22 +53,24 @@ async function fetchStream(
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Stream error for ${type}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-      });
-      console.error(response)
-      throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
-    }
+    // if (!response.ok) {
+    //   const errorText = await response.text();
+    //   console.error(`Stream error for ${type}:`, {
+    //     status: response.status,
+    //     statusText: response.statusText,
+    //     error: errorText,
+    //   });
+    //   console.error(response)
+    //   throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
+    // }
 
     if (!response.body) {
       throw new Error(`No response body for ${type} stream`);
     }
 
-    console.log(response.status)
+    if (!(response.body instanceof ReadableStream)) {
+      throw new Error(`Response body is not a ReadableStream for ${type} stream`);
+    }
 
     return response.body;
   } catch (error) {
