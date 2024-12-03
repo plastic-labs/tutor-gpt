@@ -39,7 +39,7 @@ async function fetchStream(
   honchoContent = ''
 ) {
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,11 +60,16 @@ async function fetchStream(
         statusText: response.statusText,
         error: errorText,
       });
+      console.error(response)
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
 
     if (!response.body) {
       throw new Error(`No response body for ${type} stream`);
+    }
+
+    if (!(response.body instanceof ReadableStream)) {
+      throw new Error(`Response body is not a ReadableStream for ${type} stream`);
     }
 
     return response.body;
@@ -368,6 +373,7 @@ export default function Home() {
     } catch (error) {
       console.error('Chat error:', error);
       setCanSend(true);
+      mutateMessages();
     } finally {
       // Cleanup
       if (thoughtReader) {

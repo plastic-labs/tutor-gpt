@@ -2,7 +2,10 @@ import { type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
+  console.log('Middleware - Request method:', request.method);
+  const response = await updateSession(request);
+  console.log('Middleware - Response status:', response.status);
+  return response;
 }
 
 export const config = {
