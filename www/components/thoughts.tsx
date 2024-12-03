@@ -33,7 +33,9 @@ export default function Thoughts({
         </button>
       </div>
       <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
-        <h1 className={`${departureMono.className} text-2xl font-bold`}>Thoughts</h1>
+        <h1 className={`${departureMono.className} text-2xl font-bold`}>
+          Thoughts
+        </h1>
         <ReactMarkdown>{thought}</ReactMarkdown>
         {/*
           <button>
