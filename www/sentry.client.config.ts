@@ -11,11 +11,21 @@ Sentry.init({
   dsn: SENTRY_DSN,
 
   // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
+  integrations: [
+    Sentry.replayIntegration(),
+    Sentry.browserTracingIntegration(),
+    Sentry.browserProfilingIntegration()
+  ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: SENTRY_ENVIRONMENT === "production" ? 0.1 : 1,
+  tracePropagationTargets: [
+    "localhost",
+    /^\//,
+    /^https:\/\/chat\.bloombot\.ai\/api/,
+  ],
 
+  profilesSampleRate: SENTRY_ENVIRONMENT === "production" ? 0.1 : 1,
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
