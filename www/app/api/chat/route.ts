@@ -7,7 +7,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 import * as Sentry from '@sentry/nextjs';
 
-export const runtime = 'nodejs';
+// export const runtime = 'nodejs';
 export const maxDuration = 100;
 export const dynamic = 'force-dynamic'; // always run dynamically
 
