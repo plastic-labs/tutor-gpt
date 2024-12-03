@@ -2,21 +2,12 @@
 import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
   output: "standalone",
-  //  rewrites: async () => {
-  //    return [
-  //      {
-  //        source: "/api/:path*",
-  //        destination:
-  //          process.env.NODE_ENV === "development"
-  //            ? "http://127.0.0.1:8000/api/:path*"
-  //            : `${process.env.URL}/api/:path*`,
-  //      },
-  //    ];
-  //  },
 };
+
 // export default MillionLint.next({
 //   rsc: true
 // })(
+
 export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options

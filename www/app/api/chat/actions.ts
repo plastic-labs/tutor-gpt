@@ -9,7 +9,11 @@ interface Message {
 }
 
 function parsePrompt(filePath: string, history: Message[]): Message[] {
-  const content = readFileSync(filePath, 'utf-8');
+  // Read file as buffer
+  const buffer = readFileSync(filePath);
+
+  // Decode the cuffer to s tring when needed
+  const content = buffer.toString('utf-8');
   const lines = content.split('\n');
 
   const messages: Message[] = [];

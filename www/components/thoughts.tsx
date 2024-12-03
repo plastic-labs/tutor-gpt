@@ -1,5 +1,10 @@
 import { GrClose } from 'react-icons/gr';
 import ReactMarkdown from 'react-markdown';
+import localFont from 'next/font/local';
+
+const departureMono = localFont({
+  src: '../fonts/DepartureMono-Regular.woff2',
+});
 
 export default function Thoughts({
   thought,
@@ -28,7 +33,7 @@ export default function Thoughts({
         </button>
       </div>
       <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
-        <h1 className="text-2xl font-bold">Thoughts</h1>
+        <h1 className={`${departureMono.className} text-2xl font-bold`}>Thoughts</h1>
         <ReactMarkdown>{thought}</ReactMarkdown>
         {/*
           <button>
