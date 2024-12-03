@@ -1,14 +1,9 @@
-// import MillionLint from '@million/lint';
 import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
   output: "standalone",
 };
 
-// export default MillionLint.next({
-//   rsc: true
-// })(
-
-export default withSentryConfig(nextConfig, {
+const sentryConfig = withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
@@ -54,3 +49,6 @@ export default withSentryConfig(nextConfig, {
     ];
   },
 });
+
+export default sentryConfig;
+// export default MillionLint.next({ rsc: true })(sentryConfig);
