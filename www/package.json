@@ -21,6 +21,7 @@
     "@stripe/stripe-js": "^4.9.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.6",
+    "@vercel/speed-insights": "^1.1.0",
     "ai": "^4.0.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
