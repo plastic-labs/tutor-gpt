@@ -39,7 +39,7 @@ async function fetchStream(
   honchoContent = ''
 ) {
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,12 +60,15 @@ async function fetchStream(
         statusText: response.statusText,
         error: errorText,
       });
+      console.error(response)
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
 
     if (!response.body) {
       throw new Error(`No response body for ${type} stream`);
     }
+
+    console.log(response.status)
 
     return response.body;
   } catch (error) {
