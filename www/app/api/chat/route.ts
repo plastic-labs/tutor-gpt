@@ -153,14 +153,10 @@ export async function POST(req: NextRequest) {
 
   console.log('Starting Stream');
 
-  console.log("Starting Stream")
-
   const honchoApp = await getHonchoApp();
   const honchoUser = await getHonchoUser(user.id);
 
   console.log('Got the Honcho User');
-
-  console.log("Got the Honcho User")
 
   const honchoPayload = {
     appId: honchoApp.id,
