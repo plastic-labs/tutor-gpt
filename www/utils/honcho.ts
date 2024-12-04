@@ -1,11 +1,15 @@
 import { Honcho } from 'honcho-ai';
+import { cache } from 'react';
 
-const honcho = new Honcho({
+export const honcho = new Honcho({
   baseURL: process.env.HONCHO_URL!,
 });
 
-const getHonchoApp = async () => {
+export const getHonchoApp = cache(async () => {
   return await honcho.apps.getOrCreate(process.env.HONCHO_APP_NAME!);
-};
+});
 
-export { honcho, getHonchoApp };
+export const getHonchoUser = cache(async (userId: string) => {
+  const app = await getHonchoApp();
+  return await honcho.apps.users.getOrCreate(app.id, userId);
+});

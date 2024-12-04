@@ -1,9 +1,9 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { thinkCall, respondCall } from './actions';
-import { honcho, getHonchoApp } from '@/utils/honcho';
+import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { streamText } from 'ai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createOpenAI } from '@ai-sdk/openai';
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -14,8 +14,11 @@ export const dynamic = 'force-dynamic'; // always run dynamically
 const OPENROUTER_API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
 
-const openrouter = createOpenRouter({
+const openrouter = createOpenAI({
+  // custom settings, e.g.
+  baseURL: 'https://openrouter.ai/api/v1',
   apiKey: OPENROUTER_API_KEY,
+  compatibility: 'compatible', // strict mode, enable when using the OpenAI API
   headers: {
     'HTTP-Referer': 'https://chat.bloombot.ai',
     'X-Title': 'Bloombot',
@@ -101,9 +104,7 @@ async function saveHistory({
         content: responseMetamessage,
       }
     );
-    console.log('Successfully Saved');
   } catch (error) {
-    console.error('Error in saveHistory:', error);
     Sentry.captureException(error);
     throw error; // Re-throw to be handled by caller
   }
@@ -119,7 +120,6 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
           const aiResponse = response.text;
           const finalPayload = { ...payload, aiResponse };
           await saveHistory(finalPayload);
-          console.log();
         }
       },
     });
@@ -146,12 +146,8 @@ export async function POST(req: NextRequest) {
 
   const { type, message, conversationId, thought } = data;
 
-  console.log("Starting Stream")
-
   const honchoApp = await getHonchoApp();
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
-
-  console.log("Got the Honcho User")
+  const honchoUser = await getHonchoUser(user.id);
 
   const honchoPayload = {
     appId: honchoApp.id,
@@ -170,7 +166,6 @@ export async function POST(req: NextRequest) {
         userId: honchoUser.id,
         sessionId: conversationId,
       });
-      console.log("Got Thought Messages")
     } else {
       const dialecticQuery = await honcho.apps.users.sessions.chat(
         honchoApp.id,
@@ -192,15 +187,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log("Getting the Stream")
-
     const stream = await fetchOpenRouter(type, messages, honchoPayload);
 
     if (!stream) {
       throw new Error('Failed to get stream');
     }
-
-    console.log("Got the Stream")
 
     return new NextResponse(stream.body, {
       status: 200,

@@ -1,6 +1,6 @@
 'use server';
 import { createClient } from '@/utils/supabase/server';
-import { honcho, getHonchoApp } from '@/utils/honcho';
+import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { Message } from '@/utils/types';
 
 const defaultMessage: Message = {
@@ -21,7 +21,7 @@ export async function getMessages(conversationId: string) {
   if (!user) {
     throw new Error('Unauthorized');
   }
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
   const session = await honcho.apps.users.sessions.get(
     honchoApp.id,
     honchoUser.id,
@@ -59,7 +59,7 @@ export async function getThought(conversationId: string, messageId: string) {
     throw new Error('Unauthorized');
   }
 
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
   try {
     const thoughts = await honcho.apps.users.sessions.metamessages.list(
@@ -101,7 +101,7 @@ export async function addOrRemoveReaction(
     throw new Error('Invalid reaction type');
   }
 
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
   const message = await honcho.apps.users.sessions.messages.get(
     honchoApp.id,

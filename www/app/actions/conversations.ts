@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
-import { honcho, getHonchoApp } from '@/utils/honcho';
+import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 
 // TODO add proper authorization check
 
@@ -22,8 +22,7 @@ export async function getConversations() {
   }
 
   const honchoApp = await getHonchoApp();
-
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
   const acc = [];
   for await (const convo of honcho.apps.users.sessions.list(
@@ -42,6 +41,7 @@ export async function getConversations() {
 }
 
 export async function createConversation() {
+  console.log("Starting")
   const supabase = createClient();
 
   const {
@@ -52,14 +52,20 @@ export async function createConversation() {
     throw new Error('Unauthorized');
   }
 
+  console.log("Passed Authorization")
+
   const honchoApp = await getHonchoApp();
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
+
+  console.log("Got Honcho Stuff")
 
   const session = await honcho.apps.users.sessions.create(
     honchoApp.id,
     honchoUser.id,
     {}
   );
+
+  console.log("Created Session")
 
   return { conversationId: session.id, name: 'Untitled' };
 }
@@ -76,7 +82,7 @@ export async function deleteConversation(conversationId: string) {
   }
 
   const honchoApp = await getHonchoApp();
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
   await honcho.apps.users.sessions.delete(
     honchoApp.id,
@@ -99,7 +105,7 @@ export async function updateConversation(conversationId: string, name: string) {
   }
 
   const honchoApp = await getHonchoApp();
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
   await honcho.apps.users.sessions.update(
     honchoApp.id,

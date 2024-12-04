@@ -8,12 +8,18 @@ interface Message {
   content: string;
 }
 
-function parsePrompt(filePath: string, history: Message[]): Message[] {
-  // Read file as buffer
-  const buffer = readFileSync(filePath);
+// Read prompts as buffers
+const thoughtPrompt = readFileSync(
+  path.join(process.cwd(), 'utils/prompts/thought.md'),
+);
+const responsePrompt = readFileSync(
+  path.join(process.cwd(), 'utils/prompts/response.md'),
+);
+
+function parsePrompt(prompt: Buffer, history: Message[]): Message[] {
 
   // Decode the buffer to string when needed
-  const content = buffer.toString('utf-8');
+  const content = prompt.toString('utf-8');
   const lines = content.split('\n');
 
   const messages: Message[] = [];
@@ -90,7 +96,7 @@ export async function thinkCall({
 
   // Get the base prompt messages
   const promptMessages = parsePrompt(
-    path.join(process.cwd(), 'utils/prompts/thought.md'),
+    thoughtPrompt,
     thoughtHistory
   );
 
@@ -168,7 +174,7 @@ export async function respondCall({
 
   // Get the base prompt messages
   const promptMessages = parsePrompt(
-    path.join(process.cwd(), 'utils/prompts/response.md'),
+    responsePrompt,
     history
   );
 
