@@ -30,11 +30,11 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
 });
 
 async function fetchStream(
-  type: 'thought' | 'response',
+  type: 'thought' | 'response' | 'honcho',
   message: string,
   conversationId: string,
   thought = '',
-  honchoContent = ''
+  honchoThought = ''
 ) {
   try {
     const response = await fetch(`/api/chat`, {
@@ -47,7 +47,7 @@ async function fetchStream(
         message,
         conversationId,
         thought,
-        honchoContent,
+        honchoThought,
       }),
     });
 
@@ -66,9 +66,11 @@ async function fetchStream(
       throw new Error(`No response body for ${type} stream`);
     }
 
-    if (!(response.body instanceof ReadableStream)) {
-      throw new Error(`Response body is not a ReadableStream for ${type} stream`);
-    }
+    console.log(response)
+
+    // if (!(response.body instanceof ReadableStream)) {
+    //   throw new Error(`Response body is not a ReadableStream for ${type} stream`);
+    // }
 
     return response.body;
   } catch (error) {
@@ -85,6 +87,10 @@ interface ChatProps {
   initialConversations: any[]
   initialMessages: any[]
   initialConversationId: string | null | undefined
+}
+
+interface HonchoResponse {
+  content: string;
 }
 
 export default function Chat({
@@ -301,15 +307,21 @@ export default function Chat({
       thoughtReader.releaseLock();
       thoughtReader = null;
 
+      const honchoResponse = await fetchStream('honcho', message, conversationId!, thoughtText);
+      const honchoContent = await new Response(honchoResponse).json() as HonchoResponse;
+
+      thoughtText += "\n\nHoncho Dialectic Response:\n\n" + honchoContent.content;
+      setThought(thoughtText);
+
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      // Get response stream using the thought
+      // Get response stream using the thought and dialectic response
       const responseStream = await fetchStream(
         'response',
         message,
         conversationId!,
         thoughtText,
-        ''
+        honchoContent.content
       );
       if (!responseStream) throw new Error('Failed to get response stream');
 
