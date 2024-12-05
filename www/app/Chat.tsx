@@ -59,7 +59,7 @@ async function fetchStream(
         statusText: response.statusText,
         error: errorText,
       });
-      console.error(response)
+      console.error(response);
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
 
@@ -75,13 +75,13 @@ async function fetchStream(
 }
 
 interface ChatProps {
-  initialUserId: string
-  initialEmail: string | undefined
-  initialIsSubscribed: boolean
-  initialFreeMessages: number
-  initialConversations: any[]
-  initialMessages: any[]
-  initialConversationId: string | null | undefined
+  initialUserId: string;
+  initialEmail: string | undefined;
+  initialIsSubscribed: boolean;
+  initialFreeMessages: number;
+  initialConversations: any[];
+  initialMessages: any[];
+  initialConversationId: string | null | undefined;
 }
 
 interface HonchoResponse {
@@ -103,12 +103,14 @@ export default function Chat({
   initialFreeMessages,
   initialConversations,
   initialMessages,
-  initialConversationId
+  initialConversationId,
 }: ChatProps) {
-  const [userId] = useState(initialUserId)
-  const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed)
-  const [freeMessages, setFreeMessages] = useState(initialFreeMessages)
-  const [conversationId, setConversationId] = useState<string | undefined>(initialConversationId || undefined);
+  const [userId] = useState(initialUserId);
+  const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed);
+  const [freeMessages, setFreeMessages] = useState(initialFreeMessages);
+  const [conversationId, setConversationId] = useState<string | undefined>(
+    initialConversationId || undefined
+  );
 
   const [isThoughtsOpenState, setIsThoughtsOpenState] =
     useState<boolean>(false);
@@ -129,7 +131,7 @@ export default function Chat({
     if (typeof window !== 'undefined') {
       posthog?.identify(initialUserId, { email: initialEmail });
       posthog?.capture('page_view', {
-        page: 'chat'
+        page: 'chat',
       });
     }
   }, [posthog, initialUserId, initialEmail]);
@@ -192,6 +194,7 @@ export default function Chat({
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
     if (!conversationId) return Promise.resolve([]);
+    if (conversationId.startsWith('temp-')) return Promise.resolve([]);
     // if (conversationId.startsWith('temp-') || isNewConversation) {
     //   setIsNewConversation(false); // Reset the flag
     //   return Promise.resolve([]); // Empty array since we'll add defaultMessage in render
@@ -354,10 +357,18 @@ export default function Chat({
       thoughtReader.releaseLock();
       thoughtReader = null;
 
-      const honchoResponse = await fetchStream('honcho', messageToSend, conversationId!, thoughtText);
-      const honchoContent = await new Response(honchoResponse).json() as HonchoResponse;
+      const honchoResponse = await fetchStream(
+        'honcho',
+        messageToSend,
+        conversationId!,
+        thoughtText
+      );
+      const honchoContent = (await new Response(
+        honchoResponse
+      ).json()) as HonchoResponse;
 
-      thoughtText += "\n\nHoncho Dialectic Response:\n\n" + honchoContent.content;
+      thoughtText +=
+        '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
       setThought(thoughtText);
 
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -440,7 +451,10 @@ export default function Chat({
     }
   }
 
-  const canUseApp = useMemo(() => isSubscribed || freeMessages > 0, [isSubscribed, freeMessages]);
+  const canUseApp = useMemo(
+    () => isSubscribed || freeMessages > 0,
+    [isSubscribed, freeMessages]
+  );
 
   useEffect(() => {
     if (conversationId?.startsWith('temp-') || messagesLoading) {
@@ -562,10 +576,11 @@ export default function Chat({
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200'
+                    : 'border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
