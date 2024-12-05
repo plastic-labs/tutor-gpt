@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
 import { getConversations, createConversation } from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
+import { type Message } from '@/utils/types';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -66,12 +67,6 @@ async function fetchStream(
       throw new Error(`No response body for ${type} stream`);
     }
 
-    console.log(response)
-
-    // if (!(response.body instanceof ReadableStream)) {
-    //   throw new Error(`Response body is not a ReadableStream for ${type} stream`);
-    // }
-
     return response.body;
   } catch (error) {
     console.error(`Error in fetchStream (${type}):`, error);
@@ -92,6 +87,14 @@ interface ChatProps {
 interface HonchoResponse {
   content: string;
 }
+
+// Near the top of the file, add the default message constant
+const defaultMessage: Message = {
+  content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I'll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I'm conversational by design so I'll say goodbye 😊.`,
+  isUser: false,
+  id: '',
+  metadata: {},
+};
 
 export default function Chat({
   initialUserId,
@@ -117,8 +120,6 @@ export default function Chat({
   const [thought, setThought] = useState<string>('');
   const [canSend, setCanSend] = useState<boolean>(false);
 
-  const router = useRouter();
-  const supabase = createClient();
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
   const isAtBottom = useRef(true);
@@ -191,6 +192,10 @@ export default function Chat({
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
     if (!conversationId) return Promise.resolve([]);
+    // if (conversationId.startsWith('temp-') || isNewConversation) {
+    //   setIsNewConversation(false); // Reset the flag
+    //   return Promise.resolve([]); // Empty array since we'll add defaultMessage in render
+    // }
 
     return getMessages(conversationId);
   };
@@ -199,10 +204,21 @@ export default function Chat({
     data: messages,
     mutate: mutateMessages,
     isLoading: messagesLoading,
-  } = useSWR(conversationId, messagesFetcher, {
-    fallbackData: initialMessages,
-    revalidateOnFocus: false,
-  });
+  } = useSWR(
+    conversationId ? ['messages', conversationId] : null,
+    () => messagesFetcher(conversationId!),
+    {
+      fallbackData: initialMessages,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000,
+      onSuccess: (data) => {
+        if (conversationId?.startsWith('temp-')) {
+          mutateMessages([], false);
+        }
+      },
+    }
+  );
 
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
     if (!userId || !conversationId) return;
@@ -234,8 +250,43 @@ export default function Chat({
     }
   };
 
-  async function chat() {
-    if (!userId) return;
+  async function chat(message?: string) {
+    const rawMessage = message || input.current?.value;
+    if (!userId || !rawMessage) return;
+
+    // Process message to have double newline for markdown
+    const messageToSend = rawMessage.replace(/\n/g, '\n\n');
+
+    // If we have a temporary ID, buffer the message and wait
+    if (conversationId?.startsWith('temp-')) {
+      // setPendingMessage(messageToSend);
+      if (input.current) input.current.value = '';
+      setCanSend(false); // Prevent additional messages while waiting
+
+      // Show only the new message in processing state
+      mutateMessages(
+        [
+          {
+            content: messageToSend,
+            isUser: true,
+            id: '',
+            metadata: {},
+          },
+          {
+            content: '',
+            isUser: false,
+            id: '',
+            metadata: {},
+          },
+        ],
+        { revalidate: false }
+      );
+      return;
+    }
+
+    // Clear any pending message
+    // setPendingMessage(null);
+    if (input.current) input.current.value = '';
 
     // Check free message allotment upfront if not subscribed
     if (!isSubscribed) {
@@ -253,24 +304,21 @@ export default function Chat({
       }
     }
 
-    const textbox = input.current!;
-    // process message to have double newline for markdown
-    const message = textbox.value.replace(/\n/g, '\n\n');
-    textbox.value = '';
-
     setCanSend(false);
 
     const newMessages = [
       ...messages!,
       {
-        content: message,
+        content: messageToSend,
         isUser: true,
         id: '',
+        metadata: {},
       },
       {
         content: '',
         isUser: false,
         id: '',
+        metadata: {},
       },
     ];
     mutateMessages(newMessages, { revalidate: false });
@@ -284,7 +332,7 @@ export default function Chat({
       // Get thought stream
       const thoughtStream = await fetchStream(
         'thought',
-        message,
+        messageToSend,
         conversationId!
       );
       if (!thoughtStream) throw new Error('Failed to get thought stream');
@@ -299,7 +347,6 @@ export default function Chat({
         if (done) break;
 
         thoughtText += new TextDecoder().decode(value);
-
         setThought(thoughtText);
       }
 
@@ -307,7 +354,7 @@ export default function Chat({
       thoughtReader.releaseLock();
       thoughtReader = null;
 
-      const honchoResponse = await fetchStream('honcho', message, conversationId!, thoughtText);
+      const honchoResponse = await fetchStream('honcho', messageToSend, conversationId!, thoughtText);
       const honchoContent = await new Response(honchoResponse).json() as HonchoResponse;
 
       thoughtText += "\n\nHoncho Dialectic Response:\n\n" + honchoContent.content;
@@ -318,7 +365,7 @@ export default function Chat({
       // Get response stream using the thought and dialectic response
       const responseStream = await fetchStream(
         'response',
-        message,
+        messageToSend,
         conversationId!,
         thoughtText,
         honchoContent.content
@@ -352,6 +399,7 @@ export default function Chat({
               content: currentModelOutput,
               isUser: false,
               id: '',
+              metadata: {},
             },
           ],
           { revalidate: false }
@@ -393,6 +441,32 @@ export default function Chat({
   }
 
   const canUseApp = useMemo(() => isSubscribed || freeMessages > 0, [isSubscribed, freeMessages]);
+
+  useEffect(() => {
+    if (conversationId?.startsWith('temp-') || messagesLoading) {
+      setCanSend(false);
+    } else {
+      setCanSend(true);
+    }
+  }, [conversationId]);
+
+  // const handleNewChat = (tempId: string) => {
+  //   setIsNewConversation(true);
+  //   // Clear messages immediately when starting new chat
+  //   mutateMessages([], false);
+  //   setConversationId(tempId);
+  // };
+  //
+  // // Update the effect to re-enable sending when the pending message is processed
+  // useEffect(() => {
+  //   if (pendingMessage && conversationId && !conversationId.startsWith('temp-')) {
+  //     chat(pendingMessage);
+  //   } else if (!pendingMessage && !conversationId?.startsWith('temp-')) {
+  //     setCanSend(true);
+  //   } else if (!pendingMessage && conversationId?.startsWith('temp-')) {
+  //     setCanSend(false);
+  //   }
+  // }, [conversationId, pendingMessage]);
 
   return (
     <main className="relative flex h-full overflow-hidden">
@@ -436,38 +510,40 @@ export default function Chat({
             className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
             ref={messageContainerRef}
           >
-            {messages?.map((message, i) => (
-              <MessageBox
-                key={i}
-                isUser={message.isUser}
-                userId={userId}
-                message={message}
-                loading={messagesLoading}
-                conversationId={conversationId}
-                setThought={setThought}
-                isThoughtOpen={openThoughtMessageId === message.id}
-                setIsThoughtsOpen={(isOpen) =>
-                  setIsThoughtsOpen(isOpen, message.id)
-                }
-                onReactionAdded={handleReactionAdded}
-              />
-            )) || (
+            {messages ? (
+              [defaultMessage, ...messages].map((message, i) => (
                 <MessageBox
-                  isUser={false}
-                  message={{
-                    content: '',
-                    id: '',
-                    isUser: false,
-                    metadata: { reaction: null },
-                  }}
-                  loading={true}
-                  setThought={setThought}
-                  setIsThoughtsOpen={setIsThoughtsOpen}
-                  onReactionAdded={handleReactionAdded}
+                  key={message.id || i}
+                  isUser={message.isUser}
                   userId={userId}
+                  message={message}
+                  loading={messagesLoading}
                   conversationId={conversationId}
+                  setThought={setThought}
+                  isThoughtOpen={openThoughtMessageId === message.id}
+                  setIsThoughtsOpen={(isOpen) =>
+                    setIsThoughtsOpen(isOpen, message.id)
+                  }
+                  onReactionAdded={handleReactionAdded}
                 />
-              )}
+              ))
+            ) : (
+              <MessageBox
+                isUser={false}
+                message={{
+                  content: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                conversationId={conversationId}
+              />
+            )}
           </section>
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form

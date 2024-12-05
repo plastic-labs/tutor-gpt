@@ -14,7 +14,7 @@ import {
   deleteConversation,
   updateConversation,
 } from '@/app/actions/conversations';
-import { type Conversation } from '@/utils/types';
+import { type Conversation, type Message } from '@/utils/types';
 
 const departureMono = localFont({
   src: '../fonts/DepartureMono-Regular.woff2',
@@ -58,16 +58,25 @@ export default function Sidebar({
       },
     });
 
-    await updateConversation(cur.conversationId, newName as string);
+    if (!newName) return;
 
-    // Force a re-render by directly updating the state
+    // Optimistically update the UI
     mutateConversations(
       conversations.map((conversation) =>
         conversation.conversationId === cur.conversationId
           ? { ...conversation, name: newName }
           : conversation
-      )
+      ),
+      false // Skip revalidation
     );
+
+    try {
+      await updateConversation(cur.conversationId, newName as string);
+    } catch (error) {
+      // Revert on error
+      mutateConversations(conversations);
+      Swal.fire('Error', 'Failed to update conversation name', 'error');
+    }
   }
 
   async function removeConversation(conversation: Conversation) {
@@ -81,31 +90,68 @@ export default function Sidebar({
       confirmButtonText: 'Yes, delete it!',
     });
 
-    if (isConfirmed) {
+    if (!isConfirmed) return;
+
+    // Store original state for rollback
+    const originalConversations = conversations;
+
+    // Optimistically update UI
+    const newConversations = conversations.filter(
+      (cur) => cur.conversationId != conversation.conversationId
+    );
+    mutateConversations(newConversations, false);
+
+    if (conversation.conversationId === conversationId) {
+      if (newConversations.length >= 1) {
+        setConversationId(newConversations[0].conversationId);
+      }
+    }
+
+    try {
       await deleteConversation(conversation.conversationId);
       postHog?.capture('user_deleted_conversation');
-      // Delete the conversation_id from the conversations state variable
-      const newConversations = conversations.filter(
-        (cur) => cur.conversationId != conversation.conversationId
-      );
-      if (conversation.conversationId == conversationId) {
-        if (newConversations.length >= 1) {
-          setConversationId(newConversations[0].conversationId);
-        } else {
-          const newConv = await createConversation();
-          setConversationId(newConv?.conversationId);
-          mutateConversations([newConv!]);
-        }
+
+      // If we need to create a new conversation because we deleted the last one
+      if (newConversations.length === 0) {
+        const newConv = await createConversation();
+        setConversationId(newConv?.conversationId);
+        mutateConversations([newConv!]);
       }
-      mutateConversations(newConversations);
+    } catch (error) {
+      // Revert on error
+      mutateConversations(originalConversations);
+      setConversationId(conversationId);
+      Swal.fire('Error', 'Failed to delete conversation', 'error');
     }
   }
 
   async function addChat() {
-    const conversation = await createConversation();
-    postHog?.capture('user_created_conversation');
-    setConversationId(conversation?.conversationId);
-    mutateConversations([conversation!, ...conversations]);
+    // Create a temporary conversation with a loading state
+    const tempId = 'temp-' + Date.now();
+    const tempConversation: Conversation = {
+      conversationId: tempId,
+      name: 'Untitled',
+    };
+
+    // Optimistically add the temporary conversation
+    mutateConversations([tempConversation, ...conversations], false);
+    setConversationId(tempId);
+
+    try {
+      const newConversation = await createConversation();
+      postHog?.capture('user_created_conversation');
+
+      // Replace temporary conversation with the real one
+      mutateConversations(
+        [newConversation!, ...conversations.filter(c => c.conversationId !== tempId)]
+      );
+      setConversationId(newConversation?.conversationId);
+    } catch (error) {
+      // Remove temporary conversation on error
+      mutateConversations(conversations);
+      setConversationId(conversationId);
+      Swal.fire('Error', 'Failed to create new chat', 'error');
+    }
   }
 
   const fetchUser = async () => {
