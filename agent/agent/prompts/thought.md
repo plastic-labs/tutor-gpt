@@ -88,4 +88,5 @@ So just to confirm:
 
 Sounds fantastic! I'm ready for the first user message whenever you are. Let's put this experiment into action!
 
-MESSAGES: {history}
+MESSAGES: 
+{history}
