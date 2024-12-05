@@ -6,7 +6,7 @@ import { PHProvider, PostHogPageview } from './providers';
 import { Suspense } from 'react';
 import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
 

@@ -87,13 +87,16 @@ export default function MessageBox({
     }
   };
 
-  const memoizedImage = useMemo(() => (
-    <Image
-      src={isUser ? usericon : icon}
-      alt="icon"
-      className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
-    />
-  ), [isUser, usericon, icon]);
+  const memoizedImage = useMemo(
+    () => (
+      <Image
+        src={isUser ? usericon : icon}
+        alt="icon"
+        className="rounded-full w-6 h-6 lg:w-12 lg:h-12"
+      />
+    ),
+    [isUser, usericon, icon]
+  );
 
   const memoizedSkeleton = useMemo(() => <Skeleton count={4} />, []);
 
@@ -104,11 +107,7 @@ export default function MessageBox({
         (isUser ? 'bg-gray-100 dark:bg-gray-800' : '')
       }
     >
-      {loading ? (
-        memoizedSkeleton
-      ) : (
-        memoizedImage
-      )}
+      {loading ? memoizedSkeleton : memoizedImage}
       <div className="flex flex-col gap-2 w-full">
         {loading ? memoizedSkeleton : <MarkdownWrapper text={content} />}
         {!loading && !isUser && shouldShowButtons && (

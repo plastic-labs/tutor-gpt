@@ -1,10 +1,10 @@
 import { type Reaction } from '@/components/messagebox';
 
 export interface Message {
+  id: string;
   content: string;
   isUser: boolean;
-  id: string;
-  metadata?: { reaction?: Reaction };
+  metadata: Record<string, unknown>;
 }
 
 export interface Conversation {

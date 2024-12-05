@@ -1,13 +1,14 @@
 'use server';
 import { createClient } from '@/utils/supabase/server';
-import { honcho, getHonchoApp } from '@/utils/honcho';
-import { Message } from '@/utils/types';
+import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
+// import { Message } from '@/utils/types';
 
-const defaultMessage: Message = {
-  content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
-  isUser: false,
-  id: '',
-};
+// const defaultMessage: Message = {
+//   content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+//   isUser: false,
+//   id: '',
+//   metadata: {},
+// };
 
 export async function getMessages(conversationId: string) {
   const supabase = createClient();
@@ -21,7 +22,7 @@ export async function getMessages(conversationId: string) {
   if (!user) {
     throw new Error('Unauthorized');
   }
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
   const session = await honcho.apps.users.sessions.get(
     honchoApp.id,
     honchoUser.id,
@@ -43,7 +44,7 @@ export async function getMessages(conversationId: string) {
     });
   }
 
-  return [defaultMessage, ...messages];
+  return messages;
 }
 
 export async function getThought(conversationId: string, messageId: string) {
@@ -59,7 +60,7 @@ export async function getThought(conversationId: string, messageId: string) {
     throw new Error('Unauthorized');
   }
 
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
   try {
     const thoughts = await honcho.apps.users.sessions.metamessages.list(
@@ -101,7 +102,7 @@ export async function addOrRemoveReaction(
     throw new Error('Invalid reaction type');
   }
 
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
   const message = await honcho.apps.users.sessions.messages.get(
     honchoApp.id,

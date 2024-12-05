@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useMemo, memo, lazy, Suspense } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  memo,
+  lazy,
+  Suspense,
+} from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Typing from './typing';
@@ -32,56 +39,75 @@ const CopyButton = memo(({ text }: { text: string }) => {
   );
 });
 
-const CodeBlock = memo(({ language, value }: { language: string; value: string }) => {
-  return (
-    <div className="relative">
-      <SyntaxHighlighter
-        style={oneDark}
-        language={language}
-        PreTag="div"
-        className="rounded-md"
-      >
-        {value}
-      </SyntaxHighlighter>
-      <CopyButton text={value} />
-    </div>
-  );
-})
+const CodeBlock = memo(
+  ({ language, value }: { language: string; value: string }) => {
+    return (
+      <div className="relative">
+        <SyntaxHighlighter
+          style={oneDark}
+          language={language}
+          PreTag="div"
+          className="rounded-md"
+        >
+          {value}
+        </SyntaxHighlighter>
+        <CopyButton text={value} />
+      </div>
+    );
+  }
+);
 
 const MarkdownWrapper = memo(({ text }: { text: string }) => {
   // Memoize components configuration
-  const components = useMemo(() => ({
-    ol: ({ ordered, ...props }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ol'>) => (
-      <ol className="list-decimal pl-6 space-y-2" {...props} />
-    ),
-    ul: ({ ordered, ...props }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ul'>) => (
-      <ul className="list-disc pl-6 space-y-2" {...props} />
-    ),
-    li: ({ ordered, ...props }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'li'>) => (
-      <li className="ml-2" {...props} />
-    ),
-    code: ({ inline, className, children, ...props }: {
-      inline?: boolean;
-      className?: string;
-      children: React.ReactNode;
-      [key: string]: any;
-    }) => {
-      const match = /language-(\w+)/.exec(className || '');
-      return !inline && match ? (
-        <CodeBlock
-          language={match[1]}
-          value={String(children).replace(/\n$/, '')}
-        />
-      ) : (
-        <code
-          {...props}
-          className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
-        >
-          {children}
-        </code>
-      );
-    },
-  }), []);
+  const components = useMemo(
+    () => ({
+      ol: ({
+        ordered,
+        ...props
+      }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ol'>) => (
+        <ol className="list-decimal pl-6 space-y-2" {...props} />
+      ),
+      ul: ({
+        ordered,
+        ...props
+      }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ul'>) => (
+        <ul className="list-disc pl-6 space-y-2" {...props} />
+      ),
+      li: ({
+        ordered,
+        ...props
+      }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'li'>) => (
+        <li className="ml-2" {...props} />
+      ),
+      code: ({
+        inline,
+        className,
+        children,
+        ...props
+      }: {
+        inline?: boolean;
+        className?: string;
+        children: React.ReactNode;
+        [key: string]: any;
+      }) => {
+        const match = /language-(\w+)/.exec(className || '');
+        return !inline && match ? (
+          <CodeBlock
+            language={match[1]}
+            value={String(children).replace(/\n$/, '')}
+          />
+        ) : (
+          <code
+            {...props}
+            className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
+          >
+            {children}
+          </code>
+        );
+      },
+    }),
+    []
+  );
 
   // Memoize plugins
   const remarkPlugins = useMemo(() => [remarkMath], []);
