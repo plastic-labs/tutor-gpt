@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { thinkCall, respondCall } from './actions';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { streamText } from 'ai';
-// import { createOpenAI } from '@ai-sdk/openai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -26,15 +25,9 @@ const openrouter = createOpenRouter({
   },
   extraBody: {
     provider: {
-      order: [
-        "DeepInfra",
-        "Hyperbolic",
-        "Fireworks",
-        "Together",
-        "Lambda"
-      ]
-    }
-  }
+      order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+    },
+  },
 });
 
 async function saveHistory({
@@ -158,8 +151,12 @@ export async function POST(req: NextRequest) {
 
   const { type, message, conversationId, thought, honchoThought } = data;
 
+  console.log('Starting Stream');
+
   const honchoApp = await getHonchoApp();
   const honchoUser = await getHonchoUser(user.id);
+
+  console.log('Got the Honcho User');
 
   const honchoPayload = {
     appId: honchoApp.id,
@@ -179,7 +176,6 @@ export async function POST(req: NextRequest) {
         sessionId: conversationId,
       });
     } else if (type === 'honcho') {
-      console.log("Dialectic Query");
       const dialecticQuery = await honcho.apps.users.sessions.chat(
         honchoApp.id,
         honchoUser.id,
@@ -187,9 +183,8 @@ export async function POST(req: NextRequest) {
         { queries: thought }
       );
 
-      return NextResponse.json({ content: dialecticQuery.content })
+      return NextResponse.json({ content: dialecticQuery.content });
     } else {
-
       // @ts-ignore
       honchoPayload['honchoContent'] = honchoThought;
 
@@ -201,6 +196,8 @@ export async function POST(req: NextRequest) {
         honchoContent: honchoThought,
       });
     }
+
+    console.log('Getting the Stream');
 
     const stream = await fetchOpenRouter(type, messages, honchoPayload);
 
@@ -214,9 +211,8 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
-      }
-    })
-
+      },
+    });
   } catch (error) {
     console.error('Stream error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

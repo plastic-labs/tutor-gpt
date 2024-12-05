@@ -1,13 +1,14 @@
 'use server';
 import { createClient } from '@/utils/supabase/server';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
-import { Message } from '@/utils/types';
+// import { Message } from '@/utils/types';
 
-const defaultMessage: Message = {
-  content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
-  isUser: false,
-  id: '',
-};
+// const defaultMessage: Message = {
+//   content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I’ll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I’m conversational by design so I’ll say goodbye 😊.`,
+//   isUser: false,
+//   id: '',
+//   metadata: {},
+// };
 
 export async function getMessages(conversationId: string) {
   const supabase = createClient();
@@ -43,7 +44,7 @@ export async function getMessages(conversationId: string) {
     });
   }
 
-  return [defaultMessage, ...messages];
+  return messages;
 }
 
 export async function getThought(conversationId: string, messageId: string) {

@@ -41,7 +41,6 @@ export async function getConversations() {
 }
 
 export async function createConversation() {
-  console.log("Starting")
   const supabase = createClient();
 
   const {
@@ -52,12 +51,10 @@ export async function createConversation() {
     throw new Error('Unauthorized');
   }
 
-  console.log("Passed Authorization")
 
   const honchoApp = await getHonchoApp();
   const honchoUser = await getHonchoUser(user.id);
 
-  console.log("Got Honcho Stuff")
 
   const session = await honcho.apps.users.sessions.create(
     honchoApp.id,
@@ -65,7 +62,6 @@ export async function createConversation() {
     {}
   );
 
-  console.log("Created Session")
 
   return { conversationId: session.id, name: 'Untitled' };
 }
