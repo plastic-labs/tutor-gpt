@@ -10,14 +10,13 @@ interface Message {
 
 // Read prompts as buffers
 const thoughtPrompt = readFileSync(
-  path.join(process.cwd(), 'utils/prompts/thought.md'),
+  path.join(process.cwd(), 'utils/prompts/thought.md')
 );
 const responsePrompt = readFileSync(
-  path.join(process.cwd(), 'utils/prompts/response.md'),
+  path.join(process.cwd(), 'utils/prompts/response.md')
 );
 
 function parsePrompt(prompt: Buffer, history: Message[]): Message[] {
-
   // Decode the buffer to string when needed
   const content = prompt.toString('utf-8');
   const lines = content.split('\n');
@@ -95,10 +94,7 @@ export async function thinkCall({
   }
 
   // Get the base prompt messages
-  const promptMessages = parsePrompt(
-    thoughtPrompt,
-    thoughtHistory
-  );
+  const promptMessages = parsePrompt(thoughtPrompt, thoughtHistory);
 
   // Get most recent honcho response
   const recentResponseMeta = await honcho.apps.users.sessions.metamessages.list(
@@ -173,10 +169,7 @@ export async function respondCall({
   }
 
   // Get the base prompt messages
-  const promptMessages = parsePrompt(
-    responsePrompt,
-    history
-  );
+  const promptMessages = parsePrompt(responsePrompt, history);
 
   const messages = [
     ...promptMessages,
