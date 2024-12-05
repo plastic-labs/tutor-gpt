@@ -340,7 +340,7 @@ export default function Chat({
         '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
       setThought(thoughtText);
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Get response stream using the thought and dialectic response
       const responseStream = await fetchStream(
@@ -396,6 +396,7 @@ export default function Chat({
       responseReader = null;
 
       mutateMessages();
+      setCanSend(true);
     } catch (error) {
       console.error('Chat error:', error);
       setCanSend(true);
