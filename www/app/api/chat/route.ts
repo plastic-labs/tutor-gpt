@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
 
   const data = await req.json();
 
-  const { type, message, conversationId, thought } = data;
+  const { type, message, conversationId, thought, honchoThought } = data;
 
   const honchoApp = await getHonchoApp();
   const honchoUser = await getHonchoUser(user.id);
@@ -166,24 +166,27 @@ export async function POST(req: NextRequest) {
         userId: honchoUser.id,
         sessionId: conversationId,
       });
-    } else {
+    } else if (type === 'honcho') {
+      console.log("Dialectic Query");
       const dialecticQuery = await honcho.apps.users.sessions.chat(
         honchoApp.id,
         honchoUser.id,
         conversationId,
         { queries: thought }
       );
-      const honchoResponse = dialecticQuery.content;
+
+      return NextResponse.json({ content: dialecticQuery.content })
+    } else {
 
       // @ts-ignore
-      honchoPayload['honchoContent'] = honchoResponse;
+      honchoPayload['honchoContent'] = honchoThought;
 
       messages = await respondCall({
         userInput: message,
         appId: honchoApp.id,
         userId: honchoUser.id,
         sessionId: conversationId,
-        honchoContent: honchoResponse,
+        honchoContent: honchoThought,
       });
     }
 
