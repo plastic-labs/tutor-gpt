@@ -334,6 +334,8 @@ export default function Chat({
         honchoResponse
       ).json()) as HonchoResponse;
 
+      const pureThought = thoughtText
+
       thoughtText +=
         '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
       setThought(thoughtText);
@@ -345,7 +347,7 @@ export default function Chat({
         'response',
         messageToSend,
         conversationId!,
-        thoughtText,
+        pureThought,
         honchoContent.content
       );
       if (!responseStream) throw new Error('Failed to get response stream');
