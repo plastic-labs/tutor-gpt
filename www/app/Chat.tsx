@@ -411,6 +411,32 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
     }
   }, [conversationId, messagesLoading]);
 
+  useEffect(() => {
+    if (conversationId?.startsWith('temp-') || messagesLoading) {
+      setCanSend(false);
+    } else {
+      setCanSend(true);
+    }
+  }, [conversationId]);
+
+  // const handleNewChat = (tempId: string) => {
+  //   setIsNewConversation(true);
+  //   // Clear messages immediately when starting new chat
+  //   mutateMessages([], false);
+  //   setConversationId(tempId);
+  // };
+  //
+  // // Update the effect to re-enable sending when the pending message is processed
+  // useEffect(() => {
+  //   if (pendingMessage && conversationId && !conversationId.startsWith('temp-')) {
+  //     chat(pendingMessage);
+  //   } else if (!pendingMessage && !conversationId?.startsWith('temp-')) {
+  //     setCanSend(true);
+  //   } else if (!pendingMessage && conversationId?.startsWith('temp-')) {
+  //     setCanSend(false);
+  //   }
+  // }, [conversationId, pendingMessage]);
+
   return (
     <main className="relative flex h-full overflow-hidden">
       <Sidebar
