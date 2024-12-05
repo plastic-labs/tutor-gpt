@@ -41,7 +41,6 @@ export async function getConversations() {
 }
 
 export async function createConversation() {
-  console.log("Starting")
   const supabase = createClient();
 
   const {
