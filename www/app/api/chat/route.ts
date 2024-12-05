@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { thinkCall, respondCall } from './actions';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { streamText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+// import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -14,15 +15,26 @@ export const dynamic = 'force-dynamic'; // always run dynamically
 const OPENROUTER_API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
 
-const openrouter = createOpenAI({
+const openrouter = createOpenRouter({
   // custom settings, e.g.
-  baseURL: 'https://openrouter.ai/api/v1',
+  // baseURL: 'https://openrouter.ai/api/v1',
   apiKey: OPENROUTER_API_KEY,
-  compatibility: 'compatible', // strict mode, enable when using the OpenAI API
+  // compatibility: 'compatible', // strict mode, enable when using the OpenAI API
   headers: {
     'HTTP-Referer': 'https://chat.bloombot.ai',
     'X-Title': 'Bloombot',
   },
+  extraBody: {
+    provider: {
+      order: [
+        "DeepInfra",
+        "Hyperbolic",
+        "Fireworks",
+        "Together",
+        "Lambda"
+      ]
+    }
+  }
 });
 
 async function saveHistory({
