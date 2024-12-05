@@ -145,7 +145,7 @@ class ThinkCall(HonchoCall):
             *self.get_prompt(),
             {
                 "role": "user",
-                "content": f"<oracle-response>{self.most_recent_honcho_response}</oracle-response>\n<tutor>{self.most_recent_bloom_response}</tutor>\n{self.user_input}",
+                "content": f"<honcho-response>{self.most_recent_honcho_response}</honcho-response>\n<tutor>{self.most_recent_bloom_response}</tutor>\n{self.user_input}",
             },
         ]
         response = self.openai.chat.completions.create(
@@ -159,7 +159,7 @@ class ThinkCall(HonchoCall):
             *self.get_prompt(),
             {
                 "role": "user",
-                "content": f"<oracle-response>{self.most_recent_honcho_response}</oracle-response>\n<tutor>{self.most_recent_bloom_response}</tutor>\n{self.user_input}",
+                "content": f"<honcho-response>{self.most_recent_honcho_response}</honcho-response>\n<tutor>{self.most_recent_bloom_response}</tutor>\n{self.user_input}",
             },
         ]
         completion = self.openai.chat.completions.create(
