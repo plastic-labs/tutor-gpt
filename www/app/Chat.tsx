@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
-import { useRef, useEffect, useState, ElementRef } from 'react';
+import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
@@ -392,7 +392,7 @@ export default function Chat({
     }
   }
 
-  const canUseApp = isSubscribed || freeMessages > 0;
+  const canUseApp = useMemo(() => isSubscribed || freeMessages > 0, [isSubscribed, freeMessages]);
 
   return (
     <main className="relative flex h-full overflow-hidden">
