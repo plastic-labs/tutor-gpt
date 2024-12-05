@@ -195,10 +195,6 @@ export default function Chat({
     if (!userId) return Promise.resolve([]);
     if (!conversationId) return Promise.resolve([]);
     if (conversationId.startsWith('temp-')) return Promise.resolve([]);
-    // if (conversationId.startsWith('temp-') || isNewConversation) {
-    //   setIsNewConversation(false); // Reset the flag
-    //   return Promise.resolve([]); // Empty array since we'll add defaultMessage in render
-    // }
 
     return getMessages(conversationId);
   };
@@ -260,35 +256,6 @@ export default function Chat({
     // Process message to have double newline for markdown
     const messageToSend = rawMessage.replace(/\n/g, '\n\n');
 
-    // If we have a temporary ID, buffer the message and wait
-    if (conversationId?.startsWith('temp-')) {
-      // setPendingMessage(messageToSend);
-      if (input.current) input.current.value = '';
-      setCanSend(false); // Prevent additional messages while waiting
-
-      // Show only the new message in processing state
-      mutateMessages(
-        [
-          {
-            content: messageToSend,
-            isUser: true,
-            id: '',
-            metadata: {},
-          },
-          {
-            content: '',
-            isUser: false,
-            id: '',
-            metadata: {},
-          },
-        ],
-        { revalidate: false }
-      );
-      return;
-    }
-
-    // Clear any pending message
-    // setPendingMessage(null);
     if (input.current) input.current.value = '';
 
     // Check free message allotment upfront if not subscribed
@@ -397,7 +364,6 @@ export default function Chat({
               setFreeMessages(newCount);
             }
           }
-          setCanSend(true);
           break;
         }
 
@@ -462,25 +428,7 @@ export default function Chat({
     } else {
       setCanSend(true);
     }
-  }, [conversationId]);
-
-  // const handleNewChat = (tempId: string) => {
-  //   setIsNewConversation(true);
-  //   // Clear messages immediately when starting new chat
-  //   mutateMessages([], false);
-  //   setConversationId(tempId);
-  // };
-  //
-  // // Update the effect to re-enable sending when the pending message is processed
-  // useEffect(() => {
-  //   if (pendingMessage && conversationId && !conversationId.startsWith('temp-')) {
-  //     chat(pendingMessage);
-  //   } else if (!pendingMessage && !conversationId?.startsWith('temp-')) {
-  //     setCanSend(true);
-  //   } else if (!pendingMessage && conversationId?.startsWith('temp-')) {
-  //     setCanSend(false);
-  //   }
-  // }, [conversationId, pendingMessage]);
+  }, [conversationId, messagesLoading]);
 
   return (
     <main className="relative flex h-full overflow-hidden">
@@ -576,11 +524,10 @@ export default function Chat({
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200'
-                    : 'border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
+                  ? 'border-green-200'
+                  : 'border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
