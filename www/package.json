@@ -19,6 +19,7 @@
     "@stripe/stripe-js": "^4.9.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.6",
+    "@vercel/functions": "^1.5.1",
     "@vercel/speed-insights": "^1.1.0",
     "ai": "^4.0.1",
     "class-variance-authority": "^0.7.0",
@@ -36,6 +37,7 @@
     "react-markdown": "^8.0.7",
     "react-syntax-highlighter": "^15.6.1",
     "react-toggle-dark-mode": "^1.1.1",
+    "react-turnstile": "^1.1.4",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "retry": "^0.13.1",
@@ -45,7 +47,8 @@
     "sweetalert2-react-content": "^5.0.7",
     "swr": "^2.2.5",
     "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "turnstile-types": "^1.2.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

@@ -4,6 +4,7 @@ import { thinkCall, respondCall } from './actions';
 import { honcho, getHonchoApp } from '@/utils/honcho';
 import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { ipAddress } from '@vercel/functions';
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -131,6 +132,23 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
   }
 }
 
+async function verifyTurnstile(token: string, ip: string) {
+  const formData = new FormData();
+  formData.append('secret', process.env.TURNSTILE_SECRET_KEY as string);
+  formData.append('response', token);
+  formData.append('remoteip', ip);
+
+  const url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+  const result = await fetch(url, {
+    body: formData,
+    method: 'POST',
+  });
+
+  const json = await result.json();
+
+  return json.success;
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient();
 
@@ -144,7 +162,15 @@ export async function POST(req: NextRequest) {
 
   const data = await req.json();
 
-  const { type, message, conversationId, thought } = data;
+  const { type, message, conversationId, thought, turnstileToken } = data;
+
+  if (process.env.TURNSTILE_SECRET_KEY !== null) {
+    const ip = ipAddress(req);
+    const isValid = await verifyTurnstile(turnstileToken, ip || '');
+    if (!isValid) {
+      return new NextResponse('Invalid turnstile token', { status: 429 });
+    }
+  }
 
   console.log("Starting Stream")
 
