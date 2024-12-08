@@ -24,6 +24,7 @@ import { getMessages, addOrRemoveReaction } from './actions/messages';
 //   ssr: false,
 // });
 import Thoughts from '@/components/thoughts';
+import useAutoScroll from '@/hooks/autoscroll';
 const MessageBox = dynamic(() => import('@/components/messagebox'), {
   ssr: false,
 });
@@ -39,19 +40,22 @@ async function fetchStream(
   honchoContent = ''
 ) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type,
-        message,
-        conversationId,
-        thought,
-        honchoContent,
-      }),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type,
+          message,
+          conversationId,
+          thought,
+          honchoContent,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -60,7 +64,7 @@ async function fetchStream(
         statusText: response.statusText,
         error: errorText,
       });
-      console.error(response)
+      console.error(response);
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
 
@@ -69,7 +73,9 @@ async function fetchStream(
     }
 
     if (!(response.body instanceof ReadableStream)) {
-      throw new Error(`Response body is not a ReadableStream for ${type} stream`);
+      throw new Error(
+        `Response body is not a ReadableStream for ${type} stream`
+      );
     }
 
     return response.body;
@@ -97,9 +103,10 @@ export default function Home() {
   const router = useRouter();
   const supabase = createClient();
   const posthog = usePostHog();
+
   const input = useRef<ElementRef<'textarea'>>(null);
-  const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
+  const [, scrollToBottom] = useAutoScroll(messageContainerRef);
 
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [freeMessages, setFreeMessages] = useState<number>(0);
@@ -151,25 +158,6 @@ export default function Home() {
       }
     })();
   }, [supabase, posthog, router]);
-
-  useEffect(() => {
-    const messageContainer = messageContainerRef.current;
-    if (!messageContainer) return;
-
-    const func = () => {
-      const val =
-        Math.round(
-          messageContainer.scrollHeight - messageContainer.scrollTop
-        ) === messageContainer.clientHeight;
-      isAtBottom.current = val;
-    };
-
-    messageContainer.addEventListener('scroll', func);
-
-    return () => {
-      messageContainer.removeEventListener('scroll', func);
-    };
-  }, []);
 
   const conversationsFetcher = async () => {
     return getConversations();
@@ -280,7 +268,8 @@ export default function Home() {
         id: '',
       },
     ];
-    mutateMessages(newMessages, { revalidate: false });
+    await mutateMessages(newMessages, { revalidate: false });
+    scrollToBottom();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -358,22 +347,19 @@ export default function Home() {
           { revalidate: false }
         );
 
-        if (isAtBottom.current) {
-          const messageContainer = messageContainerRef.current;
-          if (messageContainer) {
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-          }
-        }
+        scrollToBottom();
       }
 
       responseReader.releaseLock();
       responseReader = null;
 
-      mutateMessages();
+      await mutateMessages();
+      scrollToBottom();
     } catch (error) {
       console.error('Chat error:', error);
       setCanSend(true);
-      mutateMessages();
+      await mutateMessages();
+      scrollToBottom();
     } finally {
       // Cleanup
       if (thoughtReader) {
@@ -453,22 +439,22 @@ export default function Home() {
                 onReactionAdded={handleReactionAdded}
               />
             )) || (
-                <MessageBox
-                  isUser={false}
-                  message={{
-                    content: '',
-                    id: '',
-                    isUser: false,
-                    metadata: { reaction: null },
-                  }}
-                  loading={true}
-                  setThought={setThought}
-                  setIsThoughtsOpen={setIsThoughtsOpen}
-                  onReactionAdded={handleReactionAdded}
-                  userId={userId}
-                  conversationId={conversationId}
-                />
-              )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  content: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                conversationId={conversationId}
+              />
+            )}
           </section>
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
@@ -487,10 +473,11 @@ export default function Home() {
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200'
+                    : 'border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
