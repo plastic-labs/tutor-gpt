@@ -6,9 +6,11 @@ import dynamic from 'next/dynamic';
 import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
-import { useRef, useEffect, useState, ElementRef } from 'react';
+import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { usePostHog } from 'posthog-js/react';
+import Turnstile, { useTurnstile } from 'react-turnstile';
 
 import { getSubscription } from '@/utils/supabase/queries';
 
@@ -31,27 +33,39 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
 
-async function fetchStream(
-  type: 'thought' | 'response',
-  message: string,
-  conversationId: string,
+async function fetchStream({
+  type,
+  message,
+  conversationId,
   thought = '',
-  honchoContent = ''
-) {
+  honchoContent = '',
+  turnstileToken = null,
+}: {
+  type: 'thought' | 'response';
+  message: string;
+  conversationId: string;
+  thought?: string;
+  honchoContent?: string;
+  turnstileToken?: string | null;
+}) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type,
-        message,
-        conversationId,
-        thought,
-        honchoContent,
-      }),
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/api/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type,
+          message,
+          conversationId,
+          thought,
+          honchoContent,
+          turnstileToken,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -60,7 +74,7 @@ async function fetchStream(
         statusText: response.statusText,
         error: errorText,
       });
-      console.error(response)
+      console.error(response);
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
 
@@ -69,7 +83,9 @@ async function fetchStream(
     }
 
     if (!(response.body instanceof ReadableStream)) {
-      throw new Error(`Response body is not a ReadableStream for ${type} stream`);
+      throw new Error(
+        `Response body is not a ReadableStream for ${type} stream`
+      );
     }
 
     return response.body;
@@ -103,6 +119,11 @@ export default function Home() {
 
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [freeMessages, setFreeMessages] = useState<number>(0);
+
+  const turnstileEnabled = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== null;
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstile = useTurnstile();
 
   const setIsThoughtsOpen = (
     isOpen: boolean,
@@ -289,11 +310,12 @@ export default function Home() {
 
     try {
       // Get thought stream
-      const thoughtStream = await fetchStream(
-        'thought',
+      const thoughtStream = await fetchStream({
+        type: 'thought',
         message,
-        conversationId!
-      );
+        conversationId: conversationId!,
+        turnstileToken,
+      });
       if (!thoughtStream) throw new Error('Failed to get thought stream');
 
       thoughtReader = thoughtStream.getReader();
@@ -317,13 +339,14 @@ export default function Home() {
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Get response stream using the thought
-      const responseStream = await fetchStream(
-        'response',
+      const responseStream = await fetchStream({
+        type: 'response',
         message,
-        conversationId!,
-        thoughtText,
-        ''
-      );
+        conversationId: conversationId!,
+        thought: thoughtText,
+        honchoContent: '',
+        turnstileToken,
+      });
       if (!responseStream) throw new Error('Failed to get response stream');
 
       responseReader = responseStream.getReader();
@@ -393,7 +416,13 @@ export default function Home() {
     }
   }
 
-  const canUseApp = isSubscribed || freeMessages > 0;
+  // const canUseApp = isSubscribed || freeMessages > 0;
+  const canUseApp = useMemo(
+    () =>
+      (isSubscribed || freeMessages > 0) &&
+      (!turnstileEnabled || turnstileToken !== null),
+    [isSubscribed, freeMessages, turnstileEnabled, turnstileToken]
+  );
 
   return (
     <main className="relative flex h-full overflow-hidden">
@@ -453,27 +482,27 @@ export default function Home() {
                 onReactionAdded={handleReactionAdded}
               />
             )) || (
-                <MessageBox
-                  isUser={false}
-                  message={{
-                    content: '',
-                    id: '',
-                    isUser: false,
-                    metadata: { reaction: null },
-                  }}
-                  loading={true}
-                  setThought={setThought}
-                  setIsThoughtsOpen={setIsThoughtsOpen}
-                  onReactionAdded={handleReactionAdded}
-                  userId={userId}
-                  conversationId={conversationId}
-                />
-              )}
+              <MessageBox
+                isUser={false}
+                message={{
+                  content: '',
+                  id: '',
+                  isUser: false,
+                  metadata: { reaction: null },
+                }}
+                loading={true}
+                setThought={setThought}
+                setIsThoughtsOpen={setIsThoughtsOpen}
+                onReactionAdded={handleReactionAdded}
+                userId={userId}
+                conversationId={conversationId}
+              />
+            )}
           </section>
-          <div className="p-3 pb-0 lg:p-5 lg:pb-0">
+          <div className="p-3 lg:p-5">
             <form
               id="send"
-              className="flex p-3 lg:p-5 gap-3 border-gray-300"
+              className="flex flex-col items-center gap-3 border-gray-300"
               onSubmit={(e) => {
                 e.preventDefault();
                 if (canSend && input.current?.value && canUseApp) {
@@ -482,41 +511,56 @@ export default function Home() {
                 }
               }}
             >
-              <textarea
-                ref={input}
-                placeholder={
-                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
-                }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${canSend && canUseApp
-                  ? 'border-green-200'
-                  : 'border-red-200 opacity-50'
-                  }`}
-                rows={1}
-                disabled={!canUseApp}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (canSend && input.current?.value && canUseApp) {
-                      posthog.capture('user_sent_message');
-                      chat();
-                    }
+              {turnstileEnabled && (
+                <Turnstile
+                  sitekey={turnstileSiteKey}
+                  appearance="interaction-only"
+                  onVerify={(token) => {
+                    setTurnstileToken(token);
+                    turnstile.remove();
+                  }}
+                />
+              )}
+              <div className="flex gap-3 w-full">
+                <textarea
+                  ref={input}
+                  placeholder={
+                    canUseApp
+                      ? 'Type a message...'
+                      : 'Subscribe to send messages'
                   }
-                }}
-              />
-              <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-                type="submit"
-                disabled={!canSend || !canUseApp}
-              >
-                <FaPaperPlane className="inline" />
-              </button>
-              <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-                onClick={() => setIsThoughtsOpen(true)}
-                type="button"
-              >
-                <FaLightbulb className="inline" />
-              </button>
+                  className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                    canSend && canUseApp
+                      ? 'border-green-200'
+                      : 'border-red-200 opacity-50'
+                  }`}
+                  rows={1}
+                  disabled={!canUseApp}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (canSend && input.current?.value && canUseApp) {
+                        posthog.capture('user_sent_message');
+                        chat();
+                      }
+                    }
+                  }}
+                />
+                <button
+                  className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                  type="submit"
+                  disabled={!canSend || !canUseApp}
+                >
+                  <FaPaperPlane className="inline" />
+                </button>
+                <button
+                  className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                  onClick={() => setIsThoughtsOpen(true)}
+                  type="button"
+                >
+                  <FaLightbulb className="inline" />
+                </button>
+              </div>
             </form>
           </div>
         </div>
