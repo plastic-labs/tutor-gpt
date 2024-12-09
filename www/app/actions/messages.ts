@@ -23,17 +23,11 @@ export async function getMessages(conversationId: string) {
     throw new Error('Unauthorized');
   }
   const honchoUser = await getHonchoUser(user.id);
-  const session = await honcho.apps.users.sessions.get(
-    honchoApp.id,
-    honchoUser.id,
-    conversationId
-  );
   const messages = [];
-  // TODO check if empty params is necessary
   for await (const message of honcho.apps.users.sessions.messages.list(
     honchoApp.id,
     honchoUser.id,
-    session.id,
+    conversationId,
     {}
   )) {
     messages.push({
