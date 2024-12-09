@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { thinkCall, respondCall } from './actions';
-import { honcho, getHonchoApp } from '@/utils/honcho';
+import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
@@ -15,10 +15,18 @@ const OPENROUTER_API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
 
 const openrouter = createOpenRouter({
+  // custom settings, e.g.
+  // baseURL: 'https://openrouter.ai/api/v1',
   apiKey: OPENROUTER_API_KEY,
+  // compatibility: 'compatible', // strict mode, enable when using the OpenAI API
   headers: {
     'HTTP-Referer': 'https://chat.bloombot.ai',
     'X-Title': 'Bloombot',
+  },
+  extraBody: {
+    provider: {
+      order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+    },
   },
 });
 
@@ -101,9 +109,7 @@ async function saveHistory({
         content: responseMetamessage,
       }
     );
-    console.log('Successfully Saved');
   } catch (error) {
-    console.error('Error in saveHistory:', error);
     Sentry.captureException(error);
     throw error; // Re-throw to be handled by caller
   }
@@ -119,7 +125,6 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
           const aiResponse = response.text;
           const finalPayload = { ...payload, aiResponse };
           await saveHistory(finalPayload);
-          console.log();
         }
       },
     });
@@ -144,14 +149,14 @@ export async function POST(req: NextRequest) {
 
   const data = await req.json();
 
-  const { type, message, conversationId, thought } = data;
+  const { type, message, conversationId, thought, honchoThought } = data;
 
-  console.log("Starting Stream")
+  console.log('Starting Stream');
 
   const honchoApp = await getHonchoApp();
-  const honchoUser = await honcho.apps.users.getOrCreate(honchoApp.id, user.id);
+  const honchoUser = await getHonchoUser(user.id);
 
-  console.log("Got the Honcho User")
+  console.log('Got the Honcho User');
 
   const honchoPayload = {
     appId: honchoApp.id,
@@ -170,29 +175,29 @@ export async function POST(req: NextRequest) {
         userId: honchoUser.id,
         sessionId: conversationId,
       });
-      console.log("Got Thought Messages")
-    } else {
+    } else if (type === 'honcho') {
       const dialecticQuery = await honcho.apps.users.sessions.chat(
         honchoApp.id,
         honchoUser.id,
         conversationId,
         { queries: thought }
       );
-      const honchoResponse = dialecticQuery.content;
 
+      return NextResponse.json({ content: dialecticQuery.content });
+    } else {
       // @ts-ignore
-      honchoPayload['honchoContent'] = honchoResponse;
+      honchoPayload['honchoContent'] = honchoThought;
 
       messages = await respondCall({
         userInput: message,
         appId: honchoApp.id,
         userId: honchoUser.id,
         sessionId: conversationId,
-        honchoContent: honchoResponse,
+        honchoContent: honchoThought,
       });
     }
 
-    console.log("Getting the Stream")
+    console.log('Getting the Stream');
 
     const stream = await fetchOpenRouter(type, messages, honchoPayload);
 
@@ -200,17 +205,14 @@ export async function POST(req: NextRequest) {
       throw new Error('Failed to get stream');
     }
 
-    console.log("Got the Stream")
-
     return new NextResponse(stream.body, {
       status: 200,
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
-      }
-    })
-
+      },
+    });
   } catch (error) {
     console.error('Stream error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
