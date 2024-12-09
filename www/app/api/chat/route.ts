@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 100;
 export const dynamic = 'force-dynamic'; // always run dynamically
 
-const OPENROUTER_API_KEY = process.env.OPENAI_API_KEY;
+const OPENROUTER_API_KEY = process.env.AI_API_KEY;
 const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
 
 const openrouter = createOpenRouter({
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ content: dialecticQuery.content });
     } else {
-      // @ts-ignore
+      // @ts-expect-error - honchoContent is not defined in the type
       honchoPayload['honchoContent'] = honchoThought;
 
       messages = await respondCall({
@@ -204,6 +204,8 @@ export async function POST(req: NextRequest) {
     if (!stream) {
       throw new Error('Failed to get stream');
     }
+
+    console.log('Got the Stream');
 
     return new NextResponse(stream.body, {
       status: 200,

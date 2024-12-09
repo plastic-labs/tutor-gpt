@@ -19,6 +19,8 @@ import { getConversations, createConversation } from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
 import { type Message } from '@/utils/types';
 
+import useAutoScroll from '@/hooks/autoscroll';
+
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
@@ -124,8 +126,8 @@ export default function Chat({
 
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
-  const isAtBottom = useRef(true);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
+  const [, scrollToBottom] = useAutoScroll(messageContainerRef);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -143,25 +145,6 @@ export default function Chat({
     setIsThoughtsOpenState(isOpen);
     setOpenThoughtMessageId(isOpen ? messageId : null);
   };
-
-  useEffect(() => {
-    const messageContainer = messageContainerRef.current;
-    if (!messageContainer) return;
-
-    const func = () => {
-      const val =
-        Math.round(
-          messageContainer.scrollHeight - messageContainer.scrollTop
-        ) === messageContainer.clientHeight;
-      isAtBottom.current = val;
-    };
-
-    messageContainer.addEventListener('scroll', func);
-
-    return () => {
-      messageContainer.removeEventListener('scroll', func);
-    };
-  }, []);
 
   const conversationsFetcher = async () => {
     return getConversations();
@@ -291,7 +274,8 @@ export default function Chat({
         metadata: {},
       },
     ];
-    mutateMessages(newMessages, { revalidate: false });
+    await mutateMessages(newMessages, { revalidate: false });
+    scrollToBottom();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -384,23 +368,20 @@ export default function Chat({
           { revalidate: false }
         );
 
-        if (isAtBottom.current) {
-          const messageContainer = messageContainerRef.current;
-          if (messageContainer) {
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-          }
-        }
+        scrollToBottom();
       }
 
       responseReader.releaseLock();
       responseReader = null;
 
-      mutateMessages();
+      await mutateMessages();
+      scrollToBottom();
       setCanSend(true);
     } catch (error) {
       console.error('Chat error:', error);
       setCanSend(true);
-      mutateMessages();
+      await mutateMessages();
+      scrollToBottom();
     } finally {
       // Cleanup
       if (thoughtReader) {
