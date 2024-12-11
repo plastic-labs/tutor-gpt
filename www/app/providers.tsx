@@ -1,9 +1,10 @@
-// app/providers.tsx
 'use client';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { SWRConfig } from 'swr';
+import { cacheProvider } from '@/utils/swrCache';
 
 const posthogKey: string = process.env.NEXT_PUBLIC_POSTHOG_KEY || '';
 const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || '';
@@ -14,7 +15,7 @@ if (
 ) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
-    capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+    capture_pageview: false,
   });
 }
 
@@ -39,4 +40,16 @@ export function PostHogPageview(): JSX.Element {
 
 export function PHProvider({ children }: { children: React.ReactNode }) {
   return <PostHogProvider client={posthog}>{children}</PostHogProvider>;
+}
+
+export function SWRProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <SWRConfig
+      value={{
+        provider: cacheProvider
+      }}
+    >
+      {children}
+    </SWRConfig>
+  );
 }

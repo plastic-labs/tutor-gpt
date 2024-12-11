@@ -2,7 +2,7 @@ import './globals.css';
 import 'react-loading-skeleton/dist/skeleton.css';
 import type { Metadata } from 'next';
 import { Roboto_Mono } from 'next/font/google';
-import { PHProvider, PostHogPageview } from './providers';
+import { PHProvider, PostHogPageview, SWRProvider } from './providers';
 import { Suspense } from 'react';
 import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
@@ -64,10 +64,12 @@ export default function RootLayout({
             <PostHogPageview />
           </Suspense>
           <PHProvider>
-            <div className="h-screen flex flex-col">
-              <Header />
-              <main className="flex-1 overflow-y-auto">{children}</main>
-            </div>
+            <SWRProvider>
+              <div className="h-screen flex flex-col">
+                <Header />
+                <main className="flex-1 overflow-y-auto">{children}</main>
+              </div>
+            </SWRProvider>
           </PHProvider>
         </ThemeProvider>
         <SpeedInsights />
