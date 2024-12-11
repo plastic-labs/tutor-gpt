@@ -150,30 +150,20 @@ export default function Chat({
     return getConversations();
   };
 
-  const { data: conversations, mutate: mutateConversations } = useSWR(
-    userId,
-    conversationsFetcher,
-    {
-      fallbackData: initialConversations,
-      onSuccess: async (conversations) => {
-        if (conversations.length) {
-          if (
-            !conversationId ||
-            !conversations.find((c) => c.conversationId === conversationId)
-          ) {
-            setConversationId(conversations[0].conversationId);
-          }
-          setCanSend(true);
-        } else {
-          const newConvo = await createConversation();
-          setConversationId(newConvo?.conversationId);
-          await mutateConversations();
-        }
-      },
-      provider: cacheProvider,
-      revalidateOnFocus: false,
-    }
-  );
+  const conversationsKey = useMemo(() => userId, [userId]);
+
+const { data: conversations, mutate: mutateConversations } = useSWR(
+  conversationsKey,
+  conversationsFetcher,
+  {
+    fallbackData: initialConversations,
+    provider: cacheProvider,
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+    revalidateIfStale: false,
+    revalidateOnMount: false,
+  }
+);
 
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
@@ -183,12 +173,17 @@ export default function Chat({
     return getMessages(conversationId);
   };
 
+  const messagesKey = useMemo(() => 
+    conversationId ? ['messages', conversationId] : null,
+    [conversationId]
+  );
+  
   const {
     data: messages,
     mutate: mutateMessages,
     isLoading: messagesLoading,
   } = useSWR(
-    conversationId ? ['messages', conversationId] : null,
+    messagesKey,
     () => messagesFetcher(conversationId!),
     {
       fallbackData: initialMessages,
@@ -200,7 +195,7 @@ export default function Chat({
         if (conversationId?.startsWith('temp-')) {
           mutateMessages([], false);
         }
-      },
+      }
     }
   );
 
