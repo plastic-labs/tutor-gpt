@@ -15,6 +15,7 @@ import {
   updateConversation,
 } from '@/app/actions/conversations';
 import { type Conversation, type Message } from '@/utils/types';
+import { clearSWRCache } from '@/utils/swrCache';
 
 const departureMono = localFont({
   src: '../fonts/DepartureMono-Regular.woff2',
@@ -262,6 +263,7 @@ export default function Sidebar({
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
                   onClick={async () => {
                     await supabase.auth.signOut();
+                    clearSWRCache();
                     location.reload();
                   }}
                 >

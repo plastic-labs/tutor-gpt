@@ -1,14 +1,15 @@
-// app/providers.tsx
 'use client';
 import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { SWRConfig } from 'swr';
-import { localStorageProvider } from '@/utils/swrCache';
+import { createStore } from 'idb-keyval';
 
 const posthogKey: string = process.env.NEXT_PUBLIC_POSTHOG_KEY || '';
 const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || '';
+
+const swrStore = createStore('bloom-db', 'swr-cache');
 
 if (
   typeof window !== 'undefined' &&
@@ -16,7 +17,7 @@ if (
 ) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
-    capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+    capture_pageview: false,
   });
 }
 
@@ -45,7 +46,7 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
 
 export function SWRProvider({ children }: { children: React.ReactNode }) {
   return (
-    <SWRConfig value={{ provider: () => localStorageProvider() }}>
+    <SWRConfig value={{ provider: () => new Map() }}>
       {children}
     </SWRConfig>
   );

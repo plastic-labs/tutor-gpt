@@ -1,19 +1,29 @@
 import { Cache, State } from 'swr';
+import { createStore, get, set, clear } from 'idb-keyval';
 
-export function localStorageProvider(): Cache {
-  // When initializing, we restore the data from `localStorage` into a map.
+const swrStore = createStore('bloom-db', 'swr-cache');
+
+export async function clearSWRCache() {
+  await clear(swrStore);
+}
+
+export function indexedDBProvider(): Cache {
+  const cache = new Map<string, State>();
+
+  // When initializing, restore data from IndexedDB into the map
   if (typeof window !== 'undefined') {
-    const map: Map<string, State> = new Map(
-      JSON.parse(localStorage.getItem('app-cache') || '[]')
-    );
-
-    // Before unloading the app, we write back all the data into `localStorage`.
-    window.addEventListener('beforeunload', () => {
-      const appCache = JSON.stringify(Array.from(map.entries()));
-      localStorage.setItem('app-cache', appCache);
+    get('swr-cache', swrStore).then((data: Array<[string, State]> | undefined) => {
+      if (data) {
+        data.forEach(([key, value]) => cache.set(key, value));
+      }
     });
-    return map;
+
+    // Before unloading, save map data to IndexedDB
+    window.addEventListener('beforeunload', () => {
+      const entries = Array.from(cache.entries());
+      set('swr-cache', entries, swrStore);
+    });
   }
 
-  return new Map();
+  return cache;
 }

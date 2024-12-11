@@ -1,5 +1,6 @@
 'use client';
 import useSWR from 'swr';
+import { createStore, del, get, set, clear } from 'idb-keyval';
 
 import dynamic from 'next/dynamic';
 
@@ -24,13 +25,16 @@ import useAutoScroll from '@/hooks/autoscroll';
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
-// import Thoughts from '@/components/thoughts';
+
 const MessageBox = dynamic(() => import('@/components/messagebox'), {
   ssr: false,
 });
 const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
+
+const conversationsStore = createStore('bloom-db', 'conversations');
+const messagesStore = createStore('bloom-db', 'messages');
 
 async function fetchStream(
   type: 'thought' | 'response' | 'honcho',
@@ -89,8 +93,23 @@ interface ChatProps {
 interface HonchoResponse {
   content: string;
 }
+const cacheProvider = {
+  conversationsProvider: {
+    get: async (key: string) => get(key, conversationsStore),
+    set: async (key: string, value: any) => set(key, value, conversationsStore),
+    delete: async (key: string) => del(key, conversationsStore),
+  },
+  messagesProvider: {
+    get: async (key: string) => get(key, messagesStore),
+    set: async (key: string, value: any) => set(key, value, messagesStore),
+    delete: async (key: string) => del(key, messagesStore),
+  },
+  clearAll: async () => {
+    await clear(conversationsStore);
+    await clear(messagesStore);
+  }
+};
 
-// Near the top of the file, add the default message constant
 const defaultMessage: Message = {
   content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I'll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I'm conversational by design so I'll say goodbye 😊.`,
   isUser: false,
@@ -170,6 +189,7 @@ export default function Chat({
           await mutateConversations();
         }
       },
+      storage: cacheProvider.conversationsProvider,
       revalidateOnFocus: false,
     }
   );
@@ -191,6 +211,7 @@ export default function Chat({
     () => messagesFetcher(conversationId!),
     {
       fallbackData: initialMessages,
+      storage: cacheProvider.messagesProvider,
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60000,
