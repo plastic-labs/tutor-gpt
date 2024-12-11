@@ -4,12 +4,10 @@ import { PostHogProvider } from 'posthog-js/react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { SWRConfig } from 'swr';
-import { createStore } from 'idb-keyval';
+import { cacheProvider } from '@/utils/swrCache';
 
 const posthogKey: string = process.env.NEXT_PUBLIC_POSTHOG_KEY || '';
 const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || '';
-
-const swrStore = createStore('bloom-db', 'swr-cache');
 
 if (
   typeof window !== 'undefined' &&
@@ -46,7 +44,11 @@ export function PHProvider({ children }: { children: React.ReactNode }) {
 
 export function SWRProvider({ children }: { children: React.ReactNode }) {
   return (
-    <SWRConfig value={{ provider: () => new Map() }}>
+    <SWRConfig
+      value={{
+        provider: cacheProvider
+      }}
+    >
       {children}
     </SWRConfig>
   );

@@ -1,29 +1,45 @@
-import { Cache, State } from 'swr';
-import { createStore, get, set, clear } from 'idb-keyval';
+import { createStore, get, set, del, clear, } from 'idb-keyval';
+import type { Cache } from 'swr';
 
-const swrStore = createStore('bloom-db', 'swr-cache');
+const store = typeof window !== 'undefined' 
+  ? createStore('bloom-db', 'messages')
+  : null;
 
-export async function clearSWRCache() {
-  await clear(swrStore);
-}
+// In-memory cache for synchronous operations
+const memoryCache = new Map<string, any>();
 
-export function indexedDBProvider(): Cache {
-  const cache = new Map<string, State>();
-
-  // When initializing, restore data from IndexedDB into the map
-  if (typeof window !== 'undefined') {
-    get('swr-cache', swrStore).then((data: Array<[string, State]> | undefined) => {
-      if (data) {
-        data.forEach(([key, value]) => cache.set(key, value));
-      }
-    });
-
-    // Before unloading, save map data to IndexedDB
-    window.addEventListener('beforeunload', () => {
-      const entries = Array.from(cache.entries());
-      set('swr-cache', entries, swrStore);
-    });
+export const clearSWRCache = async () => {
+  memoryCache.clear();
+  if (store && typeof window !== 'undefined') {
+    try {
+      await clear(store);
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+    }
   }
+};
 
-  return cache;
+export const cacheProvider = (cache: Readonly<Cache<any>>) => {
+  return {
+    get: (key: string) => {
+      return memoryCache.get(key);
+    },
+    set: (key: string, value: any) => {
+      memoryCache.set(key, value);
+      // Persist to IndexedDB in background
+      if (store) {
+        set(key, value, store).catch(console.error);
+      }
+    },
+    delete: (key: string) => {
+      memoryCache.delete(key);
+      // Delete from IndexedDB in background
+      if (store) {
+        del(key, store).catch(console.error);
+      }
+    },
+    keys: () => {
+      return memoryCache.keys();
+    }
+  }
 }
