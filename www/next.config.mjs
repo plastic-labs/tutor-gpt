@@ -1,6 +1,15 @@
 import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
   output: "standalone",
+  webpack: (config, { isServer }) => {
+    // Add a fallback for the https scheme
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      https: false,
+    };
+
+    return config;
+  },
 };
 
 const sentryConfig = withSentryConfig(nextConfig, {

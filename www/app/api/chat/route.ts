@@ -5,6 +5,9 @@ import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
+import { HoneyHiveTracer } from "honeyhive";
+
+
 import * as Sentry from '@sentry/nextjs';
 
 export const runtime = 'nodejs';
@@ -117,6 +120,13 @@ async function saveHistory({
 
 async function fetchOpenRouter(type: string, messages: any[], payload: any) {
   try {
+
+    const tracer = await HoneyHiveTracer.init({
+      apiKey: process.env.HH_API_KEY,
+      project: process.env.HH_PROJECT,
+      sessionName: "test",
+    });
+
     const result = streamText({
       model: openrouter(MODEL),
       messages,
@@ -127,6 +137,10 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
           await saveHistory(finalPayload);
         }
       },
+      experimental_telemetry: {
+        isEnabled: true,
+        tracer: tracer.getTracer(),
+      }
     });
     return result.toTextStreamResponse();
   } catch (error) {
