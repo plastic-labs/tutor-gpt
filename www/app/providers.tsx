@@ -15,7 +15,7 @@ if (
 ) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
-    capture_pageview: false,
+    capture_pageview: false, // Disable automatic pageview capture, as we capture manually
   });
 }
 
