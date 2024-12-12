@@ -18,7 +18,7 @@ import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
 import { getConversations, createConversation } from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
 import { type Message } from '@/utils/types';
-import { cacheProvider } from '@/utils/swrCache';
+import { localStorageProvider } from '@/utils/swrCache';
 
 import useAutoScroll from '@/hooks/autoscroll';
 
@@ -157,7 +157,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
   conversationsFetcher,
   {
     fallbackData: initialConversations,
-    provider: cacheProvider,
+    provider: localStorageProvider,
     revalidateOnFocus: false,
     dedupingInterval: 60000,
     revalidateIfStale: false,
@@ -187,7 +187,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
     () => messagesFetcher(conversationId!),
     {
       fallbackData: initialMessages,
-      provider: cacheProvider, 
+      provider: localStorageProvider, 
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60000,

@@ -4,7 +4,7 @@ import { PostHogProvider } from 'posthog-js/react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { SWRConfig } from 'swr';
-import { cacheProvider } from '@/utils/swrCache';
+import { localStorageProvider } from '@/utils/swrCache';
 
 const posthogKey: string = process.env.NEXT_PUBLIC_POSTHOG_KEY || '';
 const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || '';
@@ -46,7 +46,7 @@ export function SWRProvider({ children }: { children: React.ReactNode }) {
   return (
     <SWRConfig
       value={{
-        provider: cacheProvider
+        provider: localStorageProvider
       }}
     >
       {children}

@@ -1,12 +1,28 @@
-import type { Cache } from 'swr';
+import { Cache, State, useSWRConfig } from 'swr';
 
-const memoryCache = new Map<string, any>();
+export function localStorageProvider(): Cache {
+  // When initializing, we restore the data from `localStorage` into a map.
+  if (typeof window !== 'undefined') {
+    const map: Map<string, State> = new Map(
+      JSON.parse(localStorage.getItem('app-cache') || '[]')
+    );
 
-export const cacheProvider = (cache: Readonly<Cache<any>>) => ({
-  get: (key: string) => memoryCache.get(key),
-  set: (key: string, value: any) => memoryCache.set(key, value),
-  delete: (key: string) => memoryCache.delete(key),
-  keys: () => Array.from(memoryCache.keys())[Symbol.iterator]()
-});
+    // Before unloading the app, we write back all the data into `localStorage`.
+    window.addEventListener('beforeunload', () => {
+      const appCache = JSON.stringify(Array.from(map.entries()));
+      localStorage.setItem('app-cache', appCache);
+    });
+    return map;
+  }
 
-export const clearSWRCache = () => memoryCache.clear();
+  return new Map();
+}
+
+export const clearSWRCache = async () => {
+  const { mutate } = useSWRConfig();
+  mutate(
+    () => true, // clear all keys
+    undefined,  // set to undefined
+    { revalidate: false }
+  );
+};
