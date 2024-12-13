@@ -1,19 +1,17 @@
-[tool.poetry]
+[project]
 name = "bot"
 version = "0.6.0"
 description = "Discord Bot implementation of Tutor-GPT"
-authors = ["Vineeth Voruganti <13438633+VVoruganti@users.noreply.github.com>"]
+authors = [
+    {name = "Plastic Labs", email = "hello@plasticlabs.ai"},
+]
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.11"
+dependencies = [
+    "py-cord>=2.6.0",
+    "sentry-sdk>=2.13.0",
+    "agent",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-py-cord = "^2.6.0"
-sentry-sdk = "^2.13.0"
-python-dotenv = "^1.0.1"
-agent = { path = "../agent", develop = true }
-honcho-ai = "^0.0.14"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv.sources]
+agent = { workspace=true }

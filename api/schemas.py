@@ -1,14 +1,13 @@
 from pydantic import BaseModel
-import uuid
 
 
 class ConversationInput(BaseModel):
     user_id: str
-    conversation_id: uuid.UUID
+    conversation_id: str
     message: str
 
 
 class ConversationDefinition(BaseModel):
     user_id: str
-    conversation_id: uuid.UUID
+    conversation_id: str
     name: str

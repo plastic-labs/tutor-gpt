@@ -1,12 +1,24 @@
-import { GrClose } from "react-icons/gr";
-import { Conversation, API } from "@/utils/api";
-import { createClient } from "@/utils/supabase/client";
+import { GrClose } from 'react-icons/gr';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import localFont from 'next/font/local';
 
-import { usePostHog } from "posthog-js/react";
-import Swal from "sweetalert2";
-import { ConversationTab } from "./conversationtab";
+import { usePostHog } from 'posthog-js/react';
+import Swal from 'sweetalert2';
+import { ConversationTab } from './conversationtab';
+import { useState } from 'react';
+import useSWR, { KeyedMutator } from 'swr';
+import { FaUser } from 'react-icons/fa';
+import {
+  createConversation,
+  deleteConversation,
+  updateConversation,
+} from '@/app/actions/conversations';
+import { type Conversation, type Message } from '@/utils/types';
 
-// const URL = process.env.NEXT_PUBLIC_API_URL;
+const departureMono = localFont({
+  src: '../fonts/DepartureMono-Regular.woff2',
+});
 
 export default function Sidebar({
   conversations,
@@ -14,125 +26,163 @@ export default function Sidebar({
   conversationId,
   setConversationId,
   isSidebarOpen,
-  setIsSidebarOpen,
-  api,
+  toggleSidebar,
+  isSubscribed,
 }: {
   conversations: Conversation[];
-  mutateConversations: Function;
+  mutateConversations: KeyedMutator<Conversation[]>;
   conversationId: string | undefined;
-  setConversationId: Function;
+  setConversationId: (id: typeof conversationId) => void;
   isSidebarOpen: boolean;
-  setIsSidebarOpen: Function;
-  api: API | undefined;
+  toggleSidebar: () => void;
+  isSubscribed: boolean;
 }) {
   const postHog = usePostHog();
   const supabase = createClient();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
 
   async function editConversation(cur: Conversation) {
     const { value: newName } = await Swal.fire({
-      title: "Enter a new name for the conversation",
-      input: "text",
-      inputLabel: "Conversation Name",
+      title: 'Enter a new name for the conversation',
+      input: 'text',
+      inputLabel: 'Conversation Name',
       inputValue: cur.name,
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
       inputValidator: (value) => {
         if (!value) {
-          return "You need to write something!";
+          return 'You need to write something!';
         }
       },
     });
 
-    await cur.setName(newName);
+    if (!newName) return;
 
-    // Force a re-render by directly updating the state
+    // Optimistically update the UI
     mutateConversations(
       conversations.map((conversation) =>
         conversation.conversationId === cur.conversationId
-          ? new Conversation({ ...conversation, name: newName })
+          ? { ...conversation, name: newName }
           : conversation
-      )
+      ),
+      false // Skip revalidation
     );
+
+    try {
+      await updateConversation(cur.conversationId, newName as string);
+    } catch (error) {
+      // Revert on error
+      mutateConversations(conversations);
+      Swal.fire('Error', 'Failed to update conversation name', 'error');
+    }
   }
 
-  async function deleteConversation(conversation: Conversation) {
+  async function removeConversation(conversation: Conversation) {
     const { isConfirmed } = await Swal.fire({
-      title: "Are you sure you want to delete this conversation?",
+      title: 'Are you sure you want to delete this conversation?',
       text: "You won't be able to revert this!",
-      icon: "warning",
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
     });
 
-    if (isConfirmed) {
-      await conversation.delete();
-      postHog?.capture("user_deleted_conversation");
-      // Delete the conversation_id from the conversations state variable
-      const newConversations = conversations.filter(
-        (cur) => cur.conversationId != conversation.conversationId
-      );
-      if (conversation.conversationId == conversationId) {
-        if (newConversations.length > 1) {
-          setConversationId(newConversations[0].conversationId);
-        } else {
-          const newConv = await api?.new();
-          setConversationId(newConv?.conversationId);
-          mutateConversations([newConv]);
-        }
-      }
-      mutateConversations(newConversations);
-      // setConversations((oldConversations: Conversation[]) => {
-      //   const newConversations = oldConversations.filter(
-      //     (cur) => cur.conversationId != conversation.conversationId
-      //   );
-      //   console.log("check type", Array.isArray(newConversations));
+    if (!isConfirmed) return;
 
-      //   // If it was the currentConversation, change the currentConversation to the next one in the list
-      //   if (conversation == currentConversation) {
-      //     if (newConversations.length > 1) {
-      //       setCurrentConversation(newConversations[0]);
-      //     } else {
-      //       // If there is no current conversation create a new one
-      //       const newConv = await api?.new();
-      //       setCurrentConversation(newConv);
-      //       return [newConv];
-      //     }
-      //   }
-      //   return newConversations;
-      // });
+    // Store original state for rollback
+    const originalConversations = conversations;
+
+    // Optimistically update UI
+    const newConversations = conversations.filter(
+      (cur) => cur.conversationId != conversation.conversationId
+    );
+    mutateConversations(newConversations, false);
+
+    if (conversation.conversationId === conversationId) {
+      if (newConversations.length >= 1) {
+        setConversationId(newConversations[0].conversationId);
+      }
+    }
+
+    try {
+      await deleteConversation(conversation.conversationId);
+      postHog?.capture('user_deleted_conversation');
+
+      // If we need to create a new conversation because we deleted the last one
+      if (newConversations.length === 0) {
+        const newConv = await createConversation();
+        setConversationId(newConv?.conversationId);
+        mutateConversations([newConv!]);
+      }
+    } catch (error) {
+      // Revert on error
+      mutateConversations(originalConversations);
+      setConversationId(conversationId);
+      Swal.fire('Error', 'Failed to delete conversation', 'error');
     }
   }
 
   async function addChat() {
-    const conversation = await api?.new();
-    postHog?.capture("user_created_conversation");
-    setConversationId(conversation?.conversationId);
-    mutateConversations([conversation, ...conversations]);
+    // Create a temporary conversation with a loading state
+    const tempId = 'temp-' + Date.now();
+    const tempConversation: Conversation = {
+      conversationId: tempId,
+      name: 'Untitled',
+    };
+
+    // Optimistically add the temporary conversation
+    mutateConversations([tempConversation, ...conversations], false);
+    setConversationId(tempId);
+
+    try {
+      const newConversation = await createConversation();
+      postHog?.capture('user_created_conversation');
+
+      // Replace temporary conversation with the real one
+      mutateConversations([
+        newConversation!,
+        ...conversations.filter((c) => c.conversationId !== tempId),
+      ]);
+      setConversationId(newConversation?.conversationId);
+    } catch (error) {
+      // Remove temporary conversation on error
+      mutateConversations(conversations);
+      setConversationId(conversationId);
+      Swal.fire('Error', 'Failed to create new chat', 'error');
+    }
   }
+
+  const fetchUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  };
+
+  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
 
   return (
     <div
-      className={`fixed lg:static z-20 inset-0 flex-none h-full w-full lg:absolute lg:h-auto lg:overflow-visible lg:pt-0 lg:w-60 xl:w-72 lg:block lg:shadow-lg border-r border-gray-300 dark:border-gray-700 ${isSidebarOpen ? "" : "hidden"
-        }`}
+      className={`${departureMono.className} absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}
     >
-      <div
-        className={`h-full scrollbar-trigger overflow-hidden bg-white dark:bg-gray-950 dark:text-white sm:w-3/5 w-4/5 lg:w-full flex flex-col ${isSidebarOpen ? "fixed lg:static" : "sticky"
-          } top-0 left-0`}
-      >
+      <div className="h-full overflow-hidden bg-white dark:bg-gray-950 dark:text-white flex flex-col border-gray-200 dark:border-gray-700 border-r">
         {/* Section 1: Top buttons */}
-        <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-300 dark:border-gray-700">
+        <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-200 dark:border-gray-700">
           <button
             className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
             onClick={addChat}
+            disabled={!isSubscribed}
           >
             New Chat
           </button>
           <button
             className="lg:hidden bg-neon-green text-black rounded-lg px-4 py-2 h-10"
-            onClick={() => setIsSidebarOpen(false)}
+            onClick={toggleSidebar}
           >
             <GrClose />
           </button>
@@ -140,39 +190,88 @@ export default function Sidebar({
 
         {/* Section 2: Scrollable items */}
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
-          {
-            conversations.length > 0
-              ? conversations.map((cur, i) => (
+          {conversations.length > 0
+            ? conversations.map((cur, i) => (
                 <ConversationTab
                   conversation={cur}
                   select={() => setConversationId(cur.conversationId)}
                   selected={conversationId === cur.conversationId}
                   edit={() => editConversation(cur)}
-                  del={() => deleteConversation(cur)}
+                  del={() => removeConversation(cur)}
                   key={i}
                 />
               ))
-              : Array.from({ length: 5 }).map((_, i) => (
+            : Array.from({ length: 5 }).map((_, i) => (
                 <ConversationTab loading key={i} />
-              ))
-          }
-        </div >
+              ))}
+        </div>
 
         {/* Section 3: Authentication information */}
-        < div className="border-t border-gray-300 dark:border-gray-700 p-4 w-full" >
-          {/* Replace this with your authentication information */}
-          <button
-            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              location.reload();
-            }}
-          >
-            Sign Out
-          </button>
-
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 w-full flex items-center justify-between">
+          <div className="flex items-center">
+            {isUserLoading ? (
+              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 animate-pulse"></div>
+            ) : user?.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt="Profile"
+                className="w-8 h-8 rounded-full mr-2"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-300 mr-2 flex items-center justify-center">
+                <FaUser className="w-5 h-5 text-gray-600" />
+              </div>
+            )}
+            <span className="text-sm font-medium">
+              {isUserLoading
+                ? 'Loading...'
+                : user?.user_metadata?.full_name || user?.email || 'User Name'}
+            </span>
+          </div>
+          <div className="relative">
+            <button
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                />
+              </svg>
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-10">
+                <button
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                  onClick={() => {
+                    router.push('/settings');
+                  }}
+                >
+                  Account Settings
+                </button>
+                <button
+                  className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    location.reload();
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }

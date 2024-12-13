@@ -1,20 +1,17 @@
-[tool.poetry]
-name = "tutor-gpt api"
+[project]
+name = "api"
 version = "0.6.0"
 description = "The REST API Implementation of Tutor-GPT"
-authors = ["Vineeth Voruganti <13438633+VVoruganti@users.noreply.github.com>"]
-readme = "README.md"
-package-mode = false
+authors = [{ name = "Plastic Labs", email = "hello@plasticlabs.ai" }]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.112.2",
+    "sentry-sdk[fastapi]>=2.13.0",
+    "agent",
+    "python-dotenv>=1.0.1",
+    "honcho-ai>=0.0.17",
+    "supabase>=2.9.1",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-agent = { path = "../agent", develop = true }
-fastapi = {extras = ["standard"], version = "^0.112.2"}
-sentry-sdk = {extras = ["fastapi"], version = "^2.13.0"}
-honcho-ai = "^0.0.14"
-python-dotenv = "^1.0.1"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv.sources]
+agent = {workspace=true}

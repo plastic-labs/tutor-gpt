@@ -1,6 +1,6 @@
-import { Conversation } from "@/utils/api";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import Skeleton from "react-loading-skeleton";
+import { Conversation } from '@/utils/types';
+import { FaEdit, FaTrash } from 'react-icons/fa';
+import Skeleton from 'react-loading-skeleton';
 
 interface ConversationTabRegularProps {
   conversation: Conversation;
@@ -35,7 +35,7 @@ export function ConversationTab({
   return (
     <div
       className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 hover:dark:bg-gray-800  ${
-        selected ? "bg-gray-200 dark:bg-gray-800" : ""
+        selected ? 'bg-gray-200 dark:bg-gray-800' : ''
       }`}
       onClick={select}
     >
@@ -47,7 +47,7 @@ export function ConversationTab({
         <>
           <div>
             <h2 className="font-bold overflow-ellipsis overflow-hidden ">
-              {conversation.name || "Untitled"}
+              {conversation.name || 'Untitled'}
             </h2>
           </div>
           <div className="flex flex-row justify-end gap-2 items-center w-1/5">

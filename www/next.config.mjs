@@ -1,23 +1,9 @@
-// import MillionLint from '@million/lint';
 import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
-  // output: "standalone"
-  //  rewrites: async () => {
-  //    return [
-  //      {
-  //        source: "/api/:path*",
-  //        destination:
-  //          process.env.NODE_ENV === "development"
-  //            ? "http://127.0.0.1:8000/api/:path*"
-  //            : `${process.env.URL}/api/:path*`,
-  //      },
-  //    ];
-  //  },
+  output: "standalone",
 };
-// export default MillionLint.next({
-//   rsc: true
-// })(
-export default withSentryConfig(nextConfig, {
+
+const sentryConfig = withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
@@ -32,7 +18,7 @@ export default withSentryConfig(nextConfig, {
   widenClientFileUpload: true,
   // Automatically annotate React components to show their full name in breadcrumbs and session replay
   reactComponentAnnotation: {
-    enabled: true
+    enabled: true,
   },
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
@@ -47,5 +33,22 @@ export default withSentryConfig(nextConfig, {
   // See the following for more information:
   // https://docs.sentry.io/product/crons/
   // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true
+  automaticVercelMonitors: true,
+
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Document-Policy",
+            value: "js-profiling",
+          },
+        ],
+      },
+    ];
+  },
 });
+
+export default sentryConfig;
+// export default MillionLint.next({ rsc: true })(sentryConfig);

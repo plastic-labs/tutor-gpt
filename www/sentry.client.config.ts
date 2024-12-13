@@ -4,17 +4,28 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+const SENTRY_ENVIRONMENT = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT;
+
 Sentry.init({
-  dsn: "https://736480aca394efabfb1249779653c026@o4505873635606528.ingest.us.sentry.io/4505905019682816",
+  dsn: SENTRY_DSN,
 
   // Add optional integrations for additional features
   integrations: [
     Sentry.replayIntegration(),
+    Sentry.browserTracingIntegration(),
+    Sentry.browserProfilingIntegration()
   ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  tracesSampleRate: SENTRY_ENVIRONMENT === "production" ? 0.1 : 1,
+  tracePropagationTargets: [
+    "localhost",
+    /^\//,
+    /^https:\/\/chat\.bloombot\.ai\/api/,
+  ],
 
+  profilesSampleRate: SENTRY_ENVIRONMENT === "production" ? 0.1 : 1,
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
