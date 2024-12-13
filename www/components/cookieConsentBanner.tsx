@@ -55,10 +55,14 @@ export function CookieConsentBanner() {
         <p className="text-sm dark:text-white mb-4">
           {`We use cookies to enhance your browsing experience and analyze our
           traffic. By clicking "Accept All" you consent to our use of cookies. `}
-          {/* TODO: Add cookie policy link routing
-            <a href="/cookie-policy" className="text-blue-500 hover:underline">
+          <a 
+            href="https://app.termly.io/policy-viewer/policy.html?policyUUID=028f5251-5858-4799-bffa-26a9709b3fed"
+            className="text-blue-500 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Cookie Policy
-          </a> */}
+          </a>
         </p>
         <div className="flex flex-row gap-2">
           <button

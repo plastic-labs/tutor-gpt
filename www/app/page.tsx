@@ -6,6 +6,7 @@ import { getFreeMessageCount } from '@/utils/supabase/actions';
 import { getConversations } from './actions/conversations';
 import { getMessages } from './actions/messages';
 import { type Message } from '@/utils/types';
+import { CookieConsentBanner } from "@/components/cookieConsentBanner";
 
 export default async function Home() {
   const supabase = createClient();
@@ -48,14 +49,17 @@ export default async function Home() {
   }
 
   return (
-    <Chat
-      initialUserId={user.id}
-      initialEmail={user.email}
-      initialIsSubscribed={isSubscribed}
-      initialFreeMessages={freeMessages}
-      initialConversations={conversations}
-      initialMessages={initialMessages}
-      initialConversationId={initialConversationId}
-    />
+    <>
+      <Chat
+        initialUserId={user.id}
+        initialEmail={user.email}
+        initialIsSubscribed={isSubscribed}
+        initialFreeMessages={freeMessages}
+        initialConversations={conversations}
+        initialMessages={initialMessages}
+        initialConversationId={initialConversationId}
+      />
+      <CookieConsentBanner />
+    </>
   );
 }
