@@ -1,28 +1,35 @@
-import { Cache, State, useSWRConfig } from 'swr';
+import { Cache, State } from 'swr';
+
+export let unloadListener: ((ev: BeforeUnloadEvent) => void) | null = null;
 
 export function localStorageProvider(): Cache {
-  // When initializing, we restore the data from `localStorage` into a map.
   if (typeof window !== 'undefined') {
     const map: Map<string, State> = new Map(
       JSON.parse(localStorage.getItem('app-cache') || '[]')
     );
 
-    // Before unloading the app, we write back all the data into `localStorage`.
-    window.addEventListener('beforeunload', () => {
-      const appCache = JSON.stringify(Array.from(map.entries()));
-      localStorage.setItem('app-cache', appCache);
-    });
+    // Remove any existing listener
+    if (unloadListener) {
+      window.removeEventListener('beforeunload', unloadListener);
+    }
+
+    unloadListener = () => {
+      localStorage.setItem('app-cache', JSON.stringify(Array.from(map.entries())));
+    };
+    window.addEventListener('beforeunload', unloadListener);
+
     return map;
   }
-
   return new Map();
 }
 
-export const clearSWRCache = async () => {
-  const { mutate } = useSWRConfig();
-  mutate(
-    () => true, // clear all keys
-    undefined,  // set to undefined
-    { revalidate: false }
-  );
+export const clearSWRCache = () => {
+  if (typeof window !== 'undefined') {
+    // Remove the listener before clearing cache
+    if (unloadListener) {
+      window.removeEventListener('beforeunload', unloadListener);
+      unloadListener = null;
+    }
+    localStorage.removeItem('app-cache');
+  }
 };

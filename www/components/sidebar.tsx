@@ -7,7 +7,7 @@ import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
 import { ConversationTab } from './conversationtab';
 import { useState } from 'react';
-import useSWR, { KeyedMutator } from 'swr';
+import useSWR, { KeyedMutator, useSWRConfig } from 'swr';
 import { FaUser } from 'react-icons/fa';
 import {
   createConversation,
@@ -20,6 +20,7 @@ import { clearSWRCache } from '@/utils/swrCache';
 const departureMono = localFont({
   src: '../fonts/DepartureMono-Regular.woff2',
 });
+
 
 export default function Sidebar({
   conversations,
@@ -42,6 +43,7 @@ export default function Sidebar({
   const supabase = createClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
+  const { mutate } = useSWRConfig();
 
   async function editConversation(cur: Conversation) {
     const { value: newName } = await Swal.fire({
@@ -261,10 +263,11 @@ export default function Sidebar({
                 </button>
                 <button
                   className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
+                  onClick={async () => {                    
                     clearSWRCache();
-                    location.reload();
+                    mutate(() => true, undefined, { revalidate: false });
+                    await supabase.auth.signOut();
+                    window.location.href = '/';
                   }}
                 >
                   Sign Out
