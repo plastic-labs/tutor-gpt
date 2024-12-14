@@ -9,6 +9,7 @@ import Swal from 'sweetalert2';
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
+import Turnstile, { useTurnstile } from 'react-turnstile';
 
 import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
@@ -128,6 +129,10 @@ export default function Chat({
   const input = useRef<ElementRef<'textarea'>>(null);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
   const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+
+  const turnstileEnabled = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== null;
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '';
+  const turnstile = useTurnstile();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -318,7 +323,7 @@ export default function Chat({
         honchoResponse
       ).json()) as HonchoResponse;
 
-      const pureThought = thoughtText
+      const pureThought = thoughtText;
 
       thoughtText +=
         '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
@@ -491,10 +496,10 @@ export default function Chat({
               />
             )}
           </section>
-          <div className="p-3 pb-0 lg:p-5 lg:pb-0">
+          <div className="p-3 lg:p-5">
             <form
               id="send"
-              className="flex p-3 lg:p-5 gap-3 border-gray-300"
+              className="flex flex-col items-center gap-3 border-gray-300"
               onSubmit={(e) => {
                 e.preventDefault();
                 if (canSend && input.current?.value && canUseApp) {
@@ -503,41 +508,56 @@ export default function Chat({
                 }
               }}
             >
-              <textarea
-                ref={input}
-                placeholder={
-                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
-                }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
-                  ? 'border-green-200 focus:border-green-200'
-                  : 'border-red-200 focus:border-red-200 opacity-50'
-                  }`}
-                rows={1}
-                disabled={!canUseApp}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (canSend && input.current?.value && canUseApp) {
-                      posthog.capture('user_sent_message');
-                      chat();
-                    }
+              {turnstileEnabled && (
+                <Turnstile
+                  sitekey={turnstileSiteKey}
+                  appearance="interaction-only"
+                  onVerify={(token) => {
+                    document.cookie = `cf-turnstile-response=${token}`;
+                    turnstile.remove();
+                  }}
+                />
+              )}
+              <div className="flex gap-3 w-full">
+                <textarea
+                  ref={input}
+                  placeholder={
+                    canUseApp
+                      ? 'Type a message...'
+                      : 'Subscribe to send messages'
                   }
-                }}
-              />
-              <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-                type="submit"
-                disabled={!canSend || !canUseApp}
-              >
-                <FaPaperPlane className="inline" />
-              </button>
-              <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-                onClick={() => setIsThoughtsOpen(true)}
-                type="button"
-              >
-                <FaLightbulb className="inline" />
-              </button>
+                  className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none ${
+                    canSend && canUseApp
+                      ? 'border-green-200'
+                      : 'border-red-200 opacity-50'
+                  }`}
+                  rows={1}
+                  disabled={!canUseApp}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (canSend && input.current?.value && canUseApp) {
+                        posthog.capture('user_sent_message');
+                        chat();
+                      }
+                    }
+                  }}
+                />
+                <button
+                  className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                  type="submit"
+                  disabled={!canSend || !canUseApp}
+                >
+                  <FaPaperPlane className="inline" />
+                </button>
+                <button
+                  className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                  onClick={() => setIsThoughtsOpen(true)}
+                  type="button"
+                >
+                  <FaLightbulb className="inline" />
+                </button>
+              </div>
             </form>
           </div>
         </div>
