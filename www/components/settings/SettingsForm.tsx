@@ -153,7 +153,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
               />
               <Button
                 onClick={handleProfileUpdate}
-                className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
+                className="bg-neon-green text-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
               >
                 Save
               </Button>
@@ -218,7 +218,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
             </div>
             <Button
               onClick={handleEmailChange}
-              className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
+              className="bg-neon-green text-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
             >
               Save
             </Button>
@@ -226,7 +226,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         ) : (
           <Button
             onClick={handlePasswordChange}
-            className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
+            className="bg-neon-green text-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
           >
             Save Password
           </Button>

@@ -1,13 +1,13 @@
-"use client"
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+'use client';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export function CookieConsentBanner() {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const router = useRouter();
 
   useEffect(() => {
-    const storedConsent = localStorage.getItem("cookieConsent");
+    const storedConsent = localStorage.getItem('cookieConsent');
     if (storedConsent !== null) {
       setIsVisible(false);
     }
@@ -15,13 +15,13 @@ export function CookieConsentBanner() {
 
   const acceptCookies = () => {
     setIsVisible(false);
-    localStorage.setItem("cookieConsent", JSON.stringify(true));
+    localStorage.setItem('cookieConsent', JSON.stringify(true));
     // TODO: Log file or sentry record
     // onAccept();
   };
 
   const declineCookies = () => {
-    router.push("https://bloombot.ai");
+    router.push('https://bloombot.ai');
     // setIsVisible(false);
     // localStorage.setItem("cookieConsent", JSON.stringify(false));
     // Log file or sentry record

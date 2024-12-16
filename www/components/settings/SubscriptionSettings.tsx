@@ -7,6 +7,7 @@ import { createStripePortal } from '@/utils/stripe/actions';
 import { Tables } from '@/utils/database.types';
 
 import PriceCard from '@/components/PriceCard';
+import { Button } from '@/components/ui/button';
 type Price = Tables<'prices'>;
 // type Subscription = Tables<'subscriptions'>;
 
@@ -51,13 +52,13 @@ export default function SubscriptionManager({ subscription, products }: Props) {
             : 'No Active Subscription'}
         </p>
         {subscription != null && subscription.status == 'active' ? (
-          <button
+          <Button
             onClick={handleManage}
             disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+            className="bg-neon-green text-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 px-4 py-2 rounded"
           >
             Manage Subscription
-          </button>
+          </Button>
         ) : (
           <div className="flex flex-row gap-3">
             {prices.map((price: Price, idx: number) => (

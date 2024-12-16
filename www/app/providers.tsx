@@ -46,7 +46,7 @@ export function SWRProvider({ children }: { children: React.ReactNode }) {
   return (
     <SWRConfig
       value={{
-        provider: localStorageProvider
+        provider: localStorageProvider,
       }}
     >
       {children}

@@ -159,40 +159,40 @@ export default function Chat({
 
   const conversationsKey = useMemo(() => userId, [userId]);
 
-const { data: conversations, mutate: mutateConversations } = useSWR(
-  conversationsKey,
-  conversationsFetcher,
-  {
-    fallbackData: initialConversations,
-    provider: localStorageProvider,
-    onSuccess: async (conversations) => {
-      if (conversations.length) {
-        // If there are existing conversations:
-        // 1. Set the current conversation to the first one if none is selected
-        // 2. Or if the selected conversation doesn't exist in the list
-        if (
-          !conversationId ||
-          !conversations.find((c) => c.conversationId === conversationId)
-        ) {
-          setConversationId(conversations[0].conversationId);
+  const { data: conversations, mutate: mutateConversations } = useSWR(
+    conversationsKey,
+    conversationsFetcher,
+    {
+      fallbackData: initialConversations,
+      provider: localStorageProvider,
+      onSuccess: async (conversations) => {
+        if (conversations.length) {
+          // If there are existing conversations:
+          // 1. Set the current conversation to the first one if none is selected
+          // 2. Or if the selected conversation doesn't exist in the list
+          if (
+            !conversationId ||
+            !conversations.find((c) => c.conversationId === conversationId)
+          ) {
+            setConversationId(conversations[0].conversationId);
+          }
+          setCanSend(true);
+        } else {
+          // If no conversations exist:
+          // 1. Create a new conversation
+          // 2. Set it as the current conversation
+          // 3. Refresh the conversations list
+          const newConvo = await createConversation();
+          setConversationId(newConvo?.conversationId);
+          await mutateConversations();
         }
-        setCanSend(true);
-      } else {
-        // If no conversations exist:
-        // 1. Create a new conversation
-        // 2. Set it as the current conversation
-        // 3. Refresh the conversations list
-        const newConvo = await createConversation();
-        setConversationId(newConvo?.conversationId);
-        await mutateConversations();
-      }
-    },
-    revalidateOnFocus: false,
-    dedupingInterval: 60000,
-    revalidateIfStale: false,
-    revalidateOnMount: true 
-  }
-);
+      },
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+      revalidateIfStale: false,
+      revalidateOnMount: true
+    }
+  );
 
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
@@ -202,31 +202,27 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
     return getMessages(conversationId);
   };
 
-  const messagesKey = useMemo(() => 
-    conversationId ? ['messages', conversationId] : null,
+  const messagesKey = useMemo(
+    () => (conversationId ? ['messages', conversationId] : null),
     [conversationId]
   );
-  
+
   const {
     data: messages,
     mutate: mutateMessages,
     isLoading: messagesLoading,
-  } = useSWR(
-    messagesKey,
-    () => messagesFetcher(conversationId!),
-    {
-      fallbackData: initialMessages,
-      provider: localStorageProvider, 
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-      onSuccess: (data) => {
-        if (conversationId?.startsWith('temp-')) {
-          mutateMessages([], false);
-        }
+  } = useSWR(messagesKey, () => messagesFetcher(conversationId!), {
+    fallbackData: initialMessages,
+    provider: localStorageProvider,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000,
+    onSuccess: (data) => {
+      if (conversationId?.startsWith('temp-')) {
+        mutateMessages([], false);
       }
-    }
-  );
+    },
+  });
 
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
     if (!userId || !conversationId) return;
@@ -344,7 +340,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
         honchoResponse
       ).json()) as HonchoResponse;
 
-      const pureThought = thoughtText
+      const pureThought = thoughtText;
 
       thoughtText +=
         '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
@@ -477,7 +473,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
             </p>
           </section>
         )}
-        <div className="flex flex-col flex-grow overflow-hidden dark:bg-gray-900">
+        <div className="flex flex-col flex-grow overflow-hidden bg-secondary">
           <section
             className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
             ref={messageContainerRef}
@@ -534,7 +530,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
                   ? 'border-green-200 focus:border-green-200'
                   : 'border-red-200 focus:border-red-200 opacity-50'
                   }`}
@@ -551,14 +547,14 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
                 }}
               />
               <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"
                 disabled={!canSend || !canUseApp}
               >
                 <FaPaperPlane className="inline" />
               </button>
               <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 onClick={() => setIsThoughtsOpen(true)}
                 type="button"
               >

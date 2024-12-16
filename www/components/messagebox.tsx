@@ -4,7 +4,13 @@ import icon from '@/public/bloomicon.jpg';
 import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import MarkdownWrapper from './markdownWrapper';
-import { FaLightbulb, FaThumbsDown, FaThumbsUp, FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import {
+  FaLightbulb,
+  FaThumbsDown,
+  FaThumbsUp,
+  FaChevronDown,
+  FaChevronRight,
+} from 'react-icons/fa';
 import { type Message } from '@/utils/types';
 import Spinner from './spinner';
 import { getThought } from '@/app/actions/messages';
@@ -104,7 +110,7 @@ export default function MessageBox({
     <article
       className={
         'flex p-5 lg:p-8 gap-2 lg:gap-5 lg:rounded-2xl ' +
-        (isUser ? 'bg-gray-100 dark:bg-gray-800' : '')
+        (isUser ? 'bg-accent' : '')
       }
     >
       {loading ? memoizedSkeleton : memoizedImage}
@@ -150,7 +156,7 @@ export default function MessageBox({
               className={`p-2 rounded-full ${
                 isThoughtOpen
                   ? 'bg-neon-green text-gray-800'
-                  : 'bg-gray-200 dark:bg-gray-700'
+                  : 'bg-accent text-foreground'
               }`}
               onClick={handleFetchThought}
               disabled={isThoughtLoading}

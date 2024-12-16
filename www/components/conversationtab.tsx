@@ -35,7 +35,7 @@ export function ConversationTab({
   return (
     <div
       className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 hover:dark:bg-gray-800  ${
-        selected ? 'bg-gray-200 dark:bg-gray-800' : ''
+        selected ? 'bg-accent' : ''
       }`}
       onClick={select}
     >

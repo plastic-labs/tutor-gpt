@@ -32,12 +32,9 @@ export default function Forgot(props: any) {
   };
 
   return (
-    <form action="#" className="mt-8 space-y-6">
+    <form action="#" className="mt-8 space-y-6 text-foreground">
       <div>
-        <label
-          htmlFor="Email"
-          className="block text-sm font-medium text-gray-700"
-        >
+        <label htmlFor="Email" className="block text-sm font-medium">
           Email
         </label>
 
@@ -45,7 +42,7 @@ export default function Forgot(props: any) {
           type="email"
           id="Email"
           name="email"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-accent text-sm text-foreground shadow-sm"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -59,12 +56,12 @@ export default function Forgot(props: any) {
           Send Recovery Email
         </button>
 
-        <p className="mt-4 text-sm text-gray-500 sm:mt-0">
+        <p className="mt-4 text-sm text-foreground sm:mt-0">
           Don&apos;t have an account?{' '}
           <a
             href="#"
             onClick={() => stateSync('SIGNUP')}
-            className="text-gray-700 underline"
+            className="text-foreground underline"
           >
             Sign up
           </a>
