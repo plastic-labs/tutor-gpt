@@ -18,13 +18,14 @@ import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
 import { getConversations, createConversation } from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
 import { type Message } from '@/utils/types';
+import { localStorageProvider } from '@/utils/swrCache';
 
 import useAutoScroll from '@/hooks/autoscroll';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
-// import Thoughts from '@/components/thoughts';
+
 const MessageBox = dynamic(() => import('@/components/messagebox'), {
   ssr: false,
 });
@@ -90,7 +91,6 @@ interface HonchoResponse {
   content: string;
 }
 
-// Near the top of the file, add the default message constant
 const defaultMessage: Message = {
   content: `I’m Bloom, your Aristotelian learning companion, here to guide your intellectual journey.
 
@@ -156,29 +156,20 @@ export default function Chat({
     return getConversations();
   };
 
-  const { data: conversations, mutate: mutateConversations } = useSWR(
-    userId,
-    conversationsFetcher,
-    {
-      fallbackData: initialConversations,
-      onSuccess: async (conversations) => {
-        if (conversations.length) {
-          if (
-            !conversationId ||
-            !conversations.find((c) => c.conversationId === conversationId)
-          ) {
-            setConversationId(conversations[0].conversationId);
-          }
-          setCanSend(true);
-        } else {
-          const newConvo = await createConversation();
-          setConversationId(newConvo?.conversationId);
-          await mutateConversations();
-        }
-      },
-      revalidateOnFocus: false,
-    }
-  );
+  const conversationsKey = useMemo(() => userId, [userId]);
+
+const { data: conversations, mutate: mutateConversations } = useSWR(
+  conversationsKey,
+  conversationsFetcher,
+  {
+    fallbackData: initialConversations,
+    provider: localStorageProvider,
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+    revalidateIfStale: false,
+    revalidateOnMount: false,
+  }
+);
 
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
@@ -188,15 +179,21 @@ export default function Chat({
     return getMessages(conversationId);
   };
 
+  const messagesKey = useMemo(() => 
+    conversationId ? ['messages', conversationId] : null,
+    [conversationId]
+  );
+  
   const {
     data: messages,
     mutate: mutateMessages,
     isLoading: messagesLoading,
   } = useSWR(
-    conversationId ? ['messages', conversationId] : null,
+    messagesKey,
     () => messagesFetcher(conversationId!),
     {
       fallbackData: initialMessages,
+      provider: localStorageProvider, 
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60000,
@@ -204,7 +201,7 @@ export default function Chat({
         if (conversationId?.startsWith('temp-')) {
           mutateMessages([], false);
         }
-      },
+      }
     }
   );
 
