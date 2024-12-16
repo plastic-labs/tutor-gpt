@@ -132,13 +132,13 @@ export default function Chat({
     return !initialConversations?.length || 
       (initialConversations.length === 1 && !initialMessages?.length);
   }, [initialConversations?.length, initialMessages?.length]);
-  const introMessage = firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'
   const defaultMessage: Message = {
-    content: `${introMessage} here to guide your intellectual journey.
+    content:
+    `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
 
-    The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
+The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
 
-    What's on your mind? Let's dive in. 🌱`,
+What\'s on your mind? Let\'s dive in. 🌱`,
     isUser: false,
     id: '',
     metadata: {},
