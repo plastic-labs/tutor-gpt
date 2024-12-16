@@ -153,7 +153,8 @@ export default function Chat({
   };
 
   const conversationsFetcher = async () => {
-    return getConversations();
+    const result = await getConversations();
+    return result;
   };
 
   const conversationsKey = useMemo(() => userId, [userId]);
@@ -164,10 +165,32 @@ export default function Chat({
     {
       fallbackData: initialConversations,
       provider: localStorageProvider,
+      onSuccess: async (conversations) => {
+        if (conversations.length) {
+          // If there are existing conversations:
+          // 1. Set the current conversation to the first one if none is selected
+          // 2. Or if the selected conversation doesn't exist in the list
+          if (
+            !conversationId ||
+            !conversations.find((c) => c.conversationId === conversationId)
+          ) {
+            setConversationId(conversations[0].conversationId);
+          }
+          setCanSend(true);
+        } else {
+          // If no conversations exist:
+          // 1. Create a new conversation
+          // 2. Set it as the current conversation
+          // 3. Refresh the conversations list
+          const newConvo = await createConversation();
+          setConversationId(newConvo?.conversationId);
+          await mutateConversations();
+        }
+      },
       revalidateOnFocus: false,
       dedupingInterval: 60000,
       revalidateIfStale: false,
-      revalidateOnMount: false,
+      revalidateOnMount: true
     }
   );
 
@@ -507,11 +530,10 @@ export default function Chat({
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
+                  ? 'border-green-200 focus:border-green-200'
+                  : 'border-red-200 focus:border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
