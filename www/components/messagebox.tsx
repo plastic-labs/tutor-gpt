@@ -4,10 +4,10 @@ import icon from '@/public/bloomicon.jpg';
 import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import MarkdownWrapper from './markdownWrapper';
-import { FaLightbulb, FaThumbsDown, FaThumbsUp } from 'react-icons/fa';
+import { FaLightbulb, FaThumbsDown, FaThumbsUp, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { type Message } from '@/utils/types';
-import { getThought } from '@/app/actions/messages';
 import Spinner from './spinner';
+import { getThought } from '@/app/actions/messages';
 
 export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
 

@@ -92,7 +92,13 @@ interface HonchoResponse {
 }
 
 const defaultMessage: Message = {
-  content: `I'm your Aristotelian learning companion — here to help you follow your curiosity in whatever direction you like. My engineering makes me extremely receptive to your needs and interests. You can reply normally, and I'll always respond!\n\nIf I&apos;m off track, just say so!\n\nNeed to leave or just done chatting? Let me know! I'm conversational by design so I'll say goodbye 😊.`,
+  content: `I’m Bloom, your Aristotelian learning companion, here to guide your intellectual journey.
+
+
+The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs. 
+
+
+What’s on your mind? Let’s dive in. 🌱`,
   isUser: false,
   id: '',
   metadata: {},
