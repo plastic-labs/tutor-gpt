@@ -158,18 +158,18 @@ export default function Chat({
 
   const conversationsKey = useMemo(() => userId, [userId]);
 
-const { data: conversations, mutate: mutateConversations } = useSWR(
-  conversationsKey,
-  conversationsFetcher,
-  {
-    fallbackData: initialConversations,
-    provider: localStorageProvider,
-    revalidateOnFocus: false,
-    dedupingInterval: 60000,
-    revalidateIfStale: false,
-    revalidateOnMount: false,
-  }
-);
+  const { data: conversations, mutate: mutateConversations } = useSWR(
+    conversationsKey,
+    conversationsFetcher,
+    {
+      fallbackData: initialConversations,
+      provider: localStorageProvider,
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+      revalidateIfStale: false,
+      revalidateOnMount: false,
+    }
+  );
 
   const messagesFetcher = async (conversationId: string) => {
     if (!userId) return Promise.resolve([]);
@@ -179,31 +179,27 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
     return getMessages(conversationId);
   };
 
-  const messagesKey = useMemo(() => 
-    conversationId ? ['messages', conversationId] : null,
+  const messagesKey = useMemo(
+    () => (conversationId ? ['messages', conversationId] : null),
     [conversationId]
   );
-  
+
   const {
     data: messages,
     mutate: mutateMessages,
     isLoading: messagesLoading,
-  } = useSWR(
-    messagesKey,
-    () => messagesFetcher(conversationId!),
-    {
-      fallbackData: initialMessages,
-      provider: localStorageProvider, 
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 60000,
-      onSuccess: (data) => {
-        if (conversationId?.startsWith('temp-')) {
-          mutateMessages([], false);
-        }
+  } = useSWR(messagesKey, () => messagesFetcher(conversationId!), {
+    fallbackData: initialMessages,
+    provider: localStorageProvider,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000,
+    onSuccess: (data) => {
+      if (conversationId?.startsWith('temp-')) {
+        mutateMessages([], false);
       }
-    }
-  );
+    },
+  });
 
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
     if (!userId || !conversationId) return;
@@ -321,7 +317,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
         honchoResponse
       ).json()) as HonchoResponse;
 
-      const pureThought = thoughtText
+      const pureThought = thoughtText;
 
       thoughtText +=
         '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
@@ -454,7 +450,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
             </p>
           </section>
         )}
-        <div className="flex flex-col flex-grow overflow-hidden dark:bg-gray-900">
+        <div className="flex flex-col flex-grow overflow-hidden bg-secondary">
           <section
             className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
             ref={messageContainerRef}
@@ -511,10 +507,11 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
-                  ? 'border-green-200 focus:border-green-200'
-                  : 'border-red-200 focus:border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200 focus:border-green-200'
+                    : 'border-red-200 focus:border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
@@ -528,14 +525,14 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
                 }}
               />
               <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"
                 disabled={!canSend || !canUseApp}
               >
                 <FaPaperPlane className="inline" />
               </button>
               <button
-                className="bg-dark-green text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
+                className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 onClick={() => setIsThoughtsOpen(true)}
                 type="button"
               >
