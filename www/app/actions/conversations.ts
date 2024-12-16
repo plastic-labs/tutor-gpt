@@ -51,17 +51,14 @@ export async function createConversation() {
     throw new Error('Unauthorized');
   }
 
-
   const honchoApp = await getHonchoApp();
   const honchoUser = await getHonchoUser(user.id);
-
 
   const session = await honcho.apps.users.sessions.create(
     honchoApp.id,
     honchoUser.id,
     {}
   );
-
 
   return { conversationId: session.id, name: 'Untitled' };
 }

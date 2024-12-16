@@ -14,7 +14,10 @@ export function localStorageProvider(): Cache {
     }
 
     unloadListener = () => {
-      localStorage.setItem('app-cache', JSON.stringify(Array.from(map.entries())));
+      localStorage.setItem(
+        'app-cache',
+        JSON.stringify(Array.from(map.entries()))
+      );
     };
     window.addEventListener('beforeunload', unloadListener);
 

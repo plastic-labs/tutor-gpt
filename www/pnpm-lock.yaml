@@ -45,8 +45,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       honcho-ai:
-        specifier: ^0.0.10
-        version: 0.0.10(encoding@0.1.13)
+        specifier: ^0.0.11
+        version: 0.0.11(encoding@0.1.13)
       katex:
         specifier: ^0.16.11
         version: 0.16.11
@@ -3460,8 +3460,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  honcho-ai@0.0.10:
-    resolution: {integrity: sha512-j7rJw437aMei3Ry5InX3Z8H7JamlKokUHeV/03gQAZEyMDZzvssz8sEN2ew2GcxHaslShM1fWSXW2Ip+2qNF6w==}
+  honcho-ai@0.0.11:
+    resolution: {integrity: sha512-SUl/PnMldTCz8G4S8faP00M2iFd9qWDkI5U8w0FQ7OC6SgKzTf1nJ/j3gyzctzR2IZ6LrOz/2d5OwO4f/PCMww==}
 
   http-errors@2.0.0:
     resolution: {integrity: sha512-FtwrG/euBzaEjYeRqOgly7G0qviiXoJWnvEH2Z1plBdXgbyjv34pHTSb9zoeHMyDy33+DWy5Wt9Wo+TURtOYSQ==}
@@ -5374,6 +5374,7 @@ packages:
 
   sudo-prompt@9.2.1:
     resolution: {integrity: sha512-Mu7R0g4ig9TUuGSxJavny5Rv0egCEtpZRNMrZaYS1vxkiIxGiGUwoezU3LazIQ+KE04hTrTfNPgxU5gzi7F5Pw==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   supabase@1.207.9:
     resolution: {integrity: sha512-BJPwsAd2UBIpQawcQV3/xKHEZ8YrrkHYpgibxCZbG+RuxuhTtkHG7zR4I3LylIIEwcKp3hmDKu/hO1m2NT5RXA==}
@@ -9980,7 +9981,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  honcho-ai@0.0.10(encoding@0.1.13):
+  honcho-ai@0.0.11(encoding@0.1.13):
     dependencies:
       '@types/node': 18.19.64
       '@types/node-fetch': 2.6.12

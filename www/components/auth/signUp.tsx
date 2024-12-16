@@ -86,13 +86,10 @@ export default function SignUp(props: {
         action="#"
         ref={formRef}
         onSubmit={handleSignUp}
-        className={`mt-8 space-y-6 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}
+        className={`mt-8 space-y-6 text-foreground`}
       >
         <div>
-          <label
-            htmlFor="Email"
-            className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
-          >
+          <label htmlFor="Email" className={`block text-sm font-medium`}>
             Email
           </label>
 
@@ -100,11 +97,7 @@ export default function SignUp(props: {
             type="email"
             id="Email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
-              theme === 'dark'
-                ? 'bg-gray-700 text-white border-gray-600'
-                : 'bg-white text-gray-700 border-gray-200'
-            }`}
+            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm text-foreground bg-accent`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -114,7 +107,7 @@ export default function SignUp(props: {
           <div className="flex-1">
             <label
               htmlFor="Password"
-              className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+              className={`block text-sm font-medium text-foreground`}
             >
               Password
             </label>
@@ -123,11 +116,7 @@ export default function SignUp(props: {
               type="password"
               id="Password"
               name="password"
-              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
-                theme === 'dark'
-                  ? 'bg-gray-700 text-white border-gray-600'
-                  : 'bg-white text-gray-700 border-gray-200'
-              }`}
+              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm text-foreground bg-accent`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -136,7 +125,7 @@ export default function SignUp(props: {
           <div className="flex-1">
             <label
               htmlFor="PasswordConfirmation"
-              className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+              className={`block text-sm font-medium text-foreground`}
             >
               Password Confirmation
             </label>
@@ -145,11 +134,7 @@ export default function SignUp(props: {
               type="password"
               id="PasswordConfirmation"
               name="password_confirmation"
-              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
-                theme === 'dark'
-                  ? 'bg-gray-700 text-white border-gray-600'
-                  : 'bg-white text-gray-700 border-gray-200'
-              }`}
+              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm text-foreground bg-accent`}
               value={passwordConfirmation}
               onChange={(e) => setPasswordConfirmation(e.target.value)}
             />
@@ -162,18 +147,12 @@ export default function SignUp(props: {
               type="checkbox"
               id="MarketingAccept"
               name="marketing_accept"
-              className={`h-5 w-5 rounded-md shadow-sm ${
-                theme === 'dark'
-                  ? 'bg-gray-700 border-gray-600'
-                  : 'bg-white border-gray-200'
-              }`}
+              className={`h-5 w-5 rounded-md shadow-sm bg-accent`}
               checked={opt}
               onChange={(e) => setOpt(!opt)}
             />
 
-            <span
-              className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
-            >
+            <span className={`text-sm text-foreground`}>
               I want to receive emails about events, product updates and company
               announcements.
             </span>
@@ -186,33 +165,25 @@ export default function SignUp(props: {
               type="checkbox"
               id="AgeAccept"
               name="age_accept"
-              className={`h-5 w-5 rounded-md shadow-sm ${
-                theme === 'dark'
-                  ? 'bg-gray-700 border-gray-600'
-                  : 'bg-white border-gray-200'
-              }`}
+              className={`h-5 w-5 rounded-md shadow-sm bg-accent`}
               checked={age}
               onChange={(e) => setAge(!age)}
               required
             />
 
-            <span
-              className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
-            >
+            <span className={`text-sm text-foreground`}>
               I am confirming that I am at least 13 years old.
             </span>
           </label>
         </div>
 
         <div>
-          <p
-            className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}
-          >
+          <p className={`text-sm text-foreground`}>
             By creating an account, you agree to our{' '}
             <a
               href="https://app.termly.io/document/terms-of-service/ba5ac452-fdd6-4746-8b31-973351d05008"
               target="_blank"
-              className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
+              className={`underline text-foreground`}
               rel="noreferrer"
             >
               Terms and Conditions
@@ -221,7 +192,7 @@ export default function SignUp(props: {
             <a
               href="https://app.termly.io/document/privacy-policy/29672110-b634-40ae-854d-ebaf55e8fa75"
               target="_blank"
-              className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
+              className={`underline text-foreground`}
               rel="noreferrer"
             >
               Privacy Policy
@@ -260,13 +231,13 @@ export default function SignUp(props: {
           </button>
 
           <p
-            className={`mt-4 text-sm text-center sm:text-left ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} sm:mt-0`}
+            className={`mt-4 text-sm text-center sm:text-left text-foreground sm:mt-0`}
           >
             Already have an account?{' '}
             <a
               href="#"
               onClick={() => stateSync('LOGIN')}
-              className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
+              className={`underline text-foreground`}
             >
               Log in
             </a>

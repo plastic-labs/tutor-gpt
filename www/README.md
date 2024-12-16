@@ -55,6 +55,7 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — The stripe public key
 - `STRIPE_WEBHOOK_SECRET` — The stripe webhook secret
 
+
 Below are several optional environment variables to enable error monitoring and
 analytics.
 
