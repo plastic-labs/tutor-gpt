@@ -7,10 +7,10 @@ import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
-import { createClient } from '@/utils/supabase/client';
+// import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
@@ -41,13 +41,12 @@ async function fetchStream(
   honchoThought = ''
 ) {
   try {
-    const response = await fetch(`/api/chat`, {
+    const response = await fetch(`/api/chat/${type}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        type,
         message,
         conversationId,
         thought,
@@ -315,7 +314,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
         honchoResponse
       ).json()) as HonchoResponse;
 
-      const pureThought = thoughtText
+      const pureThought = thoughtText;
 
       thoughtText +=
         '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
@@ -505,10 +504,11 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
-                  ? 'border-green-200 focus:border-green-200'
-                  : 'border-red-200 focus:border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200 focus:border-green-200'
+                    : 'border-red-200 focus:border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
