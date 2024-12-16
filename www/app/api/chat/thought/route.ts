@@ -3,16 +3,18 @@ import {
   getUserData,
   HistoryWithoutResponse,
   Message,
-  parsePrompt,
+  // parsePrompt,
 } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
-import { readFileSync } from 'fs';
+import { render } from '@/utils/prompts/lib';
+import { thoughtPrompt } from '@/utils/prompts/thought';
+// import { readFileSync } from 'fs';
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
+// import path from 'path';
 
-const thoughtPrompt = readFileSync(
-  path.join(process.cwd(), 'utils/prompts/thought.md')
-);
+// const thoughtPrompt = readFileSync(
+//   path.join(process.cwd(), 'utils/prompts/thought.md')
+// );
 
 export async function POST(req: NextRequest) {
   const { message, conversationId } = await req.json();
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const promptMessages = parsePrompt(thoughtPrompt, thoughtHistory);
+  const promptMessages = render(thoughtPrompt, thoughtHistory);
 
   const recentResponseMeta = await honcho.apps.users.sessions.metamessages.list(
     appId,

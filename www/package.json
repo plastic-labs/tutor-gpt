@@ -23,6 +23,7 @@
     "ai": "^4.0.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "dedent-js": "^1.0.1",
     "honcho-ai": "^0.0.10",
     "katex": "^0.16.11",
     "next": "^14.2.16",

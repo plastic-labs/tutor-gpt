@@ -1,12 +1,8 @@
-import { createStream, getUserData, Message, parsePrompt } from '@/utils/ai';
+import { createStream, getUserData, Message } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
-import { readFileSync } from 'fs';
+import { render } from '@/utils/prompts/lib';
+import { responsePrompt } from '@/utils/prompts/response';
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
-
-const responsePrompt = readFileSync(
-  path.join(process.cwd(), 'utils/prompts/response.md')
-);
 
 export async function POST(req: NextRequest) {
   const { message, conversationId, honchoThought } = await req.json();
@@ -40,7 +36,7 @@ export async function POST(req: NextRequest) {
     history.push({ role: 'assistant', content: associatedMessage.content });
   }
 
-  const promptMessages = parsePrompt(responsePrompt, history);
+  const promptMessages = render(responsePrompt, history);
 
   const messages = [
     ...promptMessages,
