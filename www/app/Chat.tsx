@@ -147,7 +147,8 @@ export default function Chat({
   };
 
   const conversationsFetcher = async () => {
-    return getConversations();
+    const result = await getConversations();
+    return result;
   };
 
   const conversationsKey = useMemo(() => userId, [userId]);
@@ -183,7 +184,7 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
     revalidateOnFocus: false,
     dedupingInterval: 60000,
     revalidateIfStale: false,
-    revalidateOnMount: false,
+    revalidateOnMount: true 
   }
 );
 
