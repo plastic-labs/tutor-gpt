@@ -117,3 +117,15 @@ export const getErrorRedirect = (
     disableButton,
     arbitraryParams
   );
+
+  export const getPromptFromURL = async (url: string): Promise<{parsedUrlContent: string}> => {
+    const response = await fetch(`https://r.jina.ai/${url}`, {
+      headers: {
+        // Make sure NEXT_PUBLIC_JINA_API is set in your .env file
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_JINA_API}`
+      }
+    });
+    // Extract raw text content from the response
+    const rawText = await response.text();
+    return { parsedUrlContent: rawText };
+  };
