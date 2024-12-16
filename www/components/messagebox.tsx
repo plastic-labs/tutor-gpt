@@ -5,8 +5,9 @@ import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import MarkdownWrapper from './markdownWrapper';
 import { FaLightbulb, FaThumbsDown, FaThumbsUp, FaChevronDown, FaChevronRight } from 'react-icons/fa';
-import { API, type Message } from '@/utils/api';
+import { type Message } from '@/utils/types';
 import Spinner from './spinner';
+import { getThought } from '@/app/actions/messages';
 
 export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
 
@@ -143,22 +144,15 @@ export default function MessageBox({
     >
       {loading ? memoizedSkeleton : memoizedImage}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? (
-          <Skeleton count={4} />
-        ) : isUser && isUrlContent(text) ? (
-          // For user messages containing scraped webpage content, render in a collapsible panel
-          <UrlContentMessage text={text} />
-        ) : (
-          // Otherwise render as a regular markdown message
-          <MarkdownWrapper text={text} />
-        )}
+        {loading ? memoizedSkeleton : <MarkdownWrapper text={content} />}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button
-              className={`p-2 rounded-full ${reaction === 'thumbs_up'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700'
-                } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
+              className={`p-2 rounded-full ${
+                reaction === 'thumbs_up'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_up')}
               disabled={pendingReaction !== null}
             >
@@ -171,10 +165,11 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${reaction === 'thumbs_down'
-                ? 'bg-red-500 text-white'
-                : 'bg-gray-200 dark:bg-gray-700'
-                } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
+              className={`p-2 rounded-full ${
+                reaction === 'thumbs_down'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_down')}
               disabled={pendingReaction !== null}
             >
@@ -187,10 +182,11 @@ export default function MessageBox({
               </div>
             </button>
             <button
-              className={`p-2 rounded-full ${isThoughtOpen
-                ? 'bg-neon-green text-gray-800'
-                : 'bg-gray-200 dark:bg-gray-700'
-                }`}
+              className={`p-2 rounded-full ${
+                isThoughtOpen
+                  ? 'bg-neon-green text-gray-800'
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
               onClick={handleFetchThought}
               disabled={isThoughtLoading}
             >
