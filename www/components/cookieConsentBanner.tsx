@@ -1,8 +1,10 @@
 "use client"
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export function CookieConsentBanner() {
   const [isVisible, setIsVisible] = useState<boolean>(true);
+  const router = useRouter();
 
   useEffect(() => {
     const storedConsent = localStorage.getItem("cookieConsent");
@@ -19,8 +21,9 @@ export function CookieConsentBanner() {
   };
 
   const declineCookies = () => {
-    setIsVisible(false);
-    localStorage.setItem("cookieConsent", JSON.stringify(false));
+    router.push("https://bloombot.ai");
+    // setIsVisible(false);
+    // localStorage.setItem("cookieConsent", JSON.stringify(false));
     // Log file or sentry record
     // onDecline();
   };
@@ -54,9 +57,8 @@ export function CookieConsentBanner() {
           </button>
         </div>
         <p className="text-sm dark:text-white mb-4">
-          {`We use cookies to enhance your browsing experience and analyze our
-          traffic. By clicking "Accept All" you consent to our use of cookies. `}
-          <a 
+          {`We use cookies to create the Bloom experience. These cookies are essential for our website to function properly and help us analyze how you interact with our services. By clicking "Accept All," you consent to our use of cookies. `}
+          <a
             href="https://app.termly.io/policy-viewer/policy.html?policyUUID=028f5251-5858-4799-bffa-26a9709b3fed"
             className="text-blue-500 hover:underline"
             target="_blank"
