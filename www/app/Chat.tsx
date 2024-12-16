@@ -83,6 +83,11 @@ interface ChatProps {
   initialIsSubscribed: boolean;
   initialFreeMessages: number;
   initialConversations: any[];
+  initialChatAccess: {
+    isSubscribed: boolean;
+    freeMessages: number;
+    canChat: boolean;
+  };
   initialMessages: any[];
   initialConversationId: string | null | undefined;
 }
@@ -91,31 +96,17 @@ interface HonchoResponse {
   content: string;
 }
 
-const defaultMessage: Message = {
-  content: `I’m Bloom, your Aristotelian learning companion, here to guide your intellectual journey.
-
-
-The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs. 
-
-
-What’s on your mind? Let’s dive in. 🌱`,
-  isUser: false,
-  id: '',
-  metadata: {},
-};
-
 export default function Chat({
   initialUserId,
   initialEmail,
-  initialIsSubscribed,
-  initialFreeMessages,
   initialConversations,
   initialMessages,
   initialConversationId,
+  initialChatAccess,
 }: ChatProps) {
   const [userId] = useState(initialUserId);
-  const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed);
-  const [freeMessages, setFreeMessages] = useState(initialFreeMessages);
+  const [isSubscribed, setIsSubscribed] = useState(initialChatAccess.isSubscribed);
+  const [freeMessages, setFreeMessages] = useState(initialChatAccess.freeMessages);
   const [conversationId, setConversationId] = useState<string | undefined>(
     initialConversationId || undefined
   );
@@ -134,6 +125,24 @@ export default function Chat({
   const input = useRef<ElementRef<'textarea'>>(null);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
   const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+  const router = useRouter();
+
+  const firstChat = useMemo(() => {
+    // Check if there are no conversations or only one conversation with no messages
+    return !initialConversations?.length || 
+      (initialConversations.length === 1 && !initialMessages?.length);
+  }, [initialConversations?.length, initialMessages?.length]);
+  const introMessage = firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'
+  const defaultMessage: Message = {
+    content: `${introMessage} here to guide your intellectual journey.
+
+    The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
+
+    What's on your mind? Let's dive in. 🌱`,
+    isUser: false,
+    id: '',
+    metadata: {},
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -257,27 +266,26 @@ export default function Chat({
   async function chat(message?: string) {
     const rawMessage = message || input.current?.value;
     if (!userId || !rawMessage) return;
+    if (!initialChatAccess.canChat) {
+      Swal.fire({
+        title: 'Subscription Required',
+        text: 'You have no active subscription. Subscribe to continue using Bloom!',
+        icon: 'warning',
+        confirmButtonColor: '#3085d6',
+        confirmButtonText: 'Subscribe',
+        showCancelButton: false,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.push('/settings');
+        }
+      });
+      return;
+    }
 
     // Process message to have double newline for markdown
     const messageToSend = rawMessage.replace(/\n/g, '\n\n');
 
     if (input.current) input.current.value = '';
-
-    // Check free message allotment upfront if not subscribed
-    if (!isSubscribed) {
-      const currentCount = await getFreeMessageCount(userId);
-      if (currentCount <= 0) {
-        Swal.fire({
-          title: 'Free Messages Depleted',
-          text: 'You have used all your free messages. Subscribe to continue using Bloom!',
-          icon: 'warning',
-          confirmButtonColor: '#3085d6',
-          confirmButtonText: 'Subscribe',
-          showCancelButton: true,
-        });
-        return;
-      }
-    }
 
     setCanSend(false);
 
