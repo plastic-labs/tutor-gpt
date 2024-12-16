@@ -23,41 +23,6 @@ interface MessageBoxProps {
   onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
 
-// used to identify messages that contain URL content that was fetched/scraped from a webpage.
-const isUrlContent = (text: string) => {
-  return text.startsWith("Here's the content from");
-};
-
-/**
- * Renders a collapsible message component for URL content.
- * Extracts the URL and content from the message text and displays them in an expandable panel.
- */
-const UrlContentMessage = ({ text }: { text: string }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  // Extract URL from the message
-  const urlMatch = text.match(/Here's the content from (.*?):\n\n/);
-  const url = urlMatch?.[1] || '';
-  // Remove the URL prefix to get just the content
-  const content = text.replace(/Here's the content from .*?:\n\n/, '');
-
-  return (
-    <div className="w-full">
-      <button
-        className="w-full px-4 py-2 text-left flex justify-between items-center bg-gray-200 dark:bg-gray-700 rounded-lg"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <span className="font-medium">Here is content from: {url}</span>
-        {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
-      </button>
-      {isExpanded && (
-        <div className="mt-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-          <MarkdownWrapper text={content} />
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default function MessageBox({
   isUser,
   userId,

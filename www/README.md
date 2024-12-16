@@ -55,12 +55,6 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — The stripe public key
 - `STRIPE_WEBHOOK_SECRET` — The stripe webhook secret
 
-The following is an optional environment variable that enables the 'chat with website' feature, allowing users to append a url the end of /r/ and load that sites content into a new Bloom chat window.
-(e.g. http://localhost:3000/r/https://www.example.com)
-
-**jina AI Reader**
-
-- `NEXT_PUBLIC_JINA_API` - The API key for Jina Reader to enable loading website content into Bloom chat window (https://jina.ai/)
 
 Below are several optional environment variables to enable error monitoring and
 analytics.
