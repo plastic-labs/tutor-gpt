@@ -112,7 +112,7 @@ def create_messages_and_metamessages(
             content=user_message,
         )
         # save constructed thought as a user metamessage
-        thought_metamessage = f"""<honcho-response>{honcho_content}</honcho-response>\n<bloom>{ai_response}</bloom>\n{user_message}"""
+        thought_metamessage = f"""<honcho-response>{honcho_content}</honcho-response>\n<tutor>{ai_response}</tutor>\n{user_message}"""
         honcho.apps.users.sessions.metamessages.create(
             app_id=app_id,
             user_id=user_id,
