@@ -153,7 +153,8 @@ export default function Chat({
   };
 
   const conversationsFetcher = async () => {
-    return getConversations();
+    const result = await getConversations();
+    return result;
   };
 
   const conversationsKey = useMemo(() => userId, [userId]);
@@ -164,10 +165,32 @@ const { data: conversations, mutate: mutateConversations } = useSWR(
   {
     fallbackData: initialConversations,
     provider: localStorageProvider,
+    onSuccess: async (conversations) => {
+      if (conversations.length) {
+        // If there are existing conversations:
+        // 1. Set the current conversation to the first one if none is selected
+        // 2. Or if the selected conversation doesn't exist in the list
+        if (
+          !conversationId ||
+          !conversations.find((c) => c.conversationId === conversationId)
+        ) {
+          setConversationId(conversations[0].conversationId);
+        }
+        setCanSend(true);
+      } else {
+        // If no conversations exist:
+        // 1. Create a new conversation
+        // 2. Set it as the current conversation
+        // 3. Refresh the conversations list
+        const newConvo = await createConversation();
+        setConversationId(newConvo?.conversationId);
+        await mutateConversations();
+      }
+    },
     revalidateOnFocus: false,
     dedupingInterval: 60000,
     revalidateIfStale: false,
-    revalidateOnMount: false,
+    revalidateOnMount: true 
   }
 );
 
