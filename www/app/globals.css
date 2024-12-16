@@ -37,6 +37,7 @@ html {
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
+    font-size: 87.5%;
   }
   .dark {
     --background: 220 17% 17%;
