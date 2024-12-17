@@ -1,8 +1,7 @@
-import { getSubscription } from '@/utils/supabase/queries';
+import { getSubscription, getChatAccess } from '@/utils/supabase/queries';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Chat from './Chat';
-import { getFreeMessageCount } from '@/utils/supabase/actions';
 import { getConversations } from './actions/conversations';
 import { getMessages } from './actions/messages';
 import { type Message } from '@/utils/types';
@@ -24,17 +23,23 @@ export default async function Home() {
   // Get initial subscription state
   let isSubscribed = false;
   let freeMessages = 0;
+  let chatAccess;
 
   if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
+    // In development, get the real message count but override subscription status
+    const realChatAccess = await getChatAccess(supabase, user.id);
+    chatAccess = {
+      isSubscribed: true,
+      freeMessages: realChatAccess.freeMessages,
+      canChat: realChatAccess.isSubscribed || realChatAccess.freeMessages > 0 // Always allow chat in development
+    };
     isSubscribed = true;
   } else {
-    const sub = await getSubscription(supabase);
-    // Only consider active paid subscriptions, not trials
-    isSubscribed = !!(sub && sub.status === 'active' && !sub.trial_end);
-
-    if (!isSubscribed) {
-      freeMessages = await getFreeMessageCount(user.id);
-    }
+    chatAccess = await getChatAccess(supabase, user.id);
+    isSubscribed = chatAccess.isSubscribed;
+    freeMessages = chatAccess.freeMessages;
+    // Set canChat based on subscription status or free message availability
+    chatAccess.canChat = chatAccess.isSubscribed || chatAccess.freeMessages > 0;
   }
 
   // Get initial conversations
@@ -54,11 +59,10 @@ export default async function Home() {
       <Chat
         initialUserId={user.id}
         initialEmail={user.email}
-        initialIsSubscribed={isSubscribed}
-        initialFreeMessages={freeMessages}
         initialConversations={conversations}
         initialMessages={initialMessages}
         initialConversationId={initialConversationId}
+        initialChatAccess={chatAccess}
       />
     </>
   );

@@ -58,7 +58,6 @@ const CodeBlock = memo(
 );
 
 const MarkdownWrapper = memo(({ text }: { text: string }) => {
-  // Memoize components configuration
   const components = useMemo(
     () => ({
       ol: ({
