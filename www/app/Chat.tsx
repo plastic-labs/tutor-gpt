@@ -80,8 +80,6 @@ async function fetchStream(
 interface ChatProps {
   initialUserId: string;
   initialEmail: string | undefined;
-  initialIsSubscribed: boolean;
-  initialFreeMessages: number;
   initialConversations: any[];
   initialChatAccess: {
     isSubscribed: boolean;
@@ -130,8 +128,9 @@ export default function Chat({
   const firstChat = useMemo(() => {
     // Check if there are no conversations or only one conversation with no messages
     return !initialConversations?.length || 
-      (initialConversations.length === 1 && !initialMessages?.length);
-  }, [initialConversations?.length, initialMessages?.length]);
+    (initialConversations.length === 1 && !initialMessages?.length) ||
+    initialChatAccess.freeMessages === 50; 
+  }, [initialConversations?.length, initialMessages?.length, initialChatAccess.freeMessages]);
   const defaultMessage: Message = {
     content:
     `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
@@ -266,7 +265,8 @@ What\'s on your mind? Let\'s dive in. 🌱`,
   async function chat(message?: string) {
     const rawMessage = message || input.current?.value;
     if (!userId || !rawMessage) return;
-    if (!initialChatAccess.canChat) {
+    if (initialChatAccess.canChat) {
+      setCanSend(false);
       Swal.fire({
         title: 'Subscription Required',
         text: 'You have no active subscription. Subscribe to continue using Bloom!',
