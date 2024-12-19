@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
-import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
+import { useRef, useEffect, useState, ElementRef, useMemo, memo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
@@ -29,9 +29,12 @@ const Thoughts = dynamic(() => import('@/components/thoughts'), {
 const MessageBox = dynamic(() => import('@/components/messagebox'), {
   ssr: false,
 });
+const MemoizedMessageBox = memo(MessageBox);
+
 const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
+const MemoizedSidebar = memo(Sidebar);
 
 async function fetchStream(
   type: 'thought' | 'response' | 'honcho',
@@ -129,11 +132,45 @@ export default function Chat({
 
   const [thought, setThought] = useState<string>('');
   const [canSend, setCanSend] = useState<boolean>(false);
+  const canUseApp = useMemo(
+    () => isSubscribed || freeMessages > 0,
+    [isSubscribed, freeMessages]
+  );
 
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
   const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+  const router = useRouter();
+
+  const firstChat = useMemo(() => {
+    // Check if there are no conversations or only one conversation with no messages
+    return (
+      !initialConversations?.length ||
+      (initialConversations.length === 1 && !initialMessages?.length) ||
+      freeMessages === 50
+    );
+  }, [
+    initialConversations?.length,
+    initialMessages?.length,
+    freeMessages,
+  ]);
+
+  const defaultMessage: Message = useMemo(
+    () => ({
+      content:
+        `${firstChat ? "I'm Bloom, your Aristotelian learning companion," : "Welcome back! I'm"
+        } here to guide your intellectual journey.
+    
+    The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
+    
+    What's on your mind? Let's dive in. 🌱`,
+      isUser: false,
+      id: '',
+      metadata: {},
+    }),
+    [firstChat]
+  );
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -143,14 +180,6 @@ export default function Chat({
       });
     }
   }, [posthog, initialUserId, initialEmail]);
-
-  const setIsThoughtsOpen = (
-    isOpen: boolean,
-    messageId: string | null = null
-  ) => {
-    setIsThoughtsOpenState(isOpen);
-    setOpenThoughtMessageId(isOpen ? messageId : null);
-  };
 
   const conversationsFetcher = async () => {
     const result = await getConversations();
@@ -224,15 +253,25 @@ export default function Chat({
     },
   });
 
-  const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
-    if (!userId || !conversationId) return;
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
 
-    try {
-      await addOrRemoveReaction(conversationId, messageId, reaction);
+  const setIsThoughtsOpenCallback = useCallback(
+    (isOpen: boolean, messageId: string | null = null) => {
+      setIsThoughtsOpenState(isOpen);
+      setOpenThoughtMessageId(isOpen ? messageId : null);
+    },
+    []
+  );
 
-      // Optimistically update the local data
-      mutateMessages(
-        (currentMessages) => {
+  const handleReactionAdded = useCallback(
+    async (messageId: string, reaction: Reaction) => {
+      if (!userId || !conversationId) return;
+
+      try {
+        await addOrRemoveReaction(conversationId, messageId, reaction);
+        mutateMessages((currentMessages) => {
           if (!currentMessages) return currentMessages;
           return currentMessages.map((msg) => {
             if (msg.id === messageId) {
@@ -246,188 +285,220 @@ export default function Chat({
             }
             return msg;
           });
-        },
-        { revalidate: false }
-      );
-    } catch (error) {
-      console.error('Failed to update reaction:', error);
-    }
-  };
+        }, { revalidate: false });
+      } catch (error) {
+        console.error('Failed to update reaction:', error);
+      }
+    },
+    [userId, conversationId, mutateMessages]
+  );
 
-  async function chat(message?: string) {
-    const rawMessage = message || input.current?.value;
-    if (!userId || !rawMessage) return;
-
-    // Process message to have double newline for markdown
-    const messageToSend = rawMessage.replace(/\n/g, '\n\n');
-
-    if (input.current) input.current.value = '';
-
-    // Check free message allotment upfront if not subscribed
-    if (!isSubscribed) {
-      const currentCount = await getFreeMessageCount(userId);
-      if (currentCount <= 0) {
+  const chat = useCallback(
+    async (message?: string) => {
+      const rawMessage = message || input.current?.value;
+      if (!userId || !rawMessage) return;
+      if (!canUseApp) {
+        setCanSend(false);
         Swal.fire({
-          title: 'Free Messages Depleted',
-          text: 'You have used all your free messages. Subscribe to continue using Bloom!',
+          title: 'Subscription Required',
+          text: 'You have no active subscription. Subscribe to continue using Bloom!',
           icon: 'warning',
           confirmButtonColor: '#3085d6',
           confirmButtonText: 'Subscribe',
-          showCancelButton: true,
+          showCancelButton: false,
+        }).then((result) => {
+          if (result.isConfirmed) {
+            router.push('/settings');
+          }
         });
         return;
       }
-    }
 
-    setCanSend(false);
+      // Process message to have double newline for markdown
+      const messageToSend = rawMessage.replace(/\n/g, '\n\n');
 
-    const newMessages = [
-      ...messages!,
-      {
-        content: messageToSend,
-        isUser: true,
-        id: '',
-        metadata: {},
-      },
-      {
-        content: '',
-        isUser: false,
-        id: '',
-        metadata: {},
-      },
-    ];
-    await mutateMessages(newMessages, { revalidate: false });
-    scrollToBottom();
+      if (input.current) input.current.value = '';
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      setCanSend(false);
 
-    let thoughtReader: ReadableStreamDefaultReader | null = null;
-    let responseReader: ReadableStreamDefaultReader | null = null;
+      const newMessages = [
+        ...messages!,
+        {
+          content: messageToSend,
+          isUser: true,
+          id: '',
+          metadata: {},
+        },
+        {
+          content: '',
+          isUser: false,
+          id: '',
+          metadata: {},
+        },
+      ];
+      await mutateMessages(newMessages, { revalidate: false });
+      scrollToBottom();
 
-    try {
-      // Get thought stream
-      const thoughtStream = await fetchStream(
-        'thought',
-        messageToSend,
-        conversationId!
-      );
-      if (!thoughtStream) throw new Error('Failed to get thought stream');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      thoughtReader = thoughtStream.getReader();
-      let thoughtText = '';
-      setThought('');
+      let thoughtReader: ReadableStreamDefaultReader | null = null;
+      let responseReader: ReadableStreamDefaultReader | null = null;
 
-      // Process thought stream
-      while (true) {
-        const { done, value } = await thoughtReader.read();
-        if (done) break;
-
-        thoughtText += new TextDecoder().decode(value);
-        setThought(thoughtText);
-      }
-
-      // Cleanup thought stream
-      thoughtReader.releaseLock();
-      thoughtReader = null;
-
-      const honchoResponse = await fetchStream(
-        'honcho',
-        messageToSend,
-        conversationId!,
-        thoughtText
-      );
-      const honchoContent = (await new Response(
-        honchoResponse
-      ).json()) as HonchoResponse;
-
-      const pureThought = thoughtText;
-
-      thoughtText +=
-        '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
-      setThought(thoughtText);
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Get response stream using the thought and dialectic response
-      const responseStream = await fetchStream(
-        'response',
-        messageToSend,
-        conversationId!,
-        pureThought,
-        honchoContent.content
-      );
-      if (!responseStream) throw new Error('Failed to get response stream');
-
-      responseReader = responseStream.getReader();
-      let currentModelOutput = '';
-
-      // Process response stream
-      while (true) {
-        const { done, value } = await responseReader.read();
-        if (done) {
-          if (!isSubscribed) {
-            const success = await useFreeTrial(userId);
-            if (success) {
-              const newCount = await getFreeMessageCount(userId);
-              setFreeMessages(newCount);
-            }
-          }
-          break;
-        }
-
-        currentModelOutput += new TextDecoder().decode(value);
-
-        mutateMessages(
-          [
-            ...(newMessages?.slice(0, -1) || []),
-            {
-              content: currentModelOutput,
-              isUser: false,
-              id: '',
-              metadata: {},
-            },
-          ],
-          { revalidate: false }
+      try {
+        // Get thought stream
+        const thoughtStream = await fetchStream(
+          'thought',
+          messageToSend,
+          conversationId!
         );
+        if (!thoughtStream) throw new Error('Failed to get thought stream');
 
+        thoughtReader = thoughtStream.getReader();
+        let thoughtText = '';
+        setThought('');
+
+        // Process thought stream
+        while (true) {
+          const { done, value } = await thoughtReader.read();
+          if (done) break;
+
+          thoughtText += new TextDecoder().decode(value);
+          setThought(thoughtText);
+        }
+
+        // Cleanup thought stream
+        thoughtReader.releaseLock();
+        thoughtReader = null;
+
+        const honchoResponse = await fetchStream(
+          'honcho',
+          messageToSend,
+          conversationId!,
+          thoughtText
+        );
+        const honchoContent = (await new Response(
+          honchoResponse
+        ).json()) as HonchoResponse;
+
+        const pureThought = thoughtText;
+
+        thoughtText +=
+          '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
+        setThought(thoughtText);
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // Get response stream using the thought and dialectic response
+        const responseStream = await fetchStream(
+          'response',
+          messageToSend,
+          conversationId!,
+          pureThought,
+          honchoContent.content
+        );
+        if (!responseStream) throw new Error('Failed to get response stream');
+
+        responseReader = responseStream.getReader();
+        let currentModelOutput = '';
+
+        // Process response stream
+        while (true) {
+          const { done, value } = await responseReader.read();
+          if (done) {
+            if (!isSubscribed) {
+              const success = await useFreeTrial(userId);
+              if (success) {
+                const newCount = await getFreeMessageCount(userId);
+                setFreeMessages(newCount);
+              }
+            }
+            break;
+          }
+
+          currentModelOutput += new TextDecoder().decode(value);
+
+          mutateMessages(
+            [
+              ...(newMessages?.slice(0, -1) || []),
+              {
+                content: currentModelOutput,
+                isUser: false,
+                id: '',
+                metadata: {},
+              },
+            ],
+            { revalidate: false }
+          );
+
+          scrollToBottom();
+        }
+
+        responseReader.releaseLock();
+        responseReader = null;
+
+        await mutateMessages();
         scrollToBottom();
-      }
-
-      responseReader.releaseLock();
-      responseReader = null;
-
-      await mutateMessages();
-      scrollToBottom();
-      setCanSend(true);
-    } catch (error) {
-      console.error('Chat error:', error);
-      setCanSend(true);
-      await mutateMessages();
-      scrollToBottom();
-    } finally {
-      // Cleanup
-      if (thoughtReader) {
-        try {
-          thoughtReader.releaseLock();
-        } catch (e) {
-          console.error('Error releasing thought reader:', e);
+        setCanSend(true);
+      } catch (error) {
+        console.error('Chat error:', error);
+        setCanSend(true);
+        await mutateMessages();
+        scrollToBottom();
+      } finally {
+        // Cleanup
+        if (thoughtReader) {
+          try {
+            thoughtReader.releaseLock();
+          } catch (e) {
+            console.error('Error releasing thought reader:', e);
+          }
+        }
+        if (responseReader) {
+          try {
+            responseReader.releaseLock();
+          } catch (e) {
+            console.error('Error releasing response reader:', e);
+          }
         }
       }
-      if (responseReader) {
-        try {
-          responseReader.releaseLock();
-        } catch (e) {
-          console.error('Error releasing response reader:', e);
-        }
-      }
-    }
-  }
-
-  const canUseApp = useMemo(
-    () => isSubscribed || freeMessages > 0,
-    [isSubscribed, freeMessages]
+    },
+    [
+      userId,
+      canUseApp,
+      messages,
+      conversationId,
+      isSubscribed,
+      mutateMessages,
+      scrollToBottom,
+      router,
+    ]
   );
 
+  const memoizedTextarea = useMemo(() => (
+    <textarea
+      ref={input}
+      placeholder={
+        canUseApp ? 'Type a message...' : 'Subscribe to send messages'
+      }
+      className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
+        canSend && canUseApp
+          ? 'border-green-200 focus:border-green-200'
+          : 'border-red-200 focus:border-red-200 opacity-50'
+      }`}
+      rows={1}
+      disabled={!canUseApp}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (canSend && input.current?.value && canUseApp) {
+            posthog.capture('user_sent_message');
+            chat();
+          }
+        }
+      }}
+    />
+  ), [canUseApp, canSend, chat, posthog]);
+  
   useEffect(() => {
     if (conversationId?.startsWith('temp-') || messagesLoading) {
       setCanSend(false);
@@ -436,15 +507,73 @@ export default function Chat({
     }
   }, [conversationId, messagesLoading]);
 
+  const messageBoxProps = useMemo(
+    () => ({
+      userId,
+      loading: messagesLoading,
+      conversationId,
+      setThought,
+      setIsThoughtsOpen: setIsThoughtsOpenCallback,
+      onReactionAdded: handleReactionAdded,
+    }),
+    [
+      userId,
+      messagesLoading,
+      conversationId,
+      setThought,
+      setIsThoughtsOpenCallback,
+      handleReactionAdded,
+    ]
+  );
+
+  const emptyMessage = useMemo(
+    () => ({
+      content: '',
+      id: '',
+      isUser: false,
+      metadata: { reaction: null },
+    }),
+    []
+  );
+
+  const renderedMessages = useMemo(() => {
+    if (messages) {
+      return [defaultMessage, ...messages].map((message, i) => (
+        <MemoizedMessageBox
+          key={message.id || i}
+          isUser={message.isUser}
+          message={message}
+          isThoughtOpen={openThoughtMessageId === message.id}
+          {...messageBoxProps}
+        />
+      ));
+    } else {
+      return (
+        <MemoizedMessageBox
+          isUser={false}
+          message={emptyMessage}
+          isThoughtOpen={false}
+          {...messageBoxProps}
+        />
+      );
+    }
+  }, [
+    messages,
+    defaultMessage,
+    openThoughtMessageId,
+    messageBoxProps,
+    emptyMessage,
+  ]);
+
   return (
     <main className="relative flex h-full overflow-hidden">
-      <Sidebar
+      <MemoizedSidebar
         conversations={conversations || []}
         mutateConversations={mutateConversations}
         conversationId={conversationId}
         setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        toggleSidebar={toggleSidebar}
         isSubscribed={canUseApp}
       />
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
@@ -469,7 +598,9 @@ export default function Chat({
               >
                 Subscribe now
               </Link>{' '}
-              {freeMessages === 0 ? 'to use Bloom!' : 'for unlimited access!'}
+              {freeMessages === 0
+                ? 'to use Bloom!'
+                : 'for unlimited access!'}
             </p>
           </section>
         )}
@@ -478,40 +609,7 @@ export default function Chat({
             className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
             ref={messageContainerRef}
           >
-            {messages ? (
-              [defaultMessage, ...messages].map((message, i) => (
-                <MessageBox
-                  key={message.id || i}
-                  isUser={message.isUser}
-                  userId={userId}
-                  message={message}
-                  loading={messagesLoading}
-                  conversationId={conversationId}
-                  setThought={setThought}
-                  isThoughtOpen={openThoughtMessageId === message.id}
-                  setIsThoughtsOpen={(isOpen) =>
-                    setIsThoughtsOpen(isOpen, message.id)
-                  }
-                  onReactionAdded={handleReactionAdded}
-                />
-              ))
-            ) : (
-              <MessageBox
-                isUser={false}
-                message={{
-                  content: '',
-                  id: '',
-                  isUser: false,
-                  metadata: { reaction: null },
-                }}
-                loading={true}
-                setThought={setThought}
-                setIsThoughtsOpen={setIsThoughtsOpen}
-                onReactionAdded={handleReactionAdded}
-                userId={userId}
-                conversationId={conversationId}
-              />
-            )}
+            {renderedMessages}
           </section>
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
@@ -525,28 +623,7 @@ export default function Chat({
                 }
               }}
             >
-              <textarea
-                ref={input}
-                placeholder={
-                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
-                }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
-                rows={1}
-                disabled={!canUseApp}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (canSend && input.current?.value && canUseApp) {
-                      posthog.capture('user_sent_message');
-                      chat();
-                    }
-                  }
-                }}
-              />
+              {memoizedTextarea}
               <button
                 className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"
@@ -556,7 +633,7 @@ export default function Chat({
               </button>
               <button
                 className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-                onClick={() => setIsThoughtsOpen(true)}
+                onClick={() => setIsThoughtsOpenCallback(true)}
                 type="button"
               >
                 <FaLightbulb className="inline" />
@@ -567,7 +644,7 @@ export default function Chat({
         <Thoughts
           thought={thought}
           setIsThoughtsOpen={(isOpen: boolean) =>
-            setIsThoughtsOpen(isOpen, null)
+            setIsThoughtsOpenCallback(isOpen, null)
           }
           isThoughtsOpen={isThoughtsOpenState}
         />

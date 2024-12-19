@@ -1,3 +1,4 @@
+import MillionLint from "@million/lint";
 import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
   output: "standalone",
@@ -50,5 +51,8 @@ const sentryConfig = withSentryConfig(nextConfig, {
   },
 });
 
-export default sentryConfig;
+export default MillionLint.next({
+  enabled: true,
+  rsc: true
+})(sentryConfig);
 // export default MillionLint.next({ rsc: true })(sentryConfig);

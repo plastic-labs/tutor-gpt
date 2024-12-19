@@ -109,13 +109,12 @@ const MarkdownWrapper = memo(({ text }: { text: string }) => {
     []
   );
 
-  // Memoize plugins
-  const remarkPlugins = useMemo(() => [remarkMath], []);
-  const rehypePlugins = useMemo(() => [rehypeKatex], []);
+  const remarkPlugins = [remarkMath];
+  const rehypePlugins = [rehypeKatex];
 
-  if (!text) return <Typing />;
-
-  return (
+  const memoizedTyping = useMemo(() => <Typing />, []);
+  
+  const memoizedReactMarkdown = useMemo(() => (
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
@@ -126,7 +125,11 @@ const MarkdownWrapper = memo(({ text }: { text: string }) => {
         {text}
       </ReactMarkdown>
     </Suspense>
-  );
+  ), [remarkPlugins, rehypePlugins, components, text]);
+
+  if (!text) return memoizedTyping;
+
+  return memoizedReactMarkdown;
 });
 
 CopyButton.displayName = 'CopyButton';
