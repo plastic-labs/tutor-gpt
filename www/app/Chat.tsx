@@ -10,7 +10,6 @@ import { useRef, useEffect, useState, ElementRef, useMemo, memo, useCallback } f
 import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
-import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
