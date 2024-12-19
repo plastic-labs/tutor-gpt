@@ -57,7 +57,16 @@ const CodeBlock = memo(
   }
 );
 
-const MarkdownWrapper = memo(({ text }: { text: string }) => {
+interface MarkdownWrapperProps {
+  text: string;
+  disableTyping?: boolean;
+}
+
+const MarkdownWrapper = memo(({ text, disableTyping }: MarkdownWrapperProps) => {
+  if (disableTyping) {
+    return <ReactMarkdown>{text}</ReactMarkdown>;
+  }
+  
   const components = useMemo(
     () => ({
       ol: ({
@@ -113,6 +122,7 @@ const MarkdownWrapper = memo(({ text }: { text: string }) => {
   const rehypePlugins = useMemo(() => [rehypeKatex], []);
 
   if (!text) return <Typing />;
+
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>

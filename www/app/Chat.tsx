@@ -55,6 +55,10 @@ async function fetchStream(
       }),
     });
 
+    if (response.status === 402) {
+      return response;
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Stream error for ${type}:`, {
@@ -265,22 +269,6 @@ What\'s on your mind? Let\'s dive in. 🌱`,
   async function chat(message?: string) {
     const rawMessage = message || input.current?.value;
     if (!userId || !rawMessage) return;
-    if (initialChatAccess.canChat) {
-      setCanSend(false);
-      Swal.fire({
-        title: 'Subscription Required',
-        text: 'You have no active subscription. Subscribe to continue using Bloom!',
-        icon: 'warning',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'Subscribe',
-        showCancelButton: false,
-      }).then((result) => {
-        if (result.isConfirmed) {
-          router.push('/settings');
-        }
-      });
-      return;
-    }
 
     // Process message to have double newline for markdown
     const messageToSend = rawMessage.replace(/\n/g, '\n\n');
@@ -319,7 +307,40 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         messageToSend,
         conversationId!
       );
-      if (!thoughtStream) throw new Error('Failed to get thought stream');
+
+      if (thoughtStream instanceof Response && thoughtStream.status === 402) {
+        setCanSend(false);
+        mutateMessages(
+          messages => [
+            ...(messages?.slice(0, -1) || []),
+            {
+              content: '',
+              isUser: false,
+              id: '',
+              metadata: {},
+              error: 402
+            }
+          ],
+          { revalidate: false }
+        );
+        Swal.fire({
+          title: 'Subscription Required',
+          text: 'You have no active subscription. Subscribe to continue using Bloom!',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Subscribe',
+          showCancelButton: false,
+        }).then((result) => {
+          if (result.isConfirmed) {
+            router.push('/settings');
+          }
+        });
+        return;
+      }
+
+      if (!thoughtStream || thoughtStream instanceof Response) {
+        throw new Error('Failed to get thought stream');
+      }
 
       thoughtReader = thoughtStream.getReader();
       let thoughtText = '';

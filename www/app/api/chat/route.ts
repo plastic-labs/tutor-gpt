@@ -6,6 +6,7 @@ import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 import * as Sentry from '@sentry/nextjs';
+import { getChatAccess } from '@/utils/supabase/queries';
 
 export const runtime = 'nodejs';
 export const maxDuration = 100;
@@ -147,6 +148,11 @@ export async function POST(req: NextRequest) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
+  const { canChat } = await getChatAccess(supabase, user.id);
+  if (canChat) {
+    return new NextResponse('Subscription required', { status: 402 });
+  }
+
   const data = await req.json();
 
   const { type, message, conversationId, thought, honchoThought } = data;
@@ -203,6 +209,10 @@ export async function POST(req: NextRequest) {
 
     if (!stream) {
       throw new Error('Failed to get stream');
+    }
+    // Handle the stream response correctly
+    if (stream instanceof Response) {
+      return stream;
     }
 
     console.log('Got the Stream');

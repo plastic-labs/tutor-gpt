@@ -21,13 +21,12 @@ export const getChatAccess = unstable_cache(
   async (supabase: SupabaseClient, userId: string) => {
     const { data: subscription } = await supabase
       .from('subscriptions')
-      .select('status, trial_end')
+      .select('status, trial_end, metadata')
       .in('status', ['trialing', 'active'])
       .maybeSingle();
     
     const isSubscribed = !!(subscription && subscription.status === 'active' && !subscription.trial_end);
-    const freeMessages = isSubscribed ? 0 : await getFreeMessageCount(userId);
-    
+    const freeMessages = isSubscribed ? 0 : (subscription?.metadata as { freeMessages: number })?.freeMessages ?? 0;    
     return {
       isSubscribed,
       freeMessages,
