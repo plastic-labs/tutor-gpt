@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { canChat } = await getChatAccess(supabase, user.id);
-  if (canChat) {
+  if (!canChat) {
     return new NextResponse('Subscription required', { status: 402 });
   }
 
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
 
     console.log('Got the Stream');
 
-    return new NextResponse(stream.body, {
+    return new NextResponse(stream, {
       status: 200,
       headers: {
         'Content-Type': 'text/event-stream',

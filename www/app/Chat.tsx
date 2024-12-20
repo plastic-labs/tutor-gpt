@@ -131,13 +131,13 @@ export default function Chat({
 
   const firstChat = useMemo(() => {
     // Check if there are no conversations or only one conversation with no messages
-    return !initialConversations?.length || 
-    (initialConversations.length === 1 && !initialMessages?.length) ||
-    initialChatAccess.freeMessages === 50; 
+    return !initialConversations?.length ||
+      (initialConversations.length === 1 && !initialMessages?.length) ||
+      initialChatAccess.freeMessages === 50;
   }, [initialConversations?.length, initialMessages?.length, initialChatAccess.freeMessages]);
   const defaultMessage: Message = {
     content:
-    `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
+      `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
 
 The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
 
@@ -365,9 +365,21 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         conversationId!,
         thoughtText
       );
-      const honchoContent = (await new Response(
-        honchoResponse
-      ).json()) as HonchoResponse;
+
+      let honchoContent: HonchoResponse;
+      if (honchoResponse instanceof Response) {
+        honchoContent = await honchoResponse.json();
+      } else {
+        // Convert ReadableStream to text first
+        const reader = honchoResponse.getReader();
+        let result = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          result += new TextDecoder().decode(value);
+        }
+        honchoContent = JSON.parse(result);
+      }
 
       const pureThought = thoughtText;
 
@@ -386,9 +398,15 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         honchoContent.content
       );
       if (!responseStream) throw new Error('Failed to get response stream');
+      const stream = responseStream instanceof Response
+        ? responseStream.body
+        : responseStream;
 
-      responseReader = responseStream.getReader();
+      if (!stream) throw new Error('Failed to get response stream');
+      responseReader = stream.getReader();
       let currentModelOutput = '';
+
+      if (!responseReader) throw new Error('Failed to get stream reader');
 
       // Process response stream
       while (true) {
@@ -559,11 +577,10 @@ What\'s on your mind? Let\'s dive in. 🌱`,
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
+                  ? 'border-green-200 focus:border-green-200'
+                  : 'border-red-200 focus:border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
