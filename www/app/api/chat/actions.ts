@@ -118,14 +118,14 @@ export async function thinkCall({
     honchoResponse =
       content.match(/<honcho>(.*?)<\/honcho>/s)?.[1]?.trim() ?? 'None';
     bloomResponse =
-      content.match(/<bloom>(.*?)<\/bloom>/s)?.[1]?.trim() ?? 'None';
+      content.match(/<tutor>(.*?)<\/tutor>/s)?.[1]?.trim() ?? 'None';
   }
 
   const messages = [
     ...promptMessages,
     {
       role: 'user',
-      content: `<honcho-response>${honchoResponse}</honcho-response>\n<bloom>${bloomResponse}</bloom>\n${userInput}`,
+      content: `<honcho-response>${honchoResponse}</honcho-response>\n<tutor>${bloomResponse}</tutor>\n${userInput}`,
     },
   ];
 
