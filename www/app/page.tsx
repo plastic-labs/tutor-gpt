@@ -1,4 +1,4 @@
-import { getSubscription, getChatAccess } from '@/utils/supabase/queries';
+import { getChatAccess } from '@/utils/supabase/queries';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Chat from './Chat';
@@ -21,26 +21,14 @@ export default async function Home() {
   }
 
   // Get initial subscription state
-  let isSubscribed = false;
-  let freeMessages = 0;
-  let chatAccess;
-
-  if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
-    // In development, get the real message count but override subscription status
-    const realChatAccess = await getChatAccess(supabase, user.id);
-    chatAccess = {
-      isSubscribed: true,
-      freeMessages: realChatAccess.freeMessages,
-      canChat: realChatAccess.isSubscribed || realChatAccess.freeMessages > 0 // Always allow chat in development
-    };
-    isSubscribed = true;
-  } else {
-    chatAccess = await getChatAccess(supabase, user.id);
-    isSubscribed = chatAccess.isSubscribed;
-    freeMessages = chatAccess.freeMessages;
-    // Set canChat based on subscription status or free message availability
-    chatAccess.canChat = chatAccess.isSubscribed || chatAccess.freeMessages > 0;
-  }
+  const realChatAccess = await getChatAccess(supabase, user.id);
+  const isDevMode = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false';
+  
+  const chatAccess = {
+    isSubscribed: isDevMode ? true : realChatAccess.isSubscribed,
+    freeMessages: realChatAccess.freeMessages,
+    canChat: isDevMode ? true : (realChatAccess.isSubscribed || realChatAccess.freeMessages > 0)
+  };
 
   // Get initial conversations
   const conversations = await getConversations();
