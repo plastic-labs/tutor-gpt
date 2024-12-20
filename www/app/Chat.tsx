@@ -55,6 +55,10 @@ async function fetchStream(
       }),
     });
 
+    if (response.status === 402) {
+      return response;
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Stream error for ${type}:`, {
@@ -80,9 +84,12 @@ async function fetchStream(
 interface ChatProps {
   initialUserId: string;
   initialEmail: string | undefined;
-  initialIsSubscribed: boolean;
-  initialFreeMessages: number;
   initialConversations: any[];
+  initialChatAccess: {
+    isSubscribed: boolean;
+    freeMessages: number;
+    canChat: boolean;
+  };
   initialMessages: any[];
   initialConversationId: string | null | undefined;
 }
@@ -91,31 +98,17 @@ interface HonchoResponse {
   content: string;
 }
 
-const defaultMessage: Message = {
-  content: `I’m Bloom, your Aristotelian learning companion, here to guide your intellectual journey.
-
-
-The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs. 
-
-
-What’s on your mind? Let’s dive in. 🌱`,
-  isUser: false,
-  id: '',
-  metadata: {},
-};
-
 export default function Chat({
   initialUserId,
   initialEmail,
-  initialIsSubscribed,
-  initialFreeMessages,
   initialConversations,
   initialMessages,
   initialConversationId,
+  initialChatAccess,
 }: ChatProps) {
   const [userId] = useState(initialUserId);
-  const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed);
-  const [freeMessages, setFreeMessages] = useState(initialFreeMessages);
+  const [isSubscribed, setIsSubscribed] = useState(initialChatAccess.isSubscribed);
+  const [freeMessages, setFreeMessages] = useState(initialChatAccess.freeMessages);
   const [conversationId, setConversationId] = useState<string | undefined>(
     initialConversationId || undefined
   );
@@ -134,6 +127,25 @@ export default function Chat({
   const input = useRef<ElementRef<'textarea'>>(null);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
   const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+  const router = useRouter();
+
+  const firstChat = useMemo(() => {
+    // Check if there are no conversations or only one conversation with no messages
+    return !initialConversations?.length ||
+      (initialConversations.length === 1 && !initialMessages?.length) ||
+      initialChatAccess.freeMessages === 50;
+  }, [initialConversations?.length, initialMessages?.length, initialChatAccess.freeMessages]);
+  const defaultMessage: Message = {
+    content:
+      `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
+
+The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
+
+What\'s on your mind? Let\'s dive in. 🌱`,
+    isUser: false,
+    id: '',
+    metadata: {},
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -190,7 +202,7 @@ export default function Chat({
       revalidateOnFocus: false,
       dedupingInterval: 60000,
       revalidateIfStale: false,
-      revalidateOnMount: true,
+      revalidateOnMount: true
     }
   );
 
@@ -263,22 +275,6 @@ export default function Chat({
 
     if (input.current) input.current.value = '';
 
-    // Check free message allotment upfront if not subscribed
-    if (!isSubscribed) {
-      const currentCount = await getFreeMessageCount(userId);
-      if (currentCount <= 0) {
-        Swal.fire({
-          title: 'Free Messages Depleted',
-          text: 'You have used all your free messages. Subscribe to continue using Bloom!',
-          icon: 'warning',
-          confirmButtonColor: '#3085d6',
-          confirmButtonText: 'Subscribe',
-          showCancelButton: true,
-        });
-        return;
-      }
-    }
-
     setCanSend(false);
 
     const newMessages = [
@@ -311,7 +307,40 @@ export default function Chat({
         messageToSend,
         conversationId!
       );
-      if (!thoughtStream) throw new Error('Failed to get thought stream');
+
+      if (thoughtStream instanceof Response && thoughtStream.status === 402) {
+        setCanSend(false);
+        mutateMessages(
+          messages => [
+            ...(messages?.slice(0, -1) || []),
+            {
+              content: '',
+              isUser: false,
+              id: '',
+              metadata: {},
+              error: 402
+            }
+          ],
+          { revalidate: false }
+        );
+        Swal.fire({
+          title: 'Subscription Required',
+          text: 'You have no active subscription. Subscribe to continue using Bloom!',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Subscribe',
+          showCancelButton: false,
+        }).then((result) => {
+          if (result.isConfirmed) {
+            router.push('/settings');
+          }
+        });
+        return;
+      }
+
+      if (!thoughtStream || thoughtStream instanceof Response) {
+        throw new Error('Failed to get thought stream');
+      }
 
       thoughtReader = thoughtStream.getReader();
       let thoughtText = '';
@@ -336,9 +365,21 @@ export default function Chat({
         conversationId!,
         thoughtText
       );
-      const honchoContent = (await new Response(
-        honchoResponse
-      ).json()) as HonchoResponse;
+
+      let honchoContent: HonchoResponse;
+      if (honchoResponse instanceof Response) {
+        honchoContent = await honchoResponse.json();
+      } else {
+        // Convert ReadableStream to text first
+        const reader = honchoResponse.getReader();
+        let result = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          result += new TextDecoder().decode(value);
+        }
+        honchoContent = JSON.parse(result);
+      }
 
       const pureThought = thoughtText;
 
@@ -357,9 +398,15 @@ export default function Chat({
         honchoContent.content
       );
       if (!responseStream) throw new Error('Failed to get response stream');
+      const stream = responseStream instanceof Response
+        ? responseStream.body
+        : responseStream;
 
-      responseReader = responseStream.getReader();
+      if (!stream) throw new Error('Failed to get response stream');
+      responseReader = stream.getReader();
       let currentModelOutput = '';
+
+      if (!responseReader) throw new Error('Failed to get stream reader');
 
       // Process response stream
       while (true) {
@@ -530,11 +577,10 @@ export default function Chat({
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
+                  ? 'border-green-200 focus:border-green-200'
+                  : 'border-red-200 focus:border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
