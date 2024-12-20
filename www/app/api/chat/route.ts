@@ -4,22 +4,6 @@ import { thinkCall, respondCall } from './actions';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { streamText } from 'ai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { HoneyHiveTracer } from "honeyhive";
-
-//     const tracer = await HoneyHiveTracer.init({
-//       apiKey: process.env.HH_API_KEY,
-//       project: process.env.HH_PROJECT,
-//       sessionName: "test",
-//     });
-async function initializeTracer(sessionName: string): Promise<HoneyHiveTracer> {
-  const tracer = await HoneyHiveTracer.init({
-    apiKey: process.env.HH_API_KEY,
-    project: process.env.HH_PROJECT,
-    sessionName: sessionName,
-  });
-
-  return tracer;
-}
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -134,8 +118,6 @@ async function saveHistory({
 async function fetchOpenRouter(type: string, messages: any[], payload: any) {
   try {
 
-    const tracer = await initializeTracer('test');
-
     const result = streamText({
       model: openrouter(MODEL),
       messages,
@@ -148,7 +130,10 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
       },
       experimental_telemetry: {
         isEnabled: true,
-        tracer: tracer.getTracer(),
+        metadata: {
+          sessionId: "test",
+          sessionName: "test",
+        }
       }
     });
     return result.toTextStreamResponse();
