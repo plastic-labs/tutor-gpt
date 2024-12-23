@@ -131,8 +131,9 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
       experimental_telemetry: {
         isEnabled: true,
         metadata: {
-          sessionId: "test",
-          sessionName: "test",
+          sessionId: payload.sessionId,
+          userId: payload.userId,
+          tags: [type]
         }
       }
     });
