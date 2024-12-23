@@ -58,14 +58,14 @@ export async function POST(req: NextRequest) {
   const honchoResponse =
     content.match(/<honcho>([^]*?)<\/honcho>/)?.[1]?.trim() ?? 'None';
   const bloomResponse =
-    content.match(/<bloom>([^]*?)<\/bloom>/)?.[1]?.trim() ?? 'None';
+    content.match(/<tutor>([^]*?)<\/tutor>/)?.[1]?.trim() ?? 'None';
 
   const prompt: Message[] = [
     ...thoughtPrompt,
     ...thoughtHistory,
     {
       role: 'user',
-      content: `<honcho-response>${honchoResponse}</honcho-response>\n<bloom>${bloomResponse}</bloom>\n${message}`,
+      content: `<honcho-response>${honchoResponse}</honcho-response>\n<tutor>${bloomResponse}</tutor>\n${message}`,
     },
   ];
 
