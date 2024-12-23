@@ -133,6 +133,8 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
         metadata: {
           sessionId: payload.sessionId,
           userId: payload.userId,
+          release: process.env.SENTRY_RELEASE,
+          environment: process.env.SENTRY_ENVIRONMENT,
           tags: [type]
         }
       }
