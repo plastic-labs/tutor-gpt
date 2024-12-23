@@ -2,6 +2,7 @@ import { getHonchoApp, getHonchoUser, honcho } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { streamText } from 'ai';
+import d from 'dedent-js';
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -139,51 +140,29 @@ export async function getUserData() {
   };
 }
 
-export function parsePrompt(prompt: Buffer, history: Message[]): Message[] {
-  // Decode the buffer to string when needed
-  const content = prompt.toString('utf-8');
-  const lines = content.split('\n');
+export const user = (
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): Message => ({
+  role: 'user',
+  content: d(strings, ...values),
+});
 
-  const messages: Message[] = [];
-  let currentRole: 'user' | 'assistant' | '' = '';
-  let currentContent: string[] = [];
+export const assistant = (
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): Message => ({
+  role: 'assistant',
+  content: d(strings, ...values),
+});
 
-  for (const line of lines) {
-    if (line === 'USER:') {
-      if (currentRole && currentContent.length) {
-        messages.push({
-          role: currentRole,
-          content: currentContent.join('\n').trim(),
-        });
-      }
-      currentRole = 'user';
-      currentContent = [];
-    } else if (line === 'ASSISTANT:') {
-      if (currentRole && currentContent.length) {
-        messages.push({
-          role: currentRole,
-          content: currentContent.join('\n').trim(),
-        });
-      }
-      currentRole = 'assistant';
-      currentContent = [];
-    } else if (line === 'MESSAGES:') {
-      messages.push(...history);
-    } else if (line.trim() !== '') {
-      currentContent.push(line);
-    }
-  }
-
-  // Push the last message if exists
-  if (currentRole && currentContent.length) {
-    messages.push({
-      role: currentRole,
-      content: currentContent.join('\n').trim(),
-    });
-  }
-
-  return messages;
-}
+// export const system = (
+//   strings: TemplateStringsArray,
+//   ...values: unknown[]
+// ): Message => ({
+//   role: 'system',
+//   content: d(strings, ...values),
+// });
 
 export async function createStream(
   type: string,

@@ -1,6 +1,5 @@
 import { createStream, getUserData, Message } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
-import { render } from '@/utils/prompts/lib';
 import { responsePrompt } from '@/utils/prompts/response';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -36,10 +35,9 @@ export async function POST(req: NextRequest) {
     history.push({ role: 'assistant', content: associatedMessage.content });
   }
 
-  const promptMessages = render(responsePrompt, history);
-
   const messages = [
-    ...promptMessages,
+    ...responsePrompt,
+    ...history,
     {
       role: 'user',
       content: `<honcho-response>${honchoThought}</honcho-response>\n${message}`,
