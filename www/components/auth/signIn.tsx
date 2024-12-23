@@ -43,12 +43,12 @@ export default function SignIn(props: any) {
         action="#"
         ref={formRef}
         onSubmit={handleSignIn}
-        className={`mt-8 space-y-6 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`}
+        className={`mt-8 space-y-6 text-foreground`}
       >
         <div>
           <label
             htmlFor="email"
-            className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+            className={`block text-sm font-medium text-foreground`}
           >
             Email
           </label>
@@ -57,11 +57,7 @@ export default function SignIn(props: any) {
             type="email"
             id="email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
-              theme === 'dark'
-                ? 'bg-gray-700 text-white border-gray-600'
-                : 'bg-white text-gray-700 border-gray-200'
-            } ${error ? 'border-2 border-red-500' : ''}`}
+            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -70,7 +66,7 @@ export default function SignIn(props: any) {
         <div>
           <label
             htmlFor="password"
-            className={`block text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+            className={`block text-sm font-medium text-foreground`}
           >
             Password
           </label>
@@ -79,11 +75,7 @@ export default function SignIn(props: any) {
             type="password"
             id="password"
             name="password"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm ${
-              theme === 'dark'
-                ? 'bg-gray-700 text-white border-gray-600'
-                : 'bg-white text-gray-700 border-gray-200'
-            } ${error ? 'border-2 border-red-500' : ''}`}
+            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -91,11 +83,7 @@ export default function SignIn(props: any) {
 
         <div className="sm:flex sm:items-center sm:gap-4">
           <button
-            className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-gray-800 ${
-              theme === 'dark'
-                ? 'border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green'
-                : 'border-neon-green bg-neon-green hover:bg-transparent hover:text-blue-600'
-            }`}
+            className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-foreground border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent dark:hover:text-blue-600`}
           >
             {isLoading ? (
               <svg className="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24">
@@ -119,22 +107,22 @@ export default function SignIn(props: any) {
           </button>
 
           <div className="mt-4 space-y-2 sm:mt-0 text-sm">
-            <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}>
+            <p className="text-foreground">
               Don&apos;t have an account?{' '}
               <a
                 href="#"
                 onClick={() => stateSync('SIGNUP')}
-                className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
+                className={`underline text-foreground`}
               >
                 Sign Up Now
               </a>
             </p>
-            <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-500'}>
+            <p className="text-foreground">
               Forgot Your Password?{' '}
               <a
                 href="#"
                 onClick={() => stateSync('FORGOT')}
-                className={`underline ${theme === 'dark' ? 'text-gray-100' : 'text-gray-700'}`}
+                className={`underline text-foreground`}
               >
                 Recover
               </a>

@@ -31,7 +31,7 @@ export default function SettingsLayout({
     <div className={`flex-1 flex flex-col bg-background text-foreground`}>
       <div className="flex-1 flex">
         <div className="py-4">
-          <nav className="w-64 bg-gray-100 dark:bg-muted p-4 rounded-lg">
+          <nav className="w-64 bg-background dark:bg-muted p-4 rounded-lg">
             {' '}
             <ul>
               {navItems.map((item) => (
@@ -40,7 +40,7 @@ export default function SettingsLayout({
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full text-left p-2 rounded transition-colors ${
                       activeTab === item.id
-                        ? 'bg-gray-400 text-primary-foreground dark:bg-neon-green dark:text-black'
+                        ? 'bg-accent text-foreground'
                         : 'hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-neon-green/20 dark:hover:text-neon-green'
                     }`}
                   >

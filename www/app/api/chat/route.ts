@@ -60,7 +60,7 @@ async function saveHistory({
     );
 
     // Save thought metamessage for user message
-    const thoughtMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n<bloom>${aiResponse}</bloom>\n${userInput}`;
+    const thoughtMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n<tutor>${aiResponse}</tutor>\n${userInput}`;
     await honcho.apps.users.sessions.metamessages.create(
       appId,
       userId,
