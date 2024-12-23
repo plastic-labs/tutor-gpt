@@ -25,7 +25,6 @@
     "@vercel/otel": "^1.10.0",
     "@vercel/speed-insights": "^1.1.0",
     "ai": "^4.0.1",
-    "chromadb-default-embed": "^2.13.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "honcho-ai": "^0.0.11",
