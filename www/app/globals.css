@@ -35,12 +35,17 @@ html {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 40, 20%, 94%; /* #f3f1ed */
+    --foreground: 0, 0%, 10%; /* #191919 */
+    --secondary: 0, 0%, 98%; /* #FAFAFA */
+    --accent: 0, 0%, 89%; /* #E2E2E2 */
+    font-size: 87.5%;
   }
   .dark {
-    --background: 220 17% 17%;
-    --foreground: 0 0% 98%;
+    --background: 0, 0%, 10%; /* #191919 */
+    --foreground: 40, 20%, 94%; /* #f3f1ed */
+    --secondary: 0, 0%, 0%; /* #000000 */
+    --accent: 0, 0%, 22%; /* #383838 */
   }
 }
 
