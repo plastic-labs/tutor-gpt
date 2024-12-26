@@ -7,7 +7,7 @@ import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
-// import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
 // import { createClient } from '@/utils/supabase/client';
@@ -54,12 +54,9 @@ async function fetchStream(
       }),
     });
 
-    if (response.status === 402) {
-      return response;
-    }
-
     if (!response.ok) {
       const errorText = await response.text();
+
       console.error(`Stream error for ${type}:`, {
         status: response.status,
         statusText: response.statusText,
@@ -129,11 +126,14 @@ export default function Chat({
   const router = useRouter();
 
   const firstChat = useMemo(() => {
-    // Check if there are no conversations or only one conversation with no messages
     return !initialConversations?.length ||
       (initialConversations.length === 1 && !initialMessages?.length) ||
       initialChatAccess.freeMessages === 50;
   }, [initialConversations?.length, initialMessages?.length, initialChatAccess.freeMessages]);
+
+  // Since this message is just rendered in the UI, this naive check may result in edge cases where the incorrect message is shown.
+  // (Ex. will show on all chats after creating a new session or messaging Bloom, even the first chat). 
+  // Also, clearing chats will revert the message to the initial description.
   const defaultMessage: Message = {
     content:
       `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
@@ -365,20 +365,9 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         thoughtText
       );
 
-      let honchoContent: HonchoResponse;
-      if (honchoResponse instanceof Response) {
-        honchoContent = await honchoResponse.json();
-      } else {
-        // Convert ReadableStream to text first
-        const reader = honchoResponse.getReader();
-        let result = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          result += new TextDecoder().decode(value);
-        }
-        honchoContent = JSON.parse(result);
-      }
+      const honchoContent = (await new Response(
+        honchoResponse
+      ).json()) as HonchoResponse;
 
       const pureThought = thoughtText;
 
