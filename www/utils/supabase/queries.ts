@@ -1,32 +1,26 @@
 import { cache } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { unstable_cache as next_unstable_cache } from 'next/cache';
-import { getFreeMessageCount } from './actions';
-
-export const unstable_cache = <Args extends any[], Output>(
-  callback: (...args: Args) => Promise<Output>,
-  key: string[],
-  options: { revalidate: number },
-) => {
-  return cache(
-    next_unstable_cache(
-      callback as unknown as (...args: any[]) => Promise<Output>,
-      key,
-      options
-    )
-  );
-};
+import { unstable_cache } from '../unstableCache';
+import { createOrRetrieveFreeTrialSubscription } from './admin';
 
 export const getChatAccess = unstable_cache(
   async (supabase: SupabaseClient, userId: string) => {
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('status, trial_end, metadata')
-      .in('status', ['trialing', 'active'])
-      .maybeSingle();
+  const subscription = await createOrRetrieveFreeTrialSubscription(userId);
     
-    const isSubscribed = !!(subscription && subscription.status === 'active' && !subscription.trial_end);
-    const freeMessages = isSubscribed ? 0 : (subscription?.metadata as { freeMessages: number })?.freeMessages ?? 0;    
+    // Check if subscription is active (paid subscription)
+    const isSubscribed = subscription?.status === 'active' && 
+      !subscription.cancel_at_period_end;
+
+    // Check for trial status and free messages
+    const isTrialing = subscription?.status === 'trialing';
+    const trialEnded = subscription?.trial_end 
+    ? new Date(subscription.trial_end) < new Date() 
+    : false;
+    
+    const freeMessages = (isTrialing && !trialEnded)
+    ? (subscription?.metadata as { freeMessages: number })?.freeMessages ?? 0
+    : 0;
+
     return {
       isSubscribed,
       freeMessages,
