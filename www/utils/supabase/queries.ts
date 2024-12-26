@@ -1,25 +1,33 @@
 import { cache } from 'react';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { unstable_cache } from '../unstableCache';
-import { createOrRetrieveFreeTrialSubscription } from './admin';
+import { createFreeTrialSubscription } from './admin';
+
+async function createOrRetrieveFreeTrialSubscription(supabase: SupabaseClient, userId: string) {
+  // First try to get existing subscription with user privileges
+  const existingSub = await getSubscription(supabase);
+  if (existingSub) return existingSub;
+
+  // If no subscription exists, create one with admin privileges
+  return createFreeTrialSubscription(userId);
+}
 
 export const getChatAccess = unstable_cache(
   async (supabase: SupabaseClient, userId: string) => {
-  const subscription = await createOrRetrieveFreeTrialSubscription(userId);
+    const subscription = await createOrRetrieveFreeTrialSubscription(supabase, userId);
     
-    // Check if subscription is active (paid subscription)
+    // Rest of the function remains the same
     const isSubscribed = subscription?.status === 'active' && 
       !subscription.cancel_at_period_end;
 
-    // Check for trial status and free messages
     const isTrialing = subscription?.status === 'trialing';
     const trialEnded = subscription?.trial_end 
-    ? new Date(subscription.trial_end) < new Date() 
-    : false;
+      ? new Date(subscription.trial_end) < new Date() 
+      : false;
     
     const freeMessages = (isTrialing && !trialEnded)
-    ? (subscription?.metadata as { freeMessages: number })?.freeMessages ?? 0
-    : 0;
+      ? (subscription?.metadata as { freeMessages: number })?.freeMessages ?? 0
+      : 0;
 
     return {
       isSubscribed,
