@@ -32,95 +32,95 @@ const openrouter = createOpenRouter({
   },
 });
 
-export interface HistoryWithoutResponse {
-  appId: string;
-  userId: string;
-  sessionId: string;
-  userInput: string;
-  thought?: string;
-  honchoContent?: string;
-}
+// export interface HistoryWithoutResponse {
+//   appId: string;
+//   userId: string;
+//   sessionId: string;
+//   userInput: string;
+//   thought?: string;
+//   honchoContent?: string;
+// }
 
-type History = HistoryWithoutResponse & {
-  aiResponse: string;
-};
+// type History = HistoryWithoutResponse & {
+//   aiResponse: string;
+// };
 
-async function saveHistory({
-  appId,
-  userId,
-  sessionId,
-  userInput,
-  thought,
-  honchoContent,
-  aiResponse,
-}: History) {
-  try {
-    // Create user message
-    const newUserMessage = await honcho.apps.users.sessions.messages.create(
-      appId,
-      userId,
-      sessionId,
-      {
-        is_user: true,
-        content: userInput,
-      }
-    );
+// async function saveHistory({
+//   appId,
+//   userId,
+//   sessionId,
+//   userInput,
+//   thought,
+//   honchoContent,
+//   aiResponse,
+// }: History) {
+//   try {
+//     // Create user message
+//     const newUserMessage = await honcho.apps.users.sessions.messages.create(
+//       appId,
+//       userId,
+//       sessionId,
+//       {
+//         is_user: true,
+//         content: userInput,
+//       }
+//     );
 
-    // Save thought metamessage for user message
-    const thoughtMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n<tutor>${aiResponse}</tutor>\n${userInput}`;
-    await honcho.apps.users.sessions.metamessages.create(
-      appId,
-      userId,
-      sessionId,
-      {
-        message_id: newUserMessage.id,
-        metamessage_type: 'thought',
-        content: thoughtMetamessage,
-        metadata: { type: 'user' },
-      }
-    );
+//     // Save thought metamessage for user message
+//     const thoughtMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n<tutor>${aiResponse}</tutor>\n${userInput}`;
+//     await honcho.apps.users.sessions.metamessages.create(
+//       appId,
+//       userId,
+//       sessionId,
+//       {
+//         message_id: newUserMessage.id,
+//         metamessage_type: 'thought',
+//         content: thoughtMetamessage,
+//         metadata: { type: 'user' },
+//       }
+//     );
 
-    // Create AI message
-    const newAiMessage = await honcho.apps.users.sessions.messages.create(
-      appId,
-      userId,
-      sessionId,
-      {
-        is_user: false,
-        content: aiResponse,
-      }
-    );
+//     // Create AI message
+//     const newAiMessage = await honcho.apps.users.sessions.messages.create(
+//       appId,
+//       userId,
+//       sessionId,
+//       {
+//         is_user: false,
+//         content: aiResponse,
+//       }
+//     );
 
-    // Save thought metamessage for AI message
-    await honcho.apps.users.sessions.metamessages.create(
-      appId,
-      userId,
-      sessionId,
-      {
-        content: thought || '',
-        message_id: newAiMessage.id,
-        metamessage_type: 'thought',
-        metadata: { type: 'assistant' },
-      }
-    );
+//     // Save thought metamessage for AI message
+//     await honcho.apps.users.sessions.metamessages.create(
+//       appId,
+//       userId,
+//       sessionId,
+//       {
+//         content: thought || '',
+//         message_id: newAiMessage.id,
+//         metamessage_type: 'thought',
+//         metadata: { type: 'assistant' },
+//       }
+//     );
 
-    // Save response metamessage
-    const responseMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n${userInput}`;
-    await honcho.apps.users.sessions.metamessages.create(
-      appId,
-      userId,
-      sessionId,
-      {
-        message_id: newAiMessage.id,
-        metamessage_type: 'response',
-        content: responseMetamessage,
-      }
-    );
-  } catch (error) {
-    Sentry.captureException(error);
-    throw error; // Re-throw to be handled by caller
-  }
-}
+//     // Save response metamessage
+//     const responseMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n${userInput}`;
+//     await honcho.apps.users.sessions.metamessages.create(
+//       appId,
+//       userId,
+//       sessionId,
+//       {
+//         message_id: newAiMessage.id,
+//         metamessage_type: 'response',
+//         content: responseMetamessage,
+//       }
+//     );
+//   } catch (error) {
+//     Sentry.captureException(error);
+//     throw error; // Re-throw to be handled by caller
+//   }
+// }
 
 export async function getUserData() {
   const supabase = createClient();
@@ -165,31 +165,28 @@ export const assistant = (
 //   role: 'system',
 //   content: d(strings, ...values),
 // });
-
 export async function createStream(
-  type: string,
   messages: Message[],
-  payload: HistoryWithoutResponse
+  metadata: {
+    sessionId: string;
+    userId: string;
+    type: string;
+  },
+  onFinish?: (response: { text: string }) => Promise<void>
 ) {
   try {
     const result = streamText({
       model: openrouter(MODEL),
       messages,
-      onFinish: async (response) => {
-        if (type === 'response') {
-          const aiResponse = response.text;
-          const finalPayload = { ...payload, aiResponse };
-          await saveHistory(finalPayload);
-        }
-      },
+      ...(onFinish && { onFinish }),
       experimental_telemetry: {
         isEnabled: true,
         metadata: {
-          sessionId: payload.sessionId,
-          userId: payload.userId,
+          sessionId: metadata.sessionId,
+          userId: metadata.userId,
           release: SENTRY_RELEASE,
           environment: SENTRY_ENVIRONMENT,
-          tags: [type],
+          tags: [metadata.type],
         },
       },
     });

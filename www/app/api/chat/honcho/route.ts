@@ -24,5 +24,7 @@ export async function POST(req: NextRequest) {
     { queries: message }
   );
 
+  console.log('dialecticQuery', dialecticQuery);
+
   return NextResponse.json({ content: dialecticQuery.content });
 }
