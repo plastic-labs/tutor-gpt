@@ -8,7 +8,10 @@ export const honcho = new Honcho({
 export const getHonchoApp = unstable_cache(
   async () => {
     console.log('Cache Miss App');
-    return await honcho.apps.getOrCreate(process.env.HONCHO_APP_NAME!);
+    return await honcho.apps.getOrCreate(process.env.HONCHO_APP_NAME!, {
+      timeout: 5 * 1000,
+      maxRetries: 5,
+    });
   },
   [],
   {
@@ -20,7 +23,10 @@ export const getHonchoUser = unstable_cache(
   async (userId: string) => {
     console.log('Cache Miss User');
     const app = await getHonchoApp();
-    return await honcho.apps.users.getOrCreate(app.id, userId);
+    return await honcho.apps.users.getOrCreate(app.id, userId, {
+      timeout: 5 * 1000,
+      maxRetries: 5,
+    });
   },
   [],
   {

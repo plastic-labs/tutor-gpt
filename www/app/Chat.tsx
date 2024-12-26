@@ -7,11 +7,11 @@ import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import Turnstile, { useTurnstile } from 'react-turnstile';
 
-import { createClient } from '@/utils/supabase/client';
+// import { createClient } from '@/utils/supabase/client';
 import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
@@ -42,13 +42,12 @@ async function fetchStream(
   honchoThought = ''
 ) {
   try {
-    const response = await fetch(`/api/chat`, {
+    const response = await fetch(`/api/chat/${type}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        type,
         message,
         conversationId,
         thought,
