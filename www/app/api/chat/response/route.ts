@@ -45,9 +45,16 @@ export async function POST(req: NextRequest) {
 
   const honchoHistory = Array.from(honchoIter.items);
 
-  const history = responseHistory.map((message) => {
+  console.log('honchoHistory', honchoHistory);
+  console.log('responseHistory', responseHistory);
+
+  const getHonchoMessage = (id: string) =>
+    honchoHistory.find((m) => m.message_id === id)?.content ||
+    'No Honcho Message';
+
+  const history = responseHistory.map((message, i) => {
     if (message.is_user) {
-      return user`<honcho>${honchoHistory.find((m) => (m.message_id = message.id))}</honcho>
+      return user`<honcho>${getHonchoMessage(message.id)}</honcho>
       ${message.content}`;
     } else {
       return assistant`${message.content}`;
