@@ -11,6 +11,10 @@ import { honcho } from '@/utils/honcho';
 import { thoughtPrompt } from '@/utils/prompts/thought';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+export const maxDuration = 100;
+export const dynamic = 'force-dynamic'; // always run dynamically
+
 const CONTEXT_LIMIT = 10;
 
 interface Metadata {

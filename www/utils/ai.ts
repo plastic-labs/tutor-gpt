@@ -172,7 +172,6 @@ export async function createStream(
   payload: HistoryWithoutResponse
 ) {
   try {
-
     const result = streamText({
       model: openrouter(MODEL),
       messages,
@@ -190,9 +189,9 @@ export async function createStream(
           userId: payload.userId,
           release: SENTRY_RELEASE,
           environment: SENTRY_ENVIRONMENT,
-          tags: [type]
-        }
-      }
+          tags: [type],
+        },
+      },
     });
     return result.toTextStreamResponse();
   } catch (error) {

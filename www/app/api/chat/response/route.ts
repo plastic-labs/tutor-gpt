@@ -3,6 +3,10 @@ import { honcho } from '@/utils/honcho';
 import { responsePrompt } from '@/utils/prompts/response';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+export const maxDuration = 100;
+export const dynamic = 'force-dynamic'; // always run dynamically
+
 export async function POST(req: NextRequest) {
   const { message, conversationId, honchoThought } = await req.json();
 

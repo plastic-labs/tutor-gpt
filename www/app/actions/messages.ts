@@ -1,10 +1,11 @@
 'use server';
 import { createClient } from '@/utils/supabase/server';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 export async function getMessages(conversationId: string) {
-  return Sentry.startSpan({ name: 'server-action.getMessages', op: 'server.action' },
+  return Sentry.startSpan(
+    { name: 'server-action.getMessages', op: 'server.action' },
     async () => {
       const supabase = createClient();
 
@@ -39,7 +40,8 @@ export async function getMessages(conversationId: string) {
 }
 
 export async function getThought(conversationId: string, messageId: string) {
-  return Sentry.startSpan({ name: 'server-action.getThought', op: 'server.action' },
+  return Sentry.startSpan(
+    { name: 'server-action.getThought', op: 'server.action' },
     async () => {
       const supabase = createClient();
 
@@ -81,7 +83,8 @@ export async function addOrRemoveReaction(
   messageId: string,
   reaction: 'thumbs_up' | 'thumbs_down' | null
 ) {
-  return Sentry.startSpan({ name: 'server-action.addOrRemoveReaction', op: 'server.action' },
+  return Sentry.startSpan(
+    { name: 'server-action.addOrRemoveReaction', op: 'server.action' },
     async () => {
       const supabase = createClient();
 

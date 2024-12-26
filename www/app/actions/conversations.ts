@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 // TODO add proper authorization check
 
@@ -12,9 +12,9 @@ type Conversation = {
 };
 
 export async function getConversations() {
-  return Sentry.startSpan({ name: 'server-action.getConversations', op: 'server.action' },
+  return Sentry.startSpan(
+    { name: 'server-action.getConversations', op: 'server.action' },
     async () => {
-
       const supabase = createClient();
 
       const {
@@ -47,7 +47,8 @@ export async function getConversations() {
 }
 
 export async function createConversation() {
-  return Sentry.startSpan({ name: 'server-action.createConversation', op: 'server.action' },
+  return Sentry.startSpan(
+    { name: 'server-action.createConversation', op: 'server.action' },
     async () => {
       const supabase = createClient();
 
@@ -74,7 +75,8 @@ export async function createConversation() {
 }
 
 export async function deleteConversation(conversationId: string) {
-  return Sentry.startSpan({ name: 'server-action.deleteConversation', op: 'server.action' },
+  return Sentry.startSpan(
+    { name: 'server-action.deleteConversation', op: 'server.action' },
     async () => {
       const supabase = createClient();
 
@@ -101,7 +103,8 @@ export async function deleteConversation(conversationId: string) {
 }
 
 export async function updateConversation(conversationId: string, name: string) {
-  return Sentry.startSpan({ name: 'server-action.updateConversation', op: 'server.action' },
+  return Sentry.startSpan(
+    { name: 'server-action.updateConversation', op: 'server.action' },
     async () => {
       const supabase = createClient();
 

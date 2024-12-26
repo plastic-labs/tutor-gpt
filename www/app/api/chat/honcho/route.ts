@@ -2,6 +2,10 @@ import { getUserData } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+export const maxDuration = 100;
+export const dynamic = 'force-dynamic'; // always run dynamically
+
 export async function POST(req: NextRequest) {
   const { message, conversationId } = await req.json();
 
