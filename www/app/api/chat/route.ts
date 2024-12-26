@@ -13,6 +13,8 @@ export const dynamic = 'force-dynamic'; // always run dynamically
 
 const OPENROUTER_API_KEY = process.env.AI_API_KEY;
 const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
+const SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'dev';
+const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'local';
 
 const openrouter = createOpenRouter({
   // custom settings, e.g.
@@ -117,6 +119,7 @@ async function saveHistory({
 
 async function fetchOpenRouter(type: string, messages: any[], payload: any) {
   try {
+
     const result = streamText({
       model: openrouter(MODEL),
       messages,
@@ -127,6 +130,16 @@ async function fetchOpenRouter(type: string, messages: any[], payload: any) {
           await saveHistory(finalPayload);
         }
       },
+      experimental_telemetry: {
+        isEnabled: true,
+        metadata: {
+          sessionId: payload.sessionId,
+          userId: payload.userId,
+          release: SENTRY_RELEASE,
+          environment: SENTRY_ENVIRONMENT,
+          tags: [type]
+        }
+      }
     });
     return result.toTextStreamResponse();
   } catch (error) {
