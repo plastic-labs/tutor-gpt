@@ -22,29 +22,14 @@ const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Trial membership
-const createOrRetrieveFreeTrialSubscription = async (userId: string) => {
-  // Check for existing trial subscription
-  const { data: existingSub, error: subError } = await supabaseAdmin
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('status', 'trialing')
-    .maybeSingle();
 
-  if (subError)
-    throw new Error(`Subscription lookup failed: ${subError.message}`);
-
-  // If trial subscription exists, return it
-  if (existingSub) return existingSub;
-
-  // Create a new trial subscription
+const createFreeTrialSubscription = async (userId: string) => {
   const subscriptionData: TablesInsert<'subscriptions'> = {
     id: `free_trial_${userId}`,
     user_id: userId,
     status: 'trialing',
     metadata: { freeMessages: FREE_MESSAGE_LIMIT },
-    price_id: null, // or your free tier price ID if you have one
+    price_id: null,
     quantity: 1,
     cancel_at_period_end: false,
     created: new Date().toISOString(),
@@ -63,15 +48,13 @@ const createOrRetrieveFreeTrialSubscription = async (userId: string) => {
     .from('subscriptions')
     .insert([subscriptionData]);
 
-  if (insertError)
-    throw new Error(
-      `Trial subscription creation failed: ${insertError.message}`
-    );
+  if (insertError) {
+    throw new Error(`Trial subscription creation failed: ${insertError.message}`);
+  }
 
   return subscriptionData;
 };
 
-// Add this function to decrement free messages
 const decrementFreeMessages = async (userId: string) => {
   const { data: subscription, error: subError } = await supabaseAdmin
     .from('subscriptions')
@@ -384,7 +367,7 @@ export {
   deletePriceRecord,
   createOrRetrieveCustomer,
   manageSubscriptionStatusChange,
-  createOrRetrieveFreeTrialSubscription,
+  createFreeTrialSubscription,
   decrementFreeMessages,
   FREE_MESSAGE_LIMIT,
 };

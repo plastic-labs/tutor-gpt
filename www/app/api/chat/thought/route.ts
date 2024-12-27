@@ -7,6 +7,8 @@ import {
 } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import { thoughtPrompt } from '@/utils/prompts/thought';
+import { createClient } from '@/utils/supabase/server';
+import { getChatAccessWithUser } from '@/utils/supabase/actions';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -19,13 +21,25 @@ interface ThoughtCallProps {
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = createClient();
+  const honchoUserData = await getUserData();
   const { message, conversationId } = (await req.json()) as ThoughtCallProps;
 
-  const userData = await getUserData();
-  if (!userData) {
+  const {
+    data: { user: supabaseUser },
+  } = await supabase.auth.getUser();
+
+  if (!honchoUserData || !supabaseUser) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
-  const { appId, userId } = userData;
+
+  const { canChat } = await getChatAccessWithUser(supabaseUser.id);
+
+  if (!canChat) {
+    return new NextResponse('Subscription required', { status: 402 });
+  }
+
+  const { appId, userId } = honchoUserData;
 
   const messageIter = await honcho.apps.users.sessions.messages.list(
     appId,

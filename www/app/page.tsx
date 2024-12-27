@@ -1,8 +1,7 @@
-import { getSubscription } from '@/utils/supabase/queries';
+import { getChatAccessWithUser } from '@/utils/supabase/actions';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Chat from './Chat';
-import { getFreeMessageCount } from '@/utils/supabase/actions';
 import { getConversations } from './actions/conversations';
 import { getMessages } from './actions/messages';
 import { type Message } from '@/utils/types';
@@ -22,20 +21,14 @@ export default async function Home() {
   }
 
   // Get initial subscription state
-  let isSubscribed = false;
-  let freeMessages = 0;
-
-  if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
-    isSubscribed = true;
-  } else {
-    const sub = await getSubscription(supabase);
-    // Only consider active paid subscriptions, not trials
-    isSubscribed = !!(sub && sub.status === 'active' && !sub.trial_end);
-
-    if (!isSubscribed) {
-      freeMessages = await getFreeMessageCount(user.id);
-    }
-  }
+  const realChatAccess = await getChatAccessWithUser(user.id);
+  const isDevMode = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false';
+  
+  const chatAccess = {
+    isSubscribed: isDevMode ? true : realChatAccess.isSubscribed,
+    freeMessages: realChatAccess.freeMessages,
+    canChat: isDevMode ? true : (realChatAccess.isSubscribed || realChatAccess.freeMessages > 0)
+  };
 
   // Get initial conversations
   const conversations = await getConversations();
@@ -45,7 +38,7 @@ export default async function Home() {
   let initialConversationId: string | undefined = undefined;
   if (conversations.length > 0) {
     initialConversationId = conversations[0].conversationId;
-    initialMessages = await getMessages(initialConversationId);
+    initialMessages = await getMessages(initialConversationId!);
   }
 
   return (
@@ -54,11 +47,10 @@ export default async function Home() {
       <Chat
         initialUserId={user.id}
         initialEmail={user.email}
-        initialIsSubscribed={isSubscribed}
-        initialFreeMessages={freeMessages}
         initialConversations={conversations}
         initialMessages={initialMessages}
         initialConversationId={initialConversationId}
+        initialChatAccess={chatAccess}
       />
     </>
   );
