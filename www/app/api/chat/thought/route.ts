@@ -1,8 +1,6 @@
 import {
   createStream,
   getUserData,
-  HistoryWithoutResponse,
-  Message,
   user,
   assistant,
   // parsePrompt,
@@ -15,14 +13,13 @@ export const runtime = 'nodejs';
 export const maxDuration = 100;
 export const dynamic = 'force-dynamic'; // always run dynamically
 
-const CONTEXT_LIMIT = 10;
-
-interface Metadata {
-  summary?: string;
+interface ThoughtCallProps {
+  message: string;
+  conversationId: string;
 }
 
 export async function POST(req: NextRequest) {
-  const { message, conversationId } = await req.json();
+  const { message, conversationId } = (await req.json()) as ThoughtCallProps;
 
   const userData = await getUserData();
   if (!userData) {
@@ -30,61 +27,75 @@ export async function POST(req: NextRequest) {
   }
   const { appId, userId } = userData;
 
+  const messageIter = await honcho.apps.users.sessions.messages.list(
+    appId,
+    userId,
+    conversationId,
+    {}
+  );
+
+  const messageHistory = Array.from(messageIter.items);
+
   const thoughtIter = await honcho.apps.users.sessions.metamessages.list(
     appId,
     userId,
     conversationId,
     {
       metamessage_type: 'thought',
-      filter: { type: 'user' },
     }
   );
 
-  const thoughtHistory = thoughtIter.items.map(
-    (metamessage) => user`${metamessage.content}`
-  );
+  const thoughtHistory = Array.from(thoughtIter.items);
 
-  const recentResponseMeta = await honcho.apps.users.sessions.metamessages.list(
+  const honchoIter = await honcho.apps.users.sessions.metamessages.list(
     appId,
     userId,
     conversationId,
     {
-      metamessage_type: 'response',
-      filter: { type: 'user' },
-      reverse: true,
-      size: 1,
+      metamessage_type: 'honcho',
     }
   );
 
-  const [recentResponse] = recentResponseMeta.items;
-  const content = recentResponse?.content ?? '';
+  const honchoHistory = Array.from(honchoIter.items);
 
-  const honchoResponse =
-    content.match(/<honcho>([^]*?)<\/honcho>/)?.[1]?.trim() ?? 'None';
-  const bloomResponse =
-    content.match(/<tutor>([^]*?)<\/tutor>/)?.[1]?.trim() ?? 'None';
+  const history = messageHistory.map((message, i) => {
+    if (message.is_user) {
+      if (i == 0) {
+        return user`${message.content}`;
+      }
+      const lastUserMessage = messageHistory[i - 2];
+      const honchoResponse = honchoHistory.find(
+        (h) => h.message_id === lastUserMessage.id
+      );
+      const tutorResponse = messageHistory[i - 1];
 
-  const prompt: Message[] = [
-    ...thoughtPrompt,
-    ...thoughtHistory,
-    {
-      role: 'user',
-      content: `<honcho-response>${honchoResponse}</honcho-response>\n<tutor>${bloomResponse}</tutor>\n${message}`,
-    },
-  ];
+      return user`<honcho-response>${honchoResponse?.content || 'None'}</honcho-response>
+      <tutor>${tutorResponse?.content || 'None'}</tutor>
+      ${message.content}`;
+    } else {
+      const lastUserMessage = messageHistory[i - 1];
+      const thoughtResponse = thoughtHistory.find(
+        (t) => t.message_id === lastUserMessage.id
+      );
+      return assistant`${thoughtResponse?.content || 'None'}`;
+    }
+  });
 
-  const honchoPayload: HistoryWithoutResponse = {
-    appId,
-    userId,
-    sessionId: conversationId,
-    userInput: message,
-  };
+  const finalMessage = user`<honcho-response>${honchoHistory[honchoHistory.length - 1]?.content || 'None'}</honcho-response>
+  <tutor>${messageHistory[messageHistory.length - 1]?.content || 'None'}</tutor>
+  ${message}`;
+
+  const prompt = [...thoughtPrompt, ...history, finalMessage];
 
   console.log('Messages:\n');
   console.log(prompt);
   console.log('\n\n\n');
 
-  const stream = await createStream('thought', prompt, honchoPayload);
+  const stream = await createStream(prompt, {
+    sessionId: conversationId,
+    userId,
+    type: 'thought',
+  });
 
   if (!stream) {
     throw new Error('Failed to get stream');
