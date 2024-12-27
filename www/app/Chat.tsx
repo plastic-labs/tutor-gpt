@@ -21,6 +21,8 @@ import { type Message } from '@/utils/types';
 import { localStorageProvider } from '@/utils/swrCache';
 
 import useAutoScroll from '@/hooks/autoscroll';
+import MessageList from '@/components/MessageList';
+import { MessageListRef } from '@/components/MessageList';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -133,6 +135,8 @@ export default function Chat({
   const input = useRef<ElementRef<'textarea'>>(null);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
   const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+
+  const messageListRef = useRef<MessageListRef>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -296,7 +300,7 @@ export default function Chat({
       },
     ];
     await mutateMessages(newMessages, { revalidate: false });
-    scrollToBottom();
+    messageListRef.current?.scrollToBottom();
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -389,20 +393,20 @@ export default function Chat({
           { revalidate: false }
         );
 
-        scrollToBottom();
+        messageListRef.current?.scrollToBottom();
       }
 
       responseReader.releaseLock();
       responseReader = null;
 
       await mutateMessages();
-      scrollToBottom();
+      messageListRef.current?.scrollToBottom();
       setCanSend(true);
     } catch (error) {
       console.error('Chat error:', error);
       setCanSend(true);
       await mutateMessages();
-      scrollToBottom();
+      messageListRef.current?.scrollToBottom();
     } finally {
       // Cleanup
       if (thoughtReader) {
@@ -473,45 +477,18 @@ export default function Chat({
           </section>
         )}
         <div className="flex flex-col flex-grow overflow-hidden bg-secondary">
-          <section
-            className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
-            ref={messageContainerRef}
-          >
-            {messages ? (
-              [defaultMessage, ...messages].map((message, i) => (
-                <MessageBox
-                  key={message.id || i}
-                  isUser={message.isUser}
-                  userId={userId}
-                  message={message}
-                  loading={messagesLoading}
-                  conversationId={conversationId}
-                  setThought={setThought}
-                  isThoughtOpen={openThoughtMessageId === message.id}
-                  setIsThoughtsOpen={(isOpen) =>
-                    setIsThoughtsOpen(isOpen, message.id)
-                  }
-                  onReactionAdded={handleReactionAdded}
-                />
-              ))
-            ) : (
-              <MessageBox
-                isUser={false}
-                message={{
-                  content: '',
-                  id: '',
-                  isUser: false,
-                  metadata: { reaction: null },
-                }}
-                loading={true}
-                setThought={setThought}
-                setIsThoughtsOpen={setIsThoughtsOpen}
-                onReactionAdded={handleReactionAdded}
-                userId={userId}
-                conversationId={conversationId}
-              />
-            )}
-          </section>
+          <MessageList
+            ref={messageListRef}
+            messages={messages}
+            defaultMessage={defaultMessage}
+            userId={userId}
+            conversationId={conversationId}
+            messagesLoading={messagesLoading}
+            handleReactionAdded={handleReactionAdded}
+            setThoughtParent={setThought}
+            openThoughtMessageId={openThoughtMessageId}
+            setIsThoughtsOpen={setIsThoughtsOpen}
+          />
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
               id="send"
