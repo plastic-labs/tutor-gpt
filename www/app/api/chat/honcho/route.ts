@@ -6,8 +6,18 @@ export const runtime = 'nodejs';
 export const maxDuration = 100;
 export const dynamic = 'force-dynamic'; // always run dynamically
 
+
+function parseHonchoContent(str) {
+  try {
+    const match = str.match(/<honcho>(.*?)<\/honcho>/s);
+    return match ? match[1].trim() : str;
+  } catch (error) {
+    return str;
+  }
+}
+
 export async function POST(req: NextRequest) {
-  const { message, conversationId } = await req.json();
+  const { message, thought, conversationId } = await req.json();
 
   const userData = await getUserData();
 
@@ -17,14 +27,19 @@ export async function POST(req: NextRequest) {
 
   const { appId, userId } = userData;
 
+
+
+  const query = `Given the following user message: <user>${message}</user> I had the following message: ${parseHonchoContent(thought)}`
+
   const dialecticQuery = await honcho.apps.users.sessions.chat(
     appId,
     userId,
     conversationId,
-    { queries: message }
+    { queries: query }
   );
 
-  console.log('dialecticQuery', dialecticQuery);
+  console.log('dialecticQuery:', query);
+  console.log('dialecticQuery Response:', dialecticQuery);
 
   return NextResponse.json({ content: dialecticQuery.content });
 }
