@@ -7,7 +7,7 @@ import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
 // import { createClient } from '@/utils/supabase/client';
@@ -39,7 +39,7 @@ async function fetchStream(
   conversationId: string,
   thought = '',
   honchoThought = ''
-): Promise<Response> {
+) {
   try {
     const response = await fetch(`/api/chat/${type}`, {
       method: 'POST',
@@ -56,7 +56,15 @@ async function fetchStream(
 
     if (!response.ok) {
       if (response.status === 402) {
-        return response;
+        Swal.fire({
+          title: 'Subscription Required',
+          text: 'You have no active subscription. Subscribe to continue using Bloom!',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Subscribe',
+          showCancelButton: false,
+        });
+        throw new Error(`Subscription is required to chat: ${response.status}`);
       }
       const errorText = await response.text();
       console.error(`Stream error for ${type}:`, {
@@ -68,7 +76,7 @@ async function fetchStream(
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
 
-    return response;
+    return response.body;
   } catch (error) {
     console.error(`Error in fetchStream (${type}):`, error);
     throw error;
@@ -121,7 +129,6 @@ export default function Chat({
   const input = useRef<ElementRef<'textarea'>>(null);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
   const [, scrollToBottom] = useAutoScroll(messageContainerRef);
-  const router = useRouter();
 
   const firstChat = useMemo(() => {
     return !initialConversations?.length ||
@@ -299,42 +306,12 @@ What\'s on your mind? Let\'s dive in. 🌱`,
 
     try {
       // Get thought stream
-      const thoughtResponse = await fetchStream(
+      const thoughtStream = await fetchStream(
         'thought',
         messageToSend,
         conversationId!
       );
-
-      if (thoughtResponse.status === 402) {
-        setCanSend(false);
-        mutateMessages(
-          messages => [
-            ...(messages?.slice(0, -1) || []),
-            {
-              content: '',
-              isUser: false,
-              id: '',
-              metadata: {},
-              error: 402
-            }
-          ],
-          { revalidate: false }
-        );
-        Swal.fire({
-          title: 'Subscription Required',
-          text: 'You have no active subscription. Subscribe to continue using Bloom!',
-          icon: 'warning',
-          confirmButtonColor: '#3085d6',
-          confirmButtonText: 'Subscribe',
-          showCancelButton: false,
-        }).then((result) => {
-          if (result.isConfirmed) {
-            router.push('/settings');
-          }
-        });
-        return;
-      }
-      const thoughtStream = thoughtResponse.body;
+      
       if (!thoughtStream) {
         throw new Error('Failed to get thought stream');
       }
@@ -363,8 +340,10 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         thoughtText
       );
 
-      const honchoContent = await honchoResponse.json() as HonchoResponse;
-
+      const honchoContent = (await new Response(
+        honchoResponse
+      ).json()) as HonchoResponse;
+      
       const pureThought = thoughtText;
 
       thoughtText +=
@@ -374,20 +353,17 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Get response stream using the thought and dialectic response
-      const responseAPIResponse = await fetchStream(
+      const responseStream = await fetchStream(
         'response',
         messageToSend,
         conversationId!,
         pureThought,
         honchoContent.content
       );
-      const responseStream = responseAPIResponse.body;
       if (!responseStream) throw new Error('Failed to get response stream');
 
       responseReader = responseStream.getReader();
       let currentModelOutput = '';
-
-      if (!responseReader) throw new Error('Failed to get stream reader');
 
       // Process response stream
       while (true) {

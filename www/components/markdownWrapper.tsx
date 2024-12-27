@@ -59,14 +59,9 @@ const CodeBlock = memo(
 
 interface MarkdownWrapperProps {
   text: string;
-  disableTyping?: boolean;
 }
 
-const MarkdownWrapper = memo(({ text, disableTyping }: MarkdownWrapperProps) => {
-  if (disableTyping) {
-    return <ReactMarkdown>{text}</ReactMarkdown>;
-  }
-  
+const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
   const components = useMemo(
     () => ({
       ol: ({

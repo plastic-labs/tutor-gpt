@@ -22,7 +22,6 @@ interface MessageBoxProps {
   userId?: string;
   conversationId?: string;
   message: Message;
-  chatError?: number;
   loading?: boolean;
   isThoughtOpen?: boolean;
   setIsThoughtsOpen: (isOpen: boolean) => void;
@@ -35,7 +34,6 @@ export default function MessageBox({
   userId,
   // URL,
   message,
-  chatError,
   loading = false,
   isThoughtOpen,
   setIsThoughtsOpen,
@@ -117,7 +115,7 @@ export default function MessageBox({
     >
       {loading ? memoizedSkeleton : memoizedImage}
       <div className="flex flex-col gap-2 w-full">
-        {loading ? memoizedSkeleton : <MarkdownWrapper text={chatError === 402 ? "Subscription required to continue chatting." : content} disableTyping={!!chatError} />}
+        {loading ? memoizedSkeleton : <MarkdownWrapper text={content} />}
         {!loading && !isUser && shouldShowButtons && (
           <div className="flex justify-start gap-2 mt-2">
             <button
