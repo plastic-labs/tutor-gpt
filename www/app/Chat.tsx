@@ -449,7 +449,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSubscribed={canUseApp}
+        canUseApp={canUseApp}
       />
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
         {!isSidebarOpen && (
