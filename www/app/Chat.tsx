@@ -39,7 +39,7 @@ async function fetchStream(
   conversationId: string,
   thought = '',
   honchoThought = ''
-) {
+): Promise<Response> {
   try {
     const response = await fetch(`/api/chat/${type}`, {
       method: 'POST',
@@ -68,11 +68,7 @@ async function fetchStream(
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
     }
 
-    if (!response.body) {
-      throw new Error(`No response body for ${type} stream`);
-    }
-
-    return response.body;
+    return response;
   } catch (error) {
     console.error(`Error in fetchStream (${type}):`, error);
     throw error;
@@ -303,13 +299,13 @@ What\'s on your mind? Let\'s dive in. 🌱`,
 
     try {
       // Get thought stream
-      const thoughtStream = await fetchStream(
+      const thoughtResponse = await fetchStream(
         'thought',
         messageToSend,
         conversationId!
       );
-      
-      if (thoughtStream instanceof Response && thoughtStream.status === 402) {
+
+      if (thoughtResponse.status === 402) {
         setCanSend(false);
         mutateMessages(
           messages => [
@@ -338,11 +334,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         });
         return;
       }
-
-      if (!thoughtStream || thoughtStream instanceof Response) {
+      const thoughtStream = thoughtResponse.body;
+      if (!thoughtStream) {
         throw new Error('Failed to get thought stream');
       }
-
+  
       thoughtReader = thoughtStream.getReader();
       let thoughtText = '';
       setThought('');
@@ -367,9 +363,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         thoughtText
       );
 
-      const honchoContent = (await new Response(
-        honchoResponse
-      ).json()) as HonchoResponse;
+      const honchoContent = await honchoResponse.json() as HonchoResponse;
 
       const pureThought = thoughtText;
 
@@ -380,20 +374,17 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Get response stream using the thought and dialectic response
-      const responseStream = await fetchStream(
+      const responseAPIResponse = await fetchStream(
         'response',
         messageToSend,
         conversationId!,
         pureThought,
         honchoContent.content
       );
+      const responseStream = responseAPIResponse.body;
       if (!responseStream) throw new Error('Failed to get response stream');
-      const stream = responseStream instanceof Response
-        ? responseStream.body
-        : responseStream;
 
-      if (!stream) throw new Error('Failed to get response stream');
-      responseReader = stream.getReader();
+      responseReader = responseStream.getReader();
       let currentModelOutput = '';
 
       if (!responseReader) throw new Error('Failed to get stream reader');
