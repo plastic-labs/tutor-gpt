@@ -454,14 +454,14 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
         {!isSidebarOpen && (
           <button
-            className={`absolute top-2 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2 border border-black`}
+            className={`absolute top-3 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2 border border-black`}
             onClick={() => setIsSidebarOpen(true)}
           >
             <FiMenu size={24} />
           </button>
         )}
         {!isSubscribed && (
-          <section className="h-16 lg:h-[63px] w-full bg-neon-green text-black text-center flex items-center justify-center flex-shrink-0">
+          <section className="h-[63px] w-full bg-neon-green text-black text-center flex items-center justify-center flex-shrink-0">
             <p className="lg:ml-0 ml-12">
               {freeMessages === 0
                 ? "You've used all your free messages"
