@@ -122,7 +122,7 @@ export default function MessageBox({
               className={`p-2 rounded-full ${
                 reaction === 'thumbs_up'
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
+                  : 'bg-accent text-foreground'
               } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_up')}
               disabled={pendingReaction !== null}
@@ -139,7 +139,7 @@ export default function MessageBox({
               className={`p-2 rounded-full ${
                 reaction === 'thumbs_down'
                   ? 'bg-red-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
+                  : 'bg-accent text-foreground'
               } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
               onClick={() => handleReaction('thumbs_down')}
               disabled={pendingReaction !== null}
