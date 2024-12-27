@@ -7,7 +7,7 @@ export const maxDuration = 100;
 export const dynamic = 'force-dynamic'; // always run dynamically
 
 
-function parseHonchoContent(str) {
+function parseHonchoContent(str: string) {
   try {
     const match = str.match(/<honcho>(.*?)<\/honcho>/s);
     return match ? match[1].trim() : str;
