@@ -19,6 +19,7 @@ export default function Forgot(props: any) {
         title: 'Error!',
         text: 'Something went wrong',
         icon: 'error',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
       return;
@@ -27,6 +28,7 @@ export default function Forgot(props: any) {
       title: 'Success!',
       text: 'Please check your email for a password reset link',
       icon: 'success',
+      confirmButtonColor: '#3085d6',
       confirmButtonText: 'Close',
     });
   };
@@ -50,7 +52,7 @@ export default function Forgot(props: any) {
 
       <div className="sm:flex sm:items-center sm:gap-4">
         <button
-          className="inline-block w-full sm:w-auto shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
+          className="inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-black bg-accent hover:border-neon-green hover:bg-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent"
           onClick={handleForgotPassword}
         >
           Send Recovery Email
