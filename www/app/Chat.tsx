@@ -57,6 +57,17 @@ async function fetchStream(
     });
 
     if (!response.ok) {
+      if (response.status === 402) {
+        Swal.fire({
+          title: 'Subscription Required',
+          text: 'You have no active subscription. Subscribe to continue using Bloom!',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Subscribe',
+          showCancelButton: false,
+        });
+        throw new Error(`Subscription is required to chat: ${response.status}`);
+      }
       const errorText = await response.text();
       console.error(`Stream error for ${type}:`, {
         status: response.status,
@@ -65,10 +76,6 @@ async function fetchStream(
       });
       console.error(response);
       throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
-    }
-
-    if (!response.body) {
-      throw new Error(`No response body for ${type} stream`);
     }
 
     return response.body;
@@ -81,9 +88,12 @@ async function fetchStream(
 interface ChatProps {
   initialUserId: string;
   initialEmail: string | undefined;
-  initialIsSubscribed: boolean;
-  initialFreeMessages: number;
   initialConversations: any[];
+  initialChatAccess: {
+    isSubscribed: boolean;
+    freeMessages: number;
+    canChat: boolean;
+  };
   initialMessages: any[];
   initialConversationId: string | null | undefined;
 }
@@ -92,31 +102,17 @@ interface HonchoResponse {
   content: string;
 }
 
-const defaultMessage: Message = {
-  content: `I’m Bloom, your Aristotelian learning companion, here to guide your intellectual journey.
-
-
-The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs. 
-
-
-What’s on your mind? Let’s dive in. 🌱`,
-  isUser: false,
-  id: '',
-  metadata: {},
-};
-
 export default function Chat({
   initialUserId,
   initialEmail,
-  initialIsSubscribed,
-  initialFreeMessages,
   initialConversations,
   initialMessages,
   initialConversationId,
+  initialChatAccess,
 }: ChatProps) {
   const [userId] = useState(initialUserId);
-  const [isSubscribed, setIsSubscribed] = useState(initialIsSubscribed);
-  const [freeMessages, setFreeMessages] = useState(initialFreeMessages);
+  const [isSubscribed, setIsSubscribed] = useState(initialChatAccess.isSubscribed);
+  const [freeMessages, setFreeMessages] = useState(initialChatAccess.freeMessages);
   const [conversationId, setConversationId] = useState<string | undefined>(
     initialConversationId || undefined
   );
@@ -137,6 +133,26 @@ export default function Chat({
   const [, scrollToBottom] = useAutoScroll(messageContainerRef);
 
   const messageListRef = useRef<MessageListRef>(null);
+  const firstChat = useMemo(() => {
+    return !initialConversations?.length ||
+      (initialConversations.length === 1 && !initialMessages?.length) ||
+      initialChatAccess.freeMessages === 50;
+  }, [initialConversations?.length, initialMessages?.length, initialChatAccess.freeMessages]);
+
+  // Since this message is just rendered in the UI, this naive check may result in edge cases where the incorrect message is shown.
+  // (Ex. will show on all chats after creating a new session or messaging Bloom, even the first chat). 
+  // Also, clearing chats will revert the message to the initial description.
+  const defaultMessage: Message = {
+    content:
+      `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
+
+The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
+
+What\'s on your mind? Let\'s dive in. 🌱`,
+    isUser: false,
+    id: '',
+    metadata: {},
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -193,7 +209,7 @@ export default function Chat({
       revalidateOnFocus: false,
       dedupingInterval: 60000,
       revalidateIfStale: false,
-      revalidateOnMount: true,
+      revalidateOnMount: true
     }
   );
 
@@ -266,22 +282,6 @@ export default function Chat({
 
     if (input.current) input.current.value = '';
 
-    // Check free message allotment upfront if not subscribed
-    if (!isSubscribed) {
-      const currentCount = await getFreeMessageCount(userId);
-      if (currentCount <= 0) {
-        Swal.fire({
-          title: 'Free Messages Depleted',
-          text: 'You have used all your free messages. Subscribe to continue using Bloom!',
-          icon: 'warning',
-          confirmButtonColor: '#3085d6',
-          confirmButtonText: 'Subscribe',
-          showCancelButton: true,
-        });
-        return;
-      }
-    }
-
     setCanSend(false);
 
     const newMessages = [
@@ -314,8 +314,11 @@ export default function Chat({
         messageToSend,
         conversationId!
       );
-      if (!thoughtStream) throw new Error('Failed to get thought stream');
-
+      
+      if (!thoughtStream) {
+        throw new Error('Failed to get thought stream');
+      }
+  
       thoughtReader = thoughtStream.getReader();
       let thoughtText = '';
       setThought('');
@@ -339,10 +342,11 @@ export default function Chat({
         conversationId!,
         thoughtText
       );
+
       const honchoContent = (await new Response(
         honchoResponse
       ).json()) as HonchoResponse;
-
+      
       const pureThought = thoughtText;
 
       thoughtText +=
@@ -448,7 +452,7 @@ export default function Chat({
         setConversationId={setConversationId}
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        isSubscribed={canUseApp}
+        canUseApp={canUseApp}
       />
       <div className="flex-1 flex flex-col flex-grow overflow-hidden">
         {!isSidebarOpen && (
@@ -506,11 +510,10 @@ export default function Chat({
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
+                  ? 'border-green-200 focus:border-green-200'
+                  : 'border-red-200 focus:border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {

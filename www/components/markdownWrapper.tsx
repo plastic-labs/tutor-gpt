@@ -57,8 +57,11 @@ const CodeBlock = memo(
   }
 );
 
-const MarkdownWrapper = memo(({ text }: { text: string }) => {
-  // Memoize components configuration
+interface MarkdownWrapperProps {
+  text: string;
+}
+
+const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
   const components = useMemo(
     () => ({
       ol: ({
@@ -114,6 +117,7 @@ const MarkdownWrapper = memo(({ text }: { text: string }) => {
   const rehypePlugins = useMemo(() => [rehypeKatex], []);
 
   if (!text) return <Typing />;
+
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>
