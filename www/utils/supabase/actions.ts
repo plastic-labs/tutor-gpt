@@ -1,15 +1,15 @@
 'use server'; // This directive marks all exports as server actions
 
 import { createFreeTrialSubscription, decrementFreeMessages } from './admin';
-import { createClient } from './client';
-import { getSubscription } from './queries';
+import { createClient } from './server';
+import { getChatAccess, getSubscription } from './queries';
 
-
+export async function getChatAccessWithUser(userId: string) {
+  const subscription = await createOrRetrieveFreeTrialSubscription(userId);
+  return getChatAccess(subscription);
+}
 export async function createOrRetrieveFreeTrialSubscription(userId: string) {
-  // Create server-side Supabase client
   const supabase = createClient();
-  
-  // First try to get existing subscription with user privileges
   const existingSub = await getSubscription(supabase);
   if (existingSub) return existingSub;
 

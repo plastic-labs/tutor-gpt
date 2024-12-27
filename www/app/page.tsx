@@ -1,4 +1,4 @@
-import { getChatAccess } from '@/utils/supabase/queries';
+import { getChatAccessWithUser } from '@/utils/supabase/actions';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Chat from './Chat';
@@ -21,7 +21,7 @@ export default async function Home() {
   }
 
   // Get initial subscription state
-  const realChatAccess = await getChatAccess(supabase, user.id);
+  const realChatAccess = await getChatAccessWithUser(user.id);
   const isDevMode = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false';
   
   const chatAccess = {
@@ -38,7 +38,7 @@ export default async function Home() {
   let initialConversationId: string | undefined = undefined;
   if (conversations.length > 0) {
     initialConversationId = conversations[0].conversationId;
-    initialMessages = await getMessages(initialConversationId);
+    initialMessages = await getMessages(initialConversationId!);
   }
 
   return (

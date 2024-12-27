@@ -55,8 +55,10 @@ async function fetchStream(
     });
 
     if (!response.ok) {
+      if (response.status === 402) {
+        return response;
+      }
       const errorText = await response.text();
-
       console.error(`Stream error for ${type}:`, {
         status: response.status,
         statusText: response.statusText,
@@ -306,7 +308,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         messageToSend,
         conversationId!
       );
-
+      
       if (thoughtStream instanceof Response && thoughtStream.status === 402) {
         setCanSend(false);
         mutateMessages(
