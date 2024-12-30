@@ -9,8 +9,8 @@ const getCSPDirectives = () => {
     "default-src 'self'",
     // Script handling
     isDevelopment
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://127.0.0.1:54321 https://va.vercel-scripts.com"
-      : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.supabase.co https://va.vercel-scripts.com",
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://127.0.0.1:54321 https://va.vercel-scripts.com https://*.posthog.com https://vercel.live https://js.stripe.com https://checkout.stripe.com"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.supabase.co https://va.vercel-scripts.com https://*.posthog.com https://vercel.live https://js.stripe.com https://checkout.stripe.com",
     // Style handling
     "style-src 'self' 'unsafe-inline'",
     // Images and media
@@ -21,8 +21,8 @@ const getCSPDirectives = () => {
     "worker-src 'self' blob:",
     // Supabase connectivity
     isDevelopment
-      ? "connect-src 'self' http://127.0.0.1:54321 https://vitals.vercel-insights.com"
-      : "connect-src 'self' https://*.supabase.co https://*.supabase.net https://vitals.vercel-insights.com",
+      ? "connect-src 'self' http://127.0.0.1:54321 https://vitals.vercel-insights.com https://*.posthog.com https://vercel.live https://js.stripe.com https://checkout.stripe.com"
+      : "connect-src 'self' https://*.supabase.co https://*.supabase.net https://vitals.vercel-insights.com https://*.posthog.com https://vercel.live https://js.stripe.com https://checkout.stripe.com",
     // Frame security
     "frame-ancestors 'none'",
     // Form submissions
