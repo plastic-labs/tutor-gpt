@@ -20,7 +20,9 @@ export async function createOrRetrieveFreeTrialSubscription(userId: string) {
 
 export async function getFreeMessageCount(userId: string) {
   const subscription = await createOrRetrieveFreeTrialSubscription(userId);
-  return (subscription?.metadata as { freeMessages: number })?.freeMessages ?? 0;
+  return (
+    (subscription?.metadata as { freeMessages: number })?.freeMessages ?? 0
+  );
 }
 
 export async function useFreeTrial(userId: string) {

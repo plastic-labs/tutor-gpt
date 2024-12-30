@@ -118,7 +118,6 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
 
   if (!text) return <Typing />;
 
-
   return (
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>
       <ReactMarkdown

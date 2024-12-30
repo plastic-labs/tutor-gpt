@@ -78,7 +78,7 @@ export async function getThought(conversationId: string, messageId: string) {
               metamessage_type: 'honcho',
               filter: { type: 'assistant' },
             }
-          )
+          ),
         ]);
 
         const thoughtText = thoughts.items[0]?.content;
