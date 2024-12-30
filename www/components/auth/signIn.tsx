@@ -83,7 +83,7 @@ export default function SignIn(props: any) {
 
         <div className="sm:flex sm:items-center sm:gap-4">
           <button
-            className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-foreground border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent dark:hover:text-blue-600`}
+            className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-black bg-accent hover:border-neon-green hover:bg-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent`}
           >
             {isLoading ? (
               <svg className="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24">

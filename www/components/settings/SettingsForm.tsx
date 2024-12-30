@@ -53,6 +53,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         title: 'Success!',
         text: 'Please check your new email for a confirmation link',
         icon: 'success',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
     } catch (error) {
@@ -61,6 +62,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         title: 'Error!',
         text: 'Something went wrong while updating your email',
         icon: 'error',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
     }
@@ -77,6 +79,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         title: 'Success!',
         text: 'Your profile has been updated',
         icon: 'success',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
     } catch (error) {
@@ -85,6 +88,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         title: 'Error!',
         text: 'Something went wrong while updating your profile',
         icon: 'error',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
     }
@@ -97,6 +101,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         title: 'Error!',
         text: 'Passwords do not match',
         icon: 'error',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
       return;
@@ -110,6 +115,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         title: 'Success!',
         text: 'Your password has been updated',
         icon: 'success',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
       setNewPassword('');
@@ -120,6 +126,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         title: 'Error!',
         text: 'Something went wrong while updating your password',
         icon: 'error',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
     }

@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { departureMono } from '@/utils/fonts';
 
 const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
 

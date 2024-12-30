@@ -1,7 +1,7 @@
+import React from 'react';
 import { GrClose } from 'react-icons/gr';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import localFont from 'next/font/local';
 
 import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
@@ -16,10 +16,9 @@ import {
 } from '@/app/actions/conversations';
 import { type Conversation, type Message } from '@/utils/types';
 import { clearSWRCache } from '@/utils/swrCache';
+import { departureMono } from '@/utils/fonts';
 
-const departureMono = localFont({
-  src: '../fonts/DepartureMono-Regular.woff2',
-});
+
 
 export default function Sidebar({
   conversations,
