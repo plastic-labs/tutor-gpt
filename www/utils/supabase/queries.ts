@@ -32,7 +32,6 @@ export const getSubscription = cache(async (supabase: SupabaseClient) => {
   const { data: subscription, error } = await supabase
     .from('subscriptions')
     .select('*, prices(*, products(*))')
-    .in('status', ['trialing', 'active'])
     .maybeSingle();
 
   return subscription;

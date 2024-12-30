@@ -19,6 +19,8 @@ const getCSPDirectives = () => {
     "font-src 'self' data:",
     // Worker handling
     "worker-src 'self' blob:",
+    // Frame sources
+    "frame-src 'self' https://vercel.live https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://connect.stripe.com",
     // Supabase connectivity
     isDevelopment
       ? "connect-src 'self' http://127.0.0.1:54321 https://vitals.vercel-insights.com https://*.posthog.com https://vercel.live https://js.stripe.com https://checkout.stripe.com"
