@@ -480,7 +480,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
             </p>
           </section>
         )}
-        <div className="flex flex-col flex-grow overflow-x-hidden bg-secondary">
+        <div className="flex flex-col flex-grow overflow-hidden bg-secondary">
           <MessageList
             ref={messageListRef}
             messages={messages}
