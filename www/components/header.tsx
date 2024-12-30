@@ -1,5 +1,5 @@
 'use client';
-import { useTheme } from 'next-themes';
+// import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DarkModeSwitch } from 'react-toggle-dark-mode';
@@ -10,15 +10,18 @@ import { departureMono } from '@/utils/fonts';
 // import darkBanner from '@/public/bloom2x1dark.svg';
 
 export function Header() {
-  const { theme, setTheme } = useTheme();
+  // const { theme, setTheme } = useTheme();
+  const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setIsDark(document.documentElement.classList.contains('dark'));
   }, []);
 
   const toggleDarkMode = (checked: boolean) => {
-    setTheme(checked ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark');
+    setIsDark(checked);
   };
 
   if (!mounted) {
@@ -35,7 +38,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-700">
       <nav className="flex justify-between items-center p-4">
-      <Link href="/" className="flex items-center gap-2 cursor-pointer">
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <Image
             src={bloomIcon}
             alt="Bloom Logo"
@@ -47,7 +50,7 @@ export function Header() {
         </Link>
         <div className="flex justify-between items-center gap-4">
           <DarkModeSwitch
-            checked={theme === 'dark'}
+            checked={isDark}
             onChange={toggleDarkMode}
             size={24}
           />
