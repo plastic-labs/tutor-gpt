@@ -111,8 +111,12 @@ export default function Chat({
   initialChatAccess,
 }: ChatProps) {
   const [userId] = useState(initialUserId);
-  const [isSubscribed, setIsSubscribed] = useState(initialChatAccess.isSubscribed);
-  const [freeMessages, setFreeMessages] = useState(initialChatAccess.freeMessages);
+  const [isSubscribed, setIsSubscribed] = useState(
+    initialChatAccess.isSubscribed
+  );
+  const [freeMessages, setFreeMessages] = useState(
+    initialChatAccess.freeMessages
+  );
   const [conversationId, setConversationId] = useState<string | undefined>(
     initialConversationId || undefined
   );
@@ -134,17 +138,22 @@ export default function Chat({
 
   const messageListRef = useRef<MessageListRef>(null);
   const firstChat = useMemo(() => {
-    return !initialConversations?.length ||
+    return (
+      !initialConversations?.length ||
       (initialConversations.length === 1 && !initialMessages?.length) ||
-      initialChatAccess.freeMessages === 50;
-  }, [initialConversations?.length, initialMessages?.length, initialChatAccess.freeMessages]);
+      initialChatAccess.freeMessages === 50
+    );
+  }, [
+    initialConversations?.length,
+    initialMessages?.length,
+    initialChatAccess.freeMessages,
+  ]);
 
   // Since this message is just rendered in the UI, this naive check may result in edge cases where the incorrect message is shown.
-  // (Ex. will show on all chats after creating a new session or messaging Bloom, even the first chat). 
+  // (Ex. will show on all chats after creating a new session or messaging Bloom, even the first chat).
   // Also, clearing chats will revert the message to the initial description.
   const defaultMessage: Message = {
-    content:
-      `${firstChat ? 'I\'m Bloom, your Aristotelian learning companion,' : 'Welcome back! I\'m'} here to guide your intellectual journey.
+    content: `${firstChat ? "I'm Bloom, your Aristotelian learning companion," : "Welcome back! I'm"} here to guide your intellectual journey.
 
 The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
 
@@ -209,7 +218,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       revalidateOnFocus: false,
       dedupingInterval: 60000,
       revalidateIfStale: false,
-      revalidateOnMount: true
+      revalidateOnMount: true,
     }
   );
 
@@ -314,11 +323,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         messageToSend,
         conversationId!
       );
-      
+
       if (!thoughtStream) {
         throw new Error('Failed to get thought stream');
       }
-  
+
       thoughtReader = thoughtStream.getReader();
       let thoughtText = '';
       setThought('');
@@ -346,7 +355,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       const honchoContent = (await new Response(
         honchoResponse
       ).json()) as HonchoResponse;
-      
+
       const pureThought = thoughtText;
 
       thoughtText +=
@@ -510,10 +519,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
-                  ? 'border-green-200 focus:border-green-200'
-                  : 'border-red-200 focus:border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
+                  canSend && canUseApp
+                    ? 'border-green-200 focus:border-green-200'
+                    : 'border-red-200 focus:border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {

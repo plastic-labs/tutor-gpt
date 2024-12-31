@@ -22,7 +22,6 @@ const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-
 const createFreeTrialSubscription = async (userId: string) => {
   const subscriptionData: TablesInsert<'subscriptions'> = {
     id: `free_trial_${userId}`,
@@ -49,7 +48,9 @@ const createFreeTrialSubscription = async (userId: string) => {
     .insert([subscriptionData]);
 
   if (insertError) {
-    throw new Error(`Trial subscription creation failed: ${insertError.message}`);
+    throw new Error(
+      `Trial subscription creation failed: ${insertError.message}`
+    );
   }
 
   return subscriptionData;
