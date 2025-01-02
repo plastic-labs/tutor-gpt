@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
-import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
+import { useRef, useEffect, useState, ElementRef, useMemo, useCallback, memo } from 'react';
 // import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
@@ -31,9 +31,12 @@ const Thoughts = dynamic(() => import('@/components/thoughts'), {
 const MessageBox = dynamic(() => import('@/components/messagebox'), {
   ssr: false,
 });
+const MemoizedMessageBox = memo(MessageBox);
+
 const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
+const MemoizedSidebar = memo(Sidebar);
 
 async function fetchStream(
   type: 'thought' | 'response' | 'honcho',
@@ -130,6 +133,10 @@ export default function Chat({
 
   const [thought, setThought] = useState<string>('');
   const [canSend, setCanSend] = useState<boolean>(false);
+  const canUseApp = useMemo(
+    () => isSubscribed || freeMessages > 0,
+    [isSubscribed, freeMessages]
+  );
 
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
@@ -171,14 +178,6 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       });
     }
   }, [posthog, initialUserId, initialEmail]);
-
-  const setIsThoughtsOpen = (
-    isOpen: boolean,
-    messageId: string | null = null
-  ) => {
-    setIsThoughtsOpenState(isOpen);
-    setOpenThoughtMessageId(isOpen ? messageId : null);
-  };
 
   const conversationsFetcher = async () => {
     const result = await getConversations();
@@ -252,15 +251,25 @@ What\'s on your mind? Let\'s dive in. 🌱`,
     },
   });
 
-  const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
-    if (!userId || !conversationId) return;
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
 
-    try {
-      await addOrRemoveReaction(conversationId, messageId, reaction);
+  const setIsThoughtsOpenCallback = useCallback(
+    (isOpen: boolean, messageId: string | null = null) => {
+      setIsThoughtsOpenState(isOpen);
+      setOpenThoughtMessageId(isOpen ? messageId : null);
+    },
+    []
+  );
 
-      // Optimistically update the local data
-      mutateMessages(
-        (currentMessages) => {
+  const handleReactionAdded = useCallback(
+    async (messageId: string, reaction: Reaction) => {
+      if (!userId || !conversationId) return;
+
+      try {
+        await addOrRemoveReaction(conversationId, messageId, reaction);
+        mutateMessages((currentMessages) => {
           if (!currentMessages) return currentMessages;
           return currentMessages.map((msg) => {
             if (msg.id === messageId) {
@@ -274,15 +283,16 @@ What\'s on your mind? Let\'s dive in. 🌱`,
             }
             return msg;
           });
-        },
-        { revalidate: false }
-      );
-    } catch (error) {
-      console.error('Failed to update reaction:', error);
-    }
-  };
+        }, { revalidate: false });
+      } catch (error) {
+        console.error('Failed to update reaction:', error);
+      }
+    },
+    [userId, conversationId, mutateMessages]
+  );
 
-  async function chat(message?: string) {
+  const chat = useCallback(
+    async (message?: string) => {
     const rawMessage = message || input.current?.value;
     if (!userId || !rawMessage) return;
 
@@ -291,7 +301,23 @@ What\'s on your mind? Let\'s dive in. 🌱`,
 
     if (input.current) input.current.value = '';
 
-    setCanSend(false);
+    // Check free message allotment upfront if not subscribed
+    if (!isSubscribed) {
+      const currentCount = await getFreeMessageCount(userId);
+      if (currentCount <= 0) {
+        Swal.fire({
+          title: 'Free Messages Depleted',
+          text: 'You have used all your free messages. Subscribe to continue using Bloom!',
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Subscribe',
+          showCancelButton: true,
+        });
+        return;
+      }
+    }
+
+      setCanSend(false);
 
     const newMessages = [
       ...messages!,
@@ -311,10 +337,10 @@ What\'s on your mind? Let\'s dive in. 🌱`,
     await mutateMessages(newMessages, { revalidate: false });
     messageListRef.current?.scrollToBottom();
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    let thoughtReader: ReadableStreamDefaultReader | null = null;
-    let responseReader: ReadableStreamDefaultReader | null = null;
+      let thoughtReader: ReadableStreamDefaultReader | null = null;
+      let responseReader: ReadableStreamDefaultReader | null = null;
 
     try {
       // Get thought stream
@@ -328,22 +354,22 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         throw new Error('Failed to get thought stream');
       }
 
-      thoughtReader = thoughtStream.getReader();
-      let thoughtText = '';
-      setThought('');
+        thoughtReader = thoughtStream.getReader();
+        let thoughtText = '';
+        setThought('');
 
-      // Process thought stream
-      while (true) {
-        const { done, value } = await thoughtReader.read();
-        if (done) break;
+        // Process thought stream
+        while (true) {
+          const { done, value } = await thoughtReader.read();
+          if (done) break;
 
-        thoughtText += new TextDecoder().decode(value);
-        setThought(thoughtText);
-      }
+          thoughtText += new TextDecoder().decode(value);
+          setThought(thoughtText);
+        }
 
-      // Cleanup thought stream
-      thoughtReader.releaseLock();
-      thoughtReader = null;
+        // Cleanup thought stream
+        thoughtReader.releaseLock();
+        thoughtReader = null;
 
       const honchoResponse = await fetchStream(
         'honcho',
@@ -356,61 +382,61 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         honchoResponse
       ).json()) as HonchoResponse;
 
-      const pureThought = thoughtText;
+        const pureThought = thoughtText;
 
-      thoughtText +=
-        '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
-      setThought(thoughtText);
+        thoughtText +=
+          '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
+        setThought(thoughtText);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Get response stream using the thought and dialectic response
-      const responseStream = await fetchStream(
-        'response',
-        messageToSend,
-        conversationId!,
-        pureThought,
-        honchoContent.content
-      );
-      if (!responseStream) throw new Error('Failed to get response stream');
-
-      responseReader = responseStream.getReader();
-      let currentModelOutput = '';
-
-      // Process response stream
-      while (true) {
-        const { done, value } = await responseReader.read();
-        if (done) {
-          if (!isSubscribed) {
-            const success = await useFreeTrial(userId);
-            if (success) {
-              const newCount = await getFreeMessageCount(userId);
-              setFreeMessages(newCount);
-            }
-          }
-          break;
-        }
-
-        currentModelOutput += new TextDecoder().decode(value);
-
-        mutateMessages(
-          [
-            ...(newMessages?.slice(0, -1) || []),
-            {
-              content: currentModelOutput,
-              isUser: false,
-              id: '',
-              metadata: {},
-            },
-          ],
-          { revalidate: false }
+        // Get response stream using the thought and dialectic response
+        const responseStream = await fetchStream(
+          'response',
+          messageToSend,
+          conversationId!,
+          pureThought,
+          honchoContent.content
         );
+        if (!responseStream) throw new Error('Failed to get response stream');
+
+        responseReader = responseStream.getReader();
+        let currentModelOutput = '';
+
+        // Process response stream
+        while (true) {
+          const { done, value } = await responseReader.read();
+          if (done) {
+            if (!isSubscribed) {
+              const success = await useFreeTrial(userId);
+              if (success) {
+                const newCount = await getFreeMessageCount(userId);
+                setFreeMessages(newCount);
+              }
+            }
+            break;
+          }
+
+          currentModelOutput += new TextDecoder().decode(value);
+
+          mutateMessages(
+            [
+              ...(newMessages?.slice(0, -1) || []),
+              {
+                content: currentModelOutput,
+                isUser: false,
+                id: '',
+                metadata: {},
+              },
+            ],
+            { revalidate: false }
+          );
 
         messageListRef.current?.scrollToBottom();
       }
 
-      responseReader.releaseLock();
-      responseReader = null;
+        responseReader.releaseLock();
+        responseReader = null;
 
       await mutateMessages();
       messageListRef.current?.scrollToBottom();
@@ -437,12 +463,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         }
       }
     }
-  }
-
-  const canUseApp = useMemo(
-    () => isSubscribed || freeMessages > 0,
-    [isSubscribed, freeMessages]
-  );
+  }, [userId, conversationId, messages, mutateMessages, messageListRef, setThought, setIsThoughtsOpenCallback, handleReactionAdded]);
 
   useEffect(() => {
     if (conversationId?.startsWith('temp-') || messagesLoading) {
@@ -452,9 +473,63 @@ What\'s on your mind? Let\'s dive in. 🌱`,
     }
   }, [conversationId, messagesLoading]);
 
+  const messageBoxProps = useMemo(
+    () => ({
+      userId,
+      loading: messagesLoading,
+      conversationId,
+      setThought,
+      setIsThoughtsOpen: setIsThoughtsOpenCallback,
+      onReactionAdded: handleReactionAdded,
+    }),
+    [
+      userId,
+      messagesLoading,
+      conversationId,
+      setThought,
+      setIsThoughtsOpenCallback,
+      handleReactionAdded,
+    ]
+  );
+
+  const emptyMessage = useMemo(
+    () => ({
+      content: '',
+      id: '',
+      isUser: false,
+      metadata: { reaction: null },
+    }),
+    []
+  );
+
+  const memoizedTextarea = useMemo(() => (
+    <textarea
+      ref={input}
+      placeholder={
+        canUseApp ? 'Type a message...' : 'Subscribe to send messages'
+      }
+      className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
+        canSend && canUseApp
+          ? 'border-green-200 focus:border-green-200'
+          : 'border-red-200 focus:border-red-200 opacity-50'
+      }`}
+      rows={1}
+      disabled={!canUseApp}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (canSend && input.current?.value && canUseApp) {
+            posthog.capture('user_sent_message');
+            chat();
+          }
+        }
+      }}
+    />
+  ), [canUseApp, canSend, chat, posthog]);
+
   return (
     <main className="relative flex h-full overflow-hidden">
-      <Sidebar
+      <MemoizedSidebar
         conversations={conversations || []}
         mutateConversations={mutateConversations}
         conversationId={conversationId}
@@ -485,7 +560,9 @@ What\'s on your mind? Let\'s dive in. 🌱`,
               >
                 Subscribe now
               </Link>{' '}
-              {freeMessages === 0 ? 'to use Bloom!' : 'for unlimited access!'}
+              {freeMessages === 0
+                ? 'to use Bloom!'
+                : 'for unlimited access!'}
             </p>
           </section>
         )}
@@ -500,7 +577,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
             handleReactionAdded={handleReactionAdded}
             setThoughtParent={setThought}
             openThoughtMessageId={openThoughtMessageId}
-            setIsThoughtsOpen={setIsThoughtsOpen}
+            setIsThoughtsOpen={setIsThoughtsOpenCallback}
           />
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form
@@ -514,28 +591,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
                 }
               }}
             >
-              <textarea
-                ref={input}
-                placeholder={
-                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
-                }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
-                rows={1}
-                disabled={!canUseApp}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (canSend && input.current?.value && canUseApp) {
-                      posthog.capture('user_sent_message');
-                      chat();
-                    }
-                  }
-                }}
-              />
+              {memoizedTextarea}
               <button
                 className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"
@@ -545,7 +601,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
               </button>
               <button
                 className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
-                onClick={() => setIsThoughtsOpen(true)}
+                onClick={() => setIsThoughtsOpenCallback(true)}
                 type="button"
               >
                 <FaLightbulb className="inline" />
@@ -556,7 +612,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         <Thoughts
           thought={thought}
           setIsThoughtsOpen={(isOpen: boolean) =>
-            setIsThoughtsOpen(isOpen, null)
+            setIsThoughtsOpenCallback(isOpen, null)
           }
           isThoughtsOpen={isThoughtsOpenState}
         />
