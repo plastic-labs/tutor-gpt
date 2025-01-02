@@ -28,6 +28,7 @@ export default function Forgot(props: any) {
         title: 'Error!',
         text: 'Something went wrong',
         icon: 'error',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
       console.error(error);
@@ -39,6 +40,7 @@ export default function Forgot(props: any) {
         title: 'Success!',
         text: 'Password updated successfully',
         icon: 'success',
+        confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
       });
       router.push(`/`);

@@ -4,16 +4,10 @@ import icon from '@/public/bloomicon.jpg';
 import usericon from '@/public/usericon.svg';
 import Skeleton from 'react-loading-skeleton';
 import MarkdownWrapper from './markdownWrapper';
-import {
-  FaLightbulb,
-  FaThumbsDown,
-  FaThumbsUp,
-  FaChevronDown,
-  FaChevronRight,
-} from 'react-icons/fa';
+import { FaLightbulb, FaThumbsDown, FaThumbsUp } from 'react-icons/fa';
 import { type Message } from '@/utils/types';
 import Spinner from './spinner';
-import { getThought } from '@/app/actions/messages';
+// import { getThought } from '@/app/actions/messages';
 
 export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
 
@@ -24,22 +18,24 @@ interface MessageBoxProps {
   message: Message;
   loading?: boolean;
   isThoughtOpen?: boolean;
-  setIsThoughtsOpen: (isOpen: boolean) => void;
-  setThought: (thought: string) => void;
+  isThoughtLoading?: boolean;
+  thoughtError?: string | null;
+  setIsThoughtsOpen: (isOpen: boolean, messageId?: string | null) => void;
   onReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
+  onGetThought: (messageId: string) => Promise<void>;
 }
 
 export default function MessageBox({
   isUser,
   userId,
-  // URL,
   message,
   loading = false,
   isThoughtOpen,
   setIsThoughtsOpen,
   conversationId,
   onReactionAdded,
-  setThought,
+  onGetThought,
+  thoughtError,
 }: MessageBoxProps) {
   const [isThoughtLoading, setIsThoughtLoading] = useState(false);
   const [pendingReaction, setPendingReaction] = useState<Reaction>(null);
@@ -73,18 +69,12 @@ export default function MessageBox({
       setIsThoughtsOpen(false);
       return;
     }
+
     setIsThoughtLoading(true);
     setError(null);
 
     try {
-      const thought = await getThought(conversationId, messageId);
-
-      if (thought) {
-        setIsThoughtsOpen(true);
-        setThought(thought);
-      } else {
-        setError('No thought found.');
-      }
+      await onGetThought(messageId);
     } catch (err) {
       setError('Failed to fetch thought.');
       console.error(err);
@@ -117,54 +107,59 @@ export default function MessageBox({
       <div className="flex flex-col gap-2 w-full">
         {loading ? memoizedSkeleton : <MarkdownWrapper text={content} />}
         {!loading && !isUser && shouldShowButtons && (
-          <div className="flex justify-start gap-2 mt-2">
-            <button
-              className={`p-2 rounded-full ${
-                reaction === 'thumbs_up'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
-              onClick={() => handleReaction('thumbs_up')}
-              disabled={pendingReaction !== null}
-            >
-              <div className="w-5 h-5 flex items-center justify-center">
-                {pendingReaction === 'thumbs_up' ? (
-                  <Spinner size={16} />
-                ) : (
-                  <FaThumbsUp />
-                )}
-              </div>
-            </button>
-            <button
-              className={`p-2 rounded-full ${
-                reaction === 'thumbs_down'
-                  ? 'bg-red-500 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700'
-              } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
-              onClick={() => handleReaction('thumbs_down')}
-              disabled={pendingReaction !== null}
-            >
-              <div className="w-5 h-5 flex items-center justify-center">
-                {pendingReaction === 'thumbs_down' ? (
-                  <Spinner size={16} />
-                ) : (
-                  <FaThumbsDown />
-                )}
-              </div>
-            </button>
-            <button
-              className={`p-2 rounded-full ${
-                isThoughtOpen
-                  ? 'bg-neon-green text-gray-800'
-                  : 'bg-accent text-foreground'
-              }`}
-              onClick={handleFetchThought}
-              disabled={isThoughtLoading}
-            >
-              <div className="w-5 h-5 flex items-center justify-center">
-                {isThoughtLoading ? <Spinner size={16} /> : <FaLightbulb />}
-              </div>
-            </button>
+          <div className="flex flex-col gap-2 mt-2">
+            <div className="flex justify-start gap-2">
+              <button
+                className={`p-2 rounded-full ${
+                  reaction === 'thumbs_up'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-accent text-foreground'
+                } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
+                onClick={() => handleReaction('thumbs_up')}
+                disabled={pendingReaction !== null}
+              >
+                <div className="w-5 h-5 flex items-center justify-center">
+                  {pendingReaction === 'thumbs_up' ? (
+                    <Spinner size={16} />
+                  ) : (
+                    <FaThumbsUp />
+                  )}
+                </div>
+              </button>
+              <button
+                className={`p-2 rounded-full ${
+                  reaction === 'thumbs_down'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-accent text-foreground'
+                } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
+                onClick={() => handleReaction('thumbs_down')}
+                disabled={pendingReaction !== null}
+              >
+                <div className="w-5 h-5 flex items-center justify-center">
+                  {pendingReaction === 'thumbs_down' ? (
+                    <Spinner size={16} />
+                  ) : (
+                    <FaThumbsDown />
+                  )}
+                </div>
+              </button>
+              <button
+                className={`p-2 rounded-full ${
+                  isThoughtOpen
+                    ? 'bg-neon-green text-gray-800'
+                    : 'bg-accent text-foreground'
+                }`}
+                onClick={handleFetchThought}
+                disabled={isThoughtLoading}
+              >
+                <div className="w-5 h-5 flex items-center justify-center">
+                  {isThoughtLoading ? <Spinner size={16} /> : <FaLightbulb />}
+                </div>
+              </button>
+            </div>
+            {thoughtError && (
+              <div className="text-red-500 text-sm mt-1">{thoughtError}</div>
+            )}
           </div>
         )}
         {error && <p className="text-red-500">Error: {error}</p>}
