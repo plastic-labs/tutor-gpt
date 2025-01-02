@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
-import { useRef, useEffect, useState, ElementRef, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useState, ElementRef, useMemo, useCallback, memo } from 'react';
 // import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
@@ -463,12 +463,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         }
       }
     }
-  }
-
-  const canUseApp = useMemo(
-    () => isSubscribed || freeMessages > 0,
-    [isSubscribed, freeMessages]
-  );
+  }, [userId, conversationId, messages, mutateMessages, messageListRef, setThought, setIsThoughtsOpenCallback, handleReactionAdded]);
 
   useEffect(() => {
     if (conversationId?.startsWith('temp-') || messagesLoading) {
@@ -507,34 +502,30 @@ What\'s on your mind? Let\'s dive in. 🌱`,
     []
   );
 
-  const renderedMessages = useMemo(() => {
-    if (messages) {
-      return [defaultMessage, ...messages].map((message, i) => (
-        <MemoizedMessageBox
-          key={message.id || i}
-          isUser={message.isUser}
-          message={message}
-          isThoughtOpen={openThoughtMessageId === message.id}
-          {...messageBoxProps}
-        />
-      ));
-    } else {
-      return (
-        <MemoizedMessageBox
-          isUser={false}
-          message={emptyMessage}
-          isThoughtOpen={false}
-          {...messageBoxProps}
-        />
-      );
-    }
-  }, [
-    messages,
-    defaultMessage,
-    openThoughtMessageId,
-    messageBoxProps,
-    emptyMessage,
-  ]);
+  const memoizedTextarea = useMemo(() => (
+    <textarea
+      ref={input}
+      placeholder={
+        canUseApp ? 'Type a message...' : 'Subscribe to send messages'
+      }
+      className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
+        canSend && canUseApp
+          ? 'border-green-200 focus:border-green-200'
+          : 'border-red-200 focus:border-red-200 opacity-50'
+      }`}
+      rows={1}
+      disabled={!canUseApp}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (canSend && input.current?.value && canUseApp) {
+            posthog.capture('user_sent_message');
+            chat();
+          }
+        }
+      }}
+    />
+  ), [canUseApp, canSend, chat, posthog]);
 
   return (
     <main className="relative flex h-full overflow-hidden">
@@ -586,7 +577,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
             handleReactionAdded={handleReactionAdded}
             setThoughtParent={setThought}
             openThoughtMessageId={openThoughtMessageId}
-            setIsThoughtsOpen={setIsThoughtsOpen}
+            setIsThoughtsOpen={setIsThoughtsOpenCallback}
           />
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             <form

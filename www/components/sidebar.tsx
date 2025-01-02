@@ -208,7 +208,7 @@ export default function Sidebar({
           <GrClose />
         </button>
       </div>
-    ), [addChat, toggleSidebar, isSubscribed]);
+    ), [addChat, toggleSidebar, canUseApp]);
 
     return (
       <div
