@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 
 import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
 import Swal from 'sweetalert2';
+import { useToast } from '@/hooks/use-toast';
 
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
 // import { useRouter } from 'next/navigation';
@@ -34,56 +35,6 @@ const MessageBox = dynamic(() => import('@/components/messagebox'), {
 const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
-
-async function fetchStream(
-  type: 'thought' | 'response' | 'honcho',
-  message: string,
-  conversationId: string,
-  thought = '',
-  honchoThought = ''
-) {
-  try {
-    const response = await fetch(`/api/chat/${type}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message,
-        conversationId,
-        thought,
-        honchoThought,
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 402) {
-        Swal.fire({
-          title: 'Subscription Required',
-          text: 'You have no active subscription. Subscribe to continue using Bloom!',
-          icon: 'warning',
-          confirmButtonColor: '#3085d6',
-          confirmButtonText: 'Subscribe',
-          showCancelButton: false,
-        });
-        throw new Error(`Subscription is required to chat: ${response.status}`);
-      }
-      const errorText = await response.text();
-      console.error(`Stream error for ${type}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-      });
-      console.error(response);
-      throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
-    }
-
-    return response.body;
-  } catch (error) {
-    console.error(`Error in fetchStream (${type}):`, error);
-    throw error;
-  }
-}
 
 interface ChatProps {
   initialUserId: string;
@@ -148,6 +99,59 @@ export default function Chat({
     initialMessages?.length,
     initialChatAccess.freeMessages,
   ]);
+
+  const { toast } = useToast();
+
+  async function fetchStream(
+    type: 'thought' | 'response' | 'honcho',
+    message: string,
+    conversationId: string,
+    thought = '',
+    honchoThought = ''
+  ) {
+    try {
+      const response = await fetch(`/api/chat/${type}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          conversationId,
+          thought,
+          honchoThought,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 402) {
+          Swal.fire({
+            title: 'Subscription Required',
+            text: 'You have no active subscription. Subscribe to continue using Bloom!',
+            icon: 'warning',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Subscribe',
+            showCancelButton: false,
+          });
+          throw new Error(
+            `Subscription is required to chat: ${response.status}`
+          );
+        }
+        const errorText = await response.text();
+        toast({
+          variant: 'destructive',
+          title: `Stream error for ${type}`,
+          description: `Status ${response.status}: ${errorText}`,
+        });
+        throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
+      }
+
+      return response.body;
+    } catch (error) {
+      console.error(`Error in fetchStream (${type}):`, error);
+      throw error;
+    }
+  }
 
   // Since this message is just rendered in the UI, this naive check may result in edge cases where the incorrect message is shown.
   // (Ex. will show on all chats after creating a new session or messaging Bloom, even the first chat).
@@ -278,6 +282,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         { revalidate: false }
       );
     } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update reaction',
+        // variant: 'destructive',
+      });
       console.error('Failed to update reaction:', error);
     }
   };
@@ -325,6 +334,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       );
 
       if (!thoughtStream) {
+        toast({
+          title: 'Error',
+          description: 'Failed to get thought stream',
+          variant: 'destructive',
+        });
         throw new Error('Failed to get thought stream');
       }
 
@@ -426,6 +440,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         try {
           thoughtReader.releaseLock();
         } catch (e) {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Failed to release thought reader: ${e}`,
+          });
           console.error('Error releasing thought reader:', e);
         }
       }
@@ -433,6 +452,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
         try {
           responseReader.releaseLock();
         } catch (e) {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Failed to release response reader: ${e}`,
+          });
           console.error('Error releasing response reader:', e);
         }
       }
