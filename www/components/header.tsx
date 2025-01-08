@@ -1,22 +1,27 @@
 'use client';
-import { useTheme } from 'next-themes';
+// import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DarkModeSwitch } from 'react-toggle-dark-mode';
 import { useEffect, useState } from 'react';
-import lightBanner from '@/public/bloom2x1.svg';
-import darkBanner from '@/public/bloom2x1dark.svg';
+import bloomIcon from '@/public/bloom_icon_large.jpg';
+import { departureMono } from '@/utils/fonts';
+// import lightBanner from '@/public/bloom2x1.svg';
+// import darkBanner from '@/public/bloom2x1dark.svg';
 
 export function Header() {
-  const { theme, setTheme } = useTheme();
+  // const { theme, setTheme } = useTheme();
+  const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setIsDark(document.documentElement.classList.contains('dark'));
   }, []);
 
   const toggleDarkMode = (checked: boolean) => {
-    setTheme(checked ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark');
+    setIsDark(checked);
   };
 
   if (!mounted) {
@@ -33,16 +38,19 @@ export function Header() {
   return (
     <header className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-700">
       <nav className="flex justify-between items-center p-4">
-        <Link href="/" passHref>
+        <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <Image
-            src={theme === 'dark' ? darkBanner : lightBanner}
+            src={bloomIcon}
             alt="Bloom Logo"
-            className="h-10 w-auto cursor-pointer"
+            width={32}
+            height={32}
+            className="rounded-full"
           />
+          <span className={`text-foreground text-xl font-departure ${departureMono.className}`}>BLOOM</span>
         </Link>
         <div className="flex justify-between items-center gap-4">
           <DarkModeSwitch
-            checked={theme === 'dark'}
+            checked={isDark}
             onChange={toggleDarkMode}
             size={24}
           />

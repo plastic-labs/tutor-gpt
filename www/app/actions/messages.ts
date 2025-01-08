@@ -58,18 +58,43 @@ export async function getThought(conversationId: string, messageId: string) {
       const honchoUser = await getHonchoUser(user.id);
 
       try {
-        const thoughts = await honcho.apps.users.sessions.metamessages.list(
-          honchoApp.id,
-          honchoUser.id,
-          conversationId,
-          {
-            message_id: messageId,
-            metamessage_type: 'thought',
-            filter: { type: 'assistant' },
-          }
-        );
+        const [thoughts, dialectic] = await Promise.all([
+          honcho.apps.users.sessions.metamessages.list(
+            honchoApp.id,
+            honchoUser.id,
+            conversationId,
+            {
+              message_id: messageId,
+              metamessage_type: 'thought',
+              filter: { type: 'assistant' },
+            }
+          ),
+          honcho.apps.users.sessions.metamessages.list(
+            honchoApp.id,
+            honchoUser.id,
+            conversationId,
+            {
+              message_id: messageId,
+              metamessage_type: 'honcho',
+              filter: { type: 'assistant' },
+            }
+          ),
+        ]);
 
-        return thoughts.items[0]?.content || null;
+        const thoughtText = thoughts.items[0]?.content;
+        const dialecticText = dialectic.items[0]?.content;
+
+        if (!thoughtText) {
+          return null;
+        }
+
+        let completeThought = thoughtText;
+
+        if (dialecticText) {
+          completeThought += '\n\nDialectic Response:\n\n' + dialecticText;
+        }
+
+        return completeThought;
       } catch (error) {
         console.error('Error in getThought:', error);
         throw new Error('Internal server error');

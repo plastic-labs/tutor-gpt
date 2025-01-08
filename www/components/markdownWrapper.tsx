@@ -57,8 +57,11 @@ const CodeBlock = memo(
   }
 );
 
-const MarkdownWrapper = memo(({ text }: { text: string }) => {
-  // Memoize components configuration
+interface MarkdownWrapperProps {
+  text: string;
+}
+
+const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
   const components = useMemo(
     () => ({
       ol: ({

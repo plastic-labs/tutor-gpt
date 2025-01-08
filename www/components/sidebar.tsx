@@ -1,7 +1,7 @@
+import React from 'react';
 import { GrClose } from 'react-icons/gr';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import localFont from 'next/font/local';
 
 import { usePostHog } from 'posthog-js/react';
 import Swal from 'sweetalert2';
@@ -16,10 +16,9 @@ import {
 } from '@/app/actions/conversations';
 import { type Conversation, type Message } from '@/utils/types';
 import { clearSWRCache } from '@/utils/swrCache';
+import { departureMono } from '@/utils/fonts';
 
-const departureMono = localFont({
-  src: '../fonts/DepartureMono-Regular.woff2',
-});
+
 
 export default function Sidebar({
   conversations,
@@ -28,7 +27,7 @@ export default function Sidebar({
   setConversationId,
   isSidebarOpen,
   toggleSidebar,
-  isSubscribed,
+  canUseApp,
 }: {
   conversations: Conversation[];
   mutateConversations: KeyedMutator<Conversation[]>;
@@ -36,7 +35,7 @@ export default function Sidebar({
   setConversationId: (id: typeof conversationId) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
-  isSubscribed: boolean;
+  canUseApp: boolean;
 }) {
   const postHog = usePostHog();
   const supabase = createClient();
@@ -178,7 +177,7 @@ export default function Sidebar({
           <button
             className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
             onClick={addChat}
-            disabled={!isSubscribed}
+            disabled={!canUseApp}
           >
             New Chat
           </button>
