@@ -6,7 +6,7 @@ import {
   // parsePrompt,
 } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
-import { thoughtPrompt } from '@/utils/prompts/thought';
+import thoughtPrompt from '@/utils/prompts/thought';
 import { createClient } from '@/utils/supabase/server';
 import { getChatAccessWithUser } from '@/utils/supabase/actions';
 import { NextRequest, NextResponse } from 'next/server';
