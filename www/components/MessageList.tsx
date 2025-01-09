@@ -148,9 +148,6 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
             conversationId={conversationId}
           />
         )}
-        {messages!.length > 1 && <div className="text-right text-xs text-foreground">
-          Bloom can make mistakes. Always double-check important information.
-        </div>}
       </section>
     );
   }
