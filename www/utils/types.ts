@@ -1,4 +1,4 @@
-import { type Reaction } from '@/components/messagebox';
+// import { type Reaction } from '@/components/messagebox';
 
 export interface Message {
   id: string;

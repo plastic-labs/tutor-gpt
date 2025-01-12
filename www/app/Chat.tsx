@@ -15,9 +15,13 @@ import { Reaction } from '@/components/messagebox';
 import { FiMenu } from 'react-icons/fi';
 import Link from 'next/link';
 import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
-import { getConversations, createConversation } from './actions/conversations';
+import {
+  getConversations,
+  createConversation,
+  updateConversation,
+} from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
-import { type Message } from '@/utils/types';
+import { Conversation, Message } from '@/utils/types';
 import { localStorageProvider } from '@/utils/swrCache';
 
 import useAutoScroll from '@/hooks/autoscroll';
@@ -28,9 +32,6 @@ const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
 });
 
-const MessageBox = dynamic(() => import('@/components/messagebox'), {
-  ssr: false,
-});
 const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
@@ -88,13 +89,13 @@ async function fetchStream(
 interface ChatProps {
   initialUserId: string;
   initialEmail: string | undefined;
-  initialConversations: any[];
+  initialConversations: Conversation[];
   initialChatAccess: {
     isSubscribed: boolean;
     freeMessages: number;
     canChat: boolean;
   };
-  initialMessages: any[];
+  initialMessages: Message[];
   initialConversationId: string | null | undefined;
 }
 
@@ -111,9 +112,7 @@ export default function Chat({
   initialChatAccess,
 }: ChatProps) {
   const [userId] = useState(initialUserId);
-  const [isSubscribed, setIsSubscribed] = useState(
-    initialChatAccess.isSubscribed
-  );
+  const [isSubscribed] = useState(initialChatAccess.isSubscribed);
   const [freeMessages, setFreeMessages] = useState(
     initialChatAccess.freeMessages
   );
@@ -134,7 +133,7 @@ export default function Chat({
   const posthog = usePostHog();
   const input = useRef<ElementRef<'textarea'>>(null);
   const messageContainerRef = useRef<ElementRef<'section'>>(null);
-  const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+  useAutoScroll(messageContainerRef);
 
   const messageListRef = useRef<MessageListRef>(null);
   const firstChat = useMemo(() => {
@@ -157,7 +156,7 @@ export default function Chat({
 
 The more we chat, the more I learn about you as a person. That helps me adapt to your interests and needs.
 
-What\'s on your mind? Let\'s dive in. 🌱`,
+What's on your mind? Let's dive in. 🌱`,
     isUser: false,
     id: '',
     metadata: {},
@@ -245,7 +244,7 @@ What\'s on your mind? Let\'s dive in. 🌱`,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     dedupingInterval: 60000,
-    onSuccess: (data) => {
+    onSuccess: () => {
       if (conversationId?.startsWith('temp-')) {
         mutateMessages([], false);
       }
@@ -282,101 +281,84 @@ What\'s on your mind? Let\'s dive in. 🌱`,
     }
   };
 
-  async function chat(message?: string) {
-    const rawMessage = message || input.current?.value;
-    if (!userId || !rawMessage) return;
+  async function processThought(messageToSend: string, conversationId: string) {
+    // Get thought stream
+    const thoughtStream = await fetchStream(
+      'thought',
+      messageToSend,
+      conversationId
+    );
 
-    // Process message to have double newline for markdown
-    const messageToSend = rawMessage.replace(/\n/g, '\n\n');
+    if (!thoughtStream) {
+      throw new Error('Failed to get thought stream');
+    }
 
-    if (input.current) input.current.value = '';
+    const thoughtReader = thoughtStream.getReader();
+    let thoughtText = '';
+    setThought('');
 
-    setCanSend(false);
+    // Process thought stream
+    while (true) {
+      const { done, value } = await thoughtReader.read();
+      if (done) break;
 
-    const newMessages = [
-      ...messages!,
-      {
-        content: messageToSend,
-        isUser: true,
-        id: '',
-        metadata: {},
-      },
-      {
-        content: '',
-        isUser: false,
-        id: '',
-        metadata: {},
-      },
-    ];
-    await mutateMessages(newMessages, { revalidate: false });
-    messageListRef.current?.scrollToBottom();
+      thoughtText += new TextDecoder().decode(value);
+      setThought(thoughtText);
+    }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Cleanup thought stream
+    thoughtReader.releaseLock();
 
-    let thoughtReader: ReadableStreamDefaultReader | null = null;
-    let responseReader: ReadableStreamDefaultReader | null = null;
+    return thoughtText;
+  }
+
+  async function processHoncho(
+    messageToSend: string,
+    conversationId: string,
+    thoughtText: string
+  ) {
+    // Get honcho response
+    const honchoResponse = await fetchStream(
+      'honcho',
+      messageToSend,
+      conversationId,
+      thoughtText
+    );
+
+    const honchoContent = (await new Response(
+      honchoResponse
+    ).json()) as HonchoResponse;
+
+    const updatedThought =
+      thoughtText +
+      '\n\nHoncho Dialectic Response:\n\n' +
+      honchoContent.content;
+    setThought(updatedThought);
+
+    return honchoContent;
+  }
+
+  async function processResponse(
+    messageToSend: string,
+    conversationId: string,
+    thoughtText: string,
+    honchoContent: string,
+    newMessages: Message[],
+    isSubscribed: boolean
+  ) {
+    const responseStream = await fetchStream(
+      'response',
+      messageToSend,
+      conversationId,
+      thoughtText,
+      honchoContent
+    );
+    if (!responseStream) throw new Error('Failed to get response stream');
+
+    const responseReader = responseStream.getReader();
+    let currentModelOutput = '';
 
     try {
-      // Get thought stream
-      const thoughtStream = await fetchStream(
-        'thought',
-        messageToSend,
-        conversationId!
-      );
-
-      if (!thoughtStream) {
-        throw new Error('Failed to get thought stream');
-      }
-
-      thoughtReader = thoughtStream.getReader();
-      let thoughtText = '';
-      setThought('');
-
-      // Process thought stream
-      while (true) {
-        const { done, value } = await thoughtReader.read();
-        if (done) break;
-
-        thoughtText += new TextDecoder().decode(value);
-        setThought(thoughtText);
-      }
-
-      // Cleanup thought stream
-      thoughtReader.releaseLock();
-      thoughtReader = null;
-
-      const honchoResponse = await fetchStream(
-        'honcho',
-        messageToSend,
-        conversationId!,
-        thoughtText
-      );
-
-      const honchoContent = (await new Response(
-        honchoResponse
-      ).json()) as HonchoResponse;
-
-      const pureThought = thoughtText;
-
-      thoughtText +=
-        '\n\nHoncho Dialectic Response:\n\n' + honchoContent.content;
-      setThought(thoughtText);
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Get response stream using the thought and dialectic response
-      const responseStream = await fetchStream(
-        'response',
-        messageToSend,
-        conversationId!,
-        pureThought,
-        honchoContent.content
-      );
-      if (!responseStream) throw new Error('Failed to get response stream');
-
-      responseReader = responseStream.getReader();
-      let currentModelOutput = '';
-
       // Process response stream
       while (true) {
         const { done, value } = await responseReader.read();
@@ -408,9 +390,85 @@ What\'s on your mind? Let\'s dive in. 🌱`,
 
         messageListRef.current?.scrollToBottom();
       }
-
+    } finally {
       responseReader.releaseLock();
-      responseReader = null;
+    }
+  }
+
+  async function processSummary(messageToSend: string, conversationId: string) {
+    const summaryResponse = await fetch('/api/chat/summary', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: messageToSend,
+      }),
+    });
+
+    if (summaryResponse.ok) {
+      const { summary } = await summaryResponse.json();
+      await updateConversation(conversationId, summary);
+      await mutateConversations();
+    }
+  }
+
+  async function chat(message?: string) {
+    const rawMessage = message || input.current?.value;
+    if (!userId || !rawMessage) return;
+
+    // Process message to have double newline for markdown
+    const messageToSend = rawMessage.replace(/\n/g, '\n\n');
+
+    if (input.current) input.current.value = '';
+
+    setCanSend(false);
+
+    const newMessages = [
+      ...messages!,
+      {
+        content: messageToSend,
+        isUser: true,
+        id: '',
+        metadata: {},
+      },
+      {
+        content: '',
+        isUser: false,
+        id: '',
+        metadata: {},
+      },
+    ];
+    await mutateMessages(newMessages, { revalidate: false });
+    messageListRef.current?.scrollToBottom();
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    try {
+      // Process thought and summary in parallel if this is the first message
+      const [thoughtText] = await Promise.all([
+        processThought(messageToSend, conversationId!),
+        ...(messages?.length === 0
+          ? [processSummary(messageToSend, conversationId!)]
+          : []),
+      ]);
+
+      // Process honcho response
+      const honchoContent = await processHoncho(
+        messageToSend,
+        conversationId!,
+        thoughtText
+      );
+
+      // Process response
+      await processResponse(
+        messageToSend,
+        conversationId!,
+        thoughtText,
+        honchoContent.content,
+        newMessages,
+        isSubscribed
+      );
 
       await mutateMessages();
       messageListRef.current?.scrollToBottom();
@@ -420,22 +478,6 @@ What\'s on your mind? Let\'s dive in. 🌱`,
       setCanSend(true);
       await mutateMessages();
       messageListRef.current?.scrollToBottom();
-    } finally {
-      // Cleanup
-      if (thoughtReader) {
-        try {
-          thoughtReader.releaseLock();
-        } catch (e) {
-          console.error('Error releasing thought reader:', e);
-        }
-      }
-      if (responseReader) {
-        try {
-          responseReader.releaseLock();
-        } catch (e) {
-          console.error('Error releasing response reader:', e);
-        }
-      }
     }
   }
 
