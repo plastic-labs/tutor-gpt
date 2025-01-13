@@ -503,6 +503,11 @@ What\'s on your mind? Let\'s dive in. 🌱`,
             setIsThoughtsOpen={setIsThoughtsOpen}
           />
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
+            {messages!.length > 1 && (
+              <div className="disclaimer-text text-center mb-2">
+                Bloom can make mistakes. Always double-check important information.
+              </div>
+            )}
             <form
               id="send"
               className="flex p-3 lg:p-5 gap-3 border-gray-300"
