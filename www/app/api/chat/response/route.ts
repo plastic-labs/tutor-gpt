@@ -1,10 +1,4 @@
-import {
-  assistant,
-  createStream,
-  getUserData,
-  Message,
-  user,
-} from '@/utils/ai';
+import { assistant, createStream, getUserData, user } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import { responsePrompt } from '@/utils/prompts/response';
 import { NextRequest, NextResponse } from 'next/server';
@@ -52,7 +46,7 @@ export async function POST(req: NextRequest) {
     honchoHistory.find((m) => m.message_id === id)?.content ||
     'No Honcho Message';
 
-  const history = responseHistory.map((message, i) => {
+  const history = responseHistory.map((message) => {
     if (message.is_user) {
       return user`<honcho>${getHonchoMessage(message.id)}</honcho>
       ${message.content}`;

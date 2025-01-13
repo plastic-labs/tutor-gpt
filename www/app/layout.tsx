@@ -7,7 +7,7 @@ import { Suspense } from 'react';
 import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { departureMono } from '@/utils/fonts';
+import { Toaster } from '@/components/ui/toaster';
 
 const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -69,6 +69,7 @@ export default function RootLayout({
               <div className="h-screen flex flex-col">
                 <Header />
                 <main className="flex-1 overflow-y-auto">{children}</main>
+                <Toaster />
               </div>
             </SWRProvider>
           </PHProvider>
