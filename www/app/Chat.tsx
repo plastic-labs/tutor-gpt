@@ -451,7 +451,7 @@ What's on your mind? Let's dive in. 🌱`,
       const shouldGenerateSummary = isFirstChat || isUntitledConversation;
       const [thoughtText] = await Promise.all([
         processThought(messageToSend, conversationId!),
-       ...(shouldGenerateSummary
+        ...(shouldGenerateSummary
           ? [processSummary(messageToSend, conversationId!)]
           : []),
       ]);
@@ -478,9 +478,9 @@ What's on your mind? Let's dive in. 🌱`,
       setCanSend(true);
     } catch (error) {
       console.error('Chat error:', error);
-      setCanSend(true);
       await mutateMessages();
       messageListRef.current?.scrollToBottom();
+      setCanSend(true);
     }
   }
 
@@ -564,11 +564,10 @@ What's on your mind? Let's dive in. 🌱`,
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${canSend && canUseApp
+                  ? 'border-green-200 focus:border-green-200'
+                  : 'border-red-200 focus:border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
