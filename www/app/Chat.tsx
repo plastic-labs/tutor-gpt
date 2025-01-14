@@ -446,9 +446,12 @@ What's on your mind? Let's dive in. 🌱`,
 
     try {
       // Process thought and summary in parallel if this is the first message
+      const isFirstChat = messages?.length === 0;
+      const isUntitledConversation = conversations?.find(c => c.conversationId === conversationId)?.name === 'Untitled';
+      const shouldGenerateSummary = isFirstChat || isUntitledConversation;
       const [thoughtText] = await Promise.all([
         processThought(messageToSend, conversationId!),
-        ...(messages?.length === 0
+       ...(shouldGenerateSummary
           ? [processSummary(messageToSend, conversationId!)]
           : []),
       ]);
