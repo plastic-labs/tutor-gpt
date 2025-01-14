@@ -1,7 +1,7 @@
-import { getHonchoApp, getHonchoUser, honcho } from '@/utils/honcho';
+import { getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { streamText } from 'ai';
+import { generateText, streamText } from 'ai';
 import d from 'dedent-js';
 
 import * as Sentry from '@sentry/nextjs';
@@ -196,4 +196,30 @@ export async function createStream(
     Sentry.captureException(error);
     throw error;
   }
+}
+
+export async function createCompletion(
+  messages: Message[],
+  metadata: {
+    sessionId: string;
+    userId: string;
+    type: string;
+  }
+) {
+  const result = generateText({
+    model: openrouter(MODEL),
+    messages,
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        sessionId: metadata.sessionId,
+        userId: metadata.userId,
+        release: SENTRY_RELEASE,
+        environment: SENTRY_ENVIRONMENT,
+        tags: [metadata.type],
+      },
+    },
+  });
+
+  return result;
 }

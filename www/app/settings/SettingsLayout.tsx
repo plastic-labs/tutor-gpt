@@ -18,19 +18,22 @@ export default function SettingsLayout({
   subscription,
   products,
 }: SettingsProps) {
-  const navItems = useMemo(() => [
-    { id: 'account', label: 'Account' },
-    { id: 'security', label: 'Security' },
-    { id: 'subscription', label: 'Subscription' },
-    { id: 'support', label: 'Support' },
-  ], []);
+  const navItems = useMemo(
+    () => [
+      { id: 'account', label: 'Account' },
+      { id: 'security', label: 'Security' },
+      { id: 'subscription', label: 'Subscription' },
+      { id: 'support', label: 'Support' },
+    ],
+    []
+  );
 
   const [activeTab, setActiveTab] = useState('account'); // Default to 'account' initially
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (navItems.some(item => item.id === hash)) {
+      if (navItems.some((item) => item.id === hash)) {
         setActiveTab(hash);
       }
     };
@@ -56,10 +59,11 @@ export default function SettingsLayout({
                       setActiveTab(item.id);
                       window.location.hash = item.id;
                     }}
-                    className={`w-full text-left p-2 rounded transition-colors ${activeTab === item.id
+                    className={`w-full text-left p-2 rounded transition-colors ${
+                      activeTab === item.id
                         ? 'bg-accent text-foreground'
                         : 'hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-neon-green/20 dark:hover:text-neon-green'
-                      }`}
+                    }`}
                   >
                     {item.label}
                   </button>

@@ -3,13 +3,9 @@
 import { createClient } from '@/utils/supabase/server';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import * as Sentry from '@sentry/nextjs';
+import { Conversation } from '@/utils/types';
 
 // TODO add proper authorization check
-
-type Conversation = {
-  conversationId: string;
-  name: string;
-};
 
 export async function getConversations() {
   return Sentry.startSpan(
