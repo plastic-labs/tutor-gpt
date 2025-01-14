@@ -1,7 +1,7 @@
 # Tutor-GPT Web UI
 
 This directory contains the code for the Full Stack Web-UI of Tutor-GPT. It is developed
-using [Next.js](https://nextjs.org/) and [pnpm](https://pnpm.io).
+using [Next.js](https://nextjs.org/) and [bun](https://bun.sh/).
 
 The project uses [Supabase](https://supabase.com/) for authentication and managing users subscriptions
 with [stripe](https://stripe.com/)
@@ -12,14 +12,14 @@ Clone the repo and install the necessary NodeJS depenencies
 
 ```bash
 git clone https://github.com/plastic-labs/tutor-gpt.git && cd tutor-gpt/www
-pnpm install
+bun install
 ```
 
 Set up your [environment variables](#environment-variables) in a `.env.local`
 file. Then launch the development server.
 
 ```bash
-pnpm run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
@@ -54,7 +54,6 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 - `STRIPE_SECRET_KEY` — The stripe secret key
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — The stripe public key
 - `STRIPE_WEBHOOK_SECRET` — The stripe webhook secret
-
 
 Below are several optional environment variables to enable error monitoring and
 analytics.
