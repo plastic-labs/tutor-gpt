@@ -11,6 +11,7 @@
     "sync-stripe": "node scripts/stripeSync.mjs"
   },
   "dependencies": {
+    "@million/lint": "^1.0.14",
     "@openrouter/ai-sdk-provider": "^0.0.6",
     "@opentelemetry/api-logs": "^0.56.0",
     "@opentelemetry/instrumentation": "^0.56.0",

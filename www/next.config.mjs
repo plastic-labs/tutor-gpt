@@ -1,3 +1,4 @@
+import MillionLint from "@million/lint";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -170,5 +171,8 @@ const sentryConfig = withSentryConfig(nextConfig, {
   },
 });
 
-export default sentryConfig;
+export default MillionLint.next({
+  enabled: true,
+  rsc: true
+})(sentryConfig);
 // export default MillionLint.next({ rsc: true })(sentryConfig);
