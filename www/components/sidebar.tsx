@@ -18,8 +18,6 @@ import { type Conversation, type Message } from '@/utils/types';
 import { clearSWRCache } from '@/utils/swrCache';
 import { departureMono } from '@/utils/fonts';
 
-
-
 export default function Sidebar({
   conversations,
   mutateConversations,

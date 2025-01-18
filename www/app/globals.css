@@ -33,6 +33,12 @@ html {
   animation-delay: 0.4s;
 }
 
+.disclaimer-text {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  color: hsl(var(--foreground));
+}
+
 @layer base {
   :root {
     --background: 40, 20%, 94%; /* #f3f1ed */

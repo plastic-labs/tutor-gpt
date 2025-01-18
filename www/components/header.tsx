@@ -46,7 +46,11 @@ export function Header() {
             height={32}
             className="rounded-full"
           />
-          <span className={`text-foreground text-xl font-departure ${departureMono.className}`}>BLOOM</span>
+          <span
+            className={`text-foreground text-xl font-departure ${departureMono.className}`}
+          >
+            BLOOM
+          </span>
         </Link>
         <div className="flex justify-between items-center gap-4">
           <DarkModeSwitch
