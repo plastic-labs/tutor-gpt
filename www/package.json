@@ -1,9 +1,11 @@
 {
-  "name": "Tutor GPT Web App",
+  "name": "tutor-gpt",
   "version": "0.6.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "db": "supabase start",
+    "db:stop": "supabase stop",
     "build": "next build",
     "start": "next start",
     "lint": "eslint components/ app/ utils/",
