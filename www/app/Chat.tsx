@@ -395,8 +395,8 @@ What's on your mind? Let's dive in. 🌱`,
     }
   }
 
-  async function processSummary(messageToSend: string, conversationId: string) {
-    const summaryResponse = await fetch('/api/chat/summary', {
+  async function processName(messageToSend: string, conversationId: string) {
+    const nameResponse = await fetch('/api/chat/name', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -406,9 +406,9 @@ What's on your mind? Let's dive in. 🌱`,
       }),
     });
 
-    if (summaryResponse.ok) {
-      const { summary } = await summaryResponse.json();
-      await updateConversation(conversationId, summary);
+    if (nameResponse.ok) {
+      const { name } = await nameResponse.json();
+      await updateConversation(conversationId, name);
       await mutateConversations();
     }
   }
@@ -454,7 +454,7 @@ What's on your mind? Let's dive in. 🌱`,
       const [thoughtText] = await Promise.all([
         processThought(messageToSend, conversationId!),
         ...(shouldGenerateSummary
-          ? [processSummary(messageToSend, conversationId!)]
+          ? [processName(messageToSend, conversationId!)]
           : []),
       ]);
 
@@ -552,7 +552,8 @@ What's on your mind? Let's dive in. 🌱`,
           <div className="p-3 pb-0 lg:p-5 lg:pb-0">
             {messages!.length > 1 && (
               <div className="disclaimer-text text-center mb-2">
-                Bloom can make mistakes. Always double-check important information.
+                Bloom can make mistakes. Always double-check important
+                information.
               </div>
             )}
             <form
