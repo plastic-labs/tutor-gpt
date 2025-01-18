@@ -23,43 +23,43 @@ export async function POST(req: NextRequest) {
 
   const { appId, userId } = userData;
 
-  const responseIter = await honcho.apps.users.sessions.messages.list(
-    appId,
-    userId,
-    conversationId,
-    {}
-  );
+  const [responseIter, honchoIter, summaryIter] = await Promise.all([
+    honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
+      reverse: true,
+      size: MAX_CONTEXT_SIZE,
+    }),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'honcho',
+        reverse: true,
+        size: MAX_CONTEXT_SIZE,
+      }
+    ),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'summary',
+        reverse: true,
+        size: 1,
+      }
+    ),
+  ]);
 
-  const responseHistory = Array.from(responseIter.items);
-
-  const honchoIter = await honcho.apps.users.sessions.metamessages.list(
-    appId,
-    userId,
-    conversationId,
-    {
-      metamessage_type: 'honcho',
-    }
-  );
-
-  const honchoHistory = Array.from(honchoIter.items);
-
-  const summaryIter = await honcho.apps.users.sessions.metamessages.list(
-    appId,
-    userId,
-    conversationId,
-    {
-      metamessage_type: 'summary',
-    }
-  );
-
+  const responseHistory = Array.from(responseIter.items).reverse();
+  const honchoHistory = Array.from(honchoIter.items).reverse();
   const summaryHistory = Array.from(summaryIter.items);
 
   // Get the last summary content
-  const lastSummary = summaryHistory[summaryHistory.length - 1]?.content;
+  const lastSummary = summaryHistory[0]?.content;
 
   // Find the index of the message associated with the last summary
   const lastSummaryMessageIndex = responseHistory.findIndex(
-    (m) => m.id === summaryHistory[summaryHistory.length - 1]?.message_id
+    (m) => m.id === summaryHistory[0]?.message_id
   );
   console.log('lastSummaryMessageIndex', lastSummaryMessageIndex);
 
