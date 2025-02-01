@@ -1,5 +1,5 @@
 import { createCompletion, getUserData, user } from '@/utils/ai';
-import { summaryPrompt } from '@/utils/prompts/summary';
+import { namePrompt } from '@/utils/prompts/name';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -16,13 +16,13 @@ export async function POST(req: NextRequest) {
   const { userId } = userData;
 
   const finalMessage = user`${message}`;
-  const prompt = [...summaryPrompt, finalMessage];
+  const prompt = [...namePrompt, finalMessage];
 
   const completion = await createCompletion(prompt, {
-    sessionId: 'summary',
+    sessionId: 'name',
     userId,
-    type: 'summary',
+    type: 'name',
   });
 
-  return NextResponse.json({ summary: completion.text });
+  return NextResponse.json({ name: completion.text });
 }
