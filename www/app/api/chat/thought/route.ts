@@ -20,6 +20,8 @@ interface ThoughtCallProps {
   conversationId: string;
 }
 
+const MAX_CONTEXT_SIZE = 10;
+
 export async function POST(req: NextRequest) {
   const supabase = createClient();
   const honchoUserData = await getUserData();
@@ -41,36 +43,34 @@ export async function POST(req: NextRequest) {
 
   const { appId, userId } = honchoUserData;
 
-  const messageIter = await honcho.apps.users.sessions.messages.list(
-    appId,
-    userId,
-    conversationId,
-    {}
-  );
+  const [messageIter, thoughtIter, honchoIter] = await Promise.all([
+    honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
+      reverse: true,
+      size: MAX_CONTEXT_SIZE,
+    }),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'thought',
+        reverse: true,
+        size: MAX_CONTEXT_SIZE,
+      }
+    ),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'honcho',
+      }
+    ),
+  ]);
 
-  const messageHistory = Array.from(messageIter.items);
-
-  const thoughtIter = await honcho.apps.users.sessions.metamessages.list(
-    appId,
-    userId,
-    conversationId,
-    {
-      metamessage_type: 'thought',
-    }
-  );
-
-  const thoughtHistory = Array.from(thoughtIter.items);
-
-  const honchoIter = await honcho.apps.users.sessions.metamessages.list(
-    appId,
-    userId,
-    conversationId,
-    {
-      metamessage_type: 'honcho',
-    }
-  );
-
-  const honchoHistory = Array.from(honchoIter.items);
+  const messageHistory = Array.from(messageIter.items).reverse();
+  const thoughtHistory = Array.from(thoughtIter.items).reverse();
+  const honchoHistory = Array.from(honchoIter.items).reverse();
 
   const history = messageHistory.map((message, i) => {
     if (message.is_user) {
