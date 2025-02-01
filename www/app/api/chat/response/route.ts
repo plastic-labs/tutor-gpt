@@ -1,4 +1,4 @@
-import { assistant, createStream, getUserData, user } from '@/utils/ai';
+import { assistant, createCompletion, getUserData, user } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import responsePrompt from '@/utils/prompts/response';
 import summaryPrompt from '@/utils/prompts/summary';
@@ -123,37 +123,23 @@ export async function POST(req: NextRequest) {
     console.log('Summary messages:', summaryMessages);
 
     // Get summary response
-    console.log('Creating summary stream...');
-    const summaryStream = await createStream(summaryMessages, {
+    console.log('Creating summary completion...');
+    const summaryResponse = await createCompletion(summaryMessages, {
       sessionId: conversationId,
       userId,
       type: 'summary',
     });
 
-    if (!summaryStream) {
-      console.error('Failed to get summary stream');
-      throw new Error('Failed to get summary stream');
+    if (!summaryResponse) {
+      console.error('Failed to get summary response');
+      throw new Error('Failed to get summary response');
     }
 
-    // Read the full response from the stream
-    console.log('Reading stream...');
-    const reader = summaryStream.body?.getReader();
-    if (!reader) {
-      console.error('Failed to get reader from summary stream');
-      throw new Error('Failed to get reader from summary stream');
-    }
-
-    let fullResponse = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = new TextDecoder().decode(value);
-      fullResponse += chunk;
-    }
-    console.log('Full response:', fullResponse);
+    const summaryText = String(summaryResponse);
+    console.log('Full response:', summaryText);
 
     // Extract summary from response
-    const summaryMatch = fullResponse.match(/<summary>([\s\S]*?)<\/summary/);
+    const summaryMatch = summaryText.match(/<summary>([\s\S]*?)<\/summary/);
     newSummary = summaryMatch ? summaryMatch[1] : undefined;
     console.log('Extracted summary:', newSummary);
 
@@ -185,30 +171,29 @@ export async function POST(req: NextRequest) {
 
   console.log('responsePrompt', prompt);
 
-  // Create logs directory if it doesn't exist
+  const response = await createCompletion(prompt, {
+    sessionId: conversationId,
+    userId,
+    type: 'response',
+  });
 
-  const stream = await createStream(
-    prompt,
-    {
-      sessionId: conversationId,
-      userId,
-      type: 'response',
-    },
-    async (response) => {
-      const newUserMessage = await honcho.apps.users.sessions.messages.create(
-        appId,
-        userId,
-        conversationId,
-        {
-          is_user: true,
-          content: message,
-        }
-      );
+  if (!response) {
+    throw new Error('Failed to get response');
+  }
 
-      // Execute all requests in parallel
-      await Promise.all([
+  const responseText = response.text;
+
+  // Execute all requests in parallel
+  await Promise.all([
+    // Save the user message
+    honcho.apps.users.sessions.messages
+      .create(appId, userId, conversationId, {
+        is_user: true,
+        content: message,
+      })
+      .then(async (newUserMessage) => {
         // Save the thought metamessage
-        honcho.apps.users.sessions.metamessages.create(
+        await honcho.apps.users.sessions.metamessages.create(
           appId,
           userId,
           conversationId,
@@ -218,10 +203,10 @@ export async function POST(req: NextRequest) {
             content: thought || '',
             metadata: { type: 'assistant' },
           }
-        ),
+        );
 
         // Save honcho metamessage
-        honcho.apps.users.sessions.metamessages.create(
+        await honcho.apps.users.sessions.metamessages.create(
           appId,
           userId,
           conversationId,
@@ -231,49 +216,38 @@ export async function POST(req: NextRequest) {
             content: honchoThought || '',
             metadata: { type: 'assistant' },
           }
-        ),
+        );
+      }),
 
-        // Save assistant message
-        honcho.apps.users.sessions.messages.create(
-          appId,
-          userId,
-          conversationId,
-          {
-            is_user: false,
-            content: response.text,
-          }
-        ),
+    // Save assistant message
+    honcho.apps.users.sessions.messages.create(appId, userId, conversationId, {
+      is_user: false,
+      content: responseText,
+    }),
 
-        // Save summary metamessage if one was created
-        ...(newSummary
-          ? [
-              honcho.apps.users.sessions.metamessages.create(
-                appId,
-                userId,
-                conversationId,
-                {
-                  message_id: lastMessageOfSummary!.id,
-                  metamessage_type: 'summary',
-                  content: newSummary,
-                  metadata: { type: 'assistant' },
-                }
-              ),
-            ]
-          : []),
-      ]);
-    }
-  );
+    // Save summary metamessage if one was created
+    ...(newSummary
+      ? [
+          honcho.apps.users.sessions.metamessages.create(
+            appId,
+            userId,
+            conversationId,
+            {
+              message_id: lastMessageOfSummary!.id,
+              metamessage_type: 'summary',
+              content: newSummary,
+              metadata: { type: 'assistant' },
+            }
+          ),
+        ]
+      : []),
+  ]);
 
-  if (!stream) {
-    throw new Error('Failed to get stream');
-  }
-
-  return new NextResponse(stream.body, {
+  return new NextResponse(responseText, {
     status: 200,
     headers: {
-      'Content-Type': 'text/event-stream',
+      'Content-Type': 'text/plain',
       'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
     },
   });
 }
