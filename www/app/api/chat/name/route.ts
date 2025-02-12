@@ -18,11 +18,17 @@ export async function POST(req: NextRequest) {
   const finalMessage = user`${message}`;
   const prompt = [...namePrompt, finalMessage];
 
-  const completion = await createCompletion(prompt, {
-    sessionId: 'name',
-    userId,
-    type: 'name',
-  });
+  const completion = await createCompletion(
+    prompt,
+    {
+      sessionId: 'name',
+      userId,
+      type: 'name',
+    },
+    {
+      max_tokens: 10,
+    }
+  );
 
   return NextResponse.json({ name: completion.text });
 }

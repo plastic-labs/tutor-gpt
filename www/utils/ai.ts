@@ -1,8 +1,9 @@
 import { getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { generateText, streamText } from 'ai';
+import { generateObject, generateText, streamText } from 'ai';
 import d from 'dedent-js';
+import { z } from 'zod';
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -204,11 +205,19 @@ export async function createCompletion(
     sessionId: string;
     userId: string;
     type: string;
+  },
+  parameters?: {
+    temperature?: number;
+    max_tokens?: number;
+    top_p?: number;
+    frequency_penalty?: number;
+    presence_penalty?: number;
   }
 ) {
   const result = generateText({
     model: openrouter(MODEL),
     messages,
+    ...parameters,
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -218,6 +227,32 @@ export async function createCompletion(
         environment: SENTRY_ENVIRONMENT,
         tags: [metadata.type],
       },
+    },
+  });
+
+  return result;
+}
+
+export async function createObject<T extends z.Schema>(
+  messages: Message[],
+  schema: T,
+  metadata: {
+    sessionId: string;
+    userId: string;
+    type: string;
+  }
+): Promise<z.infer<T>> {
+  const result = generateObject({
+    model: openrouter(MODEL),
+    messages,
+    // @ts-expect-error zod is not typed
+    schema,
+    metadata: {
+      sessionId: metadata.sessionId,
+      userId: metadata.userId,
+      release: SENTRY_RELEASE,
+      environment: SENTRY_ENVIRONMENT,
+      tags: [metadata.type],
     },
   });
 

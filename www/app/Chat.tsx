@@ -408,8 +408,10 @@ What's on your mind? Let's dive in. 🌱`,
 
     if (nameResponse.ok) {
       const { name } = await nameResponse.json();
-      await updateConversation(conversationId, name);
-      await mutateConversations();
+      if (name !== 'NA') {
+        await updateConversation(conversationId, name);
+        await mutateConversations();
+      }
     }
   }
 
