@@ -64,6 +64,8 @@ export async function POST(req: NextRequest) {
       conversationId,
       {
         metamessage_type: 'honcho',
+        reverse: true,
+        size: MAX_CONTEXT_SIZE,
       }
     ),
   ]);
