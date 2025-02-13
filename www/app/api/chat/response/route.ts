@@ -54,14 +54,14 @@ export async function POST(req: NextRequest) {
 
   const history = responseHistory.map((message, i) => {
     if (message.is_user) {
-      return user`<honcho>${getHonchoMessage(message.id)}</honcho>
+      return user`<context>${getHonchoMessage(message.id)}</context>
       ${message.content}`;
     } else {
       return assistant`${message.content}`;
     }
   });
 
-  const finalMessage = user`<honcho>${honchoThought}</honcho>
+  const finalMessage = user`<context>${honchoThought}</context>
   ${message}`;
 
   const prompt = [...responsePrompt, ...history, finalMessage];
