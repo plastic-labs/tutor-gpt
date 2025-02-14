@@ -1,9 +1,9 @@
 import { getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { generateObject, generateText, streamText } from 'ai';
+import { generateText, streamText } from 'ai';
 import d from 'dedent-js';
-import { z } from 'zod';
+// import { z } from 'zod';
 
 import * as Sentry from '@sentry/nextjs';
 
