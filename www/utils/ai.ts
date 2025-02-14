@@ -214,7 +214,7 @@ export async function createCompletion(
     presence_penalty?: number;
   }
 ) {
-  const result = generateText({
+  const result = await generateText({
     model: openrouter(MODEL),
     messages,
     ...parameters,
@@ -230,7 +230,7 @@ export async function createCompletion(
     },
   });
 
-  return result;
+  return result.text;
 }
 
 export async function createObject<T extends z.Schema>(

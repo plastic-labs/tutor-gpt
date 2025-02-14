@@ -1,4 +1,10 @@
-import { assistant, createCompletion, getUserData, user } from '@/utils/ai';
+import {
+  assistant,
+  createCompletion,
+  createStream,
+  getUserData,
+  user,
+} from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import responsePrompt from '@/utils/prompts/response';
 import summaryPrompt from '@/utils/prompts/summary';
@@ -135,11 +141,10 @@ export async function POST(req: NextRequest) {
       throw new Error('Failed to get summary response');
     }
 
-    const summaryText = String(summaryResponse);
-    console.log('Full response:', summaryText);
+    console.log('Full response:', summaryResponse);
 
     // Extract summary from response
-    const summaryMatch = summaryText.match(/<summary>([\s\S]*?)<\/summary/);
+    const summaryMatch = summaryResponse.match(/<summary>([\s\S]*?)<\/summary/);
     newSummary = summaryMatch ? summaryMatch[1] : undefined;
     console.log('Extracted summary:', newSummary);
 
@@ -171,83 +176,81 @@ export async function POST(req: NextRequest) {
 
   console.log('responsePrompt', prompt);
 
-  const response = await createCompletion(prompt, {
-    sessionId: conversationId,
-    userId,
-    type: 'response',
-  });
+  const response = await createStream(
+    prompt,
+    {
+      sessionId: conversationId,
+      userId,
+      type: 'response',
+    },
+    async (response) => {
+      await Promise.all([
+        // Save the user message
+        honcho.apps.users.sessions.messages
+          .create(appId, userId, conversationId, {
+            is_user: true,
+            content: message,
+          })
+          .then(async (newUserMessage) => {
+            // Save the thought metamessage
+            await honcho.apps.users.sessions.metamessages.create(
+              appId,
+              userId,
+              conversationId,
+              {
+                message_id: newUserMessage.id,
+                metamessage_type: 'thought',
+                content: thought || '',
+                metadata: { type: 'assistant' },
+              }
+            );
+
+            // Save honcho metamessage
+            await honcho.apps.users.sessions.metamessages.create(
+              appId,
+              userId,
+              conversationId,
+              {
+                message_id: newUserMessage.id,
+                metamessage_type: 'honcho',
+                content: honchoThought || '',
+                metadata: { type: 'assistant' },
+              }
+            );
+          }),
+
+        // Save summary metamessage if one was created
+        ...(newSummary
+          ? [
+              honcho.apps.users.sessions.metamessages.create(
+                appId,
+                userId,
+                conversationId,
+                {
+                  message_id: lastMessageOfSummary!.id,
+                  metamessage_type: 'summary',
+                  content: newSummary,
+                  metadata: { type: 'assistant' },
+                }
+              ),
+            ]
+          : []),
+      ]);
+
+      await honcho.apps.users.sessions.messages.create(
+        appId,
+        userId,
+        conversationId,
+        {
+          is_user: false,
+          content: response.text,
+        }
+      );
+    }
+  );
 
   if (!response) {
     throw new Error('Failed to get response');
   }
-
-  const responseText = response.text;
-
-  // Execute all requests in parallel
-  await Promise.all([
-    // Save the user message
-    honcho.apps.users.sessions.messages
-      .create(appId, userId, conversationId, {
-        is_user: true,
-        content: message,
-      })
-      .then(async (newUserMessage) => {
-        // Save the thought metamessage
-        await honcho.apps.users.sessions.metamessages.create(
-          appId,
-          userId,
-          conversationId,
-          {
-            message_id: newUserMessage.id,
-            metamessage_type: 'thought',
-            content: thought || '',
-            metadata: { type: 'assistant' },
-          }
-        );
-
-        // Save honcho metamessage
-        await honcho.apps.users.sessions.metamessages.create(
-          appId,
-          userId,
-          conversationId,
-          {
-            message_id: newUserMessage.id,
-            metamessage_type: 'honcho',
-            content: honchoThought || '',
-            metadata: { type: 'assistant' },
-          }
-        );
-      }),
-
-    // Save assistant message
-    honcho.apps.users.sessions.messages.create(appId, userId, conversationId, {
-      is_user: false,
-      content: responseText,
-    }),
-
-    // Save summary metamessage if one was created
-    ...(newSummary
-      ? [
-          honcho.apps.users.sessions.metamessages.create(
-            appId,
-            userId,
-            conversationId,
-            {
-              message_id: lastMessageOfSummary!.id,
-              metamessage_type: 'summary',
-              content: newSummary,
-              metadata: { type: 'assistant' },
-            }
-          ),
-        ]
-      : []),
-  ]);
-
-  return new NextResponse(responseText, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/plain',
-      'Cache-Control': 'no-cache',
-    },
-  });
+  return response;
 }
