@@ -2,12 +2,16 @@ import './globals.css';
 import 'react-loading-skeleton/dist/skeleton.css';
 import type { Metadata } from 'next';
 import { Roboto_Mono } from 'next/font/google';
-import { PHProvider, PostHogPageview, SWRProvider } from './providers';
+import {
+  PHProvider,
+  PostHogPageview,
+  SWRProvider,
+  ViewportScaleProvider,
+} from './providers';
 import { Suspense } from 'react';
 import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { departureMono } from '@/utils/fonts';
 import { cn } from '@/utils/helpers';
 
 const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
@@ -69,6 +73,7 @@ export default function RootLayout({
             <SWRProvider>
               <div className="h-full flex flex-col">
                 <Header />
+                <ViewportScaleProvider />
                 <main className="flex-1 overflow-y-auto">{children}</main>
               </div>
             </SWRProvider>
