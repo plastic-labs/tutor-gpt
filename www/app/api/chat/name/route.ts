@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const finalMessage = user`${message}`;
   const prompt = [...namePrompt, finalMessage];
 
-  const completion = await createCompletion(
+  const name = await createCompletion(
     prompt,
     {
       sessionId: 'name',
@@ -30,5 +30,5 @@ export async function POST(req: NextRequest) {
     }
   );
 
-  return NextResponse.json({ name: completion.text });
+  return NextResponse.json({ name });
 }

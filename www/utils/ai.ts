@@ -233,28 +233,28 @@ export async function createCompletion(
   return result.text;
 }
 
-export async function createObject<T extends z.Schema>(
-  messages: Message[],
-  schema: T,
-  metadata: {
-    sessionId: string;
-    userId: string;
-    type: string;
-  }
-): Promise<z.infer<T>> {
-  const result = generateObject({
-    model: openrouter(MODEL),
-    messages,
-    // @ts-expect-error zod is not typed
-    schema,
-    metadata: {
-      sessionId: metadata.sessionId,
-      userId: metadata.userId,
-      release: SENTRY_RELEASE,
-      environment: SENTRY_ENVIRONMENT,
-      tags: [metadata.type],
-    },
-  });
+// export async function createObject<T extends z.Schema>(
+//   messages: Message[],
+//   schema: T,
+//   metadata: {
+//     sessionId: string;
+//     userId: string;
+//     type: string;
+//   }
+// ): Promise<z.infer<T>> {
+//   const result = generateObject({
+//     model: openrouter(MODEL),
+//     messages,
+//     // @ts-expect-error zod is not typed
+//     schema,
+//     metadata: {
+//       sessionId: metadata.sessionId,
+//       userId: metadata.userId,
+//       release: SENTRY_RELEASE,
+//       environment: SENTRY_ENVIRONMENT,
+//       tags: [metadata.type],
+//     },
+//   });
 
-  return result;
-}
+//   return result;
+// }

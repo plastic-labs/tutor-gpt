@@ -396,22 +396,26 @@ What's on your mind? Let's dive in. 🌱`,
   }
 
   async function processName(messageToSend: string, conversationId: string) {
-    const nameResponse = await fetch('/api/chat/name', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: messageToSend,
-      }),
-    });
+    try {
+      const nameResponse = await fetch('/api/chat/name', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: messageToSend,
+        }),
+      });
 
-    if (nameResponse.ok) {
-      const { name } = await nameResponse.json();
-      if (name !== 'NA') {
-        await updateConversation(conversationId, name);
-        await mutateConversations();
+      if (nameResponse.ok) {
+        const { name } = await nameResponse.json();
+        if (name !== 'NA') {
+          await updateConversation(conversationId, name);
+          await mutateConversations();
+        }
       }
+    } catch (error) {
+      console.error('Failed to process name:', error);
     }
   }
 
