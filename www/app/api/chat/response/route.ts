@@ -160,16 +160,17 @@ export async function POST(req: NextRequest) {
 
   const history = responseHistory.map((message) => {
     if (message.is_user) {
-      return user`<honcho>${getHonchoMessage(message.id)}</honcho>
+      return user`<context>${getHonchoMessage(message.id)}</context>
       ${message.content}`;
     } else {
       return assistant`${message.content}`;
     }
   });
 
+  
   const summaryMessage = user`<past_summary>${newSummary || lastSummary}</past_summary>`;
+  const finalMessage = user`<context>${honchoThought}</context>
 
-  const finalMessage = user`<honcho>${honchoThought}</honcho>
   ${message}`;
 
   const prompt = [...responsePrompt, summaryMessage, ...history, finalMessage];
