@@ -144,8 +144,16 @@ export async function POST(req: NextRequest) {
     console.log('Full response:', summaryResponse);
 
     // Extract summary from response
-    const summaryMatch = summaryResponse.match(/<summary>([\s\S]*?)<\/summary/);
-    newSummary = summaryMatch ? summaryMatch[1] : undefined;
+    const extractSummary = (response: string): string | undefined => {
+      const summaryMatch = response.match(/<summary>([\s\S]*?)<\/summary/);
+      if (!summaryMatch) {
+        console.warn('Failed to extract summary with expected format');
+        // Fallback to using the entire response if it doesn't contain tags
+        return response.trim();
+      }
+      return summaryMatch[1];
+    };
+    newSummary = extractSummary(summaryResponse);
     console.log('Extracted summary:', newSummary);
 
     console.log('=== Summary Generation Complete ===');
