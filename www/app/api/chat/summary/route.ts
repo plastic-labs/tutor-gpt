@@ -2,13 +2,11 @@ import { createCompletion, user } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import summaryPrompt from '@/utils/prompts/summary';
 import { NextRequest, NextResponse } from 'next/server';
+import { MAX_CONTEXT_SIZE, SUMMARY_SIZE } from '@/utils/prompts/summary';
 
 export const runtime = 'nodejs';
 export const maxDuration = 100;
 export const dynamic = 'force-dynamic';
-
-export const MAX_CONTEXT_SIZE = 11;
-export const SUMMARY_SIZE = 5;
 
 // export const MAX_CONTEXT_SIZE = 3;
 // export const SUMMARY_SIZE = 2;

@@ -2,7 +2,7 @@ import { assistant, createStream, getUserData, user } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import responsePrompt from '@/utils/prompts/response';
 import { NextRequest, NextResponse } from 'next/server';
-import { MAX_CONTEXT_SIZE, SUMMARY_SIZE } from '../summary/route';
+import { MAX_CONTEXT_SIZE, SUMMARY_SIZE } from '@/utils/prompts/summary';
 
 export const runtime = 'nodejs';
 export const maxDuration = 100;
