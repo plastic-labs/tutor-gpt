@@ -107,11 +107,17 @@ export async function POST(req: NextRequest) {
   console.log(prompt);
   console.log('\n\n\n');
 
-  const stream = await createStream(prompt, {
-    sessionId: conversationId,
-    userId,
-    type: 'thought',
-  });
+  const stream = await createStream(
+    prompt,
+    {
+      sessionId: conversationId,
+      userId,
+      type: 'thought',
+    },
+    async (response) => {
+      console.log('Response:', response.text);
+    }
+  );
 
   if (!stream) {
     throw new Error('Failed to get stream');

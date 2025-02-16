@@ -1,21 +1,14 @@
-import {
-  assistant,
-  createCompletion,
-  createStream,
-  getUserData,
-  user,
-} from '@/utils/ai';
+import { assistant, createStream, getUserData, user } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import responsePrompt from '@/utils/prompts/response';
-import summaryPrompt from '@/utils/prompts/summary';
 import { NextRequest, NextResponse } from 'next/server';
+import { MAX_CONTEXT_SIZE, SUMMARY_SIZE } from '../summary/route';
 
 export const runtime = 'nodejs';
 export const maxDuration = 100;
-export const dynamic = 'force-dynamic'; // always run dynamically
+export const dynamic = 'force-dynamic';
 
-const MAX_CONTEXT_SIZE = 11;
-const SUMMARY_SIZE = 5;
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export async function POST(req: NextRequest) {
   const { message, conversationId, thought, honchoThought } = await req.json();
@@ -67,7 +60,6 @@ export async function POST(req: NextRequest) {
   const lastSummaryMessageIndex = responseHistory.findIndex(
     (m) => m.id === summaryHistory[0]?.message_id
   );
-  console.log('lastSummaryMessageIndex', lastSummaryMessageIndex);
 
   // Check if we've exceeded max context size since last summary
   const messagesSinceLastSummary =
@@ -76,91 +68,35 @@ export async function POST(req: NextRequest) {
       : responseHistory.length - lastSummaryMessageIndex;
 
   const needsSummary = messagesSinceLastSummary >= MAX_CONTEXT_SIZE;
-  console.log('messagesSinceLastSummary', messagesSinceLastSummary);
-  console.log('needsSummary', needsSummary);
 
   const lastMessageOfSummary = needsSummary
     ? responseHistory[responseHistory.length - MAX_CONTEXT_SIZE + SUMMARY_SIZE]
     : undefined;
 
-  let newSummary: string | undefined;
+  console.log('lastMessageOfSummary', lastMessageOfSummary);
+  console.log('messagesSinceLastSummary', messagesSinceLastSummary);
+  console.log('needsSummary', needsSummary);
+  console.log('lastSummary', lastSummary);
+  // console.log('responseHistory', responseHistory);
 
-  console.log('=== CONVERSATION STATUS ===');
-  console.log('Total messages:', responseHistory.length);
-  console.log('Messages since last summary:', messagesSinceLastSummary);
-  console.log('Last summary message index:', lastSummaryMessageIndex);
-  console.log('Last summary content:', lastSummary);
-  console.log('Last message of summary:', lastMessageOfSummary?.content);
-  console.log('Needs summary:', needsSummary);
-  console.log('================================');
-  if (needsSummary) {
-    console.log('=== Starting Summary Generation ===');
-
-    // Get the most recent MAX_CONTEXT_SIZE messages
-    const recentMessages = responseHistory.slice(-MAX_CONTEXT_SIZE);
-    console.log('Recent messages:', recentMessages);
-
-    // Get the oldest SUMMARY_SIZE messages from those
-    const messagesToSummarize = recentMessages.slice(0, SUMMARY_SIZE);
-    console.log('Messages to summarize:', messagesToSummarize);
-
-    // Format messages for summary prompt
-    const formattedMessages = messagesToSummarize
-      .map((msg) => {
-        if (msg.is_user) {
-          return `User: ${msg.content}`;
-        }
-        return `Assistant: ${msg.content}`;
-      })
-      .join('\n');
-    console.log('Formatted messages:', formattedMessages);
-
-    // Create summary prompt with existing summary if available
-    const summaryMessages = [
-      ...summaryPrompt,
-      user`<new_messages>
-          ${formattedMessages}
-          </new_messages>
-
-          <existing_summary>
-          ${lastSummary || ''}
-          </existing_summary>`,
-    ];
-    console.log('Summary messages:', summaryMessages);
-
-    // Get summary response
-    console.log('Creating summary completion...');
-    const summaryResponse = await createCompletion(summaryMessages, {
-      sessionId: conversationId,
-      userId,
-      type: 'summary',
+  // If summary is needed, trigger background summary generation
+  if (needsSummary && lastMessageOfSummary) {
+    fetch(`${baseUrl}/api/chat/summary`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversationId,
+        lastMessageOfSummaryId: lastMessageOfSummary.id,
+        responseHistory,
+        lastSummary,
+        userId,
+        appId,
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      }),
     });
-
-    if (!summaryResponse) {
-      console.error('Failed to get summary response');
-      throw new Error('Failed to get summary response');
-    }
-
-    console.log('Full response:', summaryResponse);
-
-    // Extract summary from response
-    const extractSummary = (response: string): string | undefined => {
-      const summaryMatch = response.match(/<summary>([\s\S]*?)<\/summary/);
-      if (!summaryMatch) {
-        console.warn('Failed to extract summary with expected format');
-        // Fallback to using the entire response if it doesn't contain tags
-        return response.trim();
-      }
-      return summaryMatch[1];
-    };
-    newSummary = extractSummary(summaryResponse);
-    console.log('Extracted summary:', newSummary);
-
-    console.log('=== Summary Generation Complete ===');
   }
-
-  console.log('honchoHistory', honchoHistory);
-  console.log('responseHistory', responseHistory);
 
   const getHonchoMessage = (id: string) =>
     honchoHistory.find((m) => m.message_id === id)?.content ||
@@ -175,8 +111,7 @@ export async function POST(req: NextRequest) {
     }
   });
 
-  
-  const summaryMessage = user`<past_summary>${newSummary || lastSummary}</past_summary>`;
+  const summaryMessage = user`<past_summary>${lastSummary}</past_summary>`;
   const finalMessage = user`<context>${honchoThought}</context>
 
   ${message}`;
@@ -227,23 +162,6 @@ export async function POST(req: NextRequest) {
               }
             );
           }),
-
-        // Save summary metamessage if one was created
-        ...(newSummary
-          ? [
-              honcho.apps.users.sessions.metamessages.create(
-                appId,
-                userId,
-                conversationId,
-                {
-                  message_id: lastMessageOfSummary!.id,
-                  metamessage_type: 'summary',
-                  content: newSummary,
-                  metadata: { type: 'assistant' },
-                }
-              ),
-            ]
-          : []),
       ]);
 
       await honcho.apps.users.sessions.messages.create(
