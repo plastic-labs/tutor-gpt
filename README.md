@@ -31,7 +31,7 @@ The tutor-gpt project is a Next.js application using the app router.
 - `app/` - the pages, layouts, and API routes
 - `hooks/` - Custom hooks made for the front end
 - `util/` - Various utility functions and integrations with external services
-- `components/` - this contains a FullStack `NextJS` version of Tutor-GPT
+- `components/` - this contains a FullStack `Next.js` version of Tutor-GPT
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
 - `scripts/` - Lifecycle scripts that help setup and sync the project
 
@@ -47,7 +47,7 @@ The project also makes use of several third party services
 
 ## Installation
 
-Clone the repo and install the necessary NodeJS depenencies
+Clone the repo and install the necessary Node.js dependencies
 
 ```bash
 git clone https://github.com/plastic-labs/tutor-gpt.git && cd tutor-gpt

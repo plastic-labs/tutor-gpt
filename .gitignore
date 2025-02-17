@@ -7,13 +7,6 @@
 # OS X
 .DS_Store
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-.python-version
-api/api.egg-info/*
-
 # Visual Studio Code
 .vscode/
 
@@ -21,41 +14,18 @@ api/api.egg-info/*
 .settings/
 *.code-workspace
 
-# langchain generated folders
-data/flagged_data_points/
-
-
-# Virtual Environment
-venv/
-.venv/
-
-# jupyter
-*.ipynb
-.ipynb_checkpoints/
-
 # Github Actions and nektos/act
 act.env
-
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-www/node_modules
-www/.pnp
-www/.pnp.js
-
-# testing
-www/coverage
-
-# next.js
-www/.next/
 /out/
 
 # production
 /build
 
 # misc
-.DS_Store
 *.pem
 
 # debug
@@ -94,10 +64,6 @@ dist/
 
 # production
 /build
-
-# misc
-.DS_Store
-*.pem
 
 # debug
 npm-debug.log*
