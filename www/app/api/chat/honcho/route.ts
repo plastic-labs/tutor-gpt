@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'; // always run dynamically
 
 function parseHonchoContent(str: string) {
   try {
-    const match = str.match(/<honcho>(.*?)<\/honcho>/);
+    const match = str.match(/<honcho>([\s\S]*?)<\/honcho>/);
     return match ? match[1].trim() : str;
   } catch {
     return str;

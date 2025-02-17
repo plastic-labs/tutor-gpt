@@ -70,9 +70,9 @@ export async function POST(req: NextRequest) {
     ),
   ]);
 
-  const messageHistory = Array.from(messageIter.items).reverse();
-  const thoughtHistory = Array.from(thoughtIter.items).reverse();
-  const honchoHistory = Array.from(honchoIter.items).reverse();
+  const messageHistory = Array.from(messageIter.items || []).reverse();
+  const thoughtHistory = Array.from(thoughtIter.items || []).reverse();
+  const honchoHistory = Array.from(honchoIter.items || []).reverse();
 
   const history = messageHistory.map((message, i) => {
     if (message.is_user) {

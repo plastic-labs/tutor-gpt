@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
 
     // Extract summary from response
     const extractSummary = (response: string): string | undefined => {
-      const summaryMatch = response.match(/<summary>([\s\S]*?)<\/summary/);
+      const summaryMatch = response.match(/<summary>([\s\S]*?)<\/summary>/);
       if (!summaryMatch) {
         console.warn('Failed to extract summary with expected format');
         // Fallback to using the entire response if it doesn't contain tags
