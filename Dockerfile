@@ -1,45 +1,68 @@
-# https://pythonspeed.com/articles/base-image-python-docker-images/
-# https://testdriven.io/blog/docker-best-practices/
-FROM python:3.11-slim-bullseye
+# https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
+FROM node:18-alpine AS base
+# Install dependencies only when needed
+FROM base AS deps
 
-COPY --from=ghcr.io/astral-sh/uv:0.4.9 /uv /bin/uv
-
-# Set Working directory
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache --virtual .gyp python3 build-base libc6-compat
 WORKDIR /app
 
-RUN addgroup --system app && adduser --system --group app
-RUN chown -R app:app /app
-USER app
+# Install dependencies based on the preferred package manager
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
-# Enable bytecode compilation
-ENV UV_COMPILE_BYTECODE=1
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
-# Copy from the cache instead of linking since it's a mounted volume
-ENV UV_LINK_MODE=copy
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry during the build.
+# ENV NEXT_TELEMETRY_DISABLED 1
 
-# Install the project's dependencies using the lockfile and settings
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-workspace --no-dev
 
-# Copy only requirements to cache them in docker layer
-# COPY --chown=app:app uv.lock  /app/
-COPY --chown=app:app pyproject.toml /app/
+RUN \
+  if [ -f yarn.lock ]; then yarn run build; \
+  elif [ -f package-lock.json ]; then npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
-# Place executables in the environment at the front of the path
-ENV PATH="/app/.venv/bin:$PATH"
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
 
-EXPOSE 8000
+ENV NODE_ENV=production
+# Uncomment the following line in case you want to disable telemetry during runtime.
+# ENV NEXT_TELEMETRY_DISABLED 1
 
-COPY --chown=app:app agent/ /app/agent/
-COPY --chown=app:app bot/ /app/bot/
-COPY --chown=app:app api/ /app/api/
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-      uv sync --package api
+COPY --from=builder /app/public ./public
 
-      # uv pip install -r /app/api/pyproject.toml
+# Set the correct permission for prerender cache
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
 
-# https://stackoverflow.com/questions/29663459/python-app-does-not-print-anything-when-running-detached-in-docker
-CMD ["fastapi", "run", "--host", "0.0.0.0", "api/main.py"]
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+# set hostname to localhost
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

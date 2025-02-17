@@ -1,6 +1,6 @@
 # Tutor-GPT
 
-![Static Badge](https://img.shields.io/badge/Version-0.6.0-blue)
+![Static Badge](https://img.shields.io/badge/Version-0.7.0-blue)
 [![Discord](https://img.shields.io/discord/1076192451997474938?logo=discord&logoColor=%23ffffff&label=Bloom&labelColor=%235865F2)](https://discord.gg/bloombotai)
 ![GitHub License](https://img.shields.io/github/license/plastic-labs/tutor-gpt)
 ![GitHub Repo stars](https://img.shields.io/github/stars/plastic-labs/tutor-gpt)
@@ -26,128 +26,203 @@ instructions below.
 
 ## Project Structure
 
-The tutor-gpt project is split between multiple different modules that split up
-the backend logic for different clients.
+The tutor-gpt project is a Next.js application using the app router.
 
-- `agent/` - this contains the core logic and prompting architecture
-- `bot/` - this contains the discord bot implementation
-- `api/` - this contains a FastAPI API interface that exposes the `agent/` logic
-- `www/` - this contains a FullStack `NextJS` version of Tutor-GPT
+- `app/` - the pages, layouts, and API routes
+- `hooks/` - Custom hooks made for the front end
+- `util/` - Various utility functions and integrations with external services
+- `components/` - this contains a FullStack `NextJS` version of Tutor-GPT
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
+- `scripts/` - Lifecycle scripts that help setup and sync the project
 
-Most of the project is developed using python with the exception of the NextJS
-application. For python [`uv`](https://docs.astral.sh/uv/) is used for dependency management and for the
-web interface we use `pnpm`.
+We use [pnpm](https://pnpm.io/) for dependency management.
 
-The `bot/` and `api/` modules both use `agent/` as a dependency and load it as a
-local package using `uv`
+The project also makes use of several third party services
 
-> NOTE
-> More information about the web interface is available in
-> [www/README](./www/README.md) this README primarily contains information about
-> the backend of tutor-gpt and the core logic of the tutor
-
-The `agent`, `bot`, and `api` modules are all managed using a `uv` [workspace](https://docs.astral.sh/uv/concepts/workspaces/#getting-started)
+- [Honcho](https://honcho.dev) for identity modeling and personalization
+- [Supabase](https://supabase.com) for user authentication and database
+- [Openrouter](https://openrouter.ai) for LLM integration
+- [PostHog](https://posthog.com) for analytics
+- [Stripe](https://stripe.com) for payments
 
 ## Installation
 
-This section goes over how to setup a python environment for running Tutor-GPT.
-This will let you run the discord bot, run the FastAPI application, or develop the `agent`
-code.
-
-The below commands will install all the dependencies necessary for running the
-tutor-gpt project. We recommend using uv to setup a virtual environment for
-the project.
+Clone the repo and install the necessary NodeJS depenencies
 
 ```bash
 git clone https://github.com/plastic-labs/tutor-gpt.git && cd tutor-gpt
-uv sync # set up the workspace
-source .venv/bin/activate # activate the virtual environment
+pnpm install
 ```
 
-From here you will then need to run `uv sync` in the appropriate directory
-depending on what you part of the project you want to run. For example to run
-the FastAPI application you need to navigate to the directory an re-run sync
+Set up your [environment variables](#environment-variables) in a `.env.local`
+file. Then launch the development server.
 
 ```bash
-cd api/
-uv sync
+pnpm run dev
 ```
 
-You should see a message indicated that the depenedencies were resolved and/or
-installed if not already installed before.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Docker
+## Environment Variables
 
-Alternatively (The recommended way) this project can be built and run with
-docker. [Install docker](https://docs.docker.com/get-docker/) and ensure it's
-running before proceeding.
+This section goes over the various environment variables necessary to run the
+Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 
-The web front end is built and run separately from the remainder of the
-codebase. Below are the commands for building the core of the tutor-gpt project
-which includes the necessary dependencies for running either the discord bot or
-the FastAPI endpoint.
+**Core**
+
+- `NEXT_PUBLIC_SITE_URL` — The URL that the Next.js application will run from. For
+  local development it will be `http://localhost:3000` by default.
+
+**Agent**
+
+- `MODEL` — The Openrouter model to use for generating responses.
+- `OPENAI_API_KEY` — The Openrouter API key to use
+- `HONCHO_URL` — The URL for the Honcho instance to use
+- `HONCHO_APP_NAME` — The name of the app in Honcho to use
+
+**Supabase**
+
+- `NEXT_PUBLIC_SUPABASE_URL` — The URL for your Supabase project.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — The public API key for your Supabase project.
+- `SUPABASE_SERVICE_ROLE_KEY` — The service key for the Supabase project.
+- `JWT_SECRET` — The secret key to use for signing JWT tokens
+
+**Stripe**
+
+- `NEXT_PUBLIC_STRIPE_ENABLED` — A feature flag to enable or disable stripe. By
+  default, it is `false`
+- `STRIPE_SECRET_KEY` — The stripe secret key
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — The stripe public key
+- `STRIPE_WEBHOOK_SECRET` — The stripe webhook secret
+
+Below are several optional environment variables to enable error monitoring and
+analytics.
+
+**Sentry**
+
+- `NEXT_PUBLIC_SENTRY_DSN` — The Sentry DSN
+- `SENTRY_ENVIRONMENT` — The Sentry environment
+- `SENTRY_RELEASE` — The Sentry release
+
+**Posthog**
+
+- `NEXT_PUBLIC_POSTHOG_KEY` — The Posthog project key
+- `NEXT_PUBLIC_POSTHOG_HOST` — The Posthog host
+
+## Supabase
+
+### Setup
+
+This project uses supabase for managing authentication and keeping track of
+stripe subscriptions. We recommend for testing and local development to use a
+local instance of supabase. The supabase-cli is the best way to do this.
+
+Follow the [Supabase Documentation](https://supabase.com/docs/guides/cli/local-development) for more information. The project contains a `supabase/` folder that contains the scaffolding SQL migrations necessary for setting up the necessary tables. Once you have the supabase cli installed you can simply run the below command in the `tutor-gpt` folder and a local instance of Supabase will start up.
+
+> NOTE: Local Supabase relies on docker so ensure docker is also running before running the below command
 
 ```bash
-git clone https://github.com/plastic-labs/tutor-gpt.git
+supabase start
+```
+
+Another, useful note about doing testing locally with supabase is that there is
+no need to verify an account when it is created so you can create a new account
+on the webui and then immediately sign in with it.
+
+### Authentication
+
+This application uses the new [Supabase SSR](https://supabase.com/docs/guides/auth/server-side) features and the PKCE authentication flow. So there are a
+few setup steps required before the app works with Supabase.
+
+The main change is that the email templates for authentication need to be
+modified to perform the token exchange
+
+Confirm Signup
+
+```html
+<h2>Confirm your signup</h2>
+
+<p>Follow this link to confirm your user:</p>
+<p>
+  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
+    >Confirm your email</a
+  >
+</p>
+```
+
+Invite User
+
+```html
+<h2>You have been invited</h2>
+
+<p>
+  You have been invited to create a user on {{ .SiteURL }}. Follow this link to
+  accept the invite:
+</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/path-to-your-update-password-page"
+    >Accept the invite</a
+  >
+</p>
+```
+
+Magic Link
+
+```html
+<h2>Magic Link</h2>
+
+<p>Follow this link to login:</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink"
+    >Log In</a
+  >
+</p>
+```
+
+Change Email Address
+
+```html
+<h2>Confirm Change of Email</h2>
+
+<p>
+  Follow this link to confirm the update of your email from {{ .Email }} to {{
+  .NewEmail }}:
+</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change"
+  >
+    Change Email
+  </a>
+</p>
+```
+
+Reset Password
+
+```html
+<h2>Reset Password</h2>
+
+<p>Follow this link to reset the password for your user:</p>
+<p>
+  <a
+    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/auth/reset"
+    >Reset Password</a
+  >
+</p>
+```
+
+## Docker
+
+A `Dockerfile` is included for convenience in self hosting an local development.
+to build and run the image run the following commands
+
+```bash
 cd tutor-gpt
-docker build -t tutor-gpt-core .
+docker build -t tutor-gpt .
+docker run --env-file .env.local -p 3000:3000 tutor-gpt
 ```
-
-Similarly, to build the web interface run the below commands
-
-## Usage
-
-Each of the interfaces of tutor-gpt require different environment variables to
-operate properly. Both the `bot/` and `api/` modules contain a `.env.template`
-file that you can use as a starting point. Copy and rename the `.env.template`
-to `.env`
-
-Below are more detailed explanations of environment variables
-
-### Common
-
-- `OPENAI_API_KEY` — The API Key for Openrouter which uses an OpenAI compatibile
-  API
-- `MODEL` — The openrouter model to use
-
-### FastAPI
-
-- `URL` — The URL endpoint for the frontend Next.js application
-- `HONCHO_URL` — The base URL for the instance of Honcho you are using
-- `HONCHO_APP_NAME` — The name of the honcho application to use for Tutor-GPT
-
-**Optional Extras**
-
-- `SENTRY_DSN_API` — The Sentry DSN for optional error reporting
-
-### Discord
-
-- `BOT_TOKEN` — This is the discord bot token. You can find instructions on how
-  to create a bot and generate a token in the [pycord
-  docs](https://guide.pycord.dev/getting-started/creating-your-first-bot).
-- `THOUGHT_CHANNEL_ID` — This is the discord channel for the bot to output
-  thoughts to. Make a channel in your server and copy the ID by right clicking the
-  channel and copying the link. The channel ID is the last string of numbers in
-  the link.
-
-### Docker/Containerization
-
-You can also optionally use the docker containers to run the application locally. Below is the command to run the discord bot locally using a `.env` file that is not within the docker container. Be careful not to add your `.env` in the docker container as this is insecure and can leak your secrets.
-
-```bash
-docker run --env-file .env tutor-gpt-core python bot/app.py
-```
-
-To run the webui you need to run the backend `FastAPI` and the frontend `NextJS` containers separately. In two separate terminal instances run the following commands to have both applications run.
-The current behaviour will utilize the `.env` file in your local repository and
-run the bot.
-
-```bash
-docker run -p 8000:8000 --env-file .env tutor-gpt-core python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 # FastAPI Backend
-```
-
-> NOTE: the default run command in the docker file for the core runs the FastAPI backend so you could just run docker run --env-file .env tutor-gpt-core
 
 ## Contributing
 

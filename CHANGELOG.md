@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.0]
+
+### Added
+
+- Stripe subscription management
+- Ability to retreive old thoughts
+- Like and dislike buttons
+- Settings pages
+- Google and Discord login buttons
+- Ability to change username
+- Ability to change avatar
+
+### Removed
+
+- Mirascope for prompt logic
+- Python modules opting for a fullstack NextJS implementation
 
 ## [0.6.0]
 
