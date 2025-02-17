@@ -395,21 +395,27 @@ What's on your mind? Let's dive in. 🌱`,
     }
   }
 
-  async function processSummary(messageToSend: string, conversationId: string) {
-    const summaryResponse = await fetch('/api/chat/summary', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: messageToSend,
-      }),
-    });
+  async function processName(messageToSend: string, conversationId: string) {
+    try {
+      const nameResponse = await fetch('/api/chat/name', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: messageToSend,
+        }),
+      });
 
-    if (summaryResponse.ok) {
-      const { summary } = await summaryResponse.json();
-      await updateConversation(conversationId, summary);
-      await mutateConversations();
+      if (nameResponse.ok) {
+        const { name } = await nameResponse.json();
+        if (name !== 'NA') {
+          await updateConversation(conversationId, name);
+          await mutateConversations();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to process name:', error);
     }
   }
 
@@ -454,7 +460,7 @@ What's on your mind? Let's dive in. 🌱`,
       const [thoughtText] = await Promise.all([
         processThought(messageToSend, conversationId!),
         ...(shouldGenerateSummary
-          ? [processSummary(messageToSend, conversationId!)]
+          ? [processName(messageToSend, conversationId!)]
           : []),
       ]);
 

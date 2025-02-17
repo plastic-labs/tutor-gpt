@@ -32,96 +32,6 @@ const openrouter = createOpenRouter({
   },
 });
 
-// export interface HistoryWithoutResponse {
-//   appId: string;
-//   userId: string;
-//   sessionId: string;
-//   userInput: string;
-//   thought?: string;
-//   honchoContent?: string;
-// }
-
-// type History = HistoryWithoutResponse & {
-//   aiResponse: string;
-// };
-
-// async function saveHistory({
-//   appId,
-//   userId,
-//   sessionId,
-//   userInput,
-//   thought,
-//   honchoContent,
-//   aiResponse,
-// }: History) {
-//   try {
-//     // Create user message
-//     const newUserMessage = await honcho.apps.users.sessions.messages.create(
-//       appId,
-//       userId,
-//       sessionId,
-//       {
-//         is_user: true,
-//         content: userInput,
-//       }
-//     );
-
-//     // Save thought metamessage for user message
-//     const thoughtMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n<tutor>${aiResponse}</tutor>\n${userInput}`;
-//     await honcho.apps.users.sessions.metamessages.create(
-//       appId,
-//       userId,
-//       sessionId,
-//       {
-//         message_id: newUserMessage.id,
-//         metamessage_type: 'thought',
-//         content: thoughtMetamessage,
-//         metadata: { type: 'user' },
-//       }
-//     );
-
-//     // Create AI message
-//     const newAiMessage = await honcho.apps.users.sessions.messages.create(
-//       appId,
-//       userId,
-//       sessionId,
-//       {
-//         is_user: false,
-//         content: aiResponse,
-//       }
-//     );
-
-//     // Save thought metamessage for AI message
-//     await honcho.apps.users.sessions.metamessages.create(
-//       appId,
-//       userId,
-//       sessionId,
-//       {
-//         content: thought || '',
-//         message_id: newAiMessage.id,
-//         metamessage_type: 'thought',
-//         metadata: { type: 'assistant' },
-//       }
-//     );
-
-//     // Save response metamessage
-//     const responseMetamessage = `<honcho-response>${honchoContent}</honcho-response>\n${userInput}`;
-//     await honcho.apps.users.sessions.metamessages.create(
-//       appId,
-//       userId,
-//       sessionId,
-//       {
-//         message_id: newAiMessage.id,
-//         metamessage_type: 'response',
-//         content: responseMetamessage,
-//       }
-//     );
-//   } catch (error) {
-//     Sentry.captureException(error);
-//     throw error; // Re-throw to be handled by caller
-//   }
-// }
-
 export async function getUserData() {
   const supabase = createClient();
 
@@ -158,13 +68,6 @@ export const assistant = (
   content: d(strings, ...values),
 });
 
-// export const system = (
-//   strings: TemplateStringsArray,
-//   ...values: unknown[]
-// ): Message => ({
-//   role: 'system',
-//   content: d(strings, ...values),
-// });
 export async function createStream(
   messages: Message[],
   metadata: {
@@ -204,11 +107,19 @@ export async function createCompletion(
     sessionId: string;
     userId: string;
     type: string;
+  },
+  parameters?: {
+    temperature?: number;
+    max_tokens?: number;
+    top_p?: number;
+    frequency_penalty?: number;
+    presence_penalty?: number;
   }
 ) {
-  const result = generateText({
+  const result = await generateText({
     model: openrouter(MODEL),
     messages,
+    ...parameters,
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -221,5 +132,6 @@ export async function createCompletion(
     },
   });
 
-  return result;
+  return result.text;
 }
+

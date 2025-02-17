@@ -6,7 +6,7 @@ import {
   // parsePrompt,
 } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
-import { thoughtPrompt } from '@/utils/prompts/thought';
+import thoughtPrompt from '@/utils/prompts/thought';
 import { createClient } from '@/utils/supabase/server';
 import { getChatAccessWithUser } from '@/utils/supabase/actions';
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,6 +19,8 @@ interface ThoughtCallProps {
   message: string;
   conversationId: string;
 }
+
+const MAX_CONTEXT_SIZE = 10;
 
 export async function POST(req: NextRequest) {
   const supabase = createClient();
@@ -41,36 +43,36 @@ export async function POST(req: NextRequest) {
 
   const { appId, userId } = honchoUserData;
 
-  const messageIter = await honcho.apps.users.sessions.messages.list(
-    appId,
-    userId,
-    conversationId,
-    {}
-  );
+  const [messageIter, thoughtIter, honchoIter] = await Promise.all([
+    honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
+      reverse: true,
+      size: MAX_CONTEXT_SIZE,
+    }),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'thought',
+        reverse: true,
+        size: MAX_CONTEXT_SIZE,
+      }
+    ),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'honcho',
+        reverse: true,
+        size: MAX_CONTEXT_SIZE,
+      }
+    ),
+  ]);
 
-  const messageHistory = Array.from(messageIter.items);
-
-  const thoughtIter = await honcho.apps.users.sessions.metamessages.list(
-    appId,
-    userId,
-    conversationId,
-    {
-      metamessage_type: 'thought',
-    }
-  );
-
-  const thoughtHistory = Array.from(thoughtIter.items);
-
-  const honchoIter = await honcho.apps.users.sessions.metamessages.list(
-    appId,
-    userId,
-    conversationId,
-    {
-      metamessage_type: 'honcho',
-    }
-  );
-
-  const honchoHistory = Array.from(honchoIter.items);
+  const messageHistory = Array.from(messageIter.items || []).reverse();
+  const thoughtHistory = Array.from(thoughtIter.items || []).reverse();
+  const honchoHistory = Array.from(honchoIter.items || []).reverse();
 
   const history = messageHistory.map((message, i) => {
     if (message.is_user) {
@@ -101,15 +103,21 @@ export async function POST(req: NextRequest) {
 
   const prompt = [...thoughtPrompt, ...history, finalMessage];
 
-  console.log('Messages:\n');
-  console.log(prompt);
-  console.log('\n\n\n');
+  // console.log('Messages:\n');
+  // console.log(prompt);
+  // console.log('\n\n\n');
 
-  const stream = await createStream(prompt, {
-    sessionId: conversationId,
-    userId,
-    type: 'thought',
-  });
+  const stream = await createStream(
+    prompt,
+    {
+      sessionId: conversationId,
+      userId,
+      type: 'thought',
+    },
+    async (response) => {
+      // console.log('Response:', response.text);
+    }
+  );
 
   if (!stream) {
     throw new Error('Failed to get stream');

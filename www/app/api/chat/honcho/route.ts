@@ -8,9 +8,9 @@ export const dynamic = 'force-dynamic'; // always run dynamically
 
 function parseHonchoContent(str: string) {
   try {
-    const match = str.match(/<honcho>(.*?)<\/honcho>/s);
+    const match = str.match(/<honcho>([\s\S]*?)<\/honcho>/);
     return match ? match[1].trim() : str;
-  } catch (error) {
+  } catch {
     return str;
   }
 }
@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
     { queries: query }
   );
 
-  console.log('dialecticQuery:', query);
-  console.log('dialecticQuery Response:', dialecticQuery);
+  // console.log('dialecticQuery:', query);
+  // console.log('dialecticQuery Response:', dialecticQuery);
 
   return NextResponse.json({ content: dialecticQuery.content });
 }
