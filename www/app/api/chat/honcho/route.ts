@@ -35,8 +35,8 @@ export async function POST(req: NextRequest) {
     { queries: query }
   );
 
-  console.log('dialecticQuery:', query);
-  console.log('dialecticQuery Response:', dialecticQuery);
+  // console.log('dialecticQuery:', query);
+  // console.log('dialecticQuery Response:', dialecticQuery);
 
   return NextResponse.json({ content: dialecticQuery.content });
 }

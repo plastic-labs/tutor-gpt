@@ -103,9 +103,9 @@ export async function POST(req: NextRequest) {
 
   const prompt = [...thoughtPrompt, ...history, finalMessage];
 
-  console.log('Messages:\n');
-  console.log(prompt);
-  console.log('\n\n\n');
+  // console.log('Messages:\n');
+  // console.log(prompt);
+  // console.log('\n\n\n');
 
   const stream = await createStream(
     prompt,
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       type: 'thought',
     },
     async (response) => {
-      console.log('Response:', response.text);
+      // console.log('Response:', response.text);
     }
   );
 

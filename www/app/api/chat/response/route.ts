@@ -3,6 +3,8 @@ import { honcho } from '@/utils/honcho';
 import responsePrompt from '@/utils/prompts/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { MAX_CONTEXT_SIZE, SUMMARY_SIZE } from '@/utils/prompts/summary';
+import jwt from 'jsonwebtoken'
+import { JWTPayload } from '@/utils/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 100;
@@ -13,7 +15,7 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
 export async function POST(req: NextRequest) {
   const { message, conversationId, thought, honchoThought } = await req.json();
 
-  console.log('honchoThought', honchoThought);
+  // console.log('honchoThought', honchoThought);
 
   const userData = await getUserData();
   if (!userData) {
@@ -81,10 +83,23 @@ export async function POST(req: NextRequest) {
 
   // If summary is needed, trigger background summary generation
   if (needsSummary && lastMessageOfSummary) {
+    const payload: JWTPayload = {
+      conversationId,
+      action: 'summarize',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (60 * 5) // 5 minutes
+    }
+    const secret = process.env.JWT_SECRET
+    if (!secret) {
+      throw new Error('JWT_SECRET is not defined')
+    }
+    const internalToken = jwt.sign(payload, secret)
+
     fetch(`${baseUrl}/api/chat/summary`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${internalToken}`
       },
       body: JSON.stringify({
         conversationId,
@@ -93,7 +108,6 @@ export async function POST(req: NextRequest) {
         lastSummary,
         userId,
         appId,
-        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       }),
     });
   }
@@ -118,7 +132,7 @@ export async function POST(req: NextRequest) {
 
   const prompt = [...responsePrompt, summaryMessage, ...history, finalMessage];
 
-  console.log('responsePrompt', prompt);
+  // console.log('responsePrompt', prompt);
 
   const response = await createStream(
     prompt,
