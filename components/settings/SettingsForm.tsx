@@ -156,7 +156,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="bg-input text-foreground flex-grow"
+                className="bg-input text-foreground grow"
               />
               <Button
                 onClick={handleProfileUpdate}

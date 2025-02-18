@@ -97,7 +97,7 @@ export default function SignUp(props: {
             type="email"
             id="Email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm text-foreground bg-accent`}
+            className={`p-2 mt-1 w-full rounded-md text-sm shadow-xs text-foreground bg-accent`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -116,7 +116,7 @@ export default function SignUp(props: {
               type="password"
               id="Password"
               name="password"
-              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm text-foreground bg-accent`}
+              className={`p-2 mt-1 w-full rounded-md text-sm shadow-xs text-foreground bg-accent`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -134,7 +134,7 @@ export default function SignUp(props: {
               type="password"
               id="PasswordConfirmation"
               name="password_confirmation"
-              className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm text-foreground bg-accent`}
+              className={`p-2 mt-1 w-full rounded-md text-sm shadow-xs text-foreground bg-accent`}
               value={passwordConfirmation}
               onChange={(e) => setPasswordConfirmation(e.target.value)}
             />
@@ -147,7 +147,7 @@ export default function SignUp(props: {
               type="checkbox"
               id="MarketingAccept"
               name="marketing_accept"
-              className={`h-5 w-5 rounded-md shadow-sm bg-accent`}
+              className={`h-5 w-5 rounded-md shadow-xs bg-accent`}
               checked={opt}
               onChange={(e) => setOpt(!opt)}
             />
@@ -165,7 +165,7 @@ export default function SignUp(props: {
               type="checkbox"
               id="AgeAccept"
               name="age_accept"
-              className={`h-5 w-5 rounded-md shadow-sm bg-accent`}
+              className={`h-5 w-5 rounded-md shadow-xs bg-accent`}
               checked={age}
               onChange={(e) => setAge(!age)}
               required
@@ -203,7 +203,7 @@ export default function SignUp(props: {
 
         <div className="sm:flex sm:items-center sm:gap-4">
           <button
-            className={`inline-block w-full sm:w-auto shrink-0 rounded-md text-gray-800 border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring ${
+            className={`inline-block w-full sm:w-auto shrink-0 rounded-md text-gray-800 border px-12 py-3 text-sm font-medium transition focus:outline-hidden focus:ring-3 ${
               theme === 'dark'
                 ? 'border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green'
                 : 'border-neon-green bg-neon-green hover:bg-transparent hover:text-blue-600'

@@ -516,7 +516,7 @@ What's on your mind? Let's dive in. 🌱`,
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         canUseApp={canUseApp}
       />
-      <div className="flex-1 flex flex-col flex-grow overflow-hidden">
+      <div className="flex-1 flex flex-col grow overflow-hidden">
         {!isSidebarOpen && (
           <button
             className={`absolute top-3 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2 border border-black`}
@@ -526,7 +526,7 @@ What's on your mind? Let's dive in. 🌱`,
           </button>
         )}
         {!isSubscribed && (
-          <section className="h-[63px] w-full bg-neon-green text-black text-center flex items-center justify-center flex-shrink-0">
+          <section className="h-[63px] w-full bg-neon-green text-black text-center flex items-center justify-center shrink-0">
             <p className="lg:ml-0 ml-12">
               {freeMessages === 0
                 ? "You've used all your free messages"
@@ -542,7 +542,7 @@ What's on your mind? Let's dive in. 🌱`,
             </p>
           </section>
         )}
-        <div className="flex flex-col flex-grow overflow-hidden bg-secondary">
+        <div className="flex flex-col grow overflow-hidden bg-secondary">
           <MessageList
             ref={messageListRef}
             messages={messages}
@@ -578,7 +578,7 @@ What's on your mind? Let's dive in. 🌱`,
                 placeholder={
                   canUseApp ? 'Type a message...' : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-none focus:outline-none ${
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-hidden focus:outline-hidden ${
                   canSend && canUseApp
                     ? 'border-green-200 focus:border-green-200'
                     : 'border-red-200 focus:border-red-200 opacity-50'

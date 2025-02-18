@@ -1,42 +1,102 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-html {
-  scroll-behavior: smooth;
+@custom-variant dark (&:is(.dark *));
+/* @custom-variant dark (&:where(.dark, .dark *)); */
+
+@theme {
+  --color-neon-green: #d1ef53;
+  --color-dark-green: #0e281c;
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
-.typing_dot {
-  animation: typing 1s infinite;
-}
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
 
-@keyframes typing {
-  0% {
-    opacity: 0;
-    scale: 0.5;
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
   }
-  50% {
-    opacity: 1;
-    scale: 1;
+}
+
+@layer utilities {
+  html {
+    scroll-behavior: smooth;
   }
-  100% {
-    opacity: 0;
-    scale: 0.5;
+
+  .typing_dot {
+    animation: typing 1s infinite;
   }
-}
 
-.typing_dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
+  @keyframes typing {
+    0% {
+      opacity: 0;
+      scale: 0.5;
+    }
+    50% {
+      opacity: 1;
+      scale: 1;
+    }
+    100% {
+      opacity: 0;
+      scale: 0.5;
+    }
+  }
 
-.typing_dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
+  .typing_dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
 
-.disclaimer-text {
-  font-size: 0.8rem;
-  opacity: 0.7;
-  color: hsl(var(--foreground));
+  .typing_dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  .disclaimer-text {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    color: hsl(var(--foreground));
+  }
 }
 
 @layer base {
@@ -62,4 +122,8 @@ html {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+button:hover {
+  cursor: pointer;
 }

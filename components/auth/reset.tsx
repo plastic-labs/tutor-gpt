@@ -61,7 +61,7 @@ export default function Forgot(props: any) {
           type="password"
           id="Password"
           name="password"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-sm"
+          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-gray-700 shadow-xs"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -69,7 +69,7 @@ export default function Forgot(props: any) {
 
       <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
         <button
-          className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
+          className="inline-block shrink-0 rounded-md border border-neon-green bg-neon-green px-12 py-3 text-sm font-medium transition hover:bg-transparent hover:text-blue-600 focus:outline-hidden focus:ring-3 active:text-blue-500"
           onClick={handleReset}
         >
           Reset

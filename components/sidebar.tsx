@@ -165,15 +165,14 @@ export default function Sidebar({
 
   return (
     <div
-      className={`${departureMono.className} absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      }`}
+      className={`${departureMono.className} absolute lg:relative top-0 left-0 z-40 h-full w-80 transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
     >
       <div className="h-full overflow-hidden bg-background dark:text-white flex flex-col border-gray-200 dark:border-gray-700 border-r">
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-200 dark:border-gray-700">
           <button
-            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
+            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10 cursor-pointer"
             onClick={addChat}
             disabled={!canUseApp}
           >
@@ -191,18 +190,18 @@ export default function Sidebar({
         <div className="flex flex-col flex-1 overflow-y-auto divide-y divide-gray-300 dark:divide-gray-700">
           {conversations.length > 0
             ? conversations.map((cur, i) => (
-                <ConversationTab
-                  conversation={cur}
-                  select={() => setConversationId(cur.conversationId)}
-                  selected={conversationId === cur.conversationId}
-                  edit={() => editConversation(cur)}
-                  del={() => removeConversation(cur)}
-                  key={i}
-                />
-              ))
+              <ConversationTab
+                conversation={cur}
+                select={() => setConversationId(cur.conversationId)}
+                selected={conversationId === cur.conversationId}
+                edit={() => editConversation(cur)}
+                del={() => removeConversation(cur)}
+                key={i}
+              />
+            ))
             : Array.from({ length: 5 }).map((_, i) => (
-                <ConversationTab loading key={i} />
-              ))}
+              <ConversationTab loading key={i} />
+            ))}
         </div>
 
         {/* Section 3: Authentication information */}

@@ -103,7 +103,7 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
 
     return (
       <section
-        className="flex-grow overflow-y-auto px-4 lg:px-5 dark:text-white"
+        className="grow overflow-y-auto px-4 lg:px-5 dark:text-white"
         ref={messageContainerRef}
       >
         {messages ? (

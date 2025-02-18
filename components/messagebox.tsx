@@ -110,11 +110,10 @@ export default function MessageBox({
           <div className="flex flex-col gap-2 mt-2">
             <div className="flex justify-start gap-2">
               <button
-                className={`p-2 rounded-full ${
-                  reaction === 'thumbs_up'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-accent text-foreground'
-                } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
+                className={`p-2 rounded-full ${reaction === 'thumbs_up'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-accent text-foreground'
+                  } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
                 onClick={() => handleReaction('thumbs_up')}
                 disabled={pendingReaction !== null}
               >
@@ -127,11 +126,10 @@ export default function MessageBox({
                 </div>
               </button>
               <button
-                className={`p-2 rounded-full ${
-                  reaction === 'thumbs_down'
-                    ? 'bg-red-500 text-white'
-                    : 'bg-accent text-foreground'
-                } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
+                className={`p-2 rounded-full cursor-pointer ${reaction === 'thumbs_down'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-accent text-foreground'
+                  } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
                 onClick={() => handleReaction('thumbs_down')}
                 disabled={pendingReaction !== null}
               >
@@ -144,11 +142,10 @@ export default function MessageBox({
                 </div>
               </button>
               <button
-                className={`p-2 rounded-full ${
-                  isThoughtOpen
-                    ? 'bg-neon-green text-gray-800'
-                    : 'bg-accent text-foreground'
-                }`}
+                className={`p-2 rounded-full cursor-pointer ${isThoughtOpen
+                  ? 'bg-neon-green text-gray-800'
+                  : 'bg-accent text-foreground'
+                  }`}
                 onClick={handleFetchThought}
                 disabled={isThoughtLoading}
               >

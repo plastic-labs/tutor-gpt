@@ -3,7 +3,6 @@ import {
   getUserData,
   user,
   assistant,
-  // parsePrompt,
 } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import thoughtPrompt from '@/utils/prompts/thought';
@@ -115,7 +114,7 @@ export async function POST(req: NextRequest) {
       type: 'thought',
     },
     async (response) => {
-      // console.log('Response:', response.text);
+      console.log('Response:', response.text);
     }
   );
 

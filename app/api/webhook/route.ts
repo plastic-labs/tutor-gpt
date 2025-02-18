@@ -23,7 +23,7 @@ const relevantEvents = new Set([
 ]);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-01-27.acacia',
 });
 
 export async function POST(req: Request) {

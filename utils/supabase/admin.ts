@@ -12,7 +12,7 @@ const TRIAL_PERIOD_DAYS = 0;
 const FREE_MESSAGE_LIMIT = 50;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-01-27.acacia',
 });
 
 // Note: supabaseAdmin uses the SERVICE_ROLE_KEY which you must only use in a secure server-side context

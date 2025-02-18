@@ -26,9 +26,9 @@ const openrouter = createOpenRouter({
     'X-Title': 'Bloombot',
   },
   extraBody: {
-    provider: {
-      order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
-    },
+    // provider: {
+    //   order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+    // },
   },
 });
 

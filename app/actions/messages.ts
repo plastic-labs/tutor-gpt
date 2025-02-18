@@ -84,11 +84,11 @@ export async function getThought(conversationId: string, messageId: string) {
         const thoughtText = thoughts.items[0]?.content;
         const dialecticText = dialectic.items[0]?.content;
 
-        if (!thoughtText) {
+        if (!thoughtText && !dialecticText) {
           return null;
         }
 
-        let completeThought = thoughtText;
+        let completeThought = thoughtText ?? '';
 
         if (dialecticText) {
           completeThought += '\n\nDialectic Response:\n\n' + dialecticText;
