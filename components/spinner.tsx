@@ -1,7 +1,12 @@
 import React from 'react';
 import { FaCircleNotch } from 'react-icons/fa';
 
-const Spinner = ({ size = 24, color = '#000000' }) => {
+interface SpinnerProps {
+  size?: number;
+  color?: string;
+}
+
+const Spinner = ({ size = 24, color = '#000000' }: SpinnerProps) => {
   const spinnerStyle = {
     animation: 'spin 1s linear infinite',
     color: color,

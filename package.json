@@ -3,7 +3,7 @@
   "version": "0.7.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint components/ app/ utils/",
@@ -18,7 +18,7 @@
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.1",
-    "@sentry/nextjs": "^8.38.0",
+    "@sentry/nextjs": "^9.1.0",
     "@stripe/stripe-js": "^4.9.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.6",
@@ -32,15 +32,15 @@
     "jsonwebtoken": "^9.0.2",
     "katex": "^0.16.11",
     "langfuse-vercel": "^3.32.0",
-    "next": "^14.2.16",
+    "next": "15.1.7",
     "next-themes": "^0.3.0",
     "openai": "^4.72.0",
     "posthog-js": "^1.176.0",
-    "react": "18.3.1",
-    "react-dom": "18.2.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "react-icons": "^4.12.0",
     "react-loading-skeleton": "^3.5.0",
-    "react-markdown": "^8.0.7",
+    "react-markdown": "^9.0.3",
     "react-syntax-highlighter": "^15.6.1",
     "react-toggle-dark-mode": "^1.1.1",
     "rehype-katex": "^7.0.1",
@@ -50,17 +50,18 @@
     "stripe": "^16.12.0",
     "sweetalert2": "^11.14.5",
     "sweetalert2-react-content": "^5.0.7",
-    "swr": "^2.2.5",
+    "swr": "^2.3.2",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@next/eslint-plugin-next": "^15.1.7",
     "@shadcn/ui": "^0.0.4",
     "@types/jsonwebtoken": "^9.0.8",
     "@types/node": "20.5.4",
-    "@types/react": "18.2.21",
-    "@types/react-dom": "18.2.7",
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.4",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/retry": "^0.12.5",
     "@types/uuid": "^9.0.8",
@@ -68,7 +69,6 @@
     "dotenv": "^16.4.5",
     "encoding": "^0.1.13",
     "eslint": "^9.13.0",
-    "eslint-config-next": "^13.5.7",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.2",
     "globals": "^15.11.0",
@@ -77,7 +77,7 @@
     "prettier-plugin-tailwindcss": "^0.5.14",
     "supabase": "^1.207.9",
     "tailwindcss": "3.3.3",
-    "typescript": "5.1.6",
+    "typescript": "5.7.3",
     "typescript-eslint": "^8.11.0"
   },
   "prettier": {
@@ -85,5 +85,11 @@
     "tabWidth": 2,
     "semi": true,
     "singleQuote": true
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.0.10",
+      "@types/react-dom": "19.0.4"
+    }
   }
 }

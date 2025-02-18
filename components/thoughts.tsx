@@ -13,7 +13,7 @@ export default function Thoughts({
 }: {
   thought: string;
   isThoughtsOpen: boolean;
-  setIsThoughtsOpen: Function;
+  setIsThoughtsOpen: (isOpen: boolean) => void;
 }) {
   return (
     <section

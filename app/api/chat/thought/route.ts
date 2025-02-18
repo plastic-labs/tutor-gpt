@@ -23,7 +23,7 @@ interface ThoughtCallProps {
 const MAX_CONTEXT_SIZE = 10;
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const honchoUserData = await getUserData();
   const { message, conversationId } = (await req.json()) as ThoughtCallProps;
 

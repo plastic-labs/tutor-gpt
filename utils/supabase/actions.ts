@@ -10,7 +10,7 @@ export async function getChatAccessWithUser(userId: string) {
 }
 
 export async function createOrRetrieveFreeTrialSubscription(userId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const existingSub = await getSubscription(supabase);
   if (existingSub) return existingSub;
 

@@ -7,7 +7,7 @@ export async function getMessages(conversationId: string) {
   return Sentry.startSpan(
     { name: 'server-action.getMessages', op: 'server.action' },
     async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const honchoApp = await getHonchoApp();
 
@@ -43,7 +43,7 @@ export async function getThought(conversationId: string, messageId: string) {
   return Sentry.startSpan(
     { name: 'server-action.getThought', op: 'server.action' },
     async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const honchoApp = await getHonchoApp();
 
@@ -111,7 +111,7 @@ export async function addOrRemoveReaction(
   return Sentry.startSpan(
     { name: 'server-action.addOrRemoveReaction', op: 'server.action' },
     async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const honchoApp = await getHonchoApp();
 

@@ -33,7 +33,7 @@ const openrouter = createOpenRouter({
 });
 
 export async function getUserData() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -134,4 +134,3 @@ export async function createCompletion(
 
   return result.text;
 }
-

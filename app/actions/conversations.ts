@@ -11,7 +11,7 @@ export async function getConversations() {
   return Sentry.startSpan(
     { name: 'server-action.getConversations', op: 'server.action' },
     async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const {
         data: { user },
@@ -46,7 +46,7 @@ export async function createConversation() {
   return Sentry.startSpan(
     { name: 'server-action.createConversation', op: 'server.action' },
     async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const {
         data: { user },
@@ -74,7 +74,7 @@ export async function deleteConversation(conversationId: string) {
   return Sentry.startSpan(
     { name: 'server-action.deleteConversation', op: 'server.action' },
     async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const {
         data: { user },
@@ -102,7 +102,7 @@ export async function updateConversation(conversationId: string, name: string) {
   return Sentry.startSpan(
     { name: 'server-action.updateConversation', op: 'server.action' },
     async () => {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const {
         data: { user },

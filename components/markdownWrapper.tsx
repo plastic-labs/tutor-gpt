@@ -87,11 +87,8 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
         className,
         children,
         ...props
-      }: {
+      }: React.ComponentPropsWithoutRef<'code'> & {
         inline?: boolean;
-        className?: string;
-        children: React.ReactNode;
-        [key: string]: any;
       }) => {
         const match = /language-(\w+)/.exec(className || '');
         return !inline && match ? (
@@ -113,8 +110,8 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
   );
 
   // Memoize plugins
-  const remarkPlugins = useMemo(() => [remarkMath], []);
-  const rehypePlugins = useMemo(() => [rehypeKatex], []);
+  const remarkPlugins = useMemo(() => [remarkMath] as Array<any>, []);
+  const rehypePlugins = useMemo(() => [rehypeKatex] as Array<any>, []);
 
   if (!text) return <Typing />;
 
@@ -122,7 +119,6 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
-        // @ts-expect-error i think typing is wrong from the library itself, this comment should raise an error once its fixed. // TODO: remove this comment
         rehypePlugins={rehypePlugins}
         components={components}
       >

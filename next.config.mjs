@@ -109,9 +109,9 @@ const nextConfig = {
   },
 
   output: "standalone",
-  experimental: {
-    instrumentationHook: true,
-  }
+  // experimental: {
+  //   instrumentationHook: true,
+  // }
   // webpack: (config, { isServer }) => {
   //   // Add a fallback for the https scheme
   //   config.resolve.fallback = {

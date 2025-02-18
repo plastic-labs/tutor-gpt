@@ -3,7 +3,7 @@ import { honcho } from '@/utils/honcho';
 import responsePrompt from '@/utils/prompts/response';
 import { NextRequest, NextResponse } from 'next/server';
 import { MAX_CONTEXT_SIZE, SUMMARY_SIZE } from '@/utils/prompts/summary';
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 import { JWTPayload } from '@/utils/types';
 
 export const runtime = 'nodejs';
@@ -87,19 +87,19 @@ export async function POST(req: NextRequest) {
       conversationId,
       action: 'summarize',
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (60 * 5) // 5 minutes
-    }
-    const secret = process.env.JWT_SECRET
+      exp: Math.floor(Date.now() / 1000) + 60 * 5, // 5 minutes
+    };
+    const secret = process.env.JWT_SECRET;
     if (!secret) {
-      throw new Error('JWT_SECRET is not defined')
+      throw new Error('JWT_SECRET is not defined');
     }
-    const internalToken = jwt.sign(payload, secret)
+    const internalToken = jwt.sign(payload, secret);
 
     fetch(`${baseUrl}/api/chat/summary`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${internalToken}`
+        Authorization: `Bearer ${internalToken}`,
       },
       body: JSON.stringify({
         conversationId,
