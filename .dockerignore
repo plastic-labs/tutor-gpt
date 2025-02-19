@@ -1,9 +1,7 @@
-__pycache__
-.DS_STORE
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
 README.md
-venv/
-.venv/
-act.env
-.github/
-ecs.json
-fly.toml
+.next
+.git

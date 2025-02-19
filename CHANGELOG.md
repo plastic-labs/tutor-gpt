@@ -1,9 +1,26 @@
 # Change Log
+
 All notable changes to this project will be documented in this file.
- 
+
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.0]
+
+### Added
+
+- Stripe subscription management
+- Ability to retrieve old thoughts
+- Like and dislike buttons
+- Settings pages
+- Google and Discord login buttons
+- Ability to change username
+- Ability to change avatar
+
+### Removed
+
+- Mirascope for prompt logic
+- Python modules opting for a fullstack Next.js implementation
 
 ## [0.6.0]
 
@@ -14,7 +31,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Using mirascope instead of langchain for a smaller package size
-
 
 ## [0.5.2] - 2023-12-20
 
@@ -45,7 +61,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Update Langchain version to ^0.0.348
 - Update OpenAI Package to ^1.3.8
-
 
 ## [0.4.1] – 2023-09-14
 
@@ -92,7 +107,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - The default LLM is now using Azure based OpenAI models
- 
+
 ## [0.2.1] – 2023-08-11
 
 ### Changed
@@ -102,14 +117,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   for chaining together calls
 
 ## [0.2.0] – 2023-08-08
- 
+
 ### Added
 
 - Streamlit webui as an alternative method of using tutor-gpt
 - Langsmith support
 
 ### Changed
- 
+
 - **thoughts** will no longer be forwarded to a public channel if generated from
   a discord DM
 - Migrated to `ChatMessageHistory()`
