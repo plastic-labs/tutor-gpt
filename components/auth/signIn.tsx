@@ -57,7 +57,7 @@ export default function SignIn(props: any) {
             type="email"
             id="email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
+            className={`p-2 mt-1 w-full rounded-md text-sm shadow-xs bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -75,7 +75,7 @@ export default function SignIn(props: any) {
             type="password"
             id="password"
             name="password"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-sm bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
+            className={`p-2 mt-1 w-full rounded-md text-sm shadow-xs bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -83,7 +83,7 @@ export default function SignIn(props: any) {
 
         <div className="sm:flex sm:items-center sm:gap-4">
           <button
-            className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-black bg-accent hover:border-neon-green hover:bg-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent`}
+            className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-hidden focus:ring-3 text-black bg-accent hover:border-neon-green hover:bg-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent`}
           >
             {isLoading ? (
               <svg className="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24">

@@ -12,9 +12,8 @@ type Price = Tables<'prices'>;
 // type Subscription = Tables<'subscriptions'>;
 
 interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subscription: any | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   products: any[] | null;
 }
 

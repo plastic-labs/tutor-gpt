@@ -127,7 +127,7 @@ export default function MessageBox({
                 </div>
               </button>
               <button
-                className={`p-2 rounded-full ${
+                className={`p-2 rounded-full cursor-pointer ${
                   reaction === 'thumbs_down'
                     ? 'bg-red-500 text-white'
                     : 'bg-accent text-foreground'
@@ -144,7 +144,7 @@ export default function MessageBox({
                 </div>
               </button>
               <button
-                className={`p-2 rounded-full ${
+                className={`p-2 rounded-full cursor-pointer ${
                   isThoughtOpen
                     ? 'bg-neon-green text-gray-800'
                     : 'bg-accent text-foreground'

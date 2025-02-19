@@ -1,10 +1,4 @@
-import {
-  createStream,
-  getUserData,
-  user,
-  assistant,
-  // parsePrompt,
-} from '@/utils/ai';
+import { createStream, getUserData, user, assistant } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import thoughtPrompt from '@/utils/prompts/thought';
 import { createClient } from '@/utils/supabase/server';
@@ -23,7 +17,7 @@ interface ThoughtCallProps {
 const MAX_CONTEXT_SIZE = 10;
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const honchoUserData = await getUserData();
   const { message, conversationId } = (await req.json()) as ThoughtCallProps;
 
@@ -115,7 +109,7 @@ export async function POST(req: NextRequest) {
       type: 'thought',
     },
     async (response) => {
-      // console.log('Response:', response.text);
+      console.log('Response:', response.text);
     }
   );
 

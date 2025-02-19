@@ -34,7 +34,7 @@ export function ConversationTab({
 }: ConversationTabProps) {
   return (
     <div
-      className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 hover:dark:bg-gray-800  ${
+      className={`flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800  ${
         selected ? 'bg-accent' : ''
       }`}
       onClick={select}
@@ -46,7 +46,7 @@ export function ConversationTab({
       ) : (
         <>
           <div>
-            <h2 className="font-bold overflow-ellipsis overflow-hidden ">
+            <h2 className="font-bold text-ellipsis overflow-hidden ">
               {conversation.name || 'Untitled'}
             </h2>
           </div>

@@ -44,7 +44,7 @@ export default function Forgot(props: any) {
           type="email"
           id="Email"
           name="email"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-accent text-sm text-foreground shadow-sm"
+          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-accent text-sm text-foreground shadow-xs"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -52,7 +52,7 @@ export default function Forgot(props: any) {
 
       <div className="sm:flex sm:items-center sm:gap-4">
         <button
-          className="inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-none focus:ring text-black bg-accent hover:border-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent"
+          className="inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-hidden focus:ring-3 text-black bg-accent hover:border-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent"
           onClick={handleForgotPassword}
         >
           Send Recovery Email

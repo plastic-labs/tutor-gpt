@@ -173,7 +173,7 @@ export default function Sidebar({
         {/* Section 1: Top buttons */}
         <div className="flex justify-between items-center p-4 gap-2 border-b border-gray-200 dark:border-gray-700">
           <button
-            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10"
+            className="bg-neon-green text-black rounded-lg px-4 py-2 w-full lg:w-full h-10 cursor-pointer"
             onClick={addChat}
             disabled={!canUseApp}
           >

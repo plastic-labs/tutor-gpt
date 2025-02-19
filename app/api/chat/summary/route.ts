@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     appId,
   } = await req.json();
 
-  const authHeader = req.headers.get('Authorization')
+  const authHeader = req.headers.get('Authorization');
 
   if (!authHeader?.startsWith('Bearer ')) {
     return new NextResponse('Unauthorized', { status: 401 });
@@ -129,5 +129,4 @@ export async function POST(req: NextRequest) {
     console.error('Error in summary generation:', error);
     return NextResponse.json({ success: false });
   }
-
 }

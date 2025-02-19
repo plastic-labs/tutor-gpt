@@ -12,16 +12,15 @@ export interface Conversation {
   conversationId: string;
 }
 
-
 export interface JWTPayload {
   // Standard JWT Claims
-  iss?: string;    // issuer
-  sub?: string;    // subject (usually user id)
-  aud?: string;    // audience
-  exp: number;     // expiration time (timestamp)
-  nbf?: number;    // not before (timestamp)
-  iat: number;     // issued at (timestamp)
-  jti?: string;    // JWT ID
+  iss?: string; // issuer
+  sub?: string; // subject (usually user id)
+  aud?: string; // audience
+  exp: number; // expiration time (timestamp)
+  nbf?: number; // not before (timestamp)
+  iat: number; // issued at (timestamp)
+  jti?: string; // JWT ID
 
   action: string;
   conversationId: string;

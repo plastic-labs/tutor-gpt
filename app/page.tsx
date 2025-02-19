@@ -8,7 +8,7 @@ import { type Message } from '@/utils/types';
 import { CookieConsentBanner } from '@/components/cookieConsentBanner';
 
 export default async function Home() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get user session on server
   const {

@@ -16,7 +16,7 @@ import { Tables } from '@/utils/database.types';
 type Price = Tables<'prices'>;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-01-27.acacia',
 });
 
 type CheckoutResponse = {
@@ -30,7 +30,7 @@ export async function checkoutWithStripe(
 ): Promise<CheckoutResponse> {
   try {
     // Get the user from Supabase auth
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       error,
       data: { user },
@@ -130,7 +130,7 @@ export async function checkoutWithStripe(
 
 export async function createStripePortal() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       error,
       data: { user },

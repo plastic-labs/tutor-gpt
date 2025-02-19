@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 export default function useAutoScroll(
-  containerRef: React.RefObject<HTMLElement>
+  containerRef: React.RefObject<HTMLElement | null>
 ): [boolean, () => void] {
   const isAtBottom = useRef(true);
 
