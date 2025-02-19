@@ -203,10 +203,11 @@ export default function SignUp(props: {
 
         <div className="sm:flex sm:items-center sm:gap-4">
           <button
-            className={`inline-block w-full sm:w-auto shrink-0 rounded-md text-gray-800 border px-12 py-3 text-sm font-medium transition focus:outline-hidden focus:ring-3 ${theme === 'dark'
-              ? 'border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green'
-              : 'border-neon-green bg-neon-green hover:bg-transparent hover:text-blue-600'
-              }`}
+            className={`inline-block w-full sm:w-auto shrink-0 rounded-md text-gray-800 border px-12 py-3 text-sm font-medium transition focus:outline-hidden focus:ring-3 ${
+              theme === 'dark'
+                ? 'border-neon-green bg-neon-green hover:bg-transparent hover:text-neon-green'
+                : 'border-neon-green bg-neon-green hover:bg-transparent hover:text-blue-600'
+            }`}
           >
             {isLoading ? (
               <svg className="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24">

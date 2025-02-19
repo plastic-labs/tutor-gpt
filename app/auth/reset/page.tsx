@@ -22,7 +22,6 @@ export default function ResetPage() {
           className={`flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 bg-background'
             }`}
         >
-
           <div className="w-full max-w-xl">
             <a className="block text-blue-600" href="/">
               <span className="sr-only">Home</span>
@@ -35,7 +34,9 @@ export default function ResetPage() {
               />
             </a>
 
-            <h1 className={`mt-6 text-2xl font-bold sm:text-3xl md:text-4xl text-foreground`}>
+            <h1
+              className={`mt-6 text-2xl font-bold sm:text-3xl md:text-4xl text-foreground`}
+            >
               Welcome to Bloom 🌱
             </h1>
 
@@ -47,6 +48,6 @@ export default function ResetPage() {
           </div>
         </main>
       </div>
-    </section >
+    </section>
   );
 }

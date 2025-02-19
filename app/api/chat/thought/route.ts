@@ -1,9 +1,4 @@
-import {
-  createStream,
-  getUserData,
-  user,
-  assistant,
-} from '@/utils/ai';
+import { createStream, getUserData, user, assistant } from '@/utils/ai';
 import { honcho } from '@/utils/honcho';
 import thoughtPrompt from '@/utils/prompts/thought';
 import { createClient } from '@/utils/supabase/server';

@@ -7,15 +7,18 @@ import { cn } from '@/utils/helpers';
 
 const Tabs = TabsPrimitive.Root;
 
-interface TabsListProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> {
+interface TabsListProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> {
   className?: string;
 }
 
-interface TabsTriggerProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
+interface TabsTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
   className?: string;
 }
 
-interface TabsContentProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> {
+interface TabsContentProps
+  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> {
   className?: string;
 }
 

@@ -65,10 +65,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-[100dvh]">
       <body className={cn(roboto.className, 'h-[100dvh]')}>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="system" 
-          enableSystem 
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
           storageKey="theme-preference"
           disableTransitionOnChange
         >

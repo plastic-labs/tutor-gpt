@@ -12,9 +12,8 @@ type Price = Tables<'prices'>;
 // type Subscription = Tables<'subscriptions'>;
 
 interface Props {
-   
   subscription: any | null;
-   
+
   products: any[] | null;
 }
 
