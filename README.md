@@ -1,6 +1,6 @@
 # Tutor-GPT
 
-![Static Badge](https://img.shields.io/badge/Version-0.7.0-blue)
+![Static Badge](https://img.shields.io/badge/Version-0.7.1-blue)
 [![Discord](https://img.shields.io/discord/1076192451997474938?logo=discord&logoColor=%23ffffff&label=Bloom&labelColor=%235865F2)](https://discord.gg/bloombotai)
 ![GitHub License](https://img.shields.io/github/license/plastic-labs/tutor-gpt)
 ![GitHub Repo stars](https://img.shields.io/github/stars/plastic-labs/tutor-gpt)
@@ -135,7 +135,10 @@ This application uses the new [Supabase SSR](https://supabase.com/docs/guides/au
 few setup steps required before the app works with Supabase.
 
 The main change is that the email templates for authentication need to be
-modified to perform the token exchange
+modified to perform the token exchange.
+
+For usage with a local instance of supabase the appropriate email templates have
+been setup in `./supabase/templates`
 
 Confirm Signup
 
