@@ -36,15 +36,53 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
 
-async function fetchStream(
-  type: 'thought' | 'response' | 'honcho',
+interface StreamResponseChunk {
+  type: 'thought' | 'honcho' | 'response';
+  text: string;
+}
+
+class StreamReader {
+  private reader: ReadableStreamDefaultReader<Uint8Array>;
+  private decoder: TextDecoder;
+  private buffer: string;
+
+  constructor(stream: ReadableStream<Uint8Array>) {
+    this.reader = stream.getReader();
+    this.decoder = new TextDecoder();
+    this.buffer = '';
+  }
+
+  async read(): Promise<{ done: boolean; chunk?: StreamResponseChunk }> {
+    const { done, value } = await this.reader.read();
+
+    if (done) {
+      return { done };
+    }
+
+    const text = this.decoder.decode(value, { stream: true });
+    this.buffer += text;
+
+    try {
+      const chunk = JSON.parse(this.buffer) as StreamResponseChunk;
+      this.buffer = '';
+      return { done: false, chunk };
+    } catch (e) {
+      // If we can't parse the JSON yet, return nothing and wait for more data
+      return { done: false };
+    }
+  }
+
+  release() {
+    this.reader.releaseLock();
+  }
+}
+
+async function fetchConsolidatedStream(
   message: string,
-  conversationId: string,
-  thought = '',
-  honchoThought = ''
+  conversationId: string
 ) {
   try {
-    const response = await fetch(`/api/chat/${type}`, {
+    const response = await fetch(`/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -52,8 +90,6 @@ async function fetchStream(
       body: JSON.stringify({
         message,
         conversationId,
-        thought,
-        honchoThought,
       }),
     });
 
@@ -70,18 +106,18 @@ async function fetchStream(
         throw new Error(`Subscription is required to chat: ${response.status}`);
       }
       const errorText = await response.text();
-      console.error(`Stream error for ${type}:`, {
+      console.error(`Stream error:`, {
         status: response.status,
         statusText: response.statusText,
         error: errorText,
       });
       console.error(response);
-      throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
+      throw new Error(`Failed to fetch stream: ${response.status}`);
     }
 
     return response.body;
   } catch (error) {
-    console.error(`Error in fetchStream (${type}):`, error);
+    console.error(`Error in fetchConsolidatedStream:`, error);
     throw error;
   }
 }
@@ -97,10 +133,6 @@ interface ChatProps {
   };
   initialMessages: Message[];
   initialConversationId: string | null | undefined;
-}
-
-interface HonchoResponse {
-  content: string;
 }
 
 export default function Chat({
@@ -281,120 +313,6 @@ What's on your mind? Let's dive in. 🌱`,
     }
   };
 
-  async function processThought(messageToSend: string, conversationId: string) {
-    // Get thought stream
-    const thoughtStream = await fetchStream(
-      'thought',
-      messageToSend,
-      conversationId
-    );
-
-    if (!thoughtStream) {
-      throw new Error('Failed to get thought stream');
-    }
-
-    const thoughtReader = thoughtStream.getReader();
-    let thoughtText = '';
-    setThought('');
-
-    // Process thought stream
-    while (true) {
-      const { done, value } = await thoughtReader.read();
-      if (done) break;
-
-      thoughtText += new TextDecoder().decode(value);
-      setThought(thoughtText);
-    }
-
-    // Cleanup thought stream
-    thoughtReader.releaseLock();
-
-    return thoughtText;
-  }
-
-  async function processHoncho(
-    messageToSend: string,
-    conversationId: string,
-    thoughtText: string
-  ) {
-    // Get honcho response
-    const honchoResponse = await fetchStream(
-      'honcho',
-      messageToSend,
-      conversationId,
-      thoughtText
-    );
-
-    const honchoContent = (await new Response(
-      honchoResponse
-    ).json()) as HonchoResponse;
-
-    const updatedThought =
-      thoughtText +
-      '\n\nHoncho Dialectic Response:\n\n' +
-      honchoContent.content;
-    setThought(updatedThought);
-
-    return honchoContent;
-  }
-
-  async function processResponse(
-    messageToSend: string,
-    conversationId: string,
-    thoughtText: string,
-    honchoContent: string,
-    newMessages: Message[],
-    isSubscribed: boolean
-  ) {
-    const responseStream = await fetchStream(
-      'response',
-      messageToSend,
-      conversationId,
-      thoughtText,
-      honchoContent
-    );
-    if (!responseStream) throw new Error('Failed to get response stream');
-
-    const responseReader = responseStream.getReader();
-    let currentModelOutput = '';
-
-    try {
-      // Process response stream
-      while (true) {
-        const { done, value } = await responseReader.read();
-        if (done) {
-          if (!isSubscribed) {
-            const success = await useFreeTrial(userId);
-            if (success) {
-              const newCount = await getFreeMessageCount(userId);
-              setFreeMessages(newCount);
-            }
-          }
-          break;
-        }
-
-        currentModelOutput += new TextDecoder().decode(value);
-
-        mutateMessages(
-          [
-            ...(newMessages?.slice(0, -1) || []),
-            {
-              content: currentModelOutput,
-              isUser: false,
-              id: '',
-              metadata: {},
-            },
-          ],
-          { revalidate: false }
-        );
-
-        messageListRef.current?.scrollToBottom();
-      }
-    } finally {
-      responseReader.releaseLock();
-    }
-  }
-
   async function processName(messageToSend: string, conversationId: string) {
     try {
       const nameResponse = await fetch('/api/chat/name', {
@@ -451,36 +369,77 @@ What's on your mind? Let's dive in. 🌱`,
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
-      // Process thought and summary in parallel if this is the first message
+      // Check if we should generate a summary (name) for the conversation
       const isFirstChat = messages?.length === 0;
       const isUntitledConversation =
         conversations?.find((c) => c.conversationId === conversationId)
           ?.name === 'Untitled';
       const shouldGenerateSummary = isFirstChat || isUntitledConversation;
-      const [thoughtText] = await Promise.all([
-        processThought(messageToSend, conversationId!),
-        ...(shouldGenerateSummary
-          ? [processName(messageToSend, conversationId!)]
-          : []),
-      ]);
 
-      // Process honcho response
-      const honchoContent = await processHoncho(
+      if (shouldGenerateSummary) {
+        processName(messageToSend, conversationId!).catch(console.error);
+      }
+
+      // Get the consolidated stream
+      const stream = await fetchConsolidatedStream(
         messageToSend,
-        conversationId!,
-        thoughtText
+        conversationId!
       );
+      if (!stream) throw new Error('Failed to get stream');
 
-      // Process response
-      await processResponse(
-        messageToSend,
-        conversationId!,
-        thoughtText,
-        honchoContent.content,
-        newMessages,
-        isSubscribed
-      );
+      const streamReader = new StreamReader(stream);
+      let thoughtText = '';
+      let currentModelOutput = '';
 
+      // Process the stream
+      while (true) {
+        const { done, chunk } = await streamReader.read();
+        if (done) {
+          if (!isSubscribed) {
+            const success = await useFreeTrial(userId);
+            if (success) {
+              const newCount = await getFreeMessageCount(userId);
+              setFreeMessages(newCount);
+            }
+          }
+          break;
+        }
+
+        if (!chunk) continue;
+
+        switch (chunk.type) {
+          case 'thought':
+            thoughtText += chunk.text;
+            setThought(thoughtText);
+            break;
+
+          case 'honcho':
+            // Update the thought with honcho response
+            const updatedThought =
+              thoughtText + '\n\nHoncho Dialectic Response:\n\n' + chunk.text;
+            setThought(updatedThought);
+            break;
+
+          case 'response':
+            currentModelOutput += chunk.text;
+            mutateMessages(
+              [
+                ...(newMessages?.slice(0, -1) || []),
+                {
+                  content: currentModelOutput,
+                  isUser: false,
+                  id: '',
+                  metadata: {},
+                },
+              ],
+              { revalidate: false }
+            );
+            messageListRef.current?.scrollToBottom();
+            break;
+        }
+      }
+
+      streamReader.release();
       await mutateMessages();
       messageListRef.current?.scrollToBottom();
       setCanSend(true);

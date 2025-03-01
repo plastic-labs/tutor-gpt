@@ -1,7 +1,7 @@
 import { getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { generateText, streamText } from 'ai';
+import { generateText as generateTextAi, streamText as streamTextAi } from 'ai';
 import d from 'dedent-js';
 
 import * as Sentry from '@sentry/nextjs';
@@ -68,6 +68,9 @@ export const assistant = (
   content: d(strings, ...values),
 });
 
+/**
+ * @deprecated Use streamText instead
+ */
 export async function createStream(
   messages: Message[],
   metadata: {
@@ -78,7 +81,7 @@ export async function createStream(
   onFinish?: (response: { text: string }) => Promise<void>
 ) {
   try {
-    const result = streamText({
+    const result = streamTextAi({
       model: openrouter(MODEL),
       messages,
       ...(onFinish && { onFinish }),
@@ -101,6 +104,38 @@ export async function createStream(
   }
 }
 
+export function streamText(
+  params: Omit<
+    Parameters<typeof streamTextAi>[0],
+    'model' | 'experimental_telemetry'
+  > & {
+    metadata: {
+      sessionId: string;
+      userId: string;
+      type: string;
+    };
+  }
+) {
+  const result = streamTextAi({
+    ...params,
+    model: openrouter(MODEL),
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        sessionId: params.metadata.sessionId,
+        userId: params.metadata.userId,
+        release: SENTRY_RELEASE,
+        environment: SENTRY_ENVIRONMENT,
+        tags: [params.metadata.type],
+      },
+    },
+  });
+  return result;
+}
+
+/**
+ * @deprecated Use generateText instead
+ */
 export async function createCompletion(
   messages: Message[],
   metadata: {
@@ -116,7 +151,7 @@ export async function createCompletion(
     presence_penalty?: number;
   }
 ) {
-  const result = await generateText({
+  const result = await generateTextAi({
     model: openrouter(MODEL),
     messages,
     ...parameters,
@@ -133,4 +168,34 @@ export async function createCompletion(
   });
 
   return result.text;
+}
+
+export function generateText(
+  params: Omit<
+    Parameters<typeof generateTextAi>[0],
+    'model' | 'experimental_telemetry'
+  > & {
+    metadata: {
+      sessionId: string;
+      userId: string;
+      type: string;
+    };
+  }
+) {
+  const result = generateTextAi({
+    ...params,
+    model: openrouter(MODEL),
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        sessionId: params.metadata.sessionId,
+        userId: params.metadata.userId,
+        release: SENTRY_RELEASE,
+        environment: SENTRY_ENVIRONMENT,
+        tags: [params.metadata.type],
+      },
+    },
+  });
+
+  return result;
 }
