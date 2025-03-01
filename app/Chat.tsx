@@ -368,6 +368,9 @@ What's on your mind? Let's dive in. 🌱`,
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
+    let thoughtText = '';
+    let currentModelOutput = '';
+
     try {
       // Check if we should generate a summary (name) for the conversation
       const isFirstChat = messages?.length === 0;
@@ -388,8 +391,6 @@ What's on your mind? Let's dive in. 🌱`,
       if (!stream) throw new Error('Failed to get stream');
 
       const streamReader = new StreamReader(stream);
-      let thoughtText = '';
-      let currentModelOutput = '';
 
       // Process the stream
       while (true) {
@@ -406,6 +407,8 @@ What's on your mind? Let's dive in. 🌱`,
         }
 
         if (!chunk) continue;
+
+        console.log(chunk.text);
 
         switch (chunk.type) {
           case 'thought':
@@ -440,12 +443,48 @@ What's on your mind? Let's dive in. 🌱`,
       }
 
       streamReader.release();
-      await mutateMessages();
+
+      // Preserve the final message state instead of revalidating from server
+      if (currentModelOutput) {
+        mutateMessages(
+          [
+            ...(newMessages?.slice(0, -1) || []),
+            {
+              content: currentModelOutput,
+              isUser: false,
+              id: '',
+              metadata: {},
+            },
+          ],
+          { revalidate: false }
+        );
+      }
+
       messageListRef.current?.scrollToBottom();
       setCanSend(true);
     } catch (error) {
       console.error('Chat error:', error);
-      await mutateMessages();
+
+      // Preserve the message even in case of error if we have content
+      if (currentModelOutput) {
+        mutateMessages(
+          [
+            ...(newMessages?.slice(0, -1) || []),
+            {
+              content:
+                currentModelOutput ||
+                'Sorry, there was an error generating a response.',
+              isUser: false,
+              id: '',
+              metadata: {},
+            },
+          ],
+          { revalidate: false }
+        );
+      } else {
+        await mutateMessages();
+      }
+
       messageListRef.current?.scrollToBottom();
       setCanSend(true);
     }

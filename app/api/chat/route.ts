@@ -14,15 +14,53 @@ import summaryPrompt from '@/utils/prompts/summary';
 import responsePrompt from '@/utils/prompts/response';
 
 export const runtime = 'nodejs';
-export const maxDuration = 100;
+export const maxDuration = 400;
 export const dynamic = 'force-dynamic'; // always run dynamically
 
+// Type definitions
 interface ChatCallProps {
   message: string;
   conversationId: string;
 }
 
-function stream(iterator: any) {
+interface StreamResponseChunk {
+  type: 'thought' | 'honcho' | 'response';
+  text: string;
+}
+
+interface Message {
+  id: string;
+  is_user: boolean;
+  content: string;
+}
+
+interface MetaMessage {
+  message_id: string;
+  content: string;
+}
+
+interface UserData {
+  appId: string;
+  userId: string;
+}
+
+interface ValidationResult {
+  isAuthorized: boolean;
+  error?: string;
+  status?: number;
+  userData?: UserData;
+  supabaseUser?: any;
+}
+
+// Constants
+const MAX_CONTEXT_SIZE = 11;
+export const SUMMARY_SIZE = 5;
+const encoder = new TextEncoder();
+
+// Helper functions
+function stream(
+  iterator: AsyncGenerator<Uint8Array, NextResponse | undefined, unknown>
+) {
   return new ReadableStream({
     async pull(controller) {
       const { value, done } = await iterator.next();
@@ -36,18 +74,11 @@ function stream(iterator: any) {
   });
 }
 
-interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response';
-  text: string;
+function formatStreamChunk(chunk: StreamResponseChunk): Uint8Array {
+  return encoder.encode(JSON.stringify(chunk));
 }
 
-const encode = new TextEncoder().encode;
-
-function out(chunk: StreamResponseChunk) {
-  return encode(JSON.stringify(chunk));
-}
-
-function parseHonchoContent(str: string) {
+function parseHonchoContent(str: string): string {
   try {
     const match = str.match(/<honcho>([\s\S]*?)<\/honcho>/);
     return match ? match[1].trim() : str;
@@ -56,7 +87,7 @@ function parseHonchoContent(str: string) {
   }
 }
 
-const extractSummary = (response: string): string | undefined => {
+function extractSummary(response: string): string | undefined {
   const summaryMatch = response.match(/<summary>([\s\S]*?)<\/summary>/);
   if (!summaryMatch) {
     console.warn('Failed to extract summary with expected format');
@@ -64,12 +95,9 @@ const extractSummary = (response: string): string | undefined => {
     return response.trim();
   }
   return summaryMatch[1];
-};
+}
 
-const MAX_CONTEXT_SIZE = 11;
-export const SUMMARY_SIZE = 5;
-
-async function* respond({ message, conversationId }: ChatCallProps) {
+async function validateUser(): Promise<ValidationResult> {
   const supabase = await createClient();
   const honchoUserData = await getUserData();
 
@@ -78,17 +106,30 @@ async function* respond({ message, conversationId }: ChatCallProps) {
   } = await supabase.auth.getUser();
 
   if (!honchoUserData || !supabaseUser) {
-    return new NextResponse('Unauthorized', { status: 401 });
+    return { isAuthorized: false, error: 'Unauthorized', status: 401 };
   }
 
   const { canChat } = await getChatAccessWithUser(supabaseUser.id);
 
   if (!canChat) {
-    return new NextResponse('Subscription required', { status: 402 });
+    return { isAuthorized: false, error: 'Subscription required', status: 402 };
   }
 
-  const { appId, userId } = honchoUserData;
+  return {
+    isAuthorized: true,
+    userData: {
+      appId: honchoUserData.appId,
+      userId: honchoUserData.userId,
+    },
+    supabaseUser,
+  };
+}
 
+async function fetchConversationHistory(
+  appId: string,
+  userId: string,
+  conversationId: string
+) {
   const [messageIter, thoughtIter, honchoIter, summaryIter] = await Promise.all(
     [
       honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
@@ -128,81 +169,133 @@ async function* respond({ message, conversationId }: ChatCallProps) {
     ]
   );
 
-  const messageHistory = Array.from(messageIter.items || []).reverse();
-  const thoughtHistory = Array.from(thoughtIter.items || []).reverse();
-  const honchoHistory = Array.from(honchoIter.items || []).reverse();
-  const summaryHistory = Array.from(summaryIter.items || []);
+  return {
+    messages: Array.from(messageIter.items || []).reverse(),
+    thoughts: Array.from(thoughtIter.items || []).reverse(),
+    honchoMessages: Array.from(honchoIter.items || []).reverse(),
+    summaries: Array.from(summaryIter.items || []),
+  };
+}
 
+function buildThoughtPrompt(
+  messageHistory: Message[],
+  thoughtHistory: MetaMessage[],
+  honchoHistory: MetaMessage[],
+  currentMessage: string
+) {
   const thoughtProcessedHistory = messageHistory.map((message, i) => {
     if (message.is_user) {
-      if (i == 0) {
+      if (i === 0 || i === messageHistory.length - 1) {
         return user`${message.content}`;
       }
-      const lastUserMessage = messageHistory[i - 2];
-      const honchoResponse = honchoHistory.find(
-        (h) => h.message_id === lastUserMessage.id
-      );
-      const tutorResponse = messageHistory[i - 1];
+
+      // Find previous AI and user messages
+      let prevAiIndex = -1;
+      for (let j = i - 1; j >= 0; j--) {
+        if (!messageHistory[j].is_user) {
+          prevAiIndex = j;
+          break;
+        }
+      }
+
+      let prevUserIndex = -1;
+      for (let j = prevAiIndex - 1; j >= 0; j--) {
+        if (messageHistory[j].is_user) {
+          prevUserIndex = j;
+          break;
+        }
+      }
+
+      const honchoResponse =
+        prevUserIndex >= 0
+          ? honchoHistory.find(
+              (h) => h.message_id === messageHistory[prevUserIndex].id
+            )
+          : null;
+
+      const tutorResponse =
+        prevAiIndex >= 0 ? messageHistory[prevAiIndex] : null;
 
       return user`
       <honcho-response>${honchoResponse?.content || 'None'}</honcho-response>
       <tutor>${tutorResponse?.content || 'None'}</tutor>
       ${message.content}`;
     } else {
-      const lastUserMessage = messageHistory[i - 1];
-      const thoughtResponse = thoughtHistory.find(
-        (t) => t.message_id === lastUserMessage.id
-      );
+      let prevUserIndex = -1;
+      for (let j = i - 1; j >= 0; j--) {
+        if (messageHistory[j].is_user) {
+          prevUserIndex = j;
+          break;
+        }
+      }
+
+      const thoughtResponse =
+        prevUserIndex >= 0
+          ? thoughtHistory.find(
+              (t) => t.message_id === messageHistory[prevUserIndex].id
+            )
+          : null;
+
       return assistant`${thoughtResponse?.content || 'None'}`;
     }
   });
 
   const finalMessage = user`
-  <honcho-response>${honchoHistory[honchoHistory.length - 1]?.content || 'None'}</honcho-response>
-  <tutor>${messageHistory[messageHistory.length - 1]?.content || 'None'}</tutor>
-  ${message}`;
+  <honcho-response>${honchoHistory.length > 0 ? honchoHistory[honchoHistory.length - 1]?.content || 'None' : 'None'}</honcho-response>
+  <tutor>${messageHistory.length > 0 && !messageHistory[messageHistory.length - 1].is_user ? messageHistory[messageHistory.length - 1]?.content || 'None' : 'None'}</tutor>
+  <current_message>${currentMessage}</current_message>`;
 
-  const combinedThoughtPrompt = [
-    ...thoughtPrompt,
-    ...thoughtProcessedHistory,
-    finalMessage,
-  ];
+  return [...thoughtPrompt, ...thoughtProcessedHistory, finalMessage];
+}
 
-  const { textStream: thoughtStream } = streamText({
-    messages: combinedThoughtPrompt,
-    metadata: {
-      sessionId: conversationId,
-      userId,
-      type: 'thought',
-    },
-  });
+function buildResponsePrompt(
+  messageHistory: Message[],
+  honchoHistory: MetaMessage[],
+  currentMessage: string,
+  honchoContent: string,
+  lastSummary?: string
+) {
+  const responseHistory = [];
 
-  let thought = '';
+  for (let i = 0; i < messageHistory.length; i++) {
+    const message = messageHistory[i];
 
-  for await (const chunk of thoughtStream) {
-    thought += chunk;
-    yield out({
-      type: 'thought',
-      text: chunk,
-    });
+    if (message.is_user) {
+      const honchoMessage =
+        honchoHistory.find((m) => m.message_id === message.id)?.content ||
+        'No Honcho Message';
+
+      responseHistory.push(
+        user`<context>${honchoMessage}</context>
+        ${message.content}`
+      );
+
+      if (i + 1 < messageHistory.length && !messageHistory[i + 1].is_user) {
+        responseHistory.push(assistant`${messageHistory[i + 1].content}`);
+      }
+    }
   }
 
-  const query = `Given the following user message: <user>${message}</user> I had the following message: ${parseHonchoContent(thought)}`;
+  const summaryMessage = user`<past_summary>${lastSummary || ''}</past_summary>`;
+  const mostRecentMessage = user`<context>${honchoContent}</context>
+  <current_message>${currentMessage}</current_message>`;
 
-  const { content: honchoContent } = await honcho.apps.users.sessions.chat(
-    appId,
-    userId,
-    conversationId,
-    { queries: query }
-  );
+  return [
+    ...responsePrompt,
+    summaryMessage,
+    ...responseHistory,
+    mostRecentMessage,
+  ];
+}
 
-  yield out({
-    type: 'honcho',
-    text: honchoContent,
-  });
-
-  const lastSummary = summaryHistory[0]?.content;
-
+async function checkAndGenerateSummary(
+  appId: string,
+  userId: string,
+  conversationId: string,
+  messageHistory: Message[],
+  summaryHistory: MetaMessage[],
+  lastSummary?: string
+) {
   const lastSummaryMessageIndex = messageHistory.findIndex(
     (m) => m.id === summaryHistory[0]?.message_id
   );
@@ -214,85 +307,211 @@ async function* respond({ message, conversationId }: ChatCallProps) {
 
   const needsSummary = messagesSinceLastSummary >= MAX_CONTEXT_SIZE;
 
-  const lastMessageOfSummary = needsSummary
-    ? messageHistory[messageHistory.length - MAX_CONTEXT_SIZE + SUMMARY_SIZE]
-    : undefined;
+  if (!needsSummary) {
+    return;
+  }
 
-  after(async () => {
-    if (needsSummary && lastMessageOfSummary) {
-      const recentMessages = messageHistory.slice(-MAX_CONTEXT_SIZE);
-      const messagesToSummarize = recentMessages.slice(0, SUMMARY_SIZE);
+  const lastMessageOfSummary =
+    messageHistory[messageHistory.length - MAX_CONTEXT_SIZE + SUMMARY_SIZE];
+  if (!lastMessageOfSummary) {
+    return;
+  }
 
-      const formattedMessages = messagesToSummarize.map((msg) => {
-        if (msg.is_user) {
-          return `User: ${msg.content}`;
-        }
-        return `Assistant: ${msg.content}`;
-      });
+  const recentMessages = messageHistory.slice(-MAX_CONTEXT_SIZE);
+  const messagesToSummarize = recentMessages.slice(0, SUMMARY_SIZE);
 
-      const summaryMessages = [
-        ...summaryPrompt,
-        user`<new_messages>
-        ${formattedMessages}
-        </new_messages>
-
-        <existing_summary>
-        ${lastSummary || ''}
-        </existing_summary>`,
-      ];
-
-      const summary = await generateText({
-        messages: summaryMessages,
-        metadata: {
-          sessionId: conversationId,
-          userId,
-          type: 'summary',
-        },
-      });
-
-      const newSummary = extractSummary(summary.text);
-
-      if (newSummary && lastMessageOfSummary) {
-        await honcho.apps.users.sessions.metamessages.create(
-          appId,
-          userId,
-          conversationId,
-          {
-            message_id: lastMessageOfSummary.id,
-            metamessage_type: 'summary',
-            content: newSummary,
-            metadata: { type: 'assistant' },
-          }
-        );
-      }
+  const formattedMessages = messagesToSummarize.map((msg) => {
+    if (msg.is_user) {
+      return `User: ${msg.content}`;
     }
+    return `Assistant: ${msg.content}`;
   });
 
-  const getHonchoMessage = (id: string) =>
-    honchoHistory.find((m) => m.message_id === id)?.content ||
-    'No Honcho Message';
+  const summaryMessages = [
+    ...summaryPrompt,
+    user`<new_messages>
+    ${formattedMessages}
+    </new_messages>
 
-  const responseHistory = messageHistory.map((message) => {
-    if (message.is_user) {
-      return user`<context>${getHonchoMessage(message.id)}</context>
-      ${message.content}`;
-    } else {
-      return assistant`${message.content}`;
-    }
-  });
-
-  const summaryMessage = user`<past_summary>${lastSummary}</past_summary>`;
-  const mostRecentMessage = user`<context>${honchoContent}</context>
-  ${messageHistory[messageHistory.length - 1]?.content}`;
-
-  const combinedResponsePrompt = [
-    ...responsePrompt,
-    summaryMessage,
-    ...responseHistory,
-    mostRecentMessage,
+    <existing_summary>
+    ${lastSummary || ''}
+    </existing_summary>`,
   ];
+
+  const summary = await generateText({
+    messages: summaryMessages,
+    metadata: {
+      sessionId: conversationId,
+      userId,
+      type: 'summary',
+    },
+  });
+
+  const newSummary = extractSummary(summary.text);
+
+  if (newSummary) {
+    await honcho.apps.users.sessions.metamessages.create(
+      appId,
+      userId,
+      conversationId,
+      {
+        message_id: lastMessageOfSummary.id,
+        metamessage_type: 'summary',
+        content: newSummary,
+        metadata: { type: 'assistant' },
+      }
+    );
+  }
+}
+
+async function saveConversation(
+  appId: string,
+  userId: string,
+  conversationId: string,
+  userMessage: string,
+  thought: string,
+  honchoContent: string,
+  response: string
+) {
+  // Save the user message and related metamessages
+  const newUserMessage = await honcho.apps.users.sessions.messages.create(
+    appId,
+    userId,
+    conversationId,
+    {
+      is_user: true,
+      content: userMessage,
+    }
+  );
+
+  // Save the thought metamessage
+  await honcho.apps.users.sessions.metamessages.create(
+    appId,
+    userId,
+    conversationId,
+    {
+      message_id: newUserMessage.id,
+      metamessage_type: 'thought',
+      content: thought || '',
+      metadata: { type: 'assistant' },
+    }
+  );
+
+  // Save honcho metamessage
+  await honcho.apps.users.sessions.metamessages.create(
+    appId,
+    userId,
+    conversationId,
+    {
+      message_id: newUserMessage.id,
+      metamessage_type: 'honcho',
+      content: honchoContent || '',
+      metadata: { type: 'assistant' },
+    }
+  );
+
+  // Save the assistant response
+  await honcho.apps.users.sessions.messages.create(
+    appId,
+    userId,
+    conversationId,
+    {
+      is_user: false,
+      content: response,
+    }
+  );
+}
+
+async function* respond({ message, conversationId }: ChatCallProps) {
+  // Validate user and permissions
+  const userValidation = await validateUser();
+  if (!userValidation.isAuthorized) {
+    return new NextResponse(userValidation.error, {
+      status: userValidation.status,
+    });
+  }
+
+  // We know userData exists if isAuthorized is true
+  const { userData } = userValidation;
+  if (!userData) {
+    return new NextResponse('User data not found', { status: 500 });
+  }
+
+  const { appId, userId } = userData;
+
+  // Fetch conversation history
+  const {
+    messages: messageHistory,
+    thoughts: thoughtHistory,
+    honchoMessages: honchoHistory,
+    summaries: summaryHistory,
+  } = await fetchConversationHistory(appId, userId, conversationId);
+
+  // Generate thought
+  const thoughtPrompt = buildThoughtPrompt(
+    messageHistory,
+    thoughtHistory,
+    honchoHistory,
+    message
+  );
+  const { textStream: thoughtStream } = streamText({
+    messages: thoughtPrompt,
+    metadata: {
+      sessionId: conversationId,
+      userId,
+      type: 'thought',
+    },
+  });
+
+  let thought = '';
+  for await (const chunk of thoughtStream) {
+    thought += chunk;
+    yield formatStreamChunk({
+      type: 'thought',
+      text: chunk,
+    });
+  }
+
+  // Get honcho response
+  const query = `Given the following user message: <current_message>${message}</current_message> I had the following thought: ${parseHonchoContent(thought)}`;
+  const { content: honchoContent } = await honcho.apps.users.sessions.chat(
+    appId,
+    userId,
+    conversationId,
+    { queries: query }
+  );
+
+  yield formatStreamChunk({
+    type: 'honcho',
+    text: honchoContent,
+  });
+
+  // Get last summary
+  const lastSummary = summaryHistory[0]?.content;
+
+  // Schedule summary generation if needed
+  after(async () => {
+    await checkAndGenerateSummary(
+      appId,
+      userId,
+      conversationId,
+      messageHistory,
+      summaryHistory,
+      lastSummary
+    );
+  });
+
+  // Generate response
+  const responsePrompt = buildResponsePrompt(
+    messageHistory,
+    honchoHistory,
+    message,
+    honchoContent,
+    lastSummary
+  );
+
   const { textStream: responseStream } = streamText({
-    messages: combinedResponsePrompt,
+    messages: responsePrompt,
     metadata: {
       sessionId: conversationId,
       userId,
@@ -301,60 +520,24 @@ async function* respond({ message, conversationId }: ChatCallProps) {
   });
 
   let response = '';
-
   for await (const chunk of responseStream) {
     response += chunk;
-    yield out({
+    yield formatStreamChunk({
       type: 'response',
       text: chunk,
     });
   }
 
+  // Save conversation data
   after(async () => {
-    await Promise.all([
-      // Save the user message
-      honcho.apps.users.sessions.messages
-        .create(appId, userId, conversationId, {
-          is_user: true,
-          content: message,
-        })
-        .then(async (newUserMessage) => {
-          // Save the thought metamessage
-          await honcho.apps.users.sessions.metamessages.create(
-            appId,
-            userId,
-            conversationId,
-            {
-              message_id: newUserMessage.id,
-              metamessage_type: 'thought',
-              content: thought || '',
-              metadata: { type: 'assistant' },
-            }
-          );
-
-          // Save honcho metamessage
-          await honcho.apps.users.sessions.metamessages.create(
-            appId,
-            userId,
-            conversationId,
-            {
-              message_id: newUserMessage.id,
-              metamessage_type: 'honcho',
-              content: honchoContent || '',
-              metadata: { type: 'assistant' },
-            }
-          );
-        }),
-    ]);
-
-    await honcho.apps.users.sessions.messages.create(
+    await saveConversation(
       appId,
       userId,
       conversationId,
-      {
-        is_user: false,
-        content: response,
-      }
+      message,
+      thought,
+      honchoContent,
+      response
     );
   });
 
@@ -362,7 +545,16 @@ async function* respond({ message, conversationId }: ChatCallProps) {
 }
 
 export async function POST(req: NextRequest) {
-  const { message, conversationId } = await req.json();
+  try {
+    const { message, conversationId } = await req.json();
 
-  return new Response(stream(respond({ message, conversationId })));
+    if (!message || !conversationId) {
+      return new NextResponse('Missing required fields', { status: 400 });
+    }
+
+    return new Response(stream(respond({ message, conversationId })));
+  } catch (error) {
+    console.error('Error processing chat request:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
 }
