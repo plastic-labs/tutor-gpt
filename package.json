@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "vitest",
     "lint": "eslint components/ app/ utils/",
     "pretty": "prettier --write components/ app/ utils/",
     "sync-stripe": "node scripts/stripeSync.mjs"
@@ -67,6 +68,7 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/retry": "^0.12.5",
     "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "dotenv": "^16.4.7",
     "encoding": "^0.1.13",
     "eslint": "^9.20.1",
@@ -79,7 +81,9 @@
     "supabase": "^2.12.1",
     "tailwindcss": "4.0.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "^8.24.1"
+    "typescript-eslint": "^8.24.1",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.0.8"
   },
   "prettier": {
     "trailingComma": "es5",

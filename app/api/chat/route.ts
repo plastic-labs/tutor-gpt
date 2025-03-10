@@ -10,6 +10,7 @@ import { createClient } from '@/utils/supabase/server';
 import { getChatAccessWithUser } from '@/utils/supabase/actions';
 import { after, NextRequest, NextResponse } from 'next/server';
 import thoughtPrompt from '@/utils/prompts/thought';
+import thoughtWithPDFPrompt from '@/utils/prompts/thoughtWithPDF';
 import summaryPrompt from '@/utils/prompts/summary';
 import responsePrompt from '@/utils/prompts/response';
 
@@ -21,10 +22,11 @@ export const dynamic = 'force-dynamic'; // always run dynamically
 interface ChatCallProps {
   message: string;
   conversationId: string;
+  hasPDF?: boolean;
 }
 
 interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response';
+  type: 'thought' | 'honcho' | 'response' | 'pdf';
   text: string;
 }
 
@@ -87,6 +89,15 @@ function parseHonchoContent(str: string): string {
   }
 }
 
+function parsePDFContent(str: string): string {
+  try {
+    const match = str.match(/<pdf-agent>([\s\S]*?)<\/pdf-agent>/);
+    return match ? match[1].trim() : str;
+  } catch {
+    return str;
+  }
+}
+
 function extractSummary(response: string): string | undefined {
   const summaryMatch = response.match(/<summary>([\s\S]*?)<\/summary>/);
   if (!summaryMatch) {
@@ -130,8 +141,8 @@ async function fetchConversationHistory(
   userId: string,
   conversationId: string
 ) {
-  const [messageIter, thoughtIter, honchoIter, summaryIter] = await Promise.all(
-    [
+  const [messageIter, thoughtIter, honchoIter, pdfIter, summaryIter] =
+    await Promise.all([
       honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
         reverse: true,
         size: MAX_CONTEXT_SIZE,
@@ -161,18 +172,28 @@ async function fetchConversationHistory(
         userId,
         conversationId,
         {
+          metamessage_type: 'pdf',
+          reverse: true,
+          size: MAX_CONTEXT_SIZE,
+        }
+      ),
+      honcho.apps.users.sessions.metamessages.list(
+        appId,
+        userId,
+        conversationId,
+        {
           metamessage_type: 'summary',
           reverse: true,
           size: 1,
         }
       ),
-    ]
-  );
+    ]);
 
   return {
     messages: Array.from(messageIter.items || []).reverse(),
     thoughts: Array.from(thoughtIter.items || []).reverse(),
     honchoMessages: Array.from(honchoIter.items || []).reverse(),
+    pdfMessages: Array.from(pdfIter.items || []).reverse(),
     summaries: Array.from(summaryIter.items || []),
   };
 }
@@ -181,7 +202,9 @@ function buildThoughtPrompt(
   messageHistory: Message[],
   thoughtHistory: MetaMessage[],
   honchoHistory: MetaMessage[],
-  currentMessage: string
+  pdfHistory: MetaMessage[],
+  currentMessage: string,
+  hasPDF: boolean
 ) {
   const thoughtProcessedHistory = messageHistory.map((message, i) => {
     if (message.is_user) {
@@ -213,11 +236,19 @@ function buildThoughtPrompt(
             )
           : null;
 
+      const pdfResponse =
+        prevUserIndex >= 0
+          ? pdfHistory.find(
+              (p) => p.message_id === messageHistory[prevUserIndex].id
+            )
+          : null;
+
       const tutorResponse =
         prevAiIndex >= 0 ? messageHistory[prevAiIndex] : null;
 
       return user`
       <honcho-response>${honchoResponse?.content || 'None'}</honcho-response>
+      <pdf-response>${pdfResponse?.content || 'None'}</pdf-response>
       <tutor>${tutorResponse?.content || 'None'}</tutor>
       ${message.content}`;
     } else {
@@ -242,17 +273,24 @@ function buildThoughtPrompt(
 
   const finalMessage = user`
   <honcho-response>${honchoHistory.length > 0 ? honchoHistory[honchoHistory.length - 1]?.content || 'None' : 'None'}</honcho-response>
+  <pdf-response>${pdfHistory.length > 0 ? pdfHistory[pdfHistory.length - 1]?.content || 'None' : 'None'}</pdf-response>
   <tutor>${messageHistory.length > 0 && !messageHistory[messageHistory.length - 1].is_user ? messageHistory[messageHistory.length - 1]?.content || 'None' : 'None'}</tutor>
   <current_message>${currentMessage}</current_message>`;
 
-  return [...thoughtPrompt, ...thoughtProcessedHistory, finalMessage];
+  return [
+    ...(hasPDF ? thoughtWithPDFPrompt : thoughtPrompt),
+    ...thoughtProcessedHistory,
+    finalMessage,
+  ];
 }
 
 function buildResponsePrompt(
   messageHistory: Message[],
   honchoHistory: MetaMessage[],
+  pdfHistory: MetaMessage[],
   currentMessage: string,
   honchoContent: string,
+  pdfContent: string,
   lastSummary?: string
 ) {
   const responseHistory = [];
@@ -265,8 +303,13 @@ function buildResponsePrompt(
         honchoHistory.find((m) => m.message_id === message.id)?.content ||
         'No Honcho Message';
 
+      const pdfMessage =
+        pdfHistory.find((m) => m.message_id === message.id)?.content ||
+        'No PDF Message';
+
       responseHistory.push(
         user`<context>${honchoMessage}</context>
+        <pdf_context>${pdfMessage}</pdf_context>
         ${message.content}`
       );
 
@@ -278,6 +321,7 @@ function buildResponsePrompt(
 
   const summaryMessage = user`<past_summary>${lastSummary || ''}</past_summary>`;
   const mostRecentMessage = user`<context>${honchoContent}</context>
+  <pdf_context>${pdfContent}</pdf_context>
   <current_message>${currentMessage}</current_message>`;
 
   return [
@@ -371,6 +415,7 @@ async function saveConversation(
   userMessage: string,
   thought: string,
   honchoContent: string,
+  pdfContent: string,
   response: string
 ) {
   // Save the user message and related metamessages
@@ -410,6 +455,19 @@ async function saveConversation(
     }
   );
 
+  // Save PDF metamessage
+  await honcho.apps.users.sessions.metamessages.create(
+    appId,
+    userId,
+    conversationId,
+    {
+      message_id: newUserMessage.id,
+      metamessage_type: 'pdf',
+      content: pdfContent || '',
+      metadata: { type: 'assistant' },
+    }
+  );
+
   // Save the assistant response
   await honcho.apps.users.sessions.messages.create(
     appId,
@@ -422,7 +480,11 @@ async function saveConversation(
   );
 }
 
-async function* respond({ message, conversationId }: ChatCallProps) {
+async function* respond({
+  message,
+  conversationId,
+  hasPDF = false,
+}: ChatCallProps) {
   // Validate user and permissions
   const userValidation = await validateUser();
   if (!userValidation.isAuthorized) {
@@ -444,6 +506,7 @@ async function* respond({ message, conversationId }: ChatCallProps) {
     messages: messageHistory,
     thoughts: thoughtHistory,
     honchoMessages: honchoHistory,
+    pdfMessages: pdfHistory,
     summaries: summaryHistory,
   } = await fetchConversationHistory(appId, userId, conversationId);
 
@@ -452,7 +515,9 @@ async function* respond({ message, conversationId }: ChatCallProps) {
     messageHistory,
     thoughtHistory,
     honchoHistory,
-    message
+    pdfHistory,
+    message,
+    hasPDF
   );
   const { textStream: thoughtStream } = streamText({
     messages: thoughtPrompt,
@@ -473,18 +538,36 @@ async function* respond({ message, conversationId }: ChatCallProps) {
   }
 
   // Get honcho response
-  const query = `Given the following user message: <current_message>${message}</current_message> I had the following thought: ${parseHonchoContent(thought)}`;
+  const honchoQuery = parseHonchoContent(thought);
   const { content: honchoContent } = await honcho.apps.users.sessions.chat(
     appId,
     userId,
     conversationId,
-    { queries: query }
+    { queries: honchoQuery }
   );
 
   yield formatStreamChunk({
     type: 'honcho',
     text: honchoContent,
   });
+
+  // Get PDF response if needed
+  let pdfContent = '';
+  if (hasPDF) {
+    const pdfQuery = parsePDFContent(thought);
+    const { content: pdfResponse } = await honcho.apps.users.sessions.chat(
+      appId,
+      userId,
+      conversationId,
+      { queries: pdfQuery }
+    );
+    pdfContent = pdfResponse;
+
+    yield formatStreamChunk({
+      type: 'pdf',
+      text: pdfContent,
+    });
+  }
 
   // Get last summary
   const lastSummary = summaryHistory[0]?.content;
@@ -505,8 +588,10 @@ async function* respond({ message, conversationId }: ChatCallProps) {
   const responsePrompt = buildResponsePrompt(
     messageHistory,
     honchoHistory,
+    pdfHistory,
     message,
     honchoContent,
+    pdfContent,
     lastSummary
   );
 
@@ -537,6 +622,7 @@ async function* respond({ message, conversationId }: ChatCallProps) {
       message,
       thought,
       honchoContent,
+      pdfContent,
       response
     );
   });
@@ -546,13 +632,13 @@ async function* respond({ message, conversationId }: ChatCallProps) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, conversationId } = await req.json();
+    const { message, conversationId, hasPDF = false } = await req.json();
 
     if (!message || !conversationId) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    return new Response(stream(respond({ message, conversationId })));
+    return new Response(stream(respond({ message, conversationId, hasPDF })));
   } catch (error) {
     console.error('Error processing chat request:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
