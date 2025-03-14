@@ -21,12 +21,13 @@ import {
   updateConversation,
 } from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
-import { Conversation, Message } from '@/utils/types';
+import { Message, Conversation } from '@/app/types';
 import { localStorageProvider } from '@/utils/swrCache';
 
 import useAutoScroll from '@/hooks/autoscroll';
 import MessageList from '@/components/MessageList';
 import { MessageListRef } from '@/components/MessageList';
+import { IconShare } from '@/components/icons';
 
 const Thoughts = dynamic(() => import('@/components/thoughts'), {
   ssr: false,
@@ -505,6 +506,56 @@ What's on your mind? Let's dive in. 🌱`,
     }
   }, [conversationId, messagesLoading]);
 
+  const handleShare = async () => {
+    if (!conversationId || !messages.length) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No conversation to share',
+        icon: 'error',
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: messages[0]?.content || 'Shared Conversation',
+          content: {
+            messages: messages.map(({ id, content, isUser, metadata }) => ({
+              id,
+              role: isUser ? 'user' : 'assistant',
+              content,
+              metadata,
+            })),
+          },
+        }),
+      });
+
+      const { data, error } = await response.json();
+      if (error) throw new Error(error);
+
+      const shareUrl = `${window.location.origin}/share/${data.share_id}`;
+      await navigator.clipboard.writeText(shareUrl);
+
+      Swal.fire({
+        title: 'Success',
+        text: 'Share link copied to clipboard!',
+        icon: 'success',
+      });
+    } catch (error) {
+      console.error('Error sharing conversation:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to share conversation',
+        icon: 'error',
+      });
+    }
+  };
+
   return (
     <main className="relative flex h-full overflow-hidden">
       <Sidebar
@@ -542,6 +593,25 @@ What's on your mind? Let's dive in. 🌱`,
             </p>
           </section>
         )}
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+            >
+              <FiMenu className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              title="Share conversation"
+            >
+              <IconShare />
+            </button>
+          </div>
+        </div>
         <div className="flex flex-col grow overflow-hidden bg-secondary">
           <MessageList
             ref={messageListRef}

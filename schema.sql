@@ -145,3 +145,59 @@ create policy "Can only view own subs data." on subscriptions for select using (
  */
 -- drop publication if exists supabase_realtime;
 -- create publication supabase_realtime for table products, prices;
+
+/**
+ * SHARED_CONVERSATIONS
+ * Table to store shared conversation links and their metadata
+ */
+create table shared_conversations (
+  -- Unique identifier for the shared conversation
+  id uuid default gen_random_uuid() primary key,
+  -- Reference to the user who shared the conversation
+  user_id uuid references auth.users not null,
+  -- Title of the conversation
+  title text not null,
+  -- The actual conversation content stored as JSON
+  content jsonb not null,
+  -- Unique share link identifier (will be used in URL)
+  share_id text unique not null,
+  -- When the conversation was shared
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  -- When the share link expires (null means never)
+  expires_at timestamp with time zone,
+  -- Whether the share is currently active
+  is_active boolean default true
+);
+
+-- Enable RLS
+alter table shared_conversations enable row level security;
+
+-- Policies
+-- Users can view their own shared conversations
+create policy "Users can view own shared conversations" 
+  on shared_conversations for select 
+  using (auth.uid() = user_id);
+
+-- Users can create shared conversations
+create policy "Users can create shared conversations" 
+  on shared_conversations for insert 
+  with check (auth.uid() = user_id);
+
+-- Users can update their own shared conversations
+create policy "Users can update own shared conversations" 
+  on shared_conversations for update 
+  using (auth.uid() = user_id);
+
+-- Users can delete their own shared conversations
+create policy "Users can delete own shared conversations" 
+  on shared_conversations for delete 
+  using (auth.uid() = user_id);
+
+-- Anyone can view active shared conversations by share_id
+create policy "Public can view active shared conversations" 
+  on shared_conversations for select 
+  using (is_active = true);
+
+-- Create index for faster lookups
+create index idx_shared_conversations_share_id on shared_conversations(share_id);
+create index idx_shared_conversations_user_id on shared_conversations(user_id);

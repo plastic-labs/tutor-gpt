@@ -10,6 +10,23 @@ export async function getChatAccessWithUser(userId: string) {
 }
 
 export async function createOrRetrieveFreeTrialSubscription(userId: string) {
+  // In dev mode, return a dummy subscription
+  if (process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false') {
+    return {
+      id: 'dev_subscription',
+      user_id: userId,
+      status: 'trialing',
+      metadata: { freeMessages: 999999 },
+      price_id: null,
+      quantity: 1,
+      cancel_at_period_end: false,
+      created: new Date().toISOString(),
+      current_period_start: new Date().toISOString(),
+      current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      trial_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }
+
   const supabase = await createClient();
   const existingSub = await getSubscription(supabase);
   if (existingSub) return existingSub;
