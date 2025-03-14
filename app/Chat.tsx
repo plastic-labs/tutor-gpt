@@ -3,7 +3,7 @@ import useSWR from 'swr';
 
 import dynamic from 'next/dynamic';
 
-import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
+import { FaLightbulb, FaPaperPlane, FaFileUpload } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
@@ -37,7 +37,7 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
 });
 
 interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response';
+  type: 'thought' | 'honcho' | 'response' | 'pdf';
   text: string;
 }
 
@@ -193,6 +193,10 @@ What's on your mind? Let's dive in. 🌱`,
     id: '',
     metadata: {},
   };
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -384,10 +388,43 @@ What's on your mind? Let's dive in. 🌱`,
       }
 
       // Get the consolidated stream
-      const stream = await fetchConsolidatedStream(
-        messageToSend,
-        conversationId!
-      );
+      const formData = new FormData();
+      formData.append('message', messageToSend);
+      formData.append('conversationId', conversationId!);
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+
+      const response = await fetch(`/api/chat`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        if (response.status === 402) {
+          Swal.fire({
+            title: 'Subscription Required',
+            text: 'You have no active subscription. Subscribe to continue using Bloom!',
+            icon: 'warning',
+            confirmButtonColor: '#3085d6',
+            confirmButtonText: 'Subscribe',
+            showCancelButton: false,
+          });
+          throw new Error(
+            `Subscription is required to chat: ${response.status}`
+          );
+        }
+        const errorText = await response.text();
+        console.error(`Stream error:`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        });
+        console.error(response);
+        throw new Error(`Failed to fetch stream: ${response.status}`);
+      }
+
+      const stream = response.body;
       if (!stream) throw new Error('Failed to get stream');
 
       const streamReader = new StreamReader(stream);
@@ -423,6 +460,13 @@ What's on your mind? Let's dive in. 🌱`,
             setThought(updatedThought);
             break;
 
+          case 'pdf':
+            // Update the thought with PDF response
+            const updatedThoughtWithPDF =
+              thoughtText + '\n\nPDF Analysis:\n\n' + chunk.text;
+            setThought(updatedThoughtWithPDF);
+            break;
+
           case 'response':
             currentModelOutput += chunk.text;
             mutateMessages(
@@ -443,6 +487,12 @@ What's on your mind? Let's dive in. 🌱`,
       }
 
       streamReader.release();
+
+      // Clear selected file after successful upload
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
 
       // Preserve the final message state instead of revalidating from server
       if (currentModelOutput) {
@@ -489,6 +539,14 @@ What's on your mind? Let's dive in. 🌱`,
       setCanSend(true);
     }
   }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setIsUploading(true);
+    }
+  };
 
   const canUseApp = useMemo(
     () => isSubscribed || freeMessages > 0,
@@ -574,7 +632,11 @@ What's on your mind? Let's dive in. 🌱`,
               <textarea
                 ref={input}
                 placeholder={
-                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
+                  canUseApp
+                    ? selectedFile
+                      ? `Selected file: ${selectedFile.name}`
+                      : 'Type a message...'
+                    : 'Subscribe to send messages'
                 }
                 className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-hidden focus:outline-hidden ${
                   canSend && canUseApp
@@ -593,6 +655,23 @@ What's on your mind? Let's dive in. 🌱`,
                   }
                 }}
               />
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept=".pdf,.txt"
+                className="hidden"
+              />
+              <button
+                className={`bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2 ${
+                  selectedFile ? 'bg-green-500' : ''
+                }`}
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!canUseApp}
+              >
+                <FaFileUpload className="inline" />
+              </button>
               <button
                 className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"

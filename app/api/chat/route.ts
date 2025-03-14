@@ -9,10 +9,11 @@ import { honcho } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
 import { getChatAccessWithUser } from '@/utils/supabase/actions';
 import { after, NextRequest, NextResponse } from 'next/server';
-import thoughtPrompt from '@/utils/prompts/thought';
-import thoughtWithPDFPrompt from '@/utils/prompts/thoughtWithPDF';
+import thoughtWithPDFPrompt from '@/utils/prompts/thought';
 import summaryPrompt from '@/utils/prompts/summary';
 import responsePrompt from '@/utils/prompts/response';
+import { parsePDF } from '@/utils/parsePdf';
+import { collectionChat } from '@/utils/pdfChat';
 
 export const runtime = 'nodejs';
 export const maxDuration = 400;
@@ -22,7 +23,7 @@ export const dynamic = 'force-dynamic'; // always run dynamically
 interface ChatCallProps {
   message: string;
   conversationId: string;
-  hasPDF?: boolean;
+  fileContent?: string[];
 }
 
 interface StreamResponseChunk {
@@ -141,53 +142,69 @@ async function fetchConversationHistory(
   userId: string,
   conversationId: string
 ) {
-  const [messageIter, thoughtIter, honchoIter, pdfIter, summaryIter] =
-    await Promise.all([
-      honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
+  const [
+    messageIter,
+    thoughtIter,
+    honchoIter,
+    pdfIter,
+    summaryIter,
+    collectionIter,
+  ] = await Promise.all([
+    honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
+      reverse: true,
+      size: MAX_CONTEXT_SIZE,
+    }),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'thought',
         reverse: true,
         size: MAX_CONTEXT_SIZE,
-      }),
-      honcho.apps.users.sessions.metamessages.list(
-        appId,
-        userId,
-        conversationId,
-        {
-          metamessage_type: 'thought',
-          reverse: true,
-          size: MAX_CONTEXT_SIZE,
-        }
-      ),
-      honcho.apps.users.sessions.metamessages.list(
-        appId,
-        userId,
-        conversationId,
-        {
-          metamessage_type: 'honcho',
-          reverse: true,
-          size: MAX_CONTEXT_SIZE,
-        }
-      ),
-      honcho.apps.users.sessions.metamessages.list(
-        appId,
-        userId,
-        conversationId,
-        {
-          metamessage_type: 'pdf',
-          reverse: true,
-          size: MAX_CONTEXT_SIZE,
-        }
-      ),
-      honcho.apps.users.sessions.metamessages.list(
-        appId,
-        userId,
-        conversationId,
-        {
-          metamessage_type: 'summary',
-          reverse: true,
-          size: 1,
-        }
-      ),
-    ]);
+      }
+    ),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'honcho',
+        reverse: true,
+        size: MAX_CONTEXT_SIZE,
+      }
+    ),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'pdf',
+        reverse: true,
+        size: MAX_CONTEXT_SIZE,
+      }
+    ),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'summary',
+        reverse: true,
+        size: 1,
+      }
+    ),
+    honcho.apps.users.sessions.metamessages.list(
+      appId,
+      userId,
+      conversationId,
+      {
+        metamessage_type: 'collection',
+        reverse: true,
+        size: 1,
+      }
+    ),
+  ]);
 
   return {
     messages: Array.from(messageIter.items || []).reverse(),
@@ -195,6 +212,7 @@ async function fetchConversationHistory(
     honchoMessages: Array.from(honchoIter.items || []).reverse(),
     pdfMessages: Array.from(pdfIter.items || []).reverse(),
     summaries: Array.from(summaryIter.items || []),
+    collectionId: collectionIter.items?.[0]?.content,
   };
 }
 
@@ -275,13 +293,10 @@ function buildThoughtPrompt(
   <honcho-response>${honchoHistory.length > 0 ? honchoHistory[honchoHistory.length - 1]?.content || 'None' : 'None'}</honcho-response>
   <pdf-response>${pdfHistory.length > 0 ? pdfHistory[pdfHistory.length - 1]?.content || 'None' : 'None'}</pdf-response>
   <tutor>${messageHistory.length > 0 && !messageHistory[messageHistory.length - 1].is_user ? messageHistory[messageHistory.length - 1]?.content || 'None' : 'None'}</tutor>
+  <pdf-available>${hasPDF}</pdf-available>
   <current_message>${currentMessage}</current_message>`;
 
-  return [
-    ...(hasPDF ? thoughtWithPDFPrompt : thoughtPrompt),
-    ...thoughtProcessedHistory,
-    finalMessage,
-  ];
+  return [...thoughtWithPDFPrompt, ...thoughtProcessedHistory, finalMessage];
 }
 
 function buildResponsePrompt(
@@ -416,7 +431,8 @@ async function saveConversation(
   thought: string,
   honchoContent: string,
   pdfContent: string,
-  response: string
+  response: string,
+  collectionId?: string
 ) {
   // Save the user message and related metamessages
   const newUserMessage = await honcho.apps.users.sessions.messages.create(
@@ -468,6 +484,21 @@ async function saveConversation(
     }
   );
 
+  // Save collection ID metamessage if available
+  if (collectionId) {
+    await honcho.apps.users.sessions.metamessages.create(
+      appId,
+      userId,
+      conversationId,
+      {
+        message_id: newUserMessage.id,
+        metamessage_type: 'collection',
+        content: collectionId,
+        metadata: { type: 'assistant' },
+      }
+    );
+  }
+
   // Save the assistant response
   await honcho.apps.users.sessions.messages.create(
     appId,
@@ -483,7 +514,7 @@ async function saveConversation(
 async function* respond({
   message,
   conversationId,
-  hasPDF = false,
+  fileContent,
 }: ChatCallProps) {
   // Validate user and permissions
   const userValidation = await validateUser();
@@ -508,6 +539,7 @@ async function* respond({
     honchoMessages: honchoHistory,
     pdfMessages: pdfHistory,
     summaries: summaryHistory,
+    collectionId: existingCollectionId,
   } = await fetchConversationHistory(appId, userId, conversationId);
 
   // Generate thought
@@ -517,7 +549,7 @@ async function* respond({
     honchoHistory,
     pdfHistory,
     message,
-    hasPDF
+    Boolean(fileContent || existingCollectionId)
   );
   const { textStream: thoughtStream } = streamText({
     messages: thoughtPrompt,
@@ -553,15 +585,57 @@ async function* respond({
 
   // Get PDF response if needed
   let pdfContent = '';
-  if (hasPDF) {
+  let collectionId: string | undefined;
+  if (fileContent || existingCollectionId) {
+    // If we have a new file, create a collection and add documents
+    if (fileContent) {
+      const collection = await honcho.apps.users.collections.create(
+        appId,
+        userId,
+        {
+          name: `PDF Collection - ${conversationId}`,
+        }
+      );
+      collectionId = collection.id;
+
+      // Add each page of the PDF as a document to the collection
+      await Promise.all(
+        fileContent.map((content, index) =>
+          honcho.apps.users.collections.documents.create(
+            appId,
+            userId,
+            collection.id,
+            {
+              content,
+              metadata: {
+                type: 'pdf',
+                page: index + 1,
+                conversationId,
+              },
+            }
+          )
+        )
+      );
+    } else {
+      // Use existing collection if no new file
+      collectionId = existingCollectionId;
+    }
+
+    // Get PDF query from thought stream
     const pdfQuery = parsePDFContent(thought);
-    const { content: pdfResponse } = await honcho.apps.users.sessions.chat(
-      appId,
-      userId,
-      conversationId,
-      { queries: pdfQuery }
-    );
-    pdfContent = pdfResponse;
+
+    // Use collectionChat to get response from the collection
+    const collectionResponse = await collectionChat({
+      collectionId: collectionId!,
+      question: pdfQuery,
+      metadata: {
+        sessionId: conversationId,
+        userId,
+        appId,
+      },
+    });
+
+    pdfContent = collectionResponse;
 
     yield formatStreamChunk({
       type: 'pdf',
@@ -623,7 +697,8 @@ async function* respond({
       thought,
       honchoContent,
       pdfContent,
-      response
+      response,
+      collectionId
     );
   });
 
@@ -632,13 +707,33 @@ async function* respond({
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, conversationId, hasPDF = false } = await req.json();
+    const formData = await req.formData();
+    const message = formData.get('message') as string;
+    const conversationId = formData.get('conversationId') as string;
+    const file = formData.get('file') as File | null;
 
     if (!message || !conversationId) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    return new Response(stream(respond({ message, conversationId, hasPDF })));
+    let fileContent: string[] | undefined;
+    if (file) {
+      // Read file content
+      const buffer = await file.arrayBuffer();
+
+      // Process based on file type
+      if (file.type === 'application/pdf') {
+        fileContent = await parsePDF(buffer, file.name);
+      } else if (file.type === 'text/plain') {
+        fileContent = [new TextDecoder().decode(buffer)];
+      } else {
+        return new NextResponse('Unsupported file type', { status: 400 });
+      }
+    }
+
+    return new Response(
+      stream(respond({ message, conversationId, fileContent }))
+    );
   } catch (error) {
     console.error('Error processing chat request:', error);
     return new NextResponse('Internal Server Error', { status: 500 });

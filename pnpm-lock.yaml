@@ -12,6 +12,9 @@ importers:
 
   .:
     dependencies:
+      '@mistralai/mistralai':
+        specifier: ^1.5.1
+        version: 1.5.1(zod@3.24.2)
       '@openrouter/ai-sdk-provider':
         specifier: ^0.2.1
         version: 0.2.1(zod@3.24.2)
@@ -1346,6 +1349,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+
+  '@mistralai/mistralai@1.5.1':
+    resolution: {integrity: sha512-Ie0EH4dAO11MEXR5N2kS2cgr+ycTWvqN/yP9bKrtmUEqjdcF4i7DLxtrFMUw5l2dOPhrkX93G4SziFiATPWu2w==}
+    peerDependencies:
+      zod: '>= 3'
 
   '@next/env@15.1.7':
     resolution: {integrity: sha512-d9jnRrkuOH7Mhi+LHav2XW91HOgTAWHxjMPkXMGBc9B2b7614P7kjt8tAplRvJpbSt4nbO1lugcT/kAaWzjlLQ==}
@@ -7698,6 +7706,11 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@mistralai/mistralai@1.5.1(zod@3.24.2)':
+    dependencies:
+      zod: 3.24.2
+      zod-to-json-schema: 3.24.1(zod@3.24.2)
 
   '@next/env@15.1.7': {}
 
