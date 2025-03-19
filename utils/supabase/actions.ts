@@ -4,7 +4,14 @@ import { createFreeTrialSubscription, decrementFreeMessages } from './admin';
 import { createClient } from './server';
 import { getChatAccess, getSubscription } from './queries';
 
-export async function getChatAccessWithUser(userId: string) {
+export async function getChatAccessWithUser(isDevMode: boolean, userId: string) {
+  if (isDevMode) {
+    return {
+      isSubscribed: true,
+      freeMessages: 50,
+      canChat: true,
+    };
+  }
   const subscription = await createOrRetrieveFreeTrialSubscription(userId);
   return getChatAccess(subscription);
 }

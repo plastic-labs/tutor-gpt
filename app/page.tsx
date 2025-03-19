@@ -20,17 +20,10 @@ export default async function Home() {
     redirect('/auth');
   }
 
-  // Get initial subscription state
-  const realChatAccess = await getChatAccessWithUser(user.id);
   const isDevMode = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false';
 
-  const chatAccess = {
-    isSubscribed: isDevMode ? true : realChatAccess.isSubscribed,
-    freeMessages: realChatAccess.freeMessages,
-    canChat: isDevMode
-      ? true
-      : realChatAccess.isSubscribed || realChatAccess.freeMessages > 0,
-  };
+  // Get initial subscription state
+  const chatAccess = await getChatAccessWithUser(isDevMode, user.id);
 
   // Get initial conversations
   const conversations = await getConversations();

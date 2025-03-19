@@ -11,9 +11,11 @@ type Price = Tables<'prices'>;
 const TRIAL_PERIOD_DAYS = 0;
 const FREE_MESSAGE_LIMIT = 50;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-01-27.acacia',
-});
+const stripe = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true'
+  ? new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-01-27.acacia',
+  })
+  : null;
 
 // Note: supabaseAdmin uses the SERVICE_ROLE_KEY which you must only use in a secure server-side context
 // as it has admin privileges and overwrites RLS policies!
@@ -183,7 +185,7 @@ const upsertCustomerToSupabase = async (uuid: string, customerId: string) => {
 
 const createCustomerInStripe = async (uuid: string, email: string) => {
   const customerData = { metadata: { supabaseUUID: uuid }, email: email };
-  const newCustomer = await stripe.customers.create(customerData);
+  const newCustomer = await stripe?.customers.create(customerData);
   if (!newCustomer) throw new Error('Stripe customer creation failed.');
 
   return newCustomer.id;
@@ -207,6 +209,8 @@ const createOrRetrieveCustomer = async ({
   if (queryError) {
     throw new Error(`Supabase customer lookup failed: ${queryError.message}`);
   }
+
+  if (!stripe) throw new Error('Stripe is not enabled');
 
   // Retrieve the Stripe customer ID using the Supabase customer ID, with email fallback
   let stripeCustomerId: string | undefined;
@@ -301,6 +305,8 @@ const manageSubscriptionStatusChange = async (
     throw new Error(`Customer lookup failed: ${noCustomerError.message}`);
 
   const { id: uuid } = customerData!;
+
+  if (!stripe) throw new Error('Stripe is not enabled');
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
     expand: ['default_payment_method'],

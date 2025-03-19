@@ -51,6 +51,9 @@ importers:
       '@vercel/speed-insights':
         specifier: ^1.2.0
         version: 1.2.0(next@15.1.7(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
+      again:
+        specifier: ^0.0.1
+        version: 0.0.1
       ai:
         specifier: ^4.1.41
         version: 4.1.41(react@19.0.0)(zod@3.24.2)
@@ -2384,6 +2387,9 @@ packages:
     resolution: {integrity: sha512-cl669nCJTZBsL97OF4kUQm5g5hC2uihk0NxY3WENAC0TYdILVkAyHymAntgxGkl7K+t0cXIrH5siy5S4XkFycA==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+
+  again@0.0.1:
+    resolution: {integrity: sha512-7RwRcQP1LstJTiKG5CSa/DTEWprnEUVbIg8YYMowQTEzWT4sGYOvp418l2wskC2Mo1uZ6f1pFFgqh7qxCxo5pQ==}
 
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -8677,6 +8683,8 @@ snapshots:
       acorn: 8.14.0
 
   acorn@8.14.0: {}
+
+  again@0.0.1: {}
 
   agent-base@6.0.2:
     dependencies:
