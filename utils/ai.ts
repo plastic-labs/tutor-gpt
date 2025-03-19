@@ -16,6 +16,10 @@ const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
 const SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'dev';
 const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'local';
 
+if (!OPENROUTER_API_KEY) {
+  throw new Error('OpenRouter API key is not configured. Please set the AI_API_KEY environment variable.');
+}
+
 const openrouter = createOpenRouter({
   // custom settings, e.g.
   // baseURL: 'https://openrouter.ai/api/v1',
