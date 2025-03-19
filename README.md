@@ -76,7 +76,7 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 **Agent**
 
 - `MODEL` — The Openrouter model to use for generating responses.
-- `OPENAI_API_KEY` — The Openrouter API key to use
+- `AI_API_KEY` — The Openrouter API key to use
 - `HONCHO_URL` — The URL for the Honcho instance to use
 - `HONCHO_APP_NAME` — The name of the app in Honcho to use
 
