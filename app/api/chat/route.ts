@@ -4,7 +4,7 @@ import { respond } from '@/utils/ai/index';
 import { stream } from '@/utils/ai/stream';
 
 export const runtime = 'nodejs';
-export const maxDuration = 400;
+export const maxDuration = 300; // TODO: increase when fluid compute turns on
 export const dynamic = 'force-dynamic'; // always run dynamically
 
 export async function POST(req: NextRequest) {
@@ -34,7 +34,15 @@ export async function POST(req: NextRequest) {
     }
 
     return new Response(
-      stream(respond({ message, conversationId, fileContent }))
+      stream(respond({ message, conversationId, fileContent })),
+      {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          'Transfer-Encoding': 'chunked',
+        },
+      }
     );
   } catch (error) {
     console.error('Error processing chat request:', error);

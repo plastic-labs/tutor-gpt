@@ -77,79 +77,89 @@ export async function* respond({
     });
   }
 
-  // Get honcho response
-  const honchoQuery = extractTagContent(thought, 'honcho');
-  const { content: honchoContent } = await honcho.apps.users.sessions.chat(
-    appId,
-    userId,
-    conversationId,
-    { queries: honchoQuery }
-  );
+  const [honchoContent, { pdfContent, collectionId }] = await Promise.all([
+    // HONCHO STUFF
+    (async () => {
+      const honchoQuery = extractTagContent(thought, 'honcho');
+      const { content: honchoContent } = await honcho.apps.users.sessions.chat(
+        appId,
+        userId,
+        conversationId,
+        { queries: honchoQuery }
+      );
+      return honchoContent;
+    })(),
+    // PDF STUFF
+    (async () => {
+      // Get PDF response if needed
+      let pdfContent = '';
+      let collectionId: string | undefined;
+      if (fileContent || existingCollectionId) {
+        // If we have a new file, create a collection and add documents
+        if (fileContent) {
+          const collection = await honcho.apps.users.collections.create(
+            appId,
+            userId,
+            {
+              name: `PDF Collection - ${conversationId}`,
+            }
+          );
+          collectionId = collection.id;
+
+          // Add each page of the PDF as a document to the collection
+          await Promise.all(
+            fileContent.map((content, index) =>
+              honcho.apps.users.collections.documents.create(
+                appId,
+                userId,
+                collection.id,
+                {
+                  content,
+                  metadata: {
+                    type: 'pdf',
+                    page: index + 1,
+                    conversationId,
+                  },
+                }
+              )
+            )
+          );
+        } else {
+          // Use existing collection if no new file
+          collectionId = existingCollectionId;
+        }
+
+        // Get PDF query from thought stream
+        const pdfQuery = extractTagContent(thought, 'pdf-agent');
+
+        // Use collectionChat to get response from the collection
+        const collectionResponse = await collectionChat({
+          collectionId: collectionId!,
+          question: pdfQuery,
+          metadata: {
+            sessionId: conversationId,
+            userId,
+            appId,
+          },
+        });
+
+        pdfContent = collectionResponse;
+
+        return { pdfContent, collectionId };
+      }
+      return { pdfContent: '', collectionId: undefined };
+    })(),
+  ]);
 
   yield formatStreamChunk({
     type: 'honcho',
     text: honchoContent,
   });
 
-  // Get PDF response if needed
-  let pdfContent = '';
-  let collectionId: string | undefined;
-  if (fileContent || existingCollectionId) {
-    // If we have a new file, create a collection and add documents
-    if (fileContent) {
-      const collection = await honcho.apps.users.collections.create(
-        appId,
-        userId,
-        {
-          name: `PDF Collection - ${conversationId}`,
-        }
-      );
-      collectionId = collection.id;
-
-      // Add each page of the PDF as a document to the collection
-      await Promise.all(
-        fileContent.map((content, index) =>
-          honcho.apps.users.collections.documents.create(
-            appId,
-            userId,
-            collection.id,
-            {
-              content,
-              metadata: {
-                type: 'pdf',
-                page: index + 1,
-                conversationId,
-              },
-            }
-          )
-        )
-      );
-    } else {
-      // Use existing collection if no new file
-      collectionId = existingCollectionId;
-    }
-
-    // Get PDF query from thought stream
-    const pdfQuery = extractTagContent(thought, 'pdf-agent');
-
-    // Use collectionChat to get response from the collection
-    const collectionResponse = await collectionChat({
-      collectionId: collectionId!,
-      question: pdfQuery,
-      metadata: {
-        sessionId: conversationId,
-        userId,
-        appId,
-      },
-    });
-
-    pdfContent = collectionResponse;
-
-    yield formatStreamChunk({
-      type: 'pdf',
-      text: pdfContent,
-    });
-  }
+  yield formatStreamChunk({
+    type: 'pdf',
+    text: pdfContent,
+  });
 
   // Get last summary
   const lastSummary = summaryHistory[0]?.content;

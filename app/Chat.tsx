@@ -52,23 +52,63 @@ class StreamReader {
     this.buffer = '';
   }
 
-  async read(): Promise<{ done: boolean; chunk?: StreamResponseChunk }> {
-    const { done, value } = await this.reader.read();
+  private tryParseNextJSON(): {
+    parsed: StreamResponseChunk | null;
+    remaining: string;
+  } {
+    let curlyBraceCount = 0;
+    let startIndex = -1;
 
-    if (done) {
-      return { done };
+    // Find the start of the next JSON object
+    for (let i = 0; i < this.buffer.length; i++) {
+      if (this.buffer[i] === '{') {
+        if (startIndex === -1) startIndex = i;
+        curlyBraceCount++;
+      } else if (this.buffer[i] === '}') {
+        curlyBraceCount--;
+        if (curlyBraceCount === 0 && startIndex !== -1) {
+          // We found a complete JSON object
+          try {
+            const jsonStr = this.buffer.substring(startIndex, i + 1);
+            const parsed = JSON.parse(jsonStr) as StreamResponseChunk;
+            return {
+              parsed,
+              remaining: this.buffer.substring(i + 1),
+            };
+          } catch (e) {
+            // If we can't parse this as JSON, keep looking
+            continue;
+          }
+        }
+      }
     }
 
-    const text = this.decoder.decode(value, { stream: true });
-    this.buffer += text;
+    // No complete JSON object found
+    return { parsed: null, remaining: this.buffer };
+  }
 
-    try {
-      const chunk = JSON.parse(this.buffer) as StreamResponseChunk;
-      this.buffer = '';
-      return { done: false, chunk };
-    } catch (e) {
-      // If we can't parse the JSON yet, return nothing and wait for more data
-      return { done: false };
+  async read(): Promise<{ done: boolean; chunk?: StreamResponseChunk }> {
+    while (true) {
+      // Try to parse any complete JSON object from our buffer
+      const { parsed, remaining } = this.tryParseNextJSON();
+      if (parsed) {
+        this.buffer = remaining;
+        return { done: false, chunk: parsed };
+      }
+
+      // If we couldn't parse anything, we need more data
+      const { done, value } = await this.reader.read();
+
+      if (done) {
+        // Only return done if the reader is actually finished and we have no remaining buffer
+        if (this.buffer.trim()) {
+          console.warn('Stream ended with unparsed data:', this.buffer);
+        }
+        return { done: true };
+      }
+
+      // Append new data to our buffer and continue trying to parse
+      this.buffer += this.decoder.decode(value, { stream: true });
     }
   }
 
@@ -433,6 +473,7 @@ What's on your mind? Let's dive in. 🌱`,
       while (true) {
         const { done, chunk } = await streamReader.read();
         if (done) {
+          console.log('done');
           if (!isSubscribed) {
             const success = await useFreeTrial(userId);
             if (success) {
@@ -443,7 +484,10 @@ What's on your mind? Let's dive in. 🌱`,
           break;
         }
 
-        if (!chunk) continue;
+        if (!chunk) {
+          console.log('waiting');
+          continue;
+        }
 
         console.log(chunk.text);
 
