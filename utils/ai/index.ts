@@ -218,19 +218,17 @@ export async function* respond({
   }
 
   // Save conversation data
-  after(async () => {
-    await saveConversation(
-      appId,
-      userId,
-      conversationId,
-      message,
-      thought,
-      honchoContent,
-      pdfContent,
-      response,
-      collectionId
-    );
-  });
+  await saveConversation(
+    appId,
+    userId,
+    conversationId,
+    message,
+    thought,
+    honchoContent,
+    pdfContent,
+    response,
+    collectionId
+  );
 
   return new NextResponse(response);
 }

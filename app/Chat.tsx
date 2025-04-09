@@ -509,21 +509,7 @@ What's on your mind? Let's dive in. 🌱`,
         fileInputRef.current.value = '';
       }
 
-      // Preserve the final message state instead of revalidating from server
-      if (currentModelOutput) {
-        mutateMessages(
-          [
-            ...(newMessages?.slice(0, -1) || []),
-            {
-              content: currentModelOutput,
-              isUser: false,
-              id: '',
-              metadata: {},
-            },
-          ],
-          { revalidate: false }
-        );
-      }
+      await mutateMessages();
 
       messageListRef.current?.scrollToBottom();
       setCanSend(true);
