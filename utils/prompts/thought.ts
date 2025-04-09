@@ -76,7 +76,7 @@ const thoughtWithPDFPrompt: Message[] = [
   I will then output my next queries, wrapped in the appropriate tags:
   - <honcho> tags for psychological insights
   - <pdf-agent> tags for document analysis
-  If no query is warranted for either agent, I'll output "None" in their respective tags.
+  If no query is warranted for either agent, I'll output "None" in their respective tags. Do not attempt to answer your own questions.
 
   Please go ahead and send over the first set of inputs whenever you're ready. I'm looking forward to diving in and seeing what insights I can surface from both the user's psychology and their documents to enhance their experience with Bloom the tutor! Let the experiment begin.`,
 ];

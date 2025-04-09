@@ -18,16 +18,16 @@ export async function POST(req: NextRequest) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
-    let fileContent: string[] | undefined;
+    let fileContent: Promise<string[]> | undefined;
     if (file) {
       // Read file content
       const buffer = await file.arrayBuffer();
 
       // Process based on file type
       if (file.type === 'application/pdf') {
-        fileContent = await parsePDF(buffer, file.name);
+        fileContent = parsePDF(buffer, file.name);
       } else if (file.type === 'text/plain') {
-        fileContent = [new TextDecoder().decode(buffer)];
+        fileContent = Promise.resolve([new TextDecoder().decode(buffer)]);
       } else {
         return new NextResponse('Unsupported file type', { status: 400 });
       }

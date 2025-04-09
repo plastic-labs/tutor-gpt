@@ -23,13 +23,8 @@ export default async function Home() {
   // Get initial subscription state
   const isDevMode = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'false';
   const realChatAccess = isDevMode
-    ? { isSubscribed: true, freeMessages: 100 }
+    ? { isSubscribed: true, freeMessages: 100 } // arbitrary values for dev mode
     : await getChatAccessWithUser(user.id);
-
-  // const realChatAccess = {
-  //   isSubscribed: true,
-  //   freeMessages: 100,
-  // };
 
   const chatAccess = {
     isSubscribed: realChatAccess.isSubscribed,

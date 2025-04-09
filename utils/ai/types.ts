@@ -1,7 +1,7 @@
 export interface ChatCallProps {
   message: string;
   conversationId: string;
-  fileContent?: string[];
+  fileContent?: Promise<string[]>;
 }
 
 export interface StreamResponseChunk {

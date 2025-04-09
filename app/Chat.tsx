@@ -119,18 +119,20 @@ class StreamReader {
 
 async function fetchConsolidatedStream(
   message: string,
-  conversationId: string
+  conversationId: string,
+  file?: File
 ) {
   try {
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('conversationId', conversationId);
+    if (file) {
+      formData.append('file', file);
+    }
+
     const response = await fetch(`/api/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message,
-        conversationId,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -155,7 +157,9 @@ async function fetchConsolidatedStream(
       throw new Error(`Failed to fetch stream: ${response.status}`);
     }
 
-    return response.body;
+    const stream = response.body;
+    if (!stream) throw new Error('Failed to get stream');
+    return stream;
   } catch (error) {
     console.error(`Error in fetchConsolidatedStream:`, error);
     throw error;
@@ -428,44 +432,11 @@ What's on your mind? Let's dive in. 🌱`,
       }
 
       // Get the consolidated stream
-      const formData = new FormData();
-      formData.append('message', messageToSend);
-      formData.append('conversationId', conversationId!);
-      if (selectedFile) {
-        formData.append('file', selectedFile);
-      }
-
-      const response = await fetch(`/api/chat`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        if (response.status === 402) {
-          Swal.fire({
-            title: 'Subscription Required',
-            text: 'You have no active subscription. Subscribe to continue using Bloom!',
-            icon: 'warning',
-            confirmButtonColor: '#3085d6',
-            confirmButtonText: 'Subscribe',
-            showCancelButton: false,
-          });
-          throw new Error(
-            `Subscription is required to chat: ${response.status}`
-          );
-        }
-        const errorText = await response.text();
-        console.error(`Stream error:`, {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
-        });
-        console.error(response);
-        throw new Error(`Failed to fetch stream: ${response.status}`);
-      }
-
-      const stream = response.body;
-      if (!stream) throw new Error('Failed to get stream');
+      const stream = await fetchConsolidatedStream(
+        messageToSend,
+        conversationId!,
+        selectedFile || undefined
+      );
 
       const streamReader = new StreamReader(stream);
 

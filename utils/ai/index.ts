@@ -94,9 +94,10 @@ export async function* respond({
       // Get PDF response if needed
       let pdfContent = '';
       let collectionId: string | undefined;
-      if (fileContent || existingCollectionId) {
+      const fileContentArray = await fileContent;
+      if (fileContentArray || existingCollectionId) {
         // If we have a new file, create a collection and add documents
-        if (fileContent) {
+        if (fileContentArray) {
           const collection = await honcho.apps.users.collections.create(
             appId,
             userId,
@@ -108,7 +109,7 @@ export async function* respond({
 
           // Add each page of the PDF as a document to the collection
           await Promise.all(
-            fileContent.map((content, index) =>
+            fileContentArray.map((content, index) =>
               honcho.apps.users.collections.documents.create(
                 appId,
                 userId,
@@ -131,19 +132,30 @@ export async function* respond({
 
         // Get PDF query from thought stream
         const pdfQuery = extractTagContent(thought, 'pdf-agent');
+        if (pdfQuery == 'None' || pdfQuery == '') {
+          return { pdfContent: '', collectionId };
+        }
 
         // Use collectionChat to get response from the collection
-        const collectionResponse = await collectionChat({
-          collectionId: collectionId!,
-          question: pdfQuery,
-          metadata: {
-            sessionId: conversationId,
-            userId,
-            appId,
-          },
-        });
+        try {
+          const collectionResponse = await collectionChat({
+            collectionId: collectionId!,
+            question: pdfQuery,
+            metadata: {
+              sessionId: conversationId,
+              userId,
+              appId,
+            },
+          });
 
-        pdfContent = collectionResponse;
+          pdfContent = collectionResponse;
+        } catch (error) {
+          console.error('Error in collectionChat:', error);
+          return {
+            pdfContent: 'There was an error processing your PDF.',
+            collectionId,
+          };
+        }
 
         return { pdfContent, collectionId };
       }
