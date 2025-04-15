@@ -5,7 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
-    setupFiles: ['./test/setup.ts'],
+    setupFiles: ['./tests/setup.ts'],
     // Ensure environment variables are loaded
     env: {
       OPENROUTER_API_KEY: process.env.AI_API_KEY,

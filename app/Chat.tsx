@@ -417,6 +417,7 @@ What's on your mind? Let's dive in. 🌱`,
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     let thoughtText = '';
+    let thoughtWithHonchoText = '';
     let currentModelOutput = '';
 
     try {
@@ -460,7 +461,7 @@ What's on your mind? Let's dive in. 🌱`,
           continue;
         }
 
-        console.log(chunk.text);
+        // console.log(chunk.text);
 
         switch (chunk.type) {
           case 'thought':
@@ -473,12 +474,13 @@ What's on your mind? Let's dive in. 🌱`,
             const updatedThought =
               thoughtText + '\n\nHoncho Dialectic Response:\n\n' + chunk.text;
             setThought(updatedThought);
+            thoughtWithHonchoText = updatedThought;
             break;
 
           case 'pdf':
             // Update the thought with PDF response
             const updatedThoughtWithPDF =
-              thoughtText + '\n\nPDF Analysis:\n\n' + chunk.text;
+              thoughtWithHonchoText + '\n\nPDF Analysis:\n\n' + chunk.text;
             setThought(updatedThoughtWithPDF);
             break;
 
@@ -639,11 +641,10 @@ What's on your mind? Let's dive in. 🌱`,
                       : 'Type a message...'
                     : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-hidden focus:outline-hidden ${
-                  canSend && canUseApp
-                    ? 'border-green-200 focus:border-green-200'
-                    : 'border-red-200 focus:border-red-200 opacity-50'
-                }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-hidden focus:outline-hidden ${canSend && canUseApp
+                  ? 'border-green-200 focus:border-green-200'
+                  : 'border-red-200 focus:border-red-200 opacity-50'
+                  }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
@@ -664,9 +665,8 @@ What's on your mind? Let's dive in. 🌱`,
                 className="hidden"
               />
               <button
-                className={`bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2 ${
-                  selectedFile ? 'bg-green-500' : ''
-                }`}
+                className={`bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2 ${selectedFile ? 'bg-green-500' : ''
+                  }`}
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!canUseApp}
