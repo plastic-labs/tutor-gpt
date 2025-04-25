@@ -20,6 +20,14 @@ export async function POST(req: NextRequest) {
 
     let fileContent: Promise<string[]> | undefined;
     if (file) {
+      // Check file size before reading content
+      const fileSizeLimit = 5 * 1024 * 1024; // 5MB
+      if (file.size > fileSizeLimit) {
+        return new NextResponse('File size exceeds the 5MB limit', {
+          status: 413,
+        }); // 413 Payload Too Large
+      }
+
       // Read file content
       const buffer = await file.arrayBuffer();
 

@@ -68,42 +68,6 @@ export const assistant = (
   content: d(strings, ...values),
 });
 
-/**
- * @deprecated Use streamText instead
- */
-export async function createStream(
-  messages: Message[],
-  metadata: {
-    sessionId: string;
-    userId: string;
-    type: string;
-  },
-  onFinish?: (response: { text: string }) => Promise<void>
-) {
-  try {
-    const result = streamTextAi({
-      model: openrouter(MODEL),
-      messages,
-      ...(onFinish && { onFinish }),
-      experimental_telemetry: {
-        isEnabled: true,
-        metadata: {
-          sessionId: metadata.sessionId,
-          userId: metadata.userId,
-          release: SENTRY_RELEASE,
-          environment: SENTRY_ENVIRONMENT,
-          tags: [metadata.type],
-        },
-      },
-    });
-    return result.toTextStreamResponse();
-  } catch (error) {
-    console.error('Error in fetchOpenRouter:', error);
-    Sentry.captureException(error);
-    throw error;
-  }
-}
-
 export function streamText(
   params: Omit<
     Parameters<typeof streamTextAi>[0],

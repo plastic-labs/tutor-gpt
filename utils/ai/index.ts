@@ -17,6 +17,9 @@ import {
 } from '@/utils/ai/prompts';
 import { checkAndGenerateSummary } from '@/utils/ai/summary';
 import { streamText } from '@/utils/ai';
+import { Collection } from 'honcho-ai/resources/apps/users/collections/collections.mjs';
+
+const MAX_COLLECTION_SIZE_IN_MB = 5;
 
 // Main chat response generator
 export async function* respond({
@@ -98,13 +101,48 @@ export async function* respond({
       if (fileContentArray || existingCollectionId) {
         // If we have a new file, create a collection and add documents
         if (fileContentArray) {
-          const collection = await honcho.apps.users.collections.create(
-            appId,
-            userId,
-            {
-              name: `PDF Collection - ${conversationId}`,
+          let collection: Collection;
+          const sizeInMB = fileContentArray.reduce((acc, content) => {
+            return acc + content.length / 1024 / 1024;
+          }, 0);
+          if (existingCollectionId) {
+            collection = await honcho.apps.users.collections.get(
+              appId,
+              userId,
+              existingCollectionId
+            );
+            const currentSizeInMB = collection.metadata.size as number;
+            console.log('new size', currentSizeInMB + sizeInMB);
+            if (currentSizeInMB + sizeInMB < MAX_COLLECTION_SIZE_IN_MB) {
+              await honcho.apps.users.collections.update(
+                appId,
+                userId,
+                existingCollectionId,
+                {
+                  metadata: {
+                    size: currentSizeInMB + sizeInMB,
+                  },
+                }
+              );
+            } else {
+              return {
+                pdfContent:
+                  'The user has reached the maximum file amount for this chat. Bloom, please inform them that they need to start a new conversation if they want to upload the new file that they just tried to upload. Thank you!',
+                collectionId: undefined,
+              };
             }
-          );
+          } else {
+            collection = await honcho.apps.users.collections.create(
+              appId,
+              userId,
+              {
+                name: `PDF Collection - ${conversationId}`,
+                metadata: {
+                  size: sizeInMB,
+                },
+              }
+            );
+          }
           collectionId = collection.id;
 
           // Add each page of the PDF as a document to the collection

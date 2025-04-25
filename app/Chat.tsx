@@ -416,8 +416,6 @@ What's on your mind? Let's dive in. 🌱`,
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    let thoughtText = '';
-    let thoughtWithHonchoText = '';
     let currentModelOutput = '';
 
     try {
@@ -440,6 +438,8 @@ What's on your mind? Let's dive in. 🌱`,
       );
 
       const streamReader = new StreamReader(stream);
+
+      setThought('');
 
       // Process the stream
       while (true) {
@@ -465,23 +465,21 @@ What's on your mind? Let's dive in. 🌱`,
 
         switch (chunk.type) {
           case 'thought':
-            thoughtText += chunk.text;
-            setThought(thoughtText);
+            setThought((prev) => prev + chunk.text);
             break;
 
           case 'honcho':
             // Update the thought with honcho response
-            const updatedThought =
-              thoughtText + '\n\nHoncho Dialectic Response:\n\n' + chunk.text;
-            setThought(updatedThought);
-            thoughtWithHonchoText = updatedThought;
+            setThought(
+              (prev) => prev + '\n\nHoncho Dialectic Response:\n\n' + chunk.text
+            );
             break;
 
           case 'pdf':
             // Update the thought with PDF response
-            const updatedThoughtWithPDF =
-              thoughtWithHonchoText + '\n\nPDF Analysis:\n\n' + chunk.text;
-            setThought(updatedThoughtWithPDF);
+            if (chunk.text.length > 0) {
+              setThought((prev) => prev + '\n\nPDF Analysis:\n\n' + chunk.text);
+            }
             break;
 
           case 'response':
@@ -546,6 +544,23 @@ What's on your mind? Let's dive in. 🌱`,
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const fileSizeLimit = 5 * 1024 * 1024; // 5MB
+      if (file.size > fileSizeLimit) {
+        Swal.fire({
+          title: 'File Too Large',
+          text: 'Please select a file smaller than 5MB.',
+          icon: 'error',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'OK',
+        });
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        setIsUploading(false);
+        return; // Stop processing if file is too large
+      }
+
       setSelectedFile(file);
       setIsUploading(true);
     }
@@ -641,10 +656,11 @@ What's on your mind? Let's dive in. 🌱`,
                       : 'Type a message...'
                     : 'Subscribe to send messages'
                 }
-                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-hidden focus:outline-hidden ${canSend && canUseApp
-                  ? 'border-green-200 focus:border-green-200'
-                  : 'border-red-200 focus:border-red-200 opacity-50'
-                  }`}
+                className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-hidden focus:outline-hidden ${
+                  canSend && canUseApp
+                    ? 'border-green-200 focus:border-green-200'
+                    : 'border-red-200 focus:border-red-200 opacity-50'
+                }`}
                 rows={1}
                 disabled={!canUseApp}
                 onKeyDown={(e) => {
@@ -665,8 +681,9 @@ What's on your mind? Let's dive in. 🌱`,
                 className="hidden"
               />
               <button
-                className={`bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2 ${selectedFile ? 'bg-green-500' : ''
-                  }`}
+                className={`bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2 ${
+                  selectedFile ? 'bg-green-500' : ''
+                }`}
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={!canUseApp}
