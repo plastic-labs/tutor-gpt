@@ -3,7 +3,7 @@ import useSWR from 'swr';
 
 import dynamic from 'next/dynamic';
 
-import { FaLightbulb, FaPaperPlane } from 'react-icons/fa';
+import { FaLightbulb, FaPaperPlane, FaFileUpload } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 
 import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
@@ -36,25 +36,103 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
 
-async function fetchStream(
-  type: 'thought' | 'response' | 'honcho',
+interface StreamResponseChunk {
+  type: 'thought' | 'honcho' | 'response' | 'pdf';
+  text: string;
+}
+
+class StreamReader {
+  private reader: ReadableStreamDefaultReader<Uint8Array>;
+  private decoder: TextDecoder;
+  private buffer: string;
+
+  constructor(stream: ReadableStream<Uint8Array>) {
+    this.reader = stream.getReader();
+    this.decoder = new TextDecoder();
+    this.buffer = '';
+  }
+
+  private tryParseNextJSON(): {
+    parsed: StreamResponseChunk | null;
+    remaining: string;
+  } {
+    let curlyBraceCount = 0;
+    let startIndex = -1;
+
+    // Find the start of the next JSON object
+    for (let i = 0; i < this.buffer.length; i++) {
+      if (this.buffer[i] === '{') {
+        if (startIndex === -1) startIndex = i;
+        curlyBraceCount++;
+      } else if (this.buffer[i] === '}') {
+        curlyBraceCount--;
+        if (curlyBraceCount === 0 && startIndex !== -1) {
+          // We found a complete JSON object
+          try {
+            const jsonStr = this.buffer.substring(startIndex, i + 1);
+            const parsed = JSON.parse(jsonStr) as StreamResponseChunk;
+            return {
+              parsed,
+              remaining: this.buffer.substring(i + 1),
+            };
+          } catch (e) {
+            // If we can't parse this as JSON, keep looking
+            continue;
+          }
+        }
+      }
+    }
+
+    // No complete JSON object found
+    return { parsed: null, remaining: this.buffer };
+  }
+
+  async read(): Promise<{ done: boolean; chunk?: StreamResponseChunk }> {
+    while (true) {
+      // Try to parse any complete JSON object from our buffer
+      const { parsed, remaining } = this.tryParseNextJSON();
+      if (parsed) {
+        this.buffer = remaining;
+        return { done: false, chunk: parsed };
+      }
+
+      // If we couldn't parse anything, we need more data
+      const { done, value } = await this.reader.read();
+
+      if (done) {
+        // Only return done if the reader is actually finished and we have no remaining buffer
+        if (this.buffer.trim()) {
+          console.warn('Stream ended with unparsed data:', this.buffer);
+        }
+        return { done: true };
+      }
+
+      // Append new data to our buffer and continue trying to parse
+      this.buffer += this.decoder.decode(value, { stream: true });
+    }
+  }
+
+  release() {
+    this.reader.releaseLock();
+  }
+}
+
+async function fetchConsolidatedStream(
   message: string,
   conversationId: string,
-  thought = '',
-  honchoThought = ''
+  file?: File
 ) {
   try {
-    const response = await fetch(`/api/chat/${type}`, {
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('conversationId', conversationId);
+    if (file) {
+      formData.append('file', file);
+    }
+
+    const response = await fetch(`/api/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message,
-        conversationId,
-        thought,
-        honchoThought,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -70,18 +148,20 @@ async function fetchStream(
         throw new Error(`Subscription is required to chat: ${response.status}`);
       }
       const errorText = await response.text();
-      console.error(`Stream error for ${type}:`, {
+      console.error(`Stream error:`, {
         status: response.status,
         statusText: response.statusText,
         error: errorText,
       });
       console.error(response);
-      throw new Error(`Failed to fetch ${type} stream: ${response.status}`);
+      throw new Error(`Failed to fetch stream: ${response.status}`);
     }
 
-    return response.body;
+    const stream = response.body;
+    if (!stream) throw new Error('Failed to get stream');
+    return stream;
   } catch (error) {
-    console.error(`Error in fetchStream (${type}):`, error);
+    console.error(`Error in fetchConsolidatedStream:`, error);
     throw error;
   }
 }
@@ -97,10 +177,6 @@ interface ChatProps {
   };
   initialMessages: Message[];
   initialConversationId: string | null | undefined;
-}
-
-interface HonchoResponse {
-  content: string;
 }
 
 export default function Chat({
@@ -161,6 +237,10 @@ What's on your mind? Let's dive in. 🌱`,
     id: '',
     metadata: {},
   };
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -281,120 +361,6 @@ What's on your mind? Let's dive in. 🌱`,
     }
   };
 
-  async function processThought(messageToSend: string, conversationId: string) {
-    // Get thought stream
-    const thoughtStream = await fetchStream(
-      'thought',
-      messageToSend,
-      conversationId
-    );
-
-    if (!thoughtStream) {
-      throw new Error('Failed to get thought stream');
-    }
-
-    const thoughtReader = thoughtStream.getReader();
-    let thoughtText = '';
-    setThought('');
-
-    // Process thought stream
-    while (true) {
-      const { done, value } = await thoughtReader.read();
-      if (done) break;
-
-      thoughtText += new TextDecoder().decode(value);
-      setThought(thoughtText);
-    }
-
-    // Cleanup thought stream
-    thoughtReader.releaseLock();
-
-    return thoughtText;
-  }
-
-  async function processHoncho(
-    messageToSend: string,
-    conversationId: string,
-    thoughtText: string
-  ) {
-    // Get honcho response
-    const honchoResponse = await fetchStream(
-      'honcho',
-      messageToSend,
-      conversationId,
-      thoughtText
-    );
-
-    const honchoContent = (await new Response(
-      honchoResponse
-    ).json()) as HonchoResponse;
-
-    const updatedThought =
-      thoughtText +
-      '\n\nHoncho Dialectic Response:\n\n' +
-      honchoContent.content;
-    setThought(updatedThought);
-
-    return honchoContent;
-  }
-
-  async function processResponse(
-    messageToSend: string,
-    conversationId: string,
-    thoughtText: string,
-    honchoContent: string,
-    newMessages: Message[],
-    isSubscribed: boolean
-  ) {
-    const responseStream = await fetchStream(
-      'response',
-      messageToSend,
-      conversationId,
-      thoughtText,
-      honchoContent
-    );
-    if (!responseStream) throw new Error('Failed to get response stream');
-
-    const responseReader = responseStream.getReader();
-    let currentModelOutput = '';
-
-    try {
-      // Process response stream
-      while (true) {
-        const { done, value } = await responseReader.read();
-        if (done) {
-          if (!isSubscribed) {
-            const success = await useFreeTrial(userId);
-            if (success) {
-              const newCount = await getFreeMessageCount(userId);
-              setFreeMessages(newCount);
-            }
-          }
-          break;
-        }
-
-        currentModelOutput += new TextDecoder().decode(value);
-
-        mutateMessages(
-          [
-            ...(newMessages?.slice(0, -1) || []),
-            {
-              content: currentModelOutput,
-              isUser: false,
-              id: '',
-              metadata: {},
-            },
-          ],
-          { revalidate: false }
-        );
-
-        messageListRef.current?.scrollToBottom();
-      }
-    } finally {
-      responseReader.releaseLock();
-    }
-  }
-
   async function processName(messageToSend: string, conversationId: string) {
     try {
       const nameResponse = await fetch('/api/chat/name', {
@@ -450,47 +416,155 @@ What's on your mind? Let's dive in. 🌱`,
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
+    let currentModelOutput = '';
+
     try {
-      // Process thought and summary in parallel if this is the first message
+      // Check if we should generate a summary (name) for the conversation
       const isFirstChat = messages?.length === 0;
       const isUntitledConversation =
         conversations?.find((c) => c.conversationId === conversationId)
           ?.name === 'Untitled';
       const shouldGenerateSummary = isFirstChat || isUntitledConversation;
-      const [thoughtText] = await Promise.all([
-        processThought(messageToSend, conversationId!),
-        ...(shouldGenerateSummary
-          ? [processName(messageToSend, conversationId!)]
-          : []),
-      ]);
 
-      // Process honcho response
-      const honchoContent = await processHoncho(
+      if (shouldGenerateSummary) {
+        processName(messageToSend, conversationId!).catch(console.error);
+      }
+
+      // Get the consolidated stream
+      const stream = await fetchConsolidatedStream(
         messageToSend,
         conversationId!,
-        thoughtText
+        selectedFile || undefined
       );
 
-      // Process response
-      await processResponse(
-        messageToSend,
-        conversationId!,
-        thoughtText,
-        honchoContent.content,
-        newMessages,
-        isSubscribed
-      );
+      const streamReader = new StreamReader(stream);
+
+      setThought('');
+
+      // Process the stream
+      while (true) {
+        const { done, chunk } = await streamReader.read();
+        if (done) {
+          console.log('done');
+          if (!isSubscribed) {
+            const success = await useFreeTrial(userId);
+            if (success) {
+              const newCount = await getFreeMessageCount(userId);
+              setFreeMessages(newCount);
+            }
+          }
+          break;
+        }
+
+        if (!chunk) {
+          console.log('waiting');
+          continue;
+        }
+
+        // console.log(chunk.text);
+
+        switch (chunk.type) {
+          case 'thought':
+            setThought((prev) => prev + chunk.text);
+            break;
+
+          case 'honcho':
+            // Update the thought with honcho response
+            setThought(
+              (prev) => prev + '\n\nHoncho Dialectic Response:\n\n' + chunk.text
+            );
+            break;
+
+          case 'pdf':
+            // Update the thought with PDF response
+            if (chunk.text.length > 0) {
+              setThought((prev) => prev + '\n\nPDF Analysis:\n\n' + chunk.text);
+            }
+            break;
+
+          case 'response':
+            currentModelOutput += chunk.text;
+            mutateMessages(
+              [
+                ...(newMessages?.slice(0, -1) || []),
+                {
+                  content: currentModelOutput,
+                  isUser: false,
+                  id: '',
+                  metadata: {},
+                },
+              ],
+              { revalidate: false }
+            );
+            messageListRef.current?.scrollToBottom();
+            break;
+        }
+      }
+
+      streamReader.release();
+
+      // Clear selected file after successful upload
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
 
       await mutateMessages();
+
       messageListRef.current?.scrollToBottom();
       setCanSend(true);
     } catch (error) {
       console.error('Chat error:', error);
-      await mutateMessages();
+
+      // Preserve the message even in case of error if we have content
+      if (currentModelOutput) {
+        mutateMessages(
+          [
+            ...(newMessages?.slice(0, -1) || []),
+            {
+              content:
+                currentModelOutput ||
+                'Sorry, there was an error generating a response.',
+              isUser: false,
+              id: '',
+              metadata: {},
+            },
+          ],
+          { revalidate: false }
+        );
+      } else {
+        await mutateMessages();
+      }
+
       messageListRef.current?.scrollToBottom();
       setCanSend(true);
     }
   }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileSizeLimit = 5 * 1024 * 1024; // 5MB
+      if (file.size > fileSizeLimit) {
+        Swal.fire({
+          title: 'File Too Large',
+          text: 'Please select a file smaller than 5MB.',
+          icon: 'error',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'OK',
+        });
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        setIsUploading(false);
+        return; // Stop processing if file is too large
+      }
+
+      setSelectedFile(file);
+      setIsUploading(true);
+    }
+  };
 
   const canUseApp = useMemo(
     () => isSubscribed || freeMessages > 0,
@@ -576,7 +650,11 @@ What's on your mind? Let's dive in. 🌱`,
               <textarea
                 ref={input}
                 placeholder={
-                  canUseApp ? 'Type a message...' : 'Subscribe to send messages'
+                  canUseApp
+                    ? selectedFile
+                      ? `Selected file: ${selectedFile.name}`
+                      : 'Type a message...'
+                    : 'Subscribe to send messages'
                 }
                 className={`flex-1 px-3 py-1 lg:px-5 lg:py-3 bg-accent text-gray-400 rounded-2xl border-2 resize-none outline-hidden focus:outline-hidden ${
                   canSend && canUseApp
@@ -595,6 +673,23 @@ What's on your mind? Let's dive in. 🌱`,
                   }
                 }}
               />
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept=".pdf,.txt"
+                className="hidden"
+              />
+              <button
+                className={`bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2 ${
+                  selectedFile ? 'bg-green-500' : ''
+                }`}
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!canUseApp}
+              >
+                <FaFileUpload className="inline" />
+              </button>
               <button
                 className="bg-foreground dark:bg-accent text-neon-green rounded-full px-4 py-2 lg:px-7 lg:py-3 flex justify-center items-center gap-2"
                 type="submit"

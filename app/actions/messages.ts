@@ -58,24 +58,34 @@ export async function getThought(conversationId: string, messageId: string) {
       const honchoUser = await getHonchoUser(user.id);
 
       try {
-        const [thoughts, dialectic] = await Promise.all([
-          honcho.apps.users.sessions.metamessages.list(
+        const [thoughts, dialectic, pdf] = await Promise.all([
+          honcho.apps.users.metamessages.list(
             honchoApp.id,
             honchoUser.id,
-            conversationId,
             {
+              session_id: conversationId,
               message_id: messageId,
               metamessage_type: 'thought',
               filter: { type: 'assistant' },
             }
           ),
-          honcho.apps.users.sessions.metamessages.list(
+          honcho.apps.users.metamessages.list(
             honchoApp.id,
             honchoUser.id,
-            conversationId,
             {
+              session_id: conversationId,
               message_id: messageId,
               metamessage_type: 'honcho',
+              filter: { type: 'assistant' },
+            }
+          ),
+          honcho.apps.users.metamessages.list(
+            honchoApp.id,
+            honchoUser.id,
+            {
+              session_id: conversationId,
+              message_id: messageId,
+              metamessage_type: 'pdf',
               filter: { type: 'assistant' },
             }
           ),
@@ -83,8 +93,9 @@ export async function getThought(conversationId: string, messageId: string) {
 
         const thoughtText = thoughts.items[0]?.content;
         const dialecticText = dialectic.items[0]?.content;
+        const pdfText = pdf.items[0]?.content;
 
-        if (!thoughtText && !dialecticText) {
+        if (!thoughtText && !dialecticText && !pdfText) {
           return null;
         }
 
@@ -92,6 +103,10 @@ export async function getThought(conversationId: string, messageId: string) {
 
         if (dialecticText) {
           completeThought += '\n\nDialectic Response:\n\n' + dialecticText;
+        }
+
+        if (pdfText) {
+          completeThought += '\n\nPDF Agent Response:\n\n' + pdfText;
         }
 
         return completeThought;
