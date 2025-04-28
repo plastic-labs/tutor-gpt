@@ -59,31 +59,31 @@ export async function getThought(conversationId: string, messageId: string) {
 
       try {
         const [thoughts, dialectic, pdf] = await Promise.all([
-          honcho.apps.users.sessions.metamessages.list(
+          honcho.apps.users.metamessages.list(
             honchoApp.id,
             honchoUser.id,
-            conversationId,
             {
+              session_id: conversationId,
               message_id: messageId,
               metamessage_type: 'thought',
               filter: { type: 'assistant' },
             }
           ),
-          honcho.apps.users.sessions.metamessages.list(
+          honcho.apps.users.metamessages.list(
             honchoApp.id,
             honchoUser.id,
-            conversationId,
             {
+              session_id: conversationId,
               message_id: messageId,
               metamessage_type: 'honcho',
               filter: { type: 'assistant' },
             }
           ),
-          honcho.apps.users.sessions.metamessages.list(
+          honcho.apps.users.metamessages.list(
             honchoApp.id,
             honchoUser.id,
-            conversationId,
             {
+              session_id: conversationId,
               message_id: messageId,
               metamessage_type: 'pdf',
               filter: { type: 'assistant' },
