@@ -16,7 +16,7 @@ export interface Message {
 }
 
 export interface MetaMessage {
-  message_id: string;
+  message_id: string | null;
   content: string;
 }
 

@@ -109,7 +109,7 @@ export async function* respond({
             collection = await honcho.apps.users.collections.get(
               appId,
               userId,
-              existingCollectionId
+              { collection_id: existingCollectionId }
             );
             const currentSizeInMB = collection.metadata.size as number;
             console.log('new size', currentSizeInMB + sizeInMB);
