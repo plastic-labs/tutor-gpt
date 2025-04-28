@@ -22,51 +22,51 @@ export async function fetchConversationHistory(
       reverse: true,
       size: MAX_CONTEXT_SIZE,
     }),
-    honcho.apps.users.sessions.metamessages.list(
+    honcho.apps.users.metamessages.list(
       appId,
       userId,
-      conversationId,
       {
+        session_id: conversationId,
         metamessage_type: 'thought',
         reverse: true,
         size: MAX_CONTEXT_SIZE,
       }
     ),
-    honcho.apps.users.sessions.metamessages.list(
+    honcho.apps.users.metamessages.list(
       appId,
       userId,
-      conversationId,
       {
+        session_id: conversationId,
         metamessage_type: 'honcho',
         reverse: true,
         size: MAX_CONTEXT_SIZE,
       }
     ),
-    honcho.apps.users.sessions.metamessages.list(
+    honcho.apps.users.metamessages.list(
       appId,
       userId,
-      conversationId,
       {
+        session_id: conversationId,
         metamessage_type: 'pdf',
         reverse: true,
         size: MAX_CONTEXT_SIZE,
       }
     ),
-    honcho.apps.users.sessions.metamessages.list(
+    honcho.apps.users.metamessages.list(
       appId,
       userId,
-      conversationId,
       {
+        session_id: conversationId,
         metamessage_type: 'summary',
         reverse: true,
         size: 1,
       }
     ),
-    honcho.apps.users.sessions.metamessages.list(
+    honcho.apps.users.metamessages.list(
       appId,
       userId,
-      conversationId,
       {
+        session_id: conversationId,
         metamessage_type: 'collection',
         reverse: true,
         size: 1,
@@ -107,11 +107,11 @@ export async function saveConversation(
   );
 
   // Save the thought metamessage
-  await honcho.apps.users.sessions.metamessages.create(
+  await honcho.apps.users.metamessages.create(
     appId,
     userId,
-    conversationId,
     {
+      session_id: conversationId,
       message_id: newUserMessage.id,
       metamessage_type: 'thought',
       content: thought || '',
@@ -120,11 +120,11 @@ export async function saveConversation(
   );
 
   // Save honcho metamessage
-  await honcho.apps.users.sessions.metamessages.create(
+  await honcho.apps.users.metamessages.create(
     appId,
     userId,
-    conversationId,
     {
+      session_id: conversationId,
       message_id: newUserMessage.id,
       metamessage_type: 'honcho',
       content: honchoContent || '',
@@ -133,11 +133,11 @@ export async function saveConversation(
   );
 
   // Save PDF metamessage
-  await honcho.apps.users.sessions.metamessages.create(
+  await honcho.apps.users.metamessages.create(
     appId,
     userId,
-    conversationId,
     {
+      session_id: conversationId,
       message_id: newUserMessage.id,
       metamessage_type: 'pdf',
       content: pdfContent || '',
@@ -147,11 +147,11 @@ export async function saveConversation(
 
   // Save collection ID metamessage if available
   if (collectionId) {
-    await honcho.apps.users.sessions.metamessages.create(
+    await honcho.apps.users.metamessages.create(
       appId,
       userId,
-      conversationId,
       {
+        session_id: conversationId,
         message_id: newUserMessage.id,
         metamessage_type: 'collection',
         content: collectionId,

@@ -68,11 +68,11 @@ export async function checkAndGenerateSummary(
   const newSummary = extractTagContent(summary.text, 'summary');
 
   if (newSummary) {
-    await honcho.apps.users.sessions.metamessages.create(
+    await honcho.apps.users.metamessages.create(
       appId,
       userId,
-      conversationId,
       {
+        session_id: conversationId,
         message_id: lastMessageOfSummary.id,
         metamessage_type: 'summary',
         content: newSummary,
