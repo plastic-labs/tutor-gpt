@@ -67,8 +67,8 @@ importers:
         specifier: ^1.0.1
         version: 1.0.1
       honcho-ai:
-        specifier: ^0.0.11
-        version: 0.0.11(encoding@0.1.13)
+        specifier: ^0.1.0
+        version: 0.1.0(encoding@0.1.13)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -3905,8 +3905,8 @@ packages:
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
-  honcho-ai@0.0.11:
-    resolution: {integrity: sha512-SUl/PnMldTCz8G4S8faP00M2iFd9qWDkI5U8w0FQ7OC6SgKzTf1nJ/j3gyzctzR2IZ6LrOz/2d5OwO4f/PCMww==}
+  honcho-ai@0.1.0:
+    resolution: {integrity: sha512-Aty+2js2cPoQWKv2TgMy9oSQKG++VwTfEeTps5bnHz1z5Cds7qAvP5aRv22vZi9liElBQ6MNudrlxkqKwojSLQ==}
 
   html-url-attributes@3.0.1:
     resolution: {integrity: sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==}
@@ -10780,7 +10780,7 @@ snapshots:
     dependencies:
       react-is: 16.13.1
 
-  honcho-ai@0.0.11(encoding@0.1.13):
+  honcho-ai@0.1.0(encoding@0.1.13):
     dependencies:
       '@types/node': 18.19.76
       '@types/node-fetch': 2.6.12
