@@ -12,8 +12,8 @@
     "sync-stripe": "node scripts/stripeSync.mjs"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^0.2.13",
     "@mistralai/mistralai": "^1.5.1",
-    "@openrouter/ai-sdk-provider": "^0.2.1",
     "@opentelemetry/api-logs": "^0.57.2",
     "@opentelemetry/instrumentation": "^0.57.2",
     "@opentelemetry/sdk-logs": "^0.57.2",

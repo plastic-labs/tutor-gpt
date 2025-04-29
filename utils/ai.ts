@@ -1,6 +1,6 @@
 import { getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { generateText as generateTextAi, streamText as streamTextAi } from 'ai';
 import d from 'dedent-js';
 
@@ -11,24 +11,20 @@ export interface Message {
   content: string;
 }
 
-const OPENROUTER_API_KEY = process.env.AI_API_KEY;
+const AI_PROVIDER = process.env.AI_PROVIDER || 'openrouter';
+const AI_API_KEY = process.env.AI_API_KEY;
+const AI_BASE_URL = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
 const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
 const SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'dev';
 const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'local';
 
-const openrouter = createOpenRouter({
-  // custom settings, e.g.
-  // baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: OPENROUTER_API_KEY,
-  // compatibility: 'compatible', // strict mode, enable when using the OpenAI API
+const provider = createOpenAICompatible({
+  name: AI_PROVIDER,
+  apiKey: AI_API_KEY,
+  baseURL: AI_BASE_URL,
   headers: {
     'HTTP-Referer': 'https://chat.bloombot.ai',
     'X-Title': 'Bloombot',
-  },
-  extraBody: {
-    provider: {
-      order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
-    },
   },
 });
 
@@ -82,7 +78,7 @@ export function streamText(
 ) {
   const result = streamTextAi({
     ...params,
-    model: openrouter(MODEL),
+    model: provider(MODEL),
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -93,6 +89,11 @@ export function streamText(
         tags: [params.metadata.type],
       },
     },
+    providerOptions: {
+      'openrouter': {
+        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+      }
+    }
   });
   return result;
 }
@@ -116,7 +117,7 @@ export async function createCompletion(
   }
 ) {
   const result = await generateTextAi({
-    model: openrouter(MODEL),
+    model: provider(MODEL),
     messages,
     ...parameters,
     experimental_telemetry: {
@@ -129,6 +130,11 @@ export async function createCompletion(
         tags: [metadata.type],
       },
     },
+    providerOptions: {
+      'openrouter': {
+        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+      }
+    }
   });
 
   return result.text;
@@ -148,7 +154,7 @@ export function generateText(
 ) {
   const result = generateTextAi({
     ...params,
-    model: openrouter(MODEL),
+    model: provider(MODEL),
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -159,6 +165,11 @@ export function generateText(
         tags: [params.metadata.type],
       },
     },
+    providerOptions: {
+      'openrouter': {
+        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+      }
+    }
   });
 
   return result;
