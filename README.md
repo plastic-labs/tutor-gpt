@@ -76,9 +76,13 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 **LLM**
 
 - `AI_API_KEY` — The API key for the inference provider
-- `AI_PROVIDER_NAME` — The name of the LLM inference provider
+- `AI_PROVIDER` — The name of the LLM inference provider
 - `AI_BASE_URL` — An OpenAI compatible API endpoint for LLM inference
 - `MODEL` — The LLM model to use for generating responses.
+
+**Mistral**
+
+- `MISTRAL_API_KEY` — The API key for Mistral OCR
 
 **Honcho**
 
