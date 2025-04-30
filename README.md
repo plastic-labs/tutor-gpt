@@ -73,10 +73,15 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 - `NEXT_PUBLIC_SITE_URL` — The URL that the Next.js application will run from. For
   local development it will be `http://localhost:3000` by default.
 
-**Agent**
+**LLM**
 
-- `MODEL` — The Openrouter model to use for generating responses.
-- `OPENAI_API_KEY` — The Openrouter API key to use
+- `AI_API_KEY` — The API key for the inference provider
+- `AI_PROVIDER_NAME` — The name of the LLM inference provider
+- `AI_BASE_URL` — An OpenAI compatible API endpoint for LLM inference
+- `MODEL` — The LLM model to use for generating responses.
+
+**Honcho**
+
 - `HONCHO_URL` — The URL for the Honcho instance to use
 - `HONCHO_APP_NAME` — The name of the app in Honcho to use
 

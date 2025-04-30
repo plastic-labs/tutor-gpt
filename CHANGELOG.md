@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.1]
+
+### Added
+
+- Support for uploading PDFs and text files to add to the context of the chat
+- Auto summarization to the backend to have infinite conversations
+
 ## [0.7.0]
 
 ### Added
