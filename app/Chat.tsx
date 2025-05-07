@@ -589,6 +589,9 @@ What's on your mind? Let's dive in. 🌱`,
         isSidebarOpen={isSidebarOpen}
         toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         canUseApp={canUseApp}
+        onNewChat={() => {
+          input.current?.focus();
+        }}
       />
       <div className="flex-1 flex flex-col grow overflow-hidden">
         {!isSidebarOpen && (
