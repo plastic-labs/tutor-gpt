@@ -26,6 +26,7 @@ export default function Sidebar({
   isSidebarOpen,
   toggleSidebar,
   canUseApp,
+  onNewChat,
 }: {
   conversations: Conversation[];
   mutateConversations: KeyedMutator<Conversation[]>;
@@ -34,6 +35,7 @@ export default function Sidebar({
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   canUseApp: boolean;
+  onNewChat: () => void;
 }) {
   const postHog = usePostHog();
   const supabase = createClient();
@@ -135,6 +137,7 @@ export default function Sidebar({
     // Optimistically add the temporary conversation
     mutateConversations([tempConversation, ...conversations], false);
     setConversationId(tempId);
+    onNewChat();
 
     try {
       const newConversation = await createConversation();
