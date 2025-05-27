@@ -22,6 +22,7 @@ export const getHonchoApp = unstable_cache(
 export const getHonchoUser = unstable_cache(
   async (userId: string) => {
     console.log('Cache Miss User');
+    console.log("Get or Create User")
     const app = await getHonchoApp();
     return await honcho.apps.users.getOrCreate(app.id, userId, {
       timeout: 5 * 1000,

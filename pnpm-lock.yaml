@@ -88,8 +88,8 @@ importers:
         specifier: ^4.85.1
         version: 4.85.1(encoding@0.1.13)(ws@8.18.0)(zod@3.24.2)
       posthog-js:
-        specifier: ^1.219.1
-        version: 1.219.1
+        specifier: ^1.240.6
+        version: 1.240.6
       react:
         specifier: 19.0.0
         version: 19.0.0
@@ -5112,8 +5112,16 @@ packages:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
 
-  posthog-js@1.219.1:
-    resolution: {integrity: sha512-38hjrycka7pP8gcMXf4y+c062eWSFfEdECa6VaK6eHcKqaYD+L6nck5aqTdpF4R5b0M55GPaqLntsJpK0gG/tw==}
+  posthog-js@1.240.6:
+    resolution: {integrity: sha512-Pz5r/LrMchGf9jCVnTXJrbyMhKriZRGLSZ5qt8c8QrPkmG2JOnFHNWmmBlu+iqmzbY3+oROrhwyP4IgQl2z34w==}
+    peerDependencies:
+      '@rrweb/types': 2.0.0-alpha.17
+      rrweb-snapshot: 2.0.0-alpha.17
+    peerDependenciesMeta:
+      '@rrweb/types':
+        optional: true
+      rrweb-snapshot:
+        optional: true
 
   preact@10.26.0:
     resolution: {integrity: sha512-6ugi/Mb7lyV5RA6KlnijFyDLMU253i7L0RRiObIzDoqj59KT9iTeNJbA/YGw6M7jP4vxaab0DOA8DgodTOA6EQ==}
@@ -12235,7 +12243,7 @@ snapshots:
     dependencies:
       xtend: 4.0.2
 
-  posthog-js@1.219.1:
+  posthog-js@1.240.6:
     dependencies:
       core-js: 3.40.0
       fflate: 0.4.8
