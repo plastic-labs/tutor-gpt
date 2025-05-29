@@ -113,7 +113,7 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
   const remarkPlugins = useMemo(() => [remarkMath] as Array<any>, []);
   const rehypePlugins = useMemo(() => [rehypeKatex] as Array<any>, []);
 
-  if (!text) return <Typing />;
+  if (!text) return null;
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>

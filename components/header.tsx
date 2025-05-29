@@ -26,7 +26,7 @@ export function Header() {
 
   if (!mounted) {
     return (
-      <header className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-700">
+      <header className="bg-background border-b border-gray-200 dark:border-gray-700">
         <nav className="flex justify-between items-center p-4">
           <div className="h-10 w-40 bg-gray-200 animate-pulse"></div>
           <div className="h-6 w-6 bg-gray-200 animate-pulse rounded-full"></div>
@@ -36,7 +36,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-700">
+    <header className="bg-background border-b border-gray-200 dark:border-gray-700">
       <nav className="flex justify-between items-center p-4">
         <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <Image

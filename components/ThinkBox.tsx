@@ -1,9 +1,7 @@
 'use client';
-
-import { cn } from '@/utils/helpers';
+import React, { useRef, useState, useEffect } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import { motion, useAnimate } from 'motion/react';
-import { useState, useEffect, useRef } from 'react';
 import BloomLogo from '@/components/bloomlogo';
 
 interface StreamingTextProps {
@@ -46,131 +44,7 @@ function StreamingText({ stream, finished }: StreamingTextProps) {
   );
 }
 
-interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery';
-  text: string;
-}
-
-class StreamReader {
-  private reader: ReadableStreamDefaultReader<Uint8Array>;
-  private decoder: TextDecoder;
-  private buffer: string;
-
-  constructor(stream: ReadableStream<Uint8Array>) {
-    this.reader = stream.getReader();
-    this.decoder = new TextDecoder();
-    this.buffer = '';
-  }
-
-  private tryParseNextJSON(): {
-    parsed: StreamResponseChunk | null;
-    remaining: string;
-  } {
-    let curlyBraceCount = 0;
-    let startIndex = -1;
-
-    for (let i = 0; i < this.buffer.length; i++) {
-      if (this.buffer[i] === '{') {
-        if (startIndex === -1) startIndex = i;
-        curlyBraceCount++;
-      } else if (this.buffer[i] === '}') {
-        curlyBraceCount--;
-        if (curlyBraceCount === 0 && startIndex !== -1) {
-          try {
-            const jsonStr = this.buffer.substring(startIndex, i + 1);
-            const parsed = JSON.parse(jsonStr) as StreamResponseChunk;
-            return {
-              parsed,
-              remaining: this.buffer.substring(i + 1),
-            };
-          } catch (e) {
-            continue;
-          }
-        }
-      }
-    }
-
-    return { parsed: null, remaining: this.buffer };
-  }
-
-  async read(): Promise<{ done: boolean; chunk?: StreamResponseChunk }> {
-    while (true) {
-      const { parsed, remaining } = this.tryParseNextJSON();
-      if (parsed) {
-        this.buffer = remaining;
-        return { done: false, chunk: parsed };
-      }
-
-      const { done, value } = await this.reader.read();
-
-      if (done) {
-        if (this.buffer.trim()) {
-          console.warn('Stream ended with unparsed data:', this.buffer);
-        }
-        return { done: true };
-      }
-
-      this.buffer += this.decoder.decode(value, { stream: true });
-    }
-  }
-
-  release() {
-    this.reader.releaseLock();
-  }
-}
-
-// Mock stream generator for testing
-async function* mockStreamGenerator() {
-  const mockData: StreamResponseChunk[] = [
-    {
-      type: 'thought',
-      text: 'Let me think about curiosity and what might be helpful for this user.',
-    },
-    {
-      type: 'thought',
-      text: " First, I should check what Honcho knows about the user's background.",
-    },
-    {
-      type: 'honchoQuery',
-      text: "What do we know about the user's educational background and interests in psychology or neuroscience?",
-    },
-    {
-      type: 'honcho',
-      text: 'The user has a background in computer science and has shown interest in cognitive psychology in previous interactions. They prefer practical, real-world applications of theoretical concepts.',
-    },
-    {
-      type: 'pdfQuery',
-      text: 'Find recent research papers about the neuroscience of curiosity and its practical applications in education.',
-    },
-    {
-      type: 'pdf',
-      text: "According to recent research, curiosity enhances learning outcomes. Studies show that students who are more curious retain information better. One paper found that curiosity activates the brain's reward system, leading to increased engagement and motivation.",
-    },
-    {
-      type: 'response',
-      text: 'Curiosity is a fundamental aspect of human cognition that drives learning and exploration.',
-    },
-    {
-      type: 'response',
-      text: ' It involves seeking new information and experiences, and is often triggered by knowledge gaps or unexpected stimuli.',
-    },
-    {
-      type: 'response',
-      text: ' Understanding curiosity can help educators and learners foster a more effective learning environment.',
-    },
-    {
-      type: 'response',
-      text: ' Would you like to know more about the neuroscience or practical applications of curiosity?',
-    },
-  ];
-
-  for (const chunk of mockData) {
-    await new Promise((resolve) => setTimeout(resolve, 900)); // Slower streaming
-    yield new TextEncoder().encode(JSON.stringify(chunk));
-  }
-}
-
-interface ThinkBoxProps {
+export interface ThinkBoxProps {
   thoughtChunks: string[];
   finished: boolean;
   honchoQuery: string;
@@ -179,7 +53,7 @@ interface ThinkBoxProps {
   pdfResponse: string;
 }
 
-function ThinkBox({
+export default function ThinkBox({
   thoughtChunks,
   finished,
   honchoQuery,
@@ -213,7 +87,7 @@ function ThinkBox({
       },
       { duration: 0.5, ease: 'easeInOut' }
     );
-  }, []);
+  }, [animate, scope]);
 
   // Set up ResizeObserver to track content height
   useEffect(() => {
@@ -244,7 +118,14 @@ function ThinkBox({
       setHasAnimated(true);
       runStreamAnimation();
     }
-  }, [thoughtChunks, honchoQuery, honchoResponse, pdfQuery, pdfResponse]);
+  }, [
+    thoughtChunks,
+    honchoQuery,
+    honchoResponse,
+    pdfQuery,
+    pdfResponse,
+    hasAnimated,
+  ]);
 
   async function runStreamAnimation() {
     await Promise.all([
@@ -401,7 +282,7 @@ function ThinkBox({
   );
 
   return (
-    <div className="flex w-full justify-center">
+    <div className="flex w-full justify-center mb-4">
       <motion.div
         className="bg-white rounded-2xl shadow-2xl text-gray-500 flex flex-col blur-sm opacity-0 overflow-hidden"
         ref={scope}
@@ -413,124 +294,6 @@ function ThinkBox({
       >
         {content}
       </motion.div>
-    </div>
-  );
-}
-
-export default function Testing() {
-  const [showThinkBox, setShowThinkBox] = useState(false);
-  const [thoughtChunks, setThoughtChunks] = useState<string[]>([]);
-  const [honchoQuery, setHonchoQuery] = useState('');
-  const [honchoResponse, setHonchoResponse] = useState('');
-  const [pdfQuery, setPdfQuery] = useState('');
-  const [pdfResponse, setPdfResponse] = useState('');
-  const [responseChunks, setResponseChunks] = useState<string[]>([]);
-  const [finished, setFinished] = useState(false);
-
-  useEffect(() => {
-    if (!showThinkBox) return;
-
-    let isMounted = true;
-    let generator: ReturnType<typeof mockStreamGenerator>;
-
-    async function processStream() {
-      generator = mockStreamGenerator();
-      setFinished(false);
-      const stream = new ReadableStream({
-        async pull(controller) {
-          const { value, done } = await generator.next();
-          if (done) {
-            controller.close();
-          } else {
-            controller.enqueue(value);
-          }
-        },
-      });
-
-      const streamReader = new StreamReader(stream);
-
-      while (true) {
-        const { done, chunk } = await streamReader.read();
-        if (done) break;
-        if (!chunk) continue;
-
-        if (isMounted) {
-          switch (chunk.type) {
-            case 'thought':
-              setThoughtChunks((prev) => [...prev, chunk.text]);
-              break;
-            case 'honchoQuery':
-              setHonchoQuery((prev) => prev + chunk.text);
-              break;
-            case 'honcho':
-              setHonchoResponse((prev) => prev + chunk.text);
-              break;
-            case 'pdfQuery':
-              setPdfQuery((prev) => prev + chunk.text);
-              break;
-            case 'pdf':
-              setPdfResponse((prev) => prev + chunk.text);
-              break;
-            case 'response':
-              setResponseChunks((prev) => [...prev, chunk.text]);
-              break;
-          }
-        }
-      }
-      if (isMounted) setFinished(true);
-      streamReader.release();
-    }
-
-    processStream();
-
-    return () => {
-      isMounted = false;
-      setThoughtChunks([]);
-      setHonchoQuery('');
-      setHonchoResponse('');
-      setPdfQuery('');
-      setPdfResponse('');
-      setResponseChunks([]);
-      setFinished(false);
-    };
-  }, [showThinkBox]);
-
-  return (
-    <div className="h-full w-full flex justify-center">
-      <div className="w-full max-w-[740px] px-5 flex flex-col items-center gap-7">
-        {/* User message */}
-        <div className="self-stretch flex justify-end">
-          <div className="p-3.5 bg-stone-200 rounded-2xl">
-            <div className="text-black text-base font-normal">
-              I want to know about how curiosity works.
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowThinkBox(!showThinkBox)}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          {showThinkBox ? 'Hide Think Box' : 'Show Think Box'}
-        </button>
-
-        {showThinkBox && (
-          <ThinkBox
-            thoughtChunks={thoughtChunks}
-            finished={finished}
-            honchoQuery={honchoQuery}
-            honchoResponse={honchoResponse}
-            pdfQuery={pdfQuery}
-            pdfResponse={pdfResponse}
-          />
-        )}
-
-        {responseChunks.length > 0 && (
-          <div className="text-black text-base font-normal">
-            <StreamingText stream={responseChunks} finished={finished} />
-          </div>
-        )}
-      </div>
     </div>
   );
 }

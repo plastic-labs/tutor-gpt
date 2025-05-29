@@ -19,6 +19,13 @@ export async function getMessages(conversationId: string) {
         throw new Error('Unauthorized');
       }
       const honchoUser = await getHonchoUser(user.id);
+
+      const thoughts = await honcho.apps.users.metamessages.list(
+        honchoApp.id,
+        honchoUser.id,
+        { metamessage_type: 'thought', session_id: conversationId }
+      );
+
       const messages = [];
       for await (const message of honcho.apps.users.sessions.messages.list(
         honchoApp.id,
@@ -59,36 +66,24 @@ export async function getThought(conversationId: string, messageId: string) {
 
       try {
         const [thoughts, dialectic, pdf] = await Promise.all([
-          honcho.apps.users.metamessages.list(
-            honchoApp.id,
-            honchoUser.id,
-            {
-              session_id: conversationId,
-              message_id: messageId,
-              metamessage_type: 'thought',
-              filter: { type: 'assistant' },
-            }
-          ),
-          honcho.apps.users.metamessages.list(
-            honchoApp.id,
-            honchoUser.id,
-            {
-              session_id: conversationId,
-              message_id: messageId,
-              metamessage_type: 'honcho',
-              filter: { type: 'assistant' },
-            }
-          ),
-          honcho.apps.users.metamessages.list(
-            honchoApp.id,
-            honchoUser.id,
-            {
-              session_id: conversationId,
-              message_id: messageId,
-              metamessage_type: 'pdf',
-              filter: { type: 'assistant' },
-            }
-          ),
+          honcho.apps.users.metamessages.list(honchoApp.id, honchoUser.id, {
+            session_id: conversationId,
+            message_id: messageId,
+            metamessage_type: 'thought',
+            filter: { type: 'assistant' },
+          }),
+          honcho.apps.users.metamessages.list(honchoApp.id, honchoUser.id, {
+            session_id: conversationId,
+            message_id: messageId,
+            metamessage_type: 'honcho',
+            filter: { type: 'assistant' },
+          }),
+          honcho.apps.users.metamessages.list(honchoApp.id, honchoUser.id, {
+            session_id: conversationId,
+            message_id: messageId,
+            metamessage_type: 'pdf',
+            filter: { type: 'assistant' },
+          }),
         ]);
 
         const thoughtText = thoughts.items[0]?.content;
