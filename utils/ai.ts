@@ -1,10 +1,16 @@
 import { getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { createClient } from '@/utils/supabase/server';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { generateText as generateTextAi, streamText as streamTextAi } from 'ai';
+import {
+  generateText as generateTextAi,
+  streamText as streamTextAi,
+  streamObject as streamObjectAi,
+} from 'ai';
 import d from 'dedent-js';
 
 import * as Sentry from '@sentry/nextjs';
+import { ZodTypeDef } from 'zod';
+import { ZodType } from 'zod';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -90,11 +96,48 @@ export function streamText(
       },
     },
     providerOptions: {
-      'openrouter': {
+      openrouter: {
         order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
-      }
-    }
+      },
+    },
   });
+
+  return result;
+}
+
+export function streamObject<OBJECT>(
+  params: Omit<
+    Parameters<typeof streamObjectAi<OBJECT>>[0],
+    'model' | 'experimental_telemetry' | 'schema'
+  > & {
+    schema: ZodType<OBJECT, ZodTypeDef, any>;
+    metadata: {
+      sessionId: string;
+      userId: string;
+      type: string;
+    };
+  }
+) {
+  const result = streamObjectAi({
+    ...params,
+    model: provider(MODEL),
+    experimental_telemetry: {
+      isEnabled: true,
+      metadata: {
+        sessionId: params.metadata.sessionId,
+        userId: params.metadata.userId,
+        release: SENTRY_RELEASE,
+        environment: SENTRY_ENVIRONMENT,
+        tags: [params.metadata.type],
+      },
+    },
+    providerOptions: {
+      openrouter: {
+        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+      },
+    },
+  });
+
   return result;
 }
 
@@ -131,10 +174,10 @@ export async function createCompletion(
       },
     },
     providerOptions: {
-      'openrouter': {
+      openrouter: {
         order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
-      }
-    }
+      },
+    },
   });
 
   return result.text;
@@ -166,10 +209,10 @@ export function generateText(
       },
     },
     providerOptions: {
-      'openrouter': {
+      openrouter: {
         order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
-      }
-    }
+      },
+    },
   });
 
   return result;

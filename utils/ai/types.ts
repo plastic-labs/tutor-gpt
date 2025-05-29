@@ -5,7 +5,7 @@ export interface ChatCallProps {
 }
 
 export interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response' | 'pdf';
+  type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery';
   text: string;
 }
 

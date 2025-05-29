@@ -18,6 +18,7 @@ import {
 import { checkAndGenerateSummary } from '@/utils/ai/summary';
 import { streamText } from '@/utils/ai';
 import { Collection } from 'honcho-ai/resources/apps/users/collections/collections.mjs';
+import { StreamingXmlParser } from '@/utils/ai/streamingXmlParser';
 
 const MAX_COLLECTION_SIZE_IN_MB = 5;
 
@@ -71,19 +72,47 @@ export async function* respond({
     },
   });
 
+  // Initialize XML parser for streaming thought parsing
+  const xmlParser = new StreamingXmlParser();
   let thought = '';
+  let honchoQuery = '';
+  let pdfQuery = '';
+
   for await (const chunk of thoughtStream) {
     thought += chunk;
-    yield formatStreamChunk({
-      type: 'thought',
-      text: chunk,
-    });
+
+    // Parse the chunk for XML content
+    const parsedChunks = xmlParser.parse(chunk);
+
+    for (const parsedChunk of parsedChunks) {
+      // Emit the appropriate stream chunk type
+      yield formatStreamChunk({
+        type: parsedChunk.type,
+        text: parsedChunk.text,
+      });
+
+      // Track complete queries for later use
+      if (parsedChunk.isComplete) {
+        if (parsedChunk.type === 'honchoQuery') {
+          honchoQuery = parsedChunk.text;
+        } else if (parsedChunk.type === 'pdfQuery') {
+          pdfQuery = parsedChunk.text;
+        }
+      }
+    }
+  }
+
+  // Extract final queries using fallback method if streaming didn't capture them
+  if (!honchoQuery) {
+    honchoQuery = extractTagContent(thought, 'honcho');
+  }
+  if (!pdfQuery) {
+    pdfQuery = extractTagContent(thought, 'pdf-agent');
   }
 
   const [honchoContent, { pdfContent, collectionId }] = await Promise.all([
     // HONCHO STUFF
     (async () => {
-      const honchoQuery = extractTagContent(thought, 'honcho');
       const { content: honchoContent } = await honcho.apps.users.sessions.chat(
         appId,
         userId,
@@ -168,8 +197,7 @@ export async function* respond({
           collectionId = existingCollectionId;
         }
 
-        // Get PDF query from thought stream
-        const pdfQuery = extractTagContent(thought, 'pdf-agent');
+        // Get PDF query from thought stream - skip if empty or None
         if (pdfQuery == 'None' || pdfQuery == '') {
           return { pdfContent: '', collectionId };
         }
