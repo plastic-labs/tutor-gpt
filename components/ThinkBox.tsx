@@ -45,7 +45,8 @@ function StreamingText({ stream, finished }: StreamingTextProps) {
 }
 
 export interface ThinkBoxProps {
-  thoughtChunks: string[];
+  thoughtChunks?: string[]; // For streaming (live messages)
+  thoughtContent?: string; // For complete content (past messages)
   finished: boolean;
   honchoQuery: string;
   honchoResponse: string;
@@ -55,6 +56,7 @@ export interface ThinkBoxProps {
 
 export default function ThinkBox({
   thoughtChunks,
+  thoughtContent,
   finished,
   honchoQuery,
   honchoResponse,
@@ -65,29 +67,67 @@ export default function ThinkBox({
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | 'auto'>('auto');
   const [hasAnimated, setHasAnimated] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [hasContentAnimated, setHasContentAnimated] = useState(false);
+  const [collapsed, setCollapsed] = useState(finished); // Start collapsed if already finished
 
-  // Collapse automatically when finished, after a short delay
+  // Collapse automatically when finished, after a short delay (only for new messages, not historical)
   useEffect(() => {
-    if (finished) {
+    if (finished && hasContentAnimated) {
+      // Only auto-collapse if we actually animated the content (meaning it's a new message)
       const timer = setTimeout(() => setCollapsed(true), 1200);
       return () => clearTimeout(timer);
-    } else {
+    } else if (!finished) {
       setCollapsed(false);
     }
-  }, [finished]);
+  }, [finished, hasContentAnimated]);
 
-  // Initial animation when component mounts
+  // console.log('thoughtChunks', thoughtChunks);
+  // console.log('thoughtContent', thoughtContent);
+  // console.log('honchoQuery', honchoQuery);
+  // console.log('honchoResponse', honchoResponse);
+  // console.log('pdfQuery', pdfQuery);
+  // console.log('pdfResponse', pdfResponse);
+
+  // Initial animation when component mounts - show immediately
   useEffect(() => {
-    animate(
-      scope.current,
-      {
-        filter: 'blur(0px)',
-        opacity: 1,
-      },
-      { duration: 0.5, ease: 'easeInOut' }
-    );
-  }, [animate, scope]);
+    if (!hasAnimated) {
+      setHasAnimated(true);
+      if (finished) {
+        // For finished messages (historical), show everything immediately without animation
+        animate(
+          scope.current,
+          { filter: 'blur(0px)', opacity: 1 },
+          { duration: 0 }
+        );
+        animate(
+          '#thinking-text',
+          { opacity: 1, display: 'block', filter: 'blur(0px)' },
+          { duration: 0 }
+        );
+        animate(
+          '#chevron-icon',
+          { opacity: 1, display: 'block', filter: 'blur(0px)' },
+          { duration: 0 }
+        );
+        animate(
+          '#initial-text',
+          { opacity: 1, display: 'block' },
+          { duration: 0 }
+        );
+        setHasContentAnimated(true);
+      } else {
+        // For new messages, show just the basic container
+        animate(
+          scope.current,
+          {
+            filter: 'blur(0px)',
+            opacity: 1,
+          },
+          { duration: 0.5, ease: 'easeInOut' }
+        );
+      }
+    }
+  }, [animate, scope, hasAnimated, finished]);
 
   // Set up ResizeObserver to track content height
   useEffect(() => {
@@ -108,26 +148,29 @@ export default function ThinkBox({
   // Animation when content starts streaming
   useEffect(() => {
     if (
-      (thoughtChunks.length > 0 ||
+      ((thoughtChunks && thoughtChunks.length > 0) ||
+        thoughtContent ||
         honchoQuery ||
         honchoResponse ||
         pdfQuery ||
         pdfResponse) &&
-      !hasAnimated
+      !hasContentAnimated
     ) {
-      setHasAnimated(true);
-      runStreamAnimation();
+      setHasContentAnimated(true);
+      runContentAnimation();
     }
   }, [
     thoughtChunks,
+    thoughtContent,
     honchoQuery,
     honchoResponse,
     pdfQuery,
     pdfResponse,
-    hasAnimated,
+    hasContentAnimated,
   ]);
 
-  async function runStreamAnimation() {
+  async function runContentAnimation() {
+    // First expand the box and show header elements
     await Promise.all([
       animate(
         scope.current,
@@ -156,6 +199,7 @@ export default function ThinkBox({
       ),
     ]);
 
+    // Then show the content area
     animate(
       '#initial-text',
       {
@@ -177,7 +221,7 @@ export default function ThinkBox({
         <div className="flex items-center gap-2">
           <BloomLogo />
           <span id="thinking-text" className="opacity-0 blur-sm hidden">
-            Thinking...
+            {finished ? 'Thought about it' : 'Thinking...'}
           </span>
         </div>
         <motion.div
@@ -198,83 +242,106 @@ export default function ThinkBox({
         }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
-        {thoughtChunks.length > 0 && (
+        {((thoughtChunks && thoughtChunks.length > 0) || thoughtContent) && (
           <div className="mb-4">
-            <StreamingText stream={thoughtChunks} finished={finished} />
+            {thoughtContent ? (
+              // For past messages, show complete content without animation
+              <div>{thoughtContent}</div>
+            ) : (
+              // For streaming messages, use animated text
+              <StreamingText stream={thoughtChunks || []} finished={finished} />
+            )}
           </div>
         )}
-        {(honchoQuery || pdfQuery) && (
-          <div className="flex flex-col md:flex-row gap-6 w-full">
+        {((honchoQuery && honchoQuery !== 'None') ||
+          (honchoResponse && honchoResponse !== 'None') ||
+          (pdfQuery && pdfQuery !== 'None') ||
+          (pdfResponse && pdfResponse !== 'None')) && (
+          <div
+            className={`flex flex-col gap-6 w-full ${
+              (pdfQuery && pdfQuery !== 'None') ||
+              (pdfResponse && pdfResponse !== 'None')
+                ? 'md:flex-row'
+                : ''
+            }`}
+          >
             {/* Honcho Column */}
-            <div className="flex-1 min-w-[220px]">
-              <div className="flex items-center gap-1 mb-2 text-gray-500 text-sm">
-                <Search className="w-4 h-4" />
-                <span className="font-semibold">Honcho</span>
-              </div>
-              {honchoQuery && honchoResponse ? (
-                <div className="relative flex flex-col items-stretch">
-                  <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line z-10">
-                    {honchoQuery}
-                  </div>
-                  {/* Vertical line */}
-                  <div
-                    className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-gray-300 mx-auto"
-                    style={{ transform: 'translateX(-50%)' }}
-                  ></div>
-                  <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line z-10">
-                    {honchoResponse}
-                  </div>
+            {((honchoQuery && honchoQuery !== 'None') ||
+              (honchoResponse && honchoResponse !== 'None')) && (
+              <div className="flex-1 min-w-[220px]">
+                <div className="flex items-center gap-1 mb-2 text-gray-500 text-sm">
+                  <Search className="w-4 h-4" />
+                  <span className="font-semibold">Honcho</span>
                 </div>
-              ) : (
-                <>
-                  {honchoQuery && (
-                    <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line">
+                {honchoQuery && honchoResponse ? (
+                  <div className="relative flex flex-col items-stretch">
+                    <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line z-10">
                       {honchoQuery}
                     </div>
-                  )}
-                  {honchoResponse && (
-                    <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line">
+                    {/* Vertical line */}
+                    <div
+                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-gray-300 mx-auto"
+                      style={{ transform: 'translateX(-50%)' }}
+                    ></div>
+                    <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line z-10">
                       {honchoResponse}
                     </div>
-                  )}
-                </>
-              )}
-            </div>
-            {/* PDF Column */}
-            <div className="flex-1 min-w-[220px]">
-              <div className="flex items-center gap-1 mb-2 text-gray-500 text-sm">
-                <Search className="w-4 h-4" />
-                <span className="font-semibold">PDF</span>
+                  </div>
+                ) : (
+                  <>
+                    {honchoQuery && (
+                      <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line">
+                        {honchoQuery}
+                      </div>
+                    )}
+                    {honchoResponse && (
+                      <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line">
+                        {honchoResponse}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-              {pdfQuery && pdfResponse ? (
-                <div className="relative flex flex-col items-stretch">
-                  <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line z-10">
-                    {pdfQuery}
-                  </div>
-                  {/* Vertical line */}
-                  <div
-                    className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-gray-300 mx-auto"
-                    style={{ transform: 'translateX(-50%)' }}
-                  ></div>
-                  <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line z-10">
-                    {pdfResponse}
-                  </div>
+            )}
+
+            {/* PDF Column - only show if there's PDF content */}
+            {((pdfQuery && pdfQuery !== 'None') ||
+              (pdfResponse && pdfResponse !== 'None')) && (
+              <div className="flex-1 min-w-[220px]">
+                <div className="flex items-center gap-1 mb-2 text-gray-500 text-sm">
+                  <Search className="w-4 h-4" />
+                  <span className="font-semibold">PDF</span>
                 </div>
-              ) : (
-                <>
-                  {pdfQuery && (
-                    <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line">
+                {pdfQuery && pdfResponse ? (
+                  <div className="relative flex flex-col items-stretch">
+                    <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line z-10">
                       {pdfQuery}
                     </div>
-                  )}
-                  {pdfResponse && (
-                    <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line">
+                    {/* Vertical line */}
+                    <div
+                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-gray-300 mx-auto"
+                      style={{ transform: 'translateX(-50%)' }}
+                    ></div>
+                    <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line z-10">
                       {pdfResponse}
                     </div>
-                  )}
-                </>
-              )}
-            </div>
+                  </div>
+                ) : (
+                  <>
+                    {pdfQuery && (
+                      <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line">
+                        {pdfQuery}
+                      </div>
+                    )}
+                    {pdfResponse && (
+                      <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line">
+                        {pdfResponse}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </motion.div>
@@ -284,7 +351,9 @@ export default function ThinkBox({
   return (
     <div className="flex w-full justify-center mb-4">
       <motion.div
-        className="bg-white rounded-2xl shadow-2xl text-gray-500 flex flex-col blur-sm opacity-0 overflow-hidden"
+        className={`bg-white rounded-2xl text-gray-500 flex flex-col blur-sm opacity-0 overflow-hidden ${
+          finished ? '' : 'shadow-2xl'
+        }`}
         ref={scope}
         animate={{
           height: collapsed ? 49 : height,

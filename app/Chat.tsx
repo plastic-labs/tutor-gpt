@@ -3,7 +3,6 @@ import useSWR from 'swr';
 
 import dynamic from 'next/dynamic';
 
-import { FaPaperPlane, FaFileUpload } from 'react-icons/fa';
 import { FiMenu } from 'react-icons/fi';
 import { ArrowUp, Square, Paperclip, X } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -21,7 +20,7 @@ import {
   updateConversation,
 } from './actions/conversations';
 import { getMessages, addOrRemoveReaction } from './actions/messages';
-import { Conversation, Message } from '@/utils/types';
+import { Conversation, Message, ThinkingData } from '@/utils/types';
 import { localStorageProvider } from '@/utils/swrCache';
 
 import useAutoScroll from '@/hooks/autoscroll';
@@ -50,13 +49,6 @@ interface StreamResponseChunk {
   text: string;
 }
 
-interface ThoughtData {
-  content: string;
-  honchoQuery: string;
-  honchoResponse: string;
-  pdfQuery: string;
-  pdfResponse: string;
-}
 
 class StreamReader {
   private reader: ReadableStreamDefaultReader<Uint8Array>;
@@ -216,13 +208,15 @@ export default function Chat({
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
-  const [thoughtData, setThoughtData] = useState<ThoughtData>({
-    content: '',
+  const [thoughtData, setThoughtData] = useState<ThinkingData>({
+    thoughtContent: '',
+    thoughtFinished: false,
     honchoQuery: '',
     honchoResponse: '',
     pdfQuery: '',
     pdfResponse: '',
   });
+  const [thoughtChunks, setThoughtChunks] = useState<string[]>([]);
   const [canSend, setCanSend] = useState<boolean>(false);
 
   const posthog = usePostHog();
@@ -257,7 +251,6 @@ What's on your mind? Let's dive in. 🌱`,
   };
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -268,28 +261,6 @@ What's on your mind? Let's dive in. 🌱`,
     }
   }, [posthog, initialUserId, initialEmail]);
 
-  // Convert thoughtData content to chunks for streaming display
-  const thoughtChunks = useMemo(() => {
-    return thoughtData.content ? [thoughtData.content] : [];
-  }, [thoughtData.content]);
-
-  // Track whether we're currently streaming thoughts
-  const [isThoughtsFinished, setIsThoughtsFinished] = useState(false);
-
-  // Update finished state based on streaming
-  useEffect(() => {
-    // Consider finished if we have content and responses, or if no streaming is happening
-    const hasContent = Boolean(
-      thoughtData.content || thoughtData.honchoQuery || thoughtData.pdfQuery
-    );
-    const hasResponses = Boolean(
-      thoughtData.honchoResponse || thoughtData.pdfResponse
-    );
-    setIsThoughtsFinished(
-      hasContent &&
-        (hasResponses || (!thoughtData.honchoQuery && !thoughtData.pdfQuery))
-    );
-  }, [thoughtData]);
 
   const conversationsFetcher = async () => {
     const result = await getConversations();
@@ -443,13 +414,11 @@ What's on your mind? Let's dive in. 🌱`,
     if (validFiles.length > 0) {
       // Only allow one file - take the first valid file and replace any existing files
       setSelectedFiles([validFiles[0]]);
-      setIsUploading(true);
     }
   };
 
-  const removeFile = (index: number) => {
+  const removeFile = () => {
     setSelectedFiles([]);
-    setIsUploading(false);
   };
 
   const canUseApp = useMemo(
@@ -489,6 +458,14 @@ What's on your mind? Let's dive in. 🌱`,
         isUser: false,
         id: '',
         metadata: {},
+        thinking: {
+          thoughtContent: '',
+          thoughtFinished: false,
+          honchoQuery: '',
+          honchoResponse: '',
+          pdfQuery: '',
+          pdfResponse: '',
+        },
       },
     ];
     await mutateMessages(newMessages, { revalidate: false });
@@ -520,18 +497,20 @@ What's on your mind? Let's dive in. 🌱`,
       const streamReader = new StreamReader(stream);
 
       setThoughtData({
-        content: '',
+        thoughtContent: '',
+        thoughtFinished: false,
         honchoQuery: '',
         honchoResponse: '',
         pdfQuery: '',
         pdfResponse: '',
       });
+      setThoughtChunks([]);
 
       // Process the stream
       while (true) {
         const { done, chunk } = await streamReader.read();
         if (done) {
-          console.log('done');
+          console.log('Stream done');
           if (!isSubscribed) {
             const success = await useFreeTrial(userId);
             if (success) {
@@ -543,52 +522,150 @@ What's on your mind? Let's dive in. 🌱`,
         }
 
         if (!chunk) {
-          console.log('waiting');
+          console.log('No chunk, waiting...');
           continue;
         }
+
+        console.log('Stream chunk received:', chunk);
 
         switch (chunk.type) {
           case 'thought':
             // Add thought content directly since server now sends clean content
             if (chunk.text.trim()) {
+              const newThoughtContent = thoughtData.thoughtContent + chunk.text;
               setThoughtData((prev) => ({
                 ...prev,
-                content: prev.content + chunk.text,
+                thoughtContent: newThoughtContent,
               }));
+              setThoughtChunks((prev) => [...prev, chunk.text]);
+              // Update the current AI message with thinking data
+              mutateMessages(
+                [
+                  ...(newMessages?.slice(0, -1) || []),
+                  {
+                    content: currentModelOutput,
+                    isUser: false,
+                    id: '',
+                    metadata: {},
+                    thinking: {
+                      ...thoughtData,
+                      thoughtContent: newThoughtContent,
+                      thoughtFinished: false,
+                    },
+                  },
+                ],
+                { revalidate: false }
+              );
             }
             break;
 
           case 'honchoQuery':
             // Update the thought data with honcho query
+            const newHonchoQuery = thoughtData.honchoQuery + chunk.text;
             setThoughtData((prev) => ({
               ...prev,
-              honchoQuery: prev.honchoQuery + chunk.text,
+              honchoQuery: newHonchoQuery,
             }));
+            // Update the current AI message with thinking data
+            mutateMessages(
+              [
+                ...(newMessages?.slice(0, -1) || []),
+                {
+                  content: currentModelOutput,
+                  isUser: false,
+                  id: '',
+                  metadata: {},
+                  thinking: {
+                    ...thoughtData,
+                    honchoQuery: newHonchoQuery,
+                    thoughtFinished: false,
+                  },
+                },
+              ],
+              { revalidate: false }
+            );
             break;
 
           case 'pdfQuery':
             // Update the thought data with PDF query
+            const newPdfQuery = thoughtData.pdfQuery + chunk.text;
             setThoughtData((prev) => ({
               ...prev,
-              pdfQuery: prev.pdfQuery + chunk.text,
+              pdfQuery: newPdfQuery,
             }));
+            // Update the current AI message with thinking data
+            mutateMessages(
+              [
+                ...(newMessages?.slice(0, -1) || []),
+                {
+                  content: currentModelOutput,
+                  isUser: false,
+                  id: '',
+                  metadata: {},
+                  thinking: {
+                    ...thoughtData,
+                    pdfQuery: newPdfQuery,
+                    thoughtFinished: false,
+                  },
+                },
+              ],
+              { revalidate: false }
+            );
             break;
 
           case 'honcho':
             // Update the thought data with honcho response
+            const newHonchoResponse = thoughtData.honchoResponse + chunk.text;
             setThoughtData((prev) => ({
               ...prev,
-              honchoResponse: prev.honchoResponse + chunk.text,
+              honchoResponse: newHonchoResponse,
             }));
+            // Update the current AI message with thinking data
+            mutateMessages(
+              [
+                ...(newMessages?.slice(0, -1) || []),
+                {
+                  content: currentModelOutput,
+                  isUser: false,
+                  id: '',
+                  metadata: {},
+                  thinking: {
+                    ...thoughtData,
+                    honchoResponse: newHonchoResponse,
+                    thoughtFinished: false,
+                  },
+                },
+              ],
+              { revalidate: false }
+            );
             break;
 
           case 'pdf':
             // Update the thought data with PDF response
             if (chunk.text.length > 0) {
+              const newPdfResponse = thoughtData.pdfResponse + chunk.text;
               setThoughtData((prev) => ({
                 ...prev,
-                pdfResponse: prev.pdfResponse + chunk.text,
+                pdfResponse: newPdfResponse,
               }));
+              // Update the current AI message with thinking data
+              mutateMessages(
+                [
+                  ...(newMessages?.slice(0, -1) || []),
+                  {
+                    content: currentModelOutput,
+                    isUser: false,
+                    id: '',
+                    metadata: {},
+                    thinking: {
+                      ...thoughtData,
+                      pdfResponse: newPdfResponse,
+                      thoughtFinished: false,
+                    },
+                  },
+                ],
+                { revalidate: false }
+              );
             }
             break;
 
@@ -602,6 +679,14 @@ What's on your mind? Let's dive in. 🌱`,
                   isUser: false,
                   id: '',
                   metadata: {},
+                  thinking: {
+                    thoughtContent: thoughtData.thoughtContent,
+                    thoughtFinished: true,
+                    honchoQuery: thoughtData.honchoQuery,
+                    honchoResponse: thoughtData.honchoResponse,
+                    pdfQuery: thoughtData.pdfQuery,
+                    pdfResponse: thoughtData.pdfResponse,
+                  },
                 },
               ],
               { revalidate: false }
@@ -615,7 +700,6 @@ What's on your mind? Let's dive in. 🌱`,
 
       // Clear selected files after successful upload
       setSelectedFiles([]);
-      setIsUploading(false);
 
       await mutateMessages();
 
@@ -636,6 +720,14 @@ What's on your mind? Let's dive in. 🌱`,
               isUser: false,
               id: '',
               metadata: {},
+              thinking: {
+                thoughtContent: thoughtData.thoughtContent,
+                thoughtFinished: true,
+                honchoQuery: thoughtData.honchoQuery,
+                honchoResponse: thoughtData.honchoResponse,
+                pdfQuery: thoughtData.pdfQuery,
+                pdfResponse: thoughtData.pdfResponse,
+              },
             },
           ],
           { revalidate: false }
@@ -695,14 +787,6 @@ What's on your mind? Let's dive in. 🌱`,
             conversationId={conversationId}
             messagesLoading={messagesLoading}
             handleReactionAdded={handleReactionAdded}
-            thinkBoxData={{
-              thoughtChunks,
-              finished: isThoughtsFinished,
-              honchoQuery: thoughtData.honchoQuery,
-              honchoResponse: thoughtData.honchoResponse,
-              pdfQuery: thoughtData.pdfQuery,
-              pdfResponse: thoughtData.pdfResponse,
-            }}
           />
           <div className="absolute bottom-0 left-0 right-0 z-10">
             <div className="h-3 lg:h-5  bg-gradient-to-b from-transparent to-background" />
@@ -745,7 +829,7 @@ What's on your mind? Let's dive in. 🌱`,
                               </span>
                             </div>
                             <button
-                              onClick={() => removeFile(index)}
+                              onClick={() => removeFile()}
                               className="hover:bg-gray-200 rounded-full p-1 transition-colors"
                               disabled={!canUseApp}
                             >

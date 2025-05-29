@@ -1,9 +1,140 @@
 'use server';
 import { createClient } from '@/utils/supabase/server';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
+import { Message, ThinkingData } from '@/utils/types';
+import { StreamingXmlParser } from '@/utils/ai/streamingXmlParser';
 import * as Sentry from '@sentry/nextjs';
 
-export async function getMessages(conversationId: string) {
+async function buildThinkingDataMap(
+  appId: string,
+  userId: string,
+  conversationId: string,
+  messages: any[]
+): Promise<Map<string, ThinkingData>> {
+  try {
+    // Create a mapping from user messages to their following AI messages
+    const userToAiMessageMap = new Map<string, string>();
+    
+    for (let i = 0; i < messages.length - 1; i++) {
+      const currentMessage = messages[i];
+      const nextMessage = messages[i + 1];
+      
+      // If current is user and next is AI, map them
+      if (currentMessage.is_user && !nextMessage.is_user) {
+        userToAiMessageMap.set(currentMessage.id, nextMessage.id);
+      }
+    }
+
+    // Get all user message IDs that have corresponding AI messages
+    const userMessageIds = Array.from(userToAiMessageMap.keys());
+    
+    if (userMessageIds.length === 0) {
+      return new Map();
+    }
+
+    // Fetch all metamessages attached to user messages in parallel
+    const [allThoughts, allHoncho, allPdf] = await Promise.all([
+      honcho.apps.users.metamessages.list(appId, userId, {
+        session_id: conversationId,
+        metamessage_type: 'thought',
+        filter: { type: 'assistant' },
+      }),
+      honcho.apps.users.metamessages.list(appId, userId, {
+        session_id: conversationId,
+        metamessage_type: 'honcho',
+        filter: { type: 'assistant' },
+      }),
+      honcho.apps.users.metamessages.list(appId, userId, {
+        session_id: conversationId,
+        metamessage_type: 'pdf',
+        filter: { type: 'assistant' },
+      }),
+    ]);
+
+    // Build maps for quick lookup by user message_id
+    const thoughtsMap = new Map<string, string>();
+    const honchoMap = new Map<string, string>();
+    const pdfMap = new Map<string, string>();
+
+    allThoughts.items.forEach((item) => {
+      if (item.message_id && userMessageIds.includes(item.message_id)) {
+        thoughtsMap.set(item.message_id, item.content);
+      }
+    });
+
+    allHoncho.items.forEach((item) => {
+      if (item.message_id && userMessageIds.includes(item.message_id)) {
+        honchoMap.set(item.message_id, item.content);
+      }
+    });
+
+    allPdf.items.forEach((item) => {
+      if (item.message_id && userMessageIds.includes(item.message_id)) {
+        pdfMap.set(item.message_id, item.content);
+      }
+    });
+
+    // Create thinking data map keyed by AI message IDs
+    const thinkingDataMap = new Map<string, ThinkingData>();
+
+    userToAiMessageMap.forEach((aiMessageId, userMessageId) => {
+      const thoughtData = thoughtsMap.get(userMessageId) || '';
+      const honchoData = honchoMap.get(userMessageId) || '';
+      const pdfData = pdfMap.get(userMessageId) || '';
+
+      // Parse the thought content to extract XML if present
+      let thoughtContent = '';
+      let honchoQuery = '';
+      let pdfQuery = '';
+
+      if (thoughtData) {
+        const parser = new StreamingXmlParser();
+        const chunks = parser.parse(thoughtData);
+        
+        let accumulatedThought = '';
+        let accumulatedHonchoQuery = '';
+        let accumulatedPdfQuery = '';
+
+        chunks.forEach(chunk => {
+          if (chunk.type === 'thought') {
+            accumulatedThought += chunk.text;
+          } else if (chunk.type === 'honchoQuery') {
+            accumulatedHonchoQuery += chunk.text;
+          } else if (chunk.type === 'pdfQuery') {
+            accumulatedPdfQuery += chunk.text;
+          }
+        });
+
+        thoughtContent = accumulatedThought;
+        honchoQuery = accumulatedHonchoQuery;
+        pdfQuery = accumulatedPdfQuery;
+      }
+
+      // Use the raw honcho and pdf data as responses
+      const honchoResponse = honchoData;
+      const pdfResponse = pdfData;
+
+      // Only create thinking data if any content exists
+      if (thoughtContent || honchoQuery || honchoResponse || pdfQuery || pdfResponse) {
+        thinkingDataMap.set(aiMessageId, {
+          thoughtContent,
+          thoughtFinished: true, // Past messages are always finished
+          honchoQuery,
+          honchoResponse,
+          pdfQuery,
+          pdfResponse,
+        });
+      }
+    });
+
+    return thinkingDataMap;
+  } catch (error) {
+    console.error('Error building thinking data map:', error);
+    return new Map();
+  }
+}
+
+export async function getMessages(conversationId: string): Promise<Message[]> {
   return Sentry.startSpan(
     { name: 'server-action.getMessages', op: 'server.action' },
     async () => {
@@ -20,26 +151,50 @@ export async function getMessages(conversationId: string) {
       }
       const honchoUser = await getHonchoUser(user.id);
 
-      const thoughts = await honcho.apps.users.metamessages.list(
-        honchoApp.id,
-        honchoUser.id,
-        { metamessage_type: 'thought', session_id: conversationId }
-      );
-
-      const messages = [];
+      // First, collect all raw messages
+      const rawMessages = [];
       for await (const message of honcho.apps.users.sessions.messages.list(
         honchoApp.id,
         honchoUser.id,
         conversationId,
         {}
       )) {
-        messages.push({
-          id: message.id,
-          content: message.content,
-          isUser: message.is_user,
-          metadata: message.metadata,
-        });
+        rawMessages.push(message);
       }
+
+      // Build thinking data map using the message sequence
+      const thinkingDataMap = await buildThinkingDataMap(
+        honchoApp.id,
+        honchoUser.id,
+        conversationId,
+        rawMessages
+      );
+
+      // Build final message array with thinking data properly attached
+      const messages: Message[] = [];
+      
+      rawMessages.forEach((message) => {
+        if (message.is_user) {
+          // User message - no thinking data
+          messages.push({
+            id: message.id,
+            content: message.content,
+            isUser: true,
+            metadata: message.metadata,
+          });
+        } else {
+          // AI message - get thinking data from map
+          const thinking = thinkingDataMap.get(message.id);
+
+          messages.push({
+            id: message.id,
+            content: message.content,
+            isUser: false,
+            metadata: message.metadata,
+            thinking,
+          });
+        }
+      });
 
       return messages;
     }

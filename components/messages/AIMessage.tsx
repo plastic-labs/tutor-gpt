@@ -1,13 +1,14 @@
 import React from 'react';
-import { Message } from '@/utils/types';
+import { AIMessage as AIMessageType } from '@/utils/types';
 import { LuThumbsUp, LuThumbsDown, LuClipboard } from 'react-icons/lu';
 import MarkdownWrapper from '../markdownWrapper';
 import Spinner from '../spinner';
+import ThinkBox from '../ThinkBox';
 
 export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
 
 interface AIMessageProps {
-  message: Message;
+  message: AIMessageType;
   messagesLoading: boolean;
   onReaction: (messageId: string, reaction: Exclude<Reaction, null>) => void;
   pendingReaction?: Reaction;
@@ -21,9 +22,21 @@ function AIMessage({
   pendingReaction,
   error,
 }: AIMessageProps) {
-  const { id: messageId, content, metadata } = message;
+  const { id: messageId, content, metadata, thinking } = message;
+  // console.log('thinking', thinking);
   const reaction = (metadata?.reaction as Reaction) || null;
   const shouldShowButtons = messageId !== '';
+
+  // Check if we should show the ThinkBox
+  // Show for AI messages that either have thinking data OR are being streamed (empty content with thinking object)
+  const shouldShowThinkBox = thinking && (
+    thinking.thoughtContent ||
+    thinking.honchoQuery ||
+    thinking.honchoResponse ||
+    thinking.pdfQuery ||
+    thinking.pdfResponse ||
+    (!thinking.thoughtFinished && content === '') // Show for new AI messages being streamed
+  );
 
   const handleCopyToClipboard = () => {
     if (navigator?.clipboard) {
@@ -33,6 +46,18 @@ function AIMessage({
 
   return (
     <div className="mb-6">
+      {/* ThinkBox - render before AI message content */}
+      {shouldShowThinkBox && thinking && (
+        <ThinkBox
+          thoughtContent={thinking.thoughtContent}
+          finished={thinking.thoughtFinished || false}
+          honchoQuery={thinking.honchoQuery || ''}
+          honchoResponse={thinking.honchoResponse || ''}
+          pdfQuery={thinking.pdfQuery || ''}
+          pdfResponse={thinking.pdfResponse || ''}
+        />
+      )}
+
       {/* AI message content - no background, just text on page background */}
       <div className="text-black mb-3">
         <MarkdownWrapper text={content} />
