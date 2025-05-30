@@ -4,10 +4,12 @@ import useSWR from 'swr';
 import dynamic from 'next/dynamic';
 
 import { FiMenu } from 'react-icons/fi';
-import { ArrowUp, Square, Paperclip, X } from 'lucide-react';
-import Swal from 'sweetalert2';
+import { ArrowUp, Square, Paperclip, X, Menu, Plus } from 'lucide-react';
+import BloomLogo from '@/components/bloomlogo';
+import { toast } from 'sonner';
+import { createClient } from '@/utils/supabase/client';
 
-import { useRef, useEffect, useState, ElementRef, useMemo } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 // import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 
@@ -39,6 +41,12 @@ import {
   FileUploadContent,
   FileUploadTrigger,
 } from '@/components/ui/file-upload';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { departureMono } from '@/utils/fonts';
 
 const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
@@ -48,7 +56,6 @@ interface StreamResponseChunk {
   type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery';
   text: string;
 }
-
 
 class StreamReader {
   private reader: ReadableStreamDefaultReader<Uint8Array>;
@@ -146,13 +153,13 @@ async function fetchConsolidatedStream(
 
     if (!response.ok) {
       if (response.status === 402) {
-        Swal.fire({
-          title: 'Subscription Required',
-          text: 'You have no active subscription. Subscribe to continue using Bloom!',
-          icon: 'warning',
-          confirmButtonColor: '#3085d6',
-          confirmButtonText: 'Subscribe',
-          showCancelButton: false,
+        toast.error('Subscription Required', {
+          description:
+            'You have no active subscription. Subscribe to continue using Bloom!',
+          action: {
+            label: 'Subscribe',
+            onClick: () => (window.location.href = '/settings'),
+          },
         });
         throw new Error(`Subscription is required to chat: ${response.status}`);
       }
@@ -206,24 +213,27 @@ export default function Chat({
   );
   const [inputValue, setInputValue] = useState('');
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-
-  const [thoughtData, setThoughtData] = useState<ThinkingData>({
-    thoughtContent: '',
-    thoughtFinished: false,
-    honchoQuery: '',
-    honchoResponse: '',
-    pdfQuery: '',
-    pdfResponse: '',
-  });
-  const [thoughtChunks, setThoughtChunks] = useState<string[]>([]);
   const [canSend, setCanSend] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   const posthog = usePostHog();
-  const messageContainerRef = useRef<ElementRef<'section'>>(null);
+  const messageContainerRef = useRef<HTMLElement>(null);
   useAutoScroll(messageContainerRef);
 
   const messageListRef = useRef<MessageListRef>(null);
+  const sidebarPanelRef = useRef<any>(null);
+
+  const supabase = createClient();
+  const fetchUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  };
+
+  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
+
   const firstChat = useMemo(() => {
     return (
       !initialConversations?.length ||
@@ -261,6 +271,16 @@ What's on your mind? Let's dive in. 🌱`,
     }
   }, [posthog, initialUserId, initialEmail]);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const conversationsFetcher = async () => {
     const result = await getConversations();
@@ -402,12 +422,8 @@ What's on your mind? Let's dive in. 🌱`,
     });
 
     if (invalidFiles.length > 0) {
-      Swal.fire({
-        title: 'File Too Large',
-        text: `The following files are larger than 5MB and cannot be uploaded: ${invalidFiles.join(', ')}`,
-        icon: 'error',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'OK',
+      toast.error('File Too Large', {
+        description: `The following files are larger than 5MB and cannot be uploaded: ${invalidFiles.join(', ')}`,
       });
     }
 
@@ -421,6 +437,37 @@ What's on your mind? Let's dive in. 🌱`,
     setSelectedFiles([]);
   };
 
+  async function addChat() {
+    // Create a temporary conversation with a loading state
+    const tempId = 'temp-' + Date.now();
+    const tempConversation: Conversation = {
+      conversationId: tempId,
+      name: 'Untitled',
+    };
+
+    // Optimistically add the temporary conversation
+    mutateConversations([tempConversation, ...conversations!], false);
+    setConversationId(tempId);
+
+    try {
+      const newConversation = await createConversation();
+      posthog?.capture('user_created_conversation');
+
+      // Replace temporary conversation with the real one
+      mutateConversations([
+        newConversation!,
+        ...conversations!.filter((c) => c.conversationId !== tempId),
+      ]);
+      setConversationId(newConversation?.conversationId);
+    } catch (error) {
+      // Remove temporary conversation on error
+      mutateConversations(conversations!);
+      setConversationId(conversationId);
+      toast.error('Failed to create new chat');
+      console.error('Failed to create new chat:', error);
+    }
+  }
+
   const canUseApp = useMemo(
     () => isSubscribed || freeMessages > 0,
     [isSubscribed, freeMessages]
@@ -433,6 +480,14 @@ What's on your mind? Let's dive in. 🌱`,
       setCanSend(true);
     }
   }, [conversationId, messagesLoading]);
+
+  useEffect(() => {
+    // Collapse sidebar by default on mobile
+    if (isMobile && sidebarPanelRef.current) {
+      sidebarPanelRef.current.collapse();
+      setIsMobileSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   async function chat(message?: string) {
     const rawMessage = message || inputValue;
@@ -496,16 +551,6 @@ What's on your mind? Let's dive in. 🌱`,
 
       const streamReader = new StreamReader(stream);
 
-      setThoughtData({
-        thoughtContent: '',
-        thoughtFinished: false,
-        honchoQuery: '',
-        honchoResponse: '',
-        pdfQuery: '',
-        pdfResponse: '',
-      });
-      setThoughtChunks([]);
-
       // Process the stream
       while (true) {
         const { done, chunk } = await streamReader.read();
@@ -532,138 +577,134 @@ What's on your mind? Let's dive in. 🌱`,
           case 'thought':
             // Add thought content directly since server now sends clean content
             if (chunk.text.trim()) {
-              const newThoughtContent = thoughtData.thoughtContent + chunk.text;
-              setThoughtData((prev) => ({
-                ...prev,
-                thoughtContent: newThoughtContent,
-              }));
-              setThoughtChunks((prev) => [...prev, chunk.text]);
-              // Update the current AI message with thinking data
               mutateMessages(
-                [
-                  ...(newMessages?.slice(0, -1) || []),
-                  {
-                    content: currentModelOutput,
-                    isUser: false,
-                    id: '',
-                    metadata: {},
-                    thinking: {
-                      ...thoughtData,
-                      thoughtContent: newThoughtContent,
+                (currentMessages) => {
+                  const msgs = currentMessages || [];
+                  const lastMessage = msgs[msgs.length - 1];
+                  if (lastMessage && !lastMessage.isUser) {
+                    const updatedThinking = {
+                      ...lastMessage.thinking,
+                      thoughtContent:
+                        (lastMessage.thinking?.thoughtContent || '') +
+                        chunk.text,
                       thoughtFinished: false,
-                    },
-                  },
-                ],
+                    };
+                    return [
+                      ...msgs.slice(0, -1),
+                      {
+                        ...lastMessage,
+                        thinking: updatedThinking,
+                      },
+                    ];
+                  }
+                  return msgs;
+                },
                 { revalidate: false }
               );
             }
             break;
 
           case 'honchoQuery':
-            // Update the thought data with honcho query
-            const newHonchoQuery = thoughtData.honchoQuery + chunk.text;
-            setThoughtData((prev) => ({
-              ...prev,
-              honchoQuery: newHonchoQuery,
-            }));
-            // Update the current AI message with thinking data
             mutateMessages(
-              [
-                ...(newMessages?.slice(0, -1) || []),
-                {
-                  content: currentModelOutput,
-                  isUser: false,
-                  id: '',
-                  metadata: {},
-                  thinking: {
-                    ...thoughtData,
-                    honchoQuery: newHonchoQuery,
+              (currentMessages) => {
+                const msgs = currentMessages || [];
+                const lastMessage = msgs[msgs.length - 1];
+                if (lastMessage && !lastMessage.isUser) {
+                  const updatedThinking = {
+                    ...lastMessage.thinking,
+                    honchoQuery:
+                      (lastMessage.thinking?.honchoQuery || '') + chunk.text,
                     thoughtFinished: false,
-                  },
-                },
-              ],
+                  };
+                  return [
+                    ...msgs.slice(0, -1),
+                    {
+                      ...lastMessage,
+                      thinking: updatedThinking,
+                    },
+                  ];
+                }
+                return msgs;
+              },
               { revalidate: false }
             );
             break;
 
           case 'pdfQuery':
-            // Update the thought data with PDF query
-            const newPdfQuery = thoughtData.pdfQuery + chunk.text;
-            setThoughtData((prev) => ({
-              ...prev,
-              pdfQuery: newPdfQuery,
-            }));
-            // Update the current AI message with thinking data
             mutateMessages(
-              [
-                ...(newMessages?.slice(0, -1) || []),
-                {
-                  content: currentModelOutput,
-                  isUser: false,
-                  id: '',
-                  metadata: {},
-                  thinking: {
-                    ...thoughtData,
-                    pdfQuery: newPdfQuery,
+              (currentMessages) => {
+                const msgs = currentMessages || [];
+                const lastMessage = msgs[msgs.length - 1];
+                if (lastMessage && !lastMessage.isUser) {
+                  const updatedThinking = {
+                    ...lastMessage.thinking,
+                    pdfQuery:
+                      (lastMessage.thinking?.pdfQuery || '') + chunk.text,
                     thoughtFinished: false,
-                  },
-                },
-              ],
+                  };
+                  return [
+                    ...msgs.slice(0, -1),
+                    {
+                      ...lastMessage,
+                      thinking: updatedThinking,
+                    },
+                  ];
+                }
+                return msgs;
+              },
               { revalidate: false }
             );
             break;
 
           case 'honcho':
-            // Update the thought data with honcho response
-            const newHonchoResponse = thoughtData.honchoResponse + chunk.text;
-            setThoughtData((prev) => ({
-              ...prev,
-              honchoResponse: newHonchoResponse,
-            }));
-            // Update the current AI message with thinking data
             mutateMessages(
-              [
-                ...(newMessages?.slice(0, -1) || []),
-                {
-                  content: currentModelOutput,
-                  isUser: false,
-                  id: '',
-                  metadata: {},
-                  thinking: {
-                    ...thoughtData,
-                    honchoResponse: newHonchoResponse,
+              (currentMessages) => {
+                const msgs = currentMessages || [];
+                const lastMessage = msgs[msgs.length - 1];
+                if (lastMessage && !lastMessage.isUser) {
+                  const updatedThinking = {
+                    ...lastMessage.thinking,
+                    honchoResponse:
+                      (lastMessage.thinking?.honchoResponse || '') + chunk.text,
                     thoughtFinished: false,
-                  },
-                },
-              ],
+                  };
+                  return [
+                    ...msgs.slice(0, -1),
+                    {
+                      ...lastMessage,
+                      thinking: updatedThinking,
+                    },
+                  ];
+                }
+                return msgs;
+              },
               { revalidate: false }
             );
             break;
 
           case 'pdf':
-            // Update the thought data with PDF response
             if (chunk.text.length > 0) {
-              const newPdfResponse = thoughtData.pdfResponse + chunk.text;
-              setThoughtData((prev) => ({
-                ...prev,
-                pdfResponse: newPdfResponse,
-              }));
-              // Update the current AI message with thinking data
               mutateMessages(
-                [
-                  ...(newMessages?.slice(0, -1) || []),
-                  {
-                    content: currentModelOutput,
-                    isUser: false,
-                    id: '',
-                    metadata: {},
-                    thinking: {
-                      ...thoughtData,
-                      pdfResponse: newPdfResponse,
+                (currentMessages) => {
+                  const msgs = currentMessages || [];
+                  const lastMessage = msgs[msgs.length - 1];
+                  if (lastMessage && !lastMessage.isUser) {
+                    const updatedThinking = {
+                      ...lastMessage.thinking,
+                      pdfResponse:
+                        (lastMessage.thinking?.pdfResponse || '') + chunk.text,
                       thoughtFinished: false,
-                    },
-                  },
-                ],
+                    };
+                    return [
+                      ...msgs.slice(0, -1),
+                      {
+                        ...lastMessage,
+                        thinking: updatedThinking,
+                      },
+                    ];
+                  }
+                  return msgs;
+                },
                 { revalidate: false }
               );
             }
@@ -672,23 +713,25 @@ What's on your mind? Let's dive in. 🌱`,
           case 'response':
             currentModelOutput += chunk.text;
             mutateMessages(
-              [
-                ...(newMessages?.slice(0, -1) || []),
-                {
-                  content: currentModelOutput,
-                  isUser: false,
-                  id: '',
-                  metadata: {},
-                  thinking: {
-                    thoughtContent: thoughtData.thoughtContent,
+              (currentMessages) => {
+                const msgs = currentMessages || [];
+                const lastMessage = msgs[msgs.length - 1];
+                if (lastMessage && !lastMessage.isUser) {
+                  const updatedThinking = {
+                    ...lastMessage.thinking,
                     thoughtFinished: true,
-                    honchoQuery: thoughtData.honchoQuery,
-                    honchoResponse: thoughtData.honchoResponse,
-                    pdfQuery: thoughtData.pdfQuery,
-                    pdfResponse: thoughtData.pdfResponse,
-                  },
-                },
-              ],
+                  };
+                  return [
+                    ...msgs.slice(0, -1),
+                    {
+                      ...lastMessage,
+                      content: currentModelOutput,
+                      thinking: updatedThinking,
+                    },
+                  ];
+                }
+                return msgs;
+              },
               { revalidate: false }
             );
             messageListRef.current?.scrollToBottom();
@@ -711,25 +754,27 @@ What's on your mind? Let's dive in. 🌱`,
       // Preserve the message even in case of error if we have content
       if (currentModelOutput) {
         mutateMessages(
-          [
-            ...(newMessages?.slice(0, -1) || []),
-            {
-              content:
-                currentModelOutput ||
-                'Sorry, there was an error generating a response.',
-              isUser: false,
-              id: '',
-              metadata: {},
-              thinking: {
-                thoughtContent: thoughtData.thoughtContent,
+          (currentMessages) => {
+            const msgs = currentMessages || [];
+            const lastMessage = msgs[msgs.length - 1];
+            if (lastMessage && !lastMessage.isUser) {
+              const updatedThinking = {
+                ...lastMessage.thinking,
                 thoughtFinished: true,
-                honchoQuery: thoughtData.honchoQuery,
-                honchoResponse: thoughtData.honchoResponse,
-                pdfQuery: thoughtData.pdfQuery,
-                pdfResponse: thoughtData.pdfResponse,
-              },
-            },
-          ],
+              };
+              return [
+                ...msgs.slice(0, -1),
+                {
+                  ...lastMessage,
+                  content:
+                    currentModelOutput ||
+                    'Sorry, there was an error generating a response.',
+                  thinking: updatedThinking,
+                },
+              ];
+            }
+            return msgs;
+          },
           { revalidate: false }
         );
       } else {
@@ -743,187 +788,289 @@ What's on your mind? Let's dive in. 🌱`,
 
   return (
     <main className="relative flex flex-1 w-full bg-background min-h-0">
-      <Sidebar
-        conversations={conversations || []}
-        mutateConversations={mutateConversations}
-        conversationId={conversationId}
-        setConversationId={setConversationId}
-        isSidebarOpen={isSidebarOpen}
-        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        canUseApp={canUseApp}
-      />
-      <div className="flex flex-col h-full w-full">
-        {!isSidebarOpen && (
-          <button
-            className={`absolute top-3 left-4 z-30 lg:hidden bg-neon-green text-black rounded-lg p-2 border border-black`}
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <FiMenu size={24} />
-          </button>
-        )}
-        {!isSubscribed && (
-          <section className="h-[63px] w-full bg-neon-green text-black text-center flex items-center justify-center shrink-0">
-            <p className="lg:ml-0 ml-12">
-              {freeMessages === 0
-                ? "You've used all your free messages"
-                : `${freeMessages} free messages remaining`}
-              .{' '}
-              <Link
-                className="cursor-pointer hover:cursor-pointer font-bold underline"
-                href="/settings"
-              >
-                Subscribe now
-              </Link>{' '}
-              {freeMessages === 0 ? 'to use Bloom!' : 'for unlimited access!'}
-            </p>
-          </section>
-        )}
-        <div className="flex flex-col h-full relative">
-          <MessageList
-            ref={messageListRef}
-            messages={messages}
-            defaultMessage={defaultMessage}
-            userId={userId}
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        <ResizablePanel
+          ref={sidebarPanelRef}
+          defaultSize={25}
+          minSize={20}
+          maxSize={40}
+          collapsible
+          className={isMobile ? "hidden" : ""}
+        >
+          <Sidebar
+            conversations={conversations || []}
+            mutateConversations={mutateConversations}
             conversationId={conversationId}
-            messagesLoading={messagesLoading}
-            handleReactionAdded={handleReactionAdded}
+            setConversationId={setConversationId}
+            canUseApp={canUseApp}
           />
-          <div className="absolute bottom-0 left-0 right-0 z-10">
-            <div className="h-3 lg:h-5  bg-gradient-to-b from-transparent to-background" />
-            <div className="bg-background py-3">
-              {messages!.length > 1 && (
-                <div className="disclaimer-text text-center mb-2 text-gray-400">
-                  Bloom can make mistakes. Always double-check important
-                  information.
-                </div>
-              )}
-              <div className="relative max-w-[740px] mx-auto">
-                <FileUpload
-                  onFilesAdded={handleFilesAdded}
-                  accept=".pdf,.txt"
-                  multiple={false}
-                >
-                  <PromptInput
-                    value={inputValue}
-                    onValueChange={setInputValue}
-                    isLoading={!canSend}
-                    onSubmit={() => {
-                      if (canSend && inputValue && canUseApp) {
-                        posthog.capture('user_sent_message');
-                        chat();
-                      }
-                    }}
-                    className="w-full border-border bg-white"
+        </ResizablePanel>
+        {!isMobile && <ResizableHandle />}
+        <ResizablePanel defaultSize={isMobile ? 100 : 75}>
+          <div className="flex flex-col h-full w-full">
+            {!isSubscribed && (
+              <section className="h-[63px] w-full bg-neon-green text-black text-center flex items-center justify-center shrink-0">
+                <p>
+                  {freeMessages === 0
+                    ? "You've used all your free messages"
+                    : `${freeMessages} free messages remaining`}
+                  .{' '}
+                  <Link
+                    className="cursor-pointer hover:cursor-pointer font-bold underline"
+                    href="/settings"
                   >
-                    {selectedFiles.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pb-2">
-                        {selectedFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="bg-gray-100 flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-sm border"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Paperclip className="size-4 text-gray-600" />
-                              <span className="max-w-[120px] truncate text-sm font-medium">
-                                {file.name}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => removeFile()}
-                              className="hover:bg-gray-200 rounded-full p-1 transition-colors"
-                              disabled={!canUseApp}
-                            >
-                              <X className="size-4 text-gray-500" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    Subscribe now
+                  </Link>{' '}
+                  {freeMessages === 0
+                    ? 'to use Bloom!'
+                    : 'for unlimited access!'}
+                </p>
+              </section>
+            )}
 
-                    <PromptInputTextarea
-                      placeholder={
-                        canUseApp
-                          ? selectedFiles.length > 0
-                            ? `Message with file...`
-                            : 'Type a message or drop a file...'
-                          : 'Subscribe to send messages'
+            <div className="flex flex-col h-full relative">
+              {/* Chat Header */}
+              <div className="px-4 py-3.5 border-b-2 border-zinc-300 flex justify-start items-center gap-3.5 overflow-hidden ">
+                <button
+                  onClick={() => {
+                    if (isMobile) {
+                      setIsMobileSidebarOpen(!isMobileSidebarOpen);
+                    } else {
+                      if (sidebarPanelRef.current) {
+                        if (sidebarPanelRef.current.isCollapsed()) {
+                          sidebarPanelRef.current.expand();
+                        } else {
+                          sidebarPanelRef.current.collapse();
+                        }
                       }
-                      disabled={!canUseApp}
-                      className="placeholder:text-gray-400"
-                    />
-                    <PromptInputActions className="justify-end pt-2">
-                      <PromptInputAction tooltip="Attach files">
-                        <FileUploadTrigger asChild>
-                          <Button
-                            size="icon"
-                            className={`h-10 w-10 rounded-full bg-white border border-border hover:bg-gray-50 transition-colors`}
-                            disabled={!canUseApp}
-                            type="button"
-                          >
-                            <Paperclip className={`size-4 text-gray-600`} />
-                          </Button>
-                        </FileUploadTrigger>
-                      </PromptInputAction>
-                      <Button
-                        variant="default"
-                        size="icon"
-                        className="h-10 w-10 rounded-full bg-black text-white hover:bg-gray-800 transition-colors"
-                        disabled={!canSend || !canUseApp}
-                        type="button"
-                        onClick={() => {
+                    }
+                  }}
+                  className="w-6 h-6 flex items-center justify-center"
+                >
+                  <Menu className="w-6 h-6 text-black" />
+                </button>
+                <div className="flex flex-col justify-center items-start gap-1">
+                  <div
+                    className={`text-black text-xl font-normal ${departureMono.className}`}
+                  >
+                    {conversations?.find(
+                      (c) => c.conversationId === conversationId
+                    )?.name || 'New Chat'}
+                  </div>
+                  <div className="flex justify-start items-center gap-1.5">
+                    <span className="text-neutral-500 text-base font-normal font-mono">
+                      A chat with{' '}
+                      {user?.user_metadata?.full_name || 'You'}{' '}
+                      and
+                      <div className="inline-block pl-2">
+                        <div className="flex justify-start items-center gap-1">
+                          <BloomLogo className="w-5 text-neutral-500" />
+                          <span className="text-neutral-500 text-base font-normal font-mono">
+                            Bloom
+                          </span>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-1" />
+                <div className="flex justify-start items-center gap-1.5">
+                  <button
+                    onClick={addChat}
+                    disabled={!canUseApp}
+                    className="w-10 h-10 bg-lime-300 rounded-full flex justify-center items-center overflow-hidden hover:bg-lime-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4 text-black" />
+                  </button>
+                </div>
+              </div>
+              <MessageList
+                ref={messageListRef}
+                messages={messages}
+                defaultMessage={defaultMessage}
+                userId={userId}
+                conversationId={conversationId}
+                messagesLoading={messagesLoading}
+                handleReactionAdded={handleReactionAdded}
+              />
+              <div className="absolute bottom-0 left-0 right-0 z-10">
+                <div className="h-3 lg:h-5  bg-gradient-to-b from-transparent to-background" />
+                <div className="bg-background py-3">
+                  {messages!.length > 1 && (
+                    <div className="disclaimer-text text-center mb-2 text-gray-400">
+                      Bloom can make mistakes. Always double-check important
+                      information.
+                    </div>
+                  )}
+                  <div className="relative max-w-[740px] mx-auto px-10">
+                    <FileUpload
+                      onFilesAdded={handleFilesAdded}
+                      accept=".pdf,.txt"
+                      multiple={false}
+                    >
+                      <PromptInput
+                        value={inputValue}
+                        onValueChange={setInputValue}
+                        isLoading={!canSend}
+                        onSubmit={() => {
                           if (canSend && inputValue && canUseApp) {
                             posthog.capture('user_sent_message');
                             chat();
                           }
                         }}
+                        className="w-full border-border bg-white"
                       >
-                        {!canSend ? (
-                          <Square className="size-4 fill-current" />
-                        ) : (
-                          <ArrowUp className="size-4" />
+                        {selectedFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pb-2">
+                            {selectedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="bg-gray-100 flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-sm border"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Paperclip className="size-4 text-gray-600" />
+                                  <span className="max-w-[120px] truncate text-sm font-medium">
+                                    {file.name}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => removeFile()}
+                                  className="hover:bg-gray-200 rounded-full p-1 transition-colors"
+                                  disabled={!canUseApp}
+                                >
+                                  <X className="size-4 text-gray-500" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         )}
-                      </Button>
-                    </PromptInputActions>
-                  </PromptInput>
 
-                  <FileUploadContent>
-                    <div className="flex min-h-[200px] w-full items-center justify-center">
-                      <div className="bg-white/95 backdrop-blur-sm m-4 w-full max-w-md rounded-xl border-2 border-dashed border-gray-300 p-8 shadow-xl">
-                        <div className="mb-4 flex justify-center">
-                          <div className="bg-blue-50 rounded-full p-3">
-                            <svg
-                              className="text-blue-500 size-8"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                              />
-                            </svg>
+                        <PromptInputTextarea
+                          placeholder={
+                            canUseApp
+                              ? selectedFiles.length > 0
+                                ? `Message with file...`
+                                : 'Type a message or drop a file...'
+                              : 'Subscribe to send messages'
+                          }
+                          disabled={!canUseApp}
+                          className="placeholder:text-gray-400"
+                        />
+                        <PromptInputActions className="justify-end pt-2">
+                          <PromptInputAction tooltip="Attach files">
+                            <FileUploadTrigger asChild>
+                              <Button
+                                size="icon"
+                                className={`h-10 w-10 rounded-full bg-white border border-border hover:bg-gray-50 transition-colors`}
+                                disabled={!canUseApp}
+                                type="button"
+                              >
+                                <Paperclip className={`size-4 text-gray-600`} />
+                              </Button>
+                            </FileUploadTrigger>
+                          </PromptInputAction>
+                          <Button
+                            variant="default"
+                            size="icon"
+                            className="h-10 w-10 rounded-full bg-black text-white hover:bg-gray-800 transition-colors"
+                            disabled={!canSend || !canUseApp}
+                            type="button"
+                            onClick={() => {
+                              if (canSend && inputValue && canUseApp) {
+                                posthog.capture('user_sent_message');
+                                chat();
+                              }
+                            }}
+                          >
+                            {!canSend ? (
+                              <Square className="size-4 fill-current" />
+                            ) : (
+                              <ArrowUp className="size-4" />
+                            )}
+                          </Button>
+                        </PromptInputActions>
+                      </PromptInput>
+
+                      <FileUploadContent>
+                        <div className="flex min-h-[200px] w-full items-center justify-center">
+                          <div className="bg-white/95 backdrop-blur-sm m-4 w-full max-w-md rounded-xl border-2 border-dashed border-gray-300 p-8 shadow-xl">
+                            <div className="mb-4 flex justify-center">
+                              <div className="bg-blue-50 rounded-full p-3">
+                                <svg
+                                  className="text-blue-500 size-8"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                            <h3 className="mb-2 text-center text-lg font-semibold text-gray-800">
+                              Drop a file to upload
+                            </h3>
+                            <p className="text-gray-600 text-center text-sm">
+                              Release to add a PDF or text file to your message
+                            </p>
+                            <p className="text-gray-400 text-center text-xs mt-2">
+                              Maximum file size: 5MB
+                            </p>
                           </div>
                         </div>
-                        <h3 className="mb-2 text-center text-lg font-semibold text-gray-800">
-                          Drop a file to upload
-                        </h3>
-                        <p className="text-gray-600 text-center text-sm">
-                          Release to add a PDF or text file to your message
-                        </p>
-                        <p className="text-gray-400 text-center text-xs mt-2">
-                          Maximum file size: 5MB
-                        </p>
-                      </div>
-                    </div>
-                  </FileUploadContent>
-                </FileUpload>
+                      </FileUploadContent>
+                    </FileUpload>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+      
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && isMobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <div className="h-full flex flex-col">
+            {/* Mobile sidebar header */}
+            <div className="px-4 py-3.5 border-b-2 border-zinc-300 flex justify-between items-center">
+              <button
+                onClick={() => {
+                  addChat();
+                  setIsMobileSidebarOpen(false);
+                }}
+                disabled={!canUseApp}
+                className="w-10 h-10 bg-lime-300 rounded-full flex justify-center items-center overflow-hidden hover:bg-lime-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4 text-black" />
+              </button>
+              <button
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="w-6 h-6 flex items-center justify-center"
+              >
+                <X className="w-6 h-6 text-black" />
+              </button>
+            </div>
+            {/* Mobile sidebar content */}
+            <div className="flex-1">
+              <Sidebar
+                conversations={conversations || []}
+                mutateConversations={mutateConversations}
+                conversationId={conversationId}
+                setConversationId={(id) => {
+                  setConversationId(id);
+                  setIsMobileSidebarOpen(false); // Close sidebar when selecting conversation
+                }}
+                canUseApp={canUseApp}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </main>
   );
 }

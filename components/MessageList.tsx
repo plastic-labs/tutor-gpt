@@ -59,7 +59,7 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
 
     return (
       <ScrollArea className="flex-1 w-full min-h-0" ref={messageContainerRef}>
-        <div className="max-w-[740px] mx-auto pb-[50vh] pt-5">
+        <div className="max-w-[740px] mx-auto pb-[50vh] pt-5 px-10">
           {allMessages.map((message, index) => {
             // Use a combination of id and index to ensure unique keys
             const messageKey = message.id || `temp-${index}`;

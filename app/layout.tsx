@@ -13,6 +13,7 @@ import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { cn } from '@/utils/helpers';
+import { Toaster } from '@/components/ui/sonner';
 
 const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -78,13 +79,14 @@ export default function RootLayout({
           <PHProvider>
             <SWRProvider>
               <div className="h-full flex flex-col min-h-0">
-                <Header />
+                {/* <Header /> */}
                 <ViewportScaleProvider />
                 {children}
               </div>
             </SWRProvider>
           </PHProvider>
         </ThemeProvider>
+        <Toaster />
         <SpeedInsights />
       </body>
     </html>

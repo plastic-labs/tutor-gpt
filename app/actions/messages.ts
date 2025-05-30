@@ -2,7 +2,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { Message, ThinkingData } from '@/utils/types';
-import { StreamingXmlParser } from '@/utils/ai/streamingXmlParser';
 import * as Sentry from '@sentry/nextjs';
 
 async function buildThinkingDataMap(
@@ -14,11 +13,11 @@ async function buildThinkingDataMap(
   try {
     // Create a mapping from user messages to their following AI messages
     const userToAiMessageMap = new Map<string, string>();
-    
+
     for (let i = 0; i < messages.length - 1; i++) {
       const currentMessage = messages[i];
       const nextMessage = messages[i + 1];
-      
+
       // If current is user and next is AI, map them
       if (currentMessage.is_user && !nextMessage.is_user) {
         userToAiMessageMap.set(currentMessage.id, nextMessage.id);
@@ -27,7 +26,7 @@ async function buildThinkingDataMap(
 
     // Get all user message IDs that have corresponding AI messages
     const userMessageIds = Array.from(userToAiMessageMap.keys());
-    
+
     if (userMessageIds.length === 0) {
       return new Map();
     }
@@ -88,26 +87,22 @@ async function buildThinkingDataMap(
       let pdfQuery = '';
 
       if (thoughtData) {
-        const parser = new StreamingXmlParser();
-        const chunks = parser.parse(thoughtData);
-        
-        let accumulatedThought = '';
-        let accumulatedHonchoQuery = '';
-        let accumulatedPdfQuery = '';
+        // Extract XML-wrapped content
+        const honchoQueryMatch = thoughtData.match(
+          /<honcho>([\s\S]*?)<\/honcho>/
+        );
+        const pdfQueryMatch = thoughtData.match(
+          /<pdf-agent>([\s\S]*?)<\/pdf-agent>/
+        );
 
-        chunks.forEach(chunk => {
-          if (chunk.type === 'thought') {
-            accumulatedThought += chunk.text;
-          } else if (chunk.type === 'honchoQuery') {
-            accumulatedHonchoQuery += chunk.text;
-          } else if (chunk.type === 'pdfQuery') {
-            accumulatedPdfQuery += chunk.text;
-          }
-        });
+        honchoQuery = honchoQueryMatch ? honchoQueryMatch[1] : '';
+        pdfQuery = pdfQueryMatch ? pdfQueryMatch[1] : '';
 
-        thoughtContent = accumulatedThought;
-        honchoQuery = accumulatedHonchoQuery;
-        pdfQuery = accumulatedPdfQuery;
+        // Thought content is everything else - remove the XML sections
+        thoughtContent = thoughtData
+          .replace(/<honcho>([\s\S]*?)<\/honcho>/g, '')
+          .replace(/<pdf-agent>([\s\S]*?)<\/pdf-agent>/g, '')
+          .trim();
       }
 
       // Use the raw honcho and pdf data as responses
@@ -115,7 +110,13 @@ async function buildThinkingDataMap(
       const pdfResponse = pdfData;
 
       // Only create thinking data if any content exists
-      if (thoughtContent || honchoQuery || honchoResponse || pdfQuery || pdfResponse) {
+      if (
+        thoughtContent ||
+        honchoQuery ||
+        honchoResponse ||
+        pdfQuery ||
+        pdfResponse
+      ) {
         thinkingDataMap.set(aiMessageId, {
           thoughtContent,
           thoughtFinished: true, // Past messages are always finished
@@ -172,7 +173,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
 
       // Build final message array with thinking data properly attached
       const messages: Message[] = [];
-      
+
       rawMessages.forEach((message) => {
         if (message.is_user) {
           // User message - no thinking data
@@ -185,6 +186,10 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         } else {
           // AI message - get thinking data from map
           const thinking = thinkingDataMap.get(message.id);
+          console.log('pdfQuery', thinking?.pdfQuery);
+          // console.log('pdfResponse', thinking?.pdfResponse);
+          // console.log('honchoQuery', thinking?.honchoQuery);
+          // console.log('honchoResponse', thinking?.honchoResponse);
 
           messages.push({
             id: message.id,

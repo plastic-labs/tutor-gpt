@@ -90,10 +90,13 @@ export default function ThinkBox({
 
   // Initial animation when component mounts - show immediately
   useEffect(() => {
+    console.log('finish check');
+    console.log('finished', finished);
     if (!hasAnimated) {
       setHasAnimated(true);
       if (finished) {
         // For finished messages (historical), show everything immediately without animation
+        console.log('finished', finished);
         animate(
           scope.current,
           { filter: 'blur(0px)', opacity: 1 },
@@ -171,6 +174,19 @@ export default function ThinkBox({
 
   async function runContentAnimation() {
     // First expand the box and show header elements
+    animate(
+      '#thinking-text',
+      {
+        opacity: 0,
+        filter: 'blur(4px)',
+      },
+      { duration: 0 }
+    );
+    animate(
+      '#chevron-icon',
+      { opacity: 0, filter: 'blur(4px)' },
+      { duration: 0 }
+    );
     await Promise.all([
       animate(
         scope.current,
@@ -213,26 +229,32 @@ export default function ThinkBox({
   // Animate height for collapse/expand
   const content = (
     <div ref={contentRef} className="flex flex-col">
-      <div
+      <motion.div
         className="flex items-center p-5 justify-between h-14 border-b border-gray-200 cursor-pointer select-none"
         id="top-bar"
         onClick={() => setCollapsed((c) => !c)}
+        animate={{
+          borderBottomColor: collapsed
+            ? 'rgba(229, 231, 235, 0)'
+            : 'rgba(229, 231, 235, 1)',
+        }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
         <div className="flex items-center gap-2">
           <BloomLogo />
-          <span id="thinking-text" className="opacity-0 blur-sm hidden">
+          <span id="thinking-text" className="hidden">
             {finished ? 'Thought about it' : 'Thinking...'}
           </span>
         </div>
         <motion.div
           id="chevron-icon"
-          className="opacity-0 blur-sm hidden"
+          className="hidden"
           animate={{ rotate: collapsed ? 180 : 0 }}
           transition={{ duration: 0.4, ease: 'easeInOut' }}
         >
           <ChevronDown className="w-5 h-5" />
         </motion.div>
-      </div>
+      </motion.div>
       <motion.div
         id="initial-text"
         className="p-5 border-t border-gray-200 opacity-0 hidden"
