@@ -1,5 +1,4 @@
 import React from 'react';
-import { GrClose } from 'react-icons/gr';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Settings } from 'lucide-react';
@@ -35,6 +34,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -54,7 +59,6 @@ export default function Sidebar({
 }) {
   const postHog = usePostHog();
   const supabase = createClient();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingConversation, setEditingConversation] = useState<Conversation | null>(null);
@@ -234,41 +238,33 @@ export default function Sidebar({
             </div>
           </div>
 
-          {/* Settings button */}
-          <div className="relative">
-            <button
-              className="w-6 h-6 flex items-center justify-center text-black hover:text-gray-600 transition-colors"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-
-            {isMenuOpen && (
-              <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
-                <button
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    router.push('/settings');
-                  }}
-                >
-                  Account Settings
-                </button>
-                <button
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                  onClick={async () => {
-                    setIsMenuOpen(false);
-                    clearSWRCache();
-                    mutate(() => true, undefined, { revalidate: false });
-                    await supabase.auth.signOut();
-                    window.location.href = '/';
-                  }}
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Settings dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-6 h-6 flex items-center justify-center text-black hover:text-gray-600 transition-colors">
+                <Settings className="w-5 h-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="top" align="end" className="w-48">
+              <DropdownMenuItem 
+                onClick={() => router.push('/settings')}
+                className="cursor-pointer"
+              >
+                Account Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={async () => {
+                  clearSWRCache();
+                  mutate(() => true, undefined, { revalidate: false });
+                  await supabase.auth.signOut();
+                  window.location.href = '/';
+                }}
+                className="cursor-pointer"
+              >
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
