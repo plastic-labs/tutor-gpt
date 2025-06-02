@@ -205,7 +205,7 @@ export async function* respond({
         }
 
         // Get PDF query from thought stream - skip if empty or None
-        if (pdfQuery == 'None' || pdfQuery == '') {
+        if (pdfQuery.trim().toLowerCase() === 'none' || pdfQuery.trim() === '') {
           return { pdfContent: '', collectionId };
         }
 
