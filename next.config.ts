@@ -111,7 +111,6 @@ const nextConfig: NextConfig = {
 
   output: 'standalone',
 
-  turbopack: {},
   // experimental: {
   //   instrumentationHook: true,
   // }
