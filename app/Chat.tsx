@@ -211,13 +211,15 @@ function updateThinkingData(
   return {
     thoughtContent: currentThinking?.thoughtContent || '',
     thoughtFinished: false,
-    honchoQuery: queryType === 'honchoQuery' 
-      ? (currentThinking?.honchoQuery || '') + chunkText
-      : currentThinking?.honchoQuery,
+    honchoQuery:
+      queryType === 'honchoQuery'
+        ? (currentThinking?.honchoQuery || '') + chunkText
+        : currentThinking?.honchoQuery,
     honchoResponse: currentThinking?.honchoResponse,
-    pdfQuery: queryType === 'pdfQuery'
-      ? (currentThinking?.pdfQuery || '') + chunkText
-      : currentThinking?.pdfQuery,
+    pdfQuery:
+      queryType === 'pdfQuery'
+        ? (currentThinking?.pdfQuery || '') + chunkText
+        : currentThinking?.pdfQuery,
     pdfResponse: currentThinking?.pdfResponse,
   };
 }
@@ -834,7 +836,6 @@ What's on your mind? Let's dive in. 🌱`,
   }
 
   return (
-
     <main className="relative flex flex-1 w-full bg-background min-h-0">
       <ResizablePanelGroup direction="horizontal" className="h-full">
         <ResizablePanel
@@ -851,6 +852,7 @@ What's on your mind? Let's dive in. 🌱`,
             conversationId={conversationId}
             setConversationId={setConversationId}
             canUseApp={canUseApp}
+            onNewChat={() => {}}
           />
         </ResizablePanel>
         {!isMobile && <ResizableHandle />}
@@ -1116,6 +1118,9 @@ What's on your mind? Let's dive in. 🌱`,
                   setIsMobileSidebarOpen(false); // Close sidebar when selecting conversation
                 }}
                 canUseApp={canUseApp}
+                onNewChat={() => {
+                  setIsMobileSidebarOpen(false);
+                }}
               />
             </div>
           </div>
