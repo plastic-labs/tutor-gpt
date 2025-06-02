@@ -203,6 +203,25 @@ interface ChatProps {
   initialConversationId: string | null | undefined;
 }
 
+function updateThinkingData(
+  currentThinking: ThinkingData | undefined,
+  chunkText: string,
+  queryType: 'honchoQuery' | 'pdfQuery'
+): ThinkingData {
+  return {
+    thoughtContent: currentThinking?.thoughtContent || '',
+    thoughtFinished: false,
+    honchoQuery: queryType === 'honchoQuery' 
+      ? (currentThinking?.honchoQuery || '') + chunkText
+      : currentThinking?.honchoQuery,
+    honchoResponse: currentThinking?.honchoResponse,
+    pdfQuery: queryType === 'pdfQuery'
+      ? (currentThinking?.pdfQuery || '') + chunkText
+      : currentThinking?.pdfQuery,
+    pdfResponse: currentThinking?.pdfResponse,
+  };
+}
+
 export default function Chat({
   initialUserId,
   initialEmail,
@@ -623,15 +642,11 @@ What's on your mind? Let's dive in. 🌱`,
                 const msgs = currentMessages || [];
                 const lastMessage = msgs[msgs.length - 1];
                 if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking: ThinkingData = {
-                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
-                    thoughtFinished: false,
-                    honchoQuery:
-                      (lastMessage.thinking?.honchoQuery || '') + chunk.text,
-                    honchoResponse: lastMessage.thinking?.honchoResponse,
-                    pdfQuery: lastMessage.thinking?.pdfQuery,
-                    pdfResponse: lastMessage.thinking?.pdfResponse,
-                  };
+                  const updatedThinking = updateThinkingData(
+                    lastMessage.thinking,
+                    chunk.text,
+                    'honchoQuery'
+                  );
                   return [
                     ...msgs.slice(0, -1),
                     {
@@ -652,15 +667,11 @@ What's on your mind? Let's dive in. 🌱`,
                 const msgs = currentMessages || [];
                 const lastMessage = msgs[msgs.length - 1];
                 if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking: ThinkingData = {
-                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
-                    thoughtFinished: false,
-                    honchoQuery: lastMessage.thinking?.honchoQuery,
-                    honchoResponse: lastMessage.thinking?.honchoResponse,
-                    pdfQuery:
-                      (lastMessage.thinking?.pdfQuery || '') + chunk.text,
-                    pdfResponse: lastMessage.thinking?.pdfResponse,
-                  };
+                  const updatedThinking = updateThinkingData(
+                    lastMessage.thinking,
+                    chunk.text,
+                    'pdfQuery'
+                  );
                   return [
                     ...msgs.slice(0, -1),
                     {
