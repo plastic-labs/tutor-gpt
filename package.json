@@ -3,7 +3,7 @@
   "version": "0.7.1",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "SENTRY_SUPPRESS_TURBOPACK_WARNING=1 next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "test": "vitest",
