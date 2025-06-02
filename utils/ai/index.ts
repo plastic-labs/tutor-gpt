@@ -10,15 +10,10 @@ import {
   fetchConversationHistory,
   saveConversation,
 } from '@/utils/ai/conversation';
-import {
-  buildThoughtPrompt,
-  buildResponsePrompt,
-  extractTagContent,
-} from '@/utils/ai/prompts';
+import { buildThoughtPrompt, buildResponsePrompt } from '@/utils/ai/prompts';
 import { checkAndGenerateSummary } from '@/utils/ai/summary';
 import { streamText } from '@/utils/ai';
 import { Collection } from 'honcho-ai/resources/apps/users/collections/collections.mjs';
-import { StreamingXmlParser } from '@/utils/ai/streamingXmlParser';
 
 const MAX_COLLECTION_SIZE_IN_MB = 5;
 
@@ -72,42 +67,56 @@ export async function* respond({
     },
   });
 
-  // Initialize XML parser for streaming thought parsing
-  const xmlParser = new StreamingXmlParser();
   let thought = '';
+  let initialThought = '';
   let honchoQuery = '';
   let pdfQuery = '';
 
-  for await (const chunk of thoughtStream) {
-    thought += chunk;
+  let currentSection: 'thought' | 'honchoQuery' | 'pdfQuery' = 'thought';
 
-    // Parse the chunk for XML content
-    const parsedChunks = xmlParser.parse(chunk);
-
-    for (const parsedChunk of parsedChunks) {
-      // Emit the appropriate stream chunk type
-      yield formatStreamChunk({
-        type: parsedChunk.type,
-        text: parsedChunk.text,
-      });
-
-      // Track complete queries for later use
-      if (parsedChunk.isComplete) {
-        if (parsedChunk.type === 'honchoQuery') {
-          honchoQuery = parsedChunk.text;
-        } else if (parsedChunk.type === 'pdfQuery') {
-          pdfQuery = parsedChunk.text;
-        }
-      }
+  function addToSection(
+    section: 'thought' | 'honchoQuery' | 'pdfQuery',
+    text: string
+  ) {
+    if (section === 'thought') {
+      initialThought += text;
+    } else if (section === 'honchoQuery') {
+      honchoQuery += text;
+    } else {
+      pdfQuery += text;
     }
   }
 
-  // Extract final queries using fallback method if streaming didn't capture them
-  if (!honchoQuery) {
-    honchoQuery = extractTagContent(thought, 'honcho');
-  }
-  if (!pdfQuery) {
-    pdfQuery = extractTagContent(thought, 'pdf-agent');
+  for await (const chunk of thoughtStream) {
+    console.log(chunk);
+    thought += chunk;
+    if (chunk.includes('␁')) {
+      console.log('--------------------------------');
+      const textBeforeDelimiter = chunk.split('␁')[0].trimEnd();
+      const textAfterDelimiter = chunk.split('␁')[1].trimStart();
+      yield formatStreamChunk({
+        type: currentSection,
+        text: textBeforeDelimiter,
+      });
+
+      addToSection(currentSection, textBeforeDelimiter);
+      if (currentSection === 'thought') {
+        currentSection = 'honchoQuery';
+      } else if (currentSection === 'honchoQuery') {
+        currentSection = 'pdfQuery';
+      }
+      addToSection(currentSection, textAfterDelimiter);
+      yield formatStreamChunk({
+        type: currentSection,
+        text: textAfterDelimiter,
+      });
+    } else {
+      addToSection(currentSection, chunk);
+      yield formatStreamChunk({
+        type: currentSection,
+        text: chunk,
+      });
+    }
   }
 
   const [honchoContent, { pdfContent, collectionId }] = await Promise.all([

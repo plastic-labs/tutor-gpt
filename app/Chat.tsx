@@ -215,7 +215,8 @@ export default function Chat({
 
   const [canSend, setCanSend] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] =
+    useState<boolean>(false);
 
   const posthog = usePostHog();
   const messageContainerRef = useRef<HTMLElement>(null);
@@ -275,10 +276,10 @@ What's on your mind? Let's dive in. 🌱`,
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768); // md breakpoint
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -494,7 +495,12 @@ What's on your mind? Let's dive in. 🌱`,
     if (!userId || !rawMessage) return;
 
     // Process message to have double newline for markdown
-    const messageToSend = rawMessage.replace(/\n/g, '\n\n');
+    let messageToSend = rawMessage.replace(/\n/g, '\n\n');
+
+    if (selectedFiles.length > 0) {
+      const fileName = selectedFiles[0].name;
+      messageToSend += `\n\n<file-name>${fileName}</file-name>`;
+    }
 
     if (inputValue) setInputValue('');
 
@@ -795,7 +801,7 @@ What's on your mind? Let's dive in. 🌱`,
           minSize={20}
           maxSize={40}
           collapsible
-          className={isMobile ? "hidden" : ""}
+          className={isMobile ? 'hidden' : ''}
         >
           <Sidebar
             conversations={conversations || []}
@@ -859,9 +865,7 @@ What's on your mind? Let's dive in. 🌱`,
                   </div>
                   <div className="flex justify-start items-center gap-1.5">
                     <span className="text-neutral-500 text-base font-normal font-mono">
-                      A chat with{' '}
-                      {user?.user_metadata?.full_name || 'You'}{' '}
-                      and
+                      A chat with {user?.user_metadata?.full_name || 'You'} and
                       <div className="inline-block pl-2">
                         <div className="flex justify-start items-center gap-1">
                           <BloomLogo className="w-5 text-neutral-500" />
@@ -1031,7 +1035,7 @@ What's on your mind? Let's dive in. 🌱`,
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
-      
+
       {/* Mobile Sidebar Overlay */}
       {isMobile && isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 bg-background">

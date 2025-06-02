@@ -87,23 +87,17 @@ async function buildThinkingDataMap(
       let pdfQuery = '';
 
       if (thoughtData) {
-        // Extract XML-wrapped content
-        const honchoQueryMatch = thoughtData.match(
-          /<honcho>([\s\S]*?)<\/honcho>/
-        );
-        const pdfQueryMatch = thoughtData.match(
-          /<pdf-agent>([\s\S]*?)<\/pdf-agent>/
-        );
+        // Parse using new delimiter style from thought.ts
+        const parts = thoughtData.split('␁');
 
-        honchoQuery = honchoQueryMatch ? honchoQueryMatch[1] : '';
-        pdfQuery = pdfQueryMatch ? pdfQueryMatch[1] : '';
-
-        // Thought content is everything else - remove the XML sections
-        thoughtContent = thoughtData
-          .replace(/<honcho>([\s\S]*?)<\/honcho>/g, '')
-          .replace(/<pdf-agent>([\s\S]*?)<\/pdf-agent>/g, '')
-          .trim();
+        thoughtContent = parts[0].trim();
+        honchoQuery = parts[1]?.trim() || '';
+        pdfQuery = parts[2]?.trim() || '';
       }
+
+      console.log('thoughtContent', thoughtContent);
+      console.log('honchoQuery', honchoQuery);
+      console.log('pdfQuery', pdfQuery);
 
       // Use the raw honcho and pdf data as responses
       const honchoResponse = honchoData;
