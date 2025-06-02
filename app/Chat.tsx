@@ -502,6 +502,9 @@ What's on your mind? Let's dive in. 🌱`,
       messageToSend += `\n\n<file-name>${fileName}</file-name>`;
     }
 
+    // Clear selected files immediately after appending to message to prevent re-attachment
+    setSelectedFiles([]);
+
     if (inputValue) setInputValue('');
 
     setCanSend(false);
@@ -763,8 +766,7 @@ What's on your mind? Let's dive in. 🌱`,
 
       streamReader.release();
 
-      // Clear selected files after successful upload
-      setSelectedFiles([]);
+      // selectedFiles already cleared above to prevent re-attachment
 
       await mutateMessages();
 
@@ -772,6 +774,9 @@ What's on your mind? Let's dive in. 🌱`,
       setCanSend(true);
     } catch (error) {
       console.error('Chat error:', error);
+
+      // Clear selected files in error case as well
+      setSelectedFiles([]);
 
       // Preserve the message even in case of error if we have content
       if (currentModelOutput) {
