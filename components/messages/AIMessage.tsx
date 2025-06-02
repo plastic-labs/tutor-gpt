@@ -23,20 +23,19 @@ function AIMessage({
   error,
 }: AIMessageProps) {
   const { id: messageId, content, metadata, thinking } = message;
-  // console.log('thinking', thinking);
   const reaction = (metadata?.reaction as Reaction) || null;
   const shouldShowButtons = messageId !== '';
 
   // Check if we should show the ThinkBox
   // Show for AI messages that either have thinking data OR are being streamed (empty content with thinking object)
-  const shouldShowThinkBox = thinking && (
-    thinking.thoughtContent ||
-    thinking.honchoQuery ||
-    thinking.honchoResponse ||
-    thinking.pdfQuery ||
-    thinking.pdfResponse ||
-    (!thinking.thoughtFinished && content === '') // Show for new AI messages being streamed
-  );
+  const shouldShowThinkBox =
+    thinking &&
+    (thinking.thoughtContent ||
+      thinking.honchoQuery ||
+      thinking.honchoResponse ||
+      thinking.pdfQuery ||
+      thinking.pdfResponse ||
+      (!thinking.thoughtFinished && content === '')); // Show for new AI messages being streamed
 
   const handleCopyToClipboard = () => {
     if (navigator?.clipboard) {

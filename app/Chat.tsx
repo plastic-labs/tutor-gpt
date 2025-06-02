@@ -561,7 +561,6 @@ What's on your mind? Let's dive in. 🌱`,
       while (true) {
         const { done, chunk } = await streamReader.read();
         if (done) {
-          console.log('Stream done');
           if (!isSubscribed) {
             const success = await useFreeTrial(userId);
             if (success) {
@@ -573,11 +572,8 @@ What's on your mind? Let's dive in. 🌱`,
         }
 
         if (!chunk) {
-          console.log('No chunk, waiting...');
           continue;
         }
-
-        console.log('Stream chunk received:', chunk);
 
         switch (chunk.type) {
           case 'thought':

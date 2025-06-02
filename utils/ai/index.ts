@@ -88,10 +88,8 @@ export async function* respond({
   }
 
   for await (const chunk of thoughtStream) {
-    console.log(chunk);
     thought += chunk;
     if (chunk.includes('␁')) {
-      console.log('--------------------------------');
       const textBeforeDelimiter = chunk.split('␁')[0].trimEnd();
       const textAfterDelimiter = chunk.split('␁')[1].trimStart();
       yield formatStreamChunk({

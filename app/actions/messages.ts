@@ -95,10 +95,6 @@ async function buildThinkingDataMap(
         pdfQuery = parts[2]?.trim() || '';
       }
 
-      console.log('thoughtContent', thoughtContent);
-      console.log('honchoQuery', honchoQuery);
-      console.log('pdfQuery', pdfQuery);
-
       // Use the raw honcho and pdf data as responses
       const honchoResponse = honchoData;
       const pdfResponse = pdfData;
@@ -180,10 +176,6 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         } else {
           // AI message - get thinking data from map
           const thinking = thinkingDataMap.get(message.id);
-          console.log('pdfQuery', thinking?.pdfQuery);
-          // console.log('pdfResponse', thinking?.pdfResponse);
-          // console.log('honchoQuery', thinking?.honchoQuery);
-          // console.log('honchoResponse', thinking?.honchoResponse);
 
           messages.push({
             id: message.id,

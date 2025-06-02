@@ -81,22 +81,12 @@ export default function ThinkBox({
     }
   }, [finished, hasContentAnimated]);
 
-  // console.log('thoughtChunks', thoughtChunks);
-  // console.log('thoughtContent', thoughtContent);
-  // console.log('honchoQuery', honchoQuery);
-  // console.log('honchoResponse', honchoResponse);
-  // console.log('pdfQuery', pdfQuery);
-  // console.log('pdfResponse', pdfResponse);
-
   // Initial animation when component mounts - show immediately
   useEffect(() => {
-    console.log('finish check');
-    console.log('finished', finished);
     if (!hasAnimated) {
       setHasAnimated(true);
       if (finished) {
         // For finished messages (historical), show everything immediately without animation
-        console.log('finished', finished);
         animate(
           scope.current,
           { filter: 'blur(0px)', opacity: 1 },
