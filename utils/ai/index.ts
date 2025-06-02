@@ -90,24 +90,36 @@ export async function* respond({
   for await (const chunk of thoughtStream) {
     thought += chunk;
     if (chunk.includes('␁')) {
-      const textBeforeDelimiter = chunk.split('␁')[0].trimEnd();
-      const textAfterDelimiter = chunk.split('␁')[1].trimStart();
-      yield formatStreamChunk({
-        type: currentSection,
-        text: textBeforeDelimiter,
-      });
-
-      addToSection(currentSection, textBeforeDelimiter);
-      if (currentSection === 'thought') {
-        currentSection = 'honchoQuery';
-      } else if (currentSection === 'honchoQuery') {
-        currentSection = 'pdfQuery';
+      const segments = chunk.split('␁');
+      
+      // Process first segment (before any delimiter)
+      const firstSegment = segments[0].trimEnd();
+      if (firstSegment) {
+        addToSection(currentSection, firstSegment);
+        yield formatStreamChunk({
+          type: currentSection,
+          text: firstSegment,
+        });
       }
-      addToSection(currentSection, textAfterDelimiter);
-      yield formatStreamChunk({
-        type: currentSection,
-        text: textAfterDelimiter,
-      });
+      
+      // Process remaining segments (after each delimiter)
+      for (let i = 1; i < segments.length; i++) {
+        // Update section after each delimiter
+        if (currentSection === 'thought') {
+          currentSection = 'honchoQuery';
+        } else if (currentSection === 'honchoQuery') {
+          currentSection = 'pdfQuery';
+        }
+        
+        const segment = i === 1 ? segments[i].trimStart() : segments[i];
+        if (segment) {
+          addToSection(currentSection, segment);
+          yield formatStreamChunk({
+            type: currentSection,
+            text: segment,
+          });
+        }
+      }
     } else {
       addToSection(currentSection, chunk);
       yield formatStreamChunk({
