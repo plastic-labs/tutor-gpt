@@ -220,6 +220,7 @@ export default function Chat({
     initialConversationId || undefined
   );
   const [inputValue, setInputValue] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const [canSend, setCanSend] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -281,6 +282,10 @@ What's on your mind? Let's dive in. 🌱`,
     window.addEventListener('resize', checkMobile);
 
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    setIsHydrated(true);
   }, []);
 
   const conversationsFetcher = async () => {
@@ -890,7 +895,11 @@ What's on your mind? Let's dive in. 🌱`,
                   </div>
                   <div className="flex justify-start items-center gap-1.5">
                     <span className="text-neutral-500 text-base font-normal font-mono">
-                      A chat with {user?.user_metadata?.full_name || 'You'} and
+                      A chat with{' '}
+                      {isHydrated
+                        ? user?.user_metadata?.full_name || 'You'
+                        : 'You'}{' '}
+                      and
                       <div className="inline-block pl-2">
                         <div className="flex justify-start items-center gap-1">
                           <BloomLogo className="w-5 text-neutral-500" />
