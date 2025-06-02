@@ -44,6 +44,19 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+/**
+ * Displays a sidebar with a list of chat conversations, user information, and account settings.
+ *
+ * Allows users to create, rename, and delete conversations with optimistic UI updates and error handling. Provides dialogs for renaming and deleting conversations, and displays user profile information with options to access account settings or sign out.
+ *
+ * @param conversations - List of available chat conversations.
+ * @param conversationId - ID of the currently selected conversation.
+ * @param setConversationId - Function to update the selected conversation.
+ * @param canUseApp - Indicates whether the user has permission to use the app.
+ *
+ * @remark
+ * If the last conversation is deleted, a new conversation is automatically created and selected.
+ */
 export default function Sidebar({
   conversations,
   mutateConversations,

@@ -4,6 +4,17 @@ import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
 import { Message, ThinkingData } from '@/utils/types';
 import * as Sentry from '@sentry/nextjs';
 
+/**
+ * Constructs a map linking AI message IDs to their associated thinking metadata for a conversation.
+ *
+ * For each user message immediately followed by an AI message, retrieves related metamessages of types 'thought', 'honcho', and 'pdf', parses their contents, and assembles a {@link ThinkingData} object. Only AI messages with at least one relevant piece of thinking data are included in the resulting map.
+ *
+ * @param appId - The application ID.
+ * @param userId - The user ID.
+ * @param conversationId - The conversation/session ID.
+ * @param messages - The ordered list of messages in the conversation.
+ * @returns A map from AI message IDs to their corresponding {@link ThinkingData} objects. Returns an empty map if no relevant pairs or on error.
+ */
 async function buildThinkingDataMap(
   appId: string,
   userId: string,
@@ -125,6 +136,16 @@ async function buildThinkingDataMap(
   }
 }
 
+/**
+ * Retrieves all messages for a conversation, attaching thinking metadata to AI messages.
+ *
+ * For each message in the conversation, user messages are returned as-is, while AI messages include associated thinking data if available.
+ *
+ * @param conversationId - The unique identifier of the conversation whose messages are to be retrieved.
+ * @returns An array of messages, with AI messages containing additional thinking metadata when present.
+ *
+ * @throws {Error} If the user is not authenticated.
+ */
 export async function getMessages(conversationId: string): Promise<Message[]> {
   return Sentry.startSpan(
     { name: 'server-action.getMessages', op: 'server.action' },
@@ -192,6 +213,17 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   );
 }
 
+/**
+ * Retrieves and combines the "thought," "honcho," and "pdf" metamessage content for a specific message in a conversation.
+ *
+ * Returns a concatenated string containing the thought, dialectic response, and PDF agent response if available, or `null` if none exist.
+ *
+ * @param conversationId - The ID of the conversation containing the message.
+ * @param messageId - The ID of the message for which to retrieve thought data.
+ * @returns The combined thought content as a string, or `null` if no relevant content is found.
+ *
+ * @throws {Error} If the user is unauthorized or if an internal server error occurs during retrieval.
+ */
 export async function getThought(conversationId: string, messageId: string) {
   return Sentry.startSpan(
     { name: 'server-action.getThought', op: 'server.action' },

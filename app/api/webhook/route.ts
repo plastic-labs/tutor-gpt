@@ -22,6 +22,16 @@ const relevantEvents = new Set([
   'customer.subscription.deleted',
 ]);
 
+/**
+ * Handles incoming Stripe webhook events and processes relevant product, price, and subscription updates.
+ *
+ * Verifies the Stripe webhook signature, checks for required environment variables, and processes only events of interest. Updates or deletes product and price records, and manages subscription status changes in response to Stripe events. Returns appropriate HTTP responses based on processing outcome.
+ *
+ * @param req - The incoming HTTP request containing the Stripe webhook event.
+ * @returns A Response indicating the result of webhook processing.
+ *
+ * @remark If the `STRIPE_SECRET_KEY` environment variable is not set, the function skips processing and returns a 200 response with a message indicating Stripe is not configured.
+ */
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
     console.log(

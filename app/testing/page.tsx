@@ -11,6 +11,14 @@ interface StreamingTextProps {
   finished: boolean;
 }
 
+/**
+ * Displays streamed text as animated words with fade-in and de-blur effects.
+ *
+ * Combines incoming text chunks, splits them into words, and animates each word as it appears. Excludes the last incomplete word if streaming is not finished.
+ *
+ * @param stream - Array of text chunks to display.
+ * @param finished - Indicates whether the streaming is complete.
+ */
 function StreamingText({ stream, finished }: StreamingTextProps) {
   const [words, setWords] = useState<string[]>([]);
 
@@ -179,6 +187,18 @@ interface ThinkBoxProps {
   pdfResponse: string;
 }
 
+/**
+ * Displays an animated, collapsible panel showing streaming thoughts and query/response pairs.
+ *
+ * Renders a top bar with a logo and "Thinking..." indicator, a streaming text area for thought chunks, and two columns for Honcho and PDF queries and responses. Supports animated transitions for blur, opacity, height, and collapse/expand behavior. Automatically collapses after a delay when streaming is finished.
+ *
+ * @param thoughtChunks - Array of streamed thought text chunks to display.
+ * @param finished - Indicates whether streaming is complete.
+ * @param honchoQuery - Query string for the Honcho source.
+ * @param honchoResponse - Response string from the Honcho source.
+ * @param pdfQuery - Query string for the PDF source.
+ * @param pdfResponse - Response string from the PDF source.
+ */
 function ThinkBox({
   thoughtChunks,
   finished,
@@ -417,6 +437,11 @@ function ThinkBox({
   );
 }
 
+/**
+ * Renders a simulated streaming conversational interface with animated text and expandable sections.
+ *
+ * Displays a user message, a toggleable "Think Box" that streams and animates thought, query, and response content, and a separate area for streaming response text. Manages state for streamed content and handles cleanup on unmount or toggle off.
+ */
 export default function Testing() {
   const [showThinkBox, setShowThinkBox] = useState(false);
   const [thoughtChunks, setThoughtChunks] = useState<string[]>([]);

@@ -6,12 +6,20 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
 
 import { cn } from "@/utils/helpers"
 
+/**
+ * Provides the root container for a context menu, enabling contextual actions on its descendants.
+ */
 function ContextMenu({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Root>) {
   return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />
 }
 
+/**
+ * Serves as the interactive element that triggers the display of the context menu.
+ *
+ * Forwards all props to the underlying Radix UI trigger primitive and adds a data attribute for slot identification.
+ */
 function ContextMenuTrigger({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Trigger>) {
@@ -20,6 +28,9 @@ function ContextMenuTrigger({
   )
 }
 
+/**
+ * Groups related items within a context menu for organizational purposes.
+ */
 function ContextMenuGroup({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Group>) {
@@ -28,6 +39,9 @@ function ContextMenuGroup({
   )
 }
 
+/**
+ * Renders context menu content in a React portal, enabling the menu to appear outside the normal DOM hierarchy.
+ */
 function ContextMenuPortal({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Portal>) {
@@ -36,12 +50,20 @@ function ContextMenuPortal({
   )
 }
 
+/**
+ * Provides a container for a submenu within a context menu.
+ *
+ * Wraps the Radix UI Sub primitive, enabling nested context menu structures.
+ */
 function ContextMenuSub({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Sub>) {
   return <ContextMenuPrimitive.Sub data-slot="context-menu-sub" {...props} />
 }
 
+/**
+ * Groups related radio items within a context menu, allowing exclusive selection.
+ */
 function ContextMenuRadioGroup({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.RadioGroup>) {
@@ -53,6 +75,11 @@ function ContextMenuRadioGroup({
   )
 }
 
+/**
+ * Renders a styled submenu trigger for a context menu, displaying a right-pointing chevron to indicate a submenu.
+ *
+ * @param inset - If true, applies additional left padding for visual alignment.
+ */
 function ContextMenuSubTrigger({
   className,
   inset,
@@ -77,6 +104,11 @@ function ContextMenuSubTrigger({
   )
 }
 
+/**
+ * Renders the content of a context menu submenu with styled appearance and transition animations.
+ *
+ * Applies background, border, shadow, and animated transitions based on menu state and position.
+ */
 function ContextMenuSubContent({
   className,
   ...props
@@ -93,6 +125,11 @@ function ContextMenuSubContent({
   )
 }
 
+/**
+ * Renders the main context menu content inside a portal with styled appearance and transition animations.
+ *
+ * @remark The content is rendered in a React portal to ensure proper overlay behavior and includes scroll handling, rounded corners, border, and shadow styling.
+ */
 function ContextMenuContent({
   className,
   ...props
@@ -111,6 +148,12 @@ function ContextMenuContent({
   )
 }
 
+/**
+ * Renders a styled context menu item with optional inset and variant styling.
+ *
+ * @param inset - If true, increases left padding for alignment with icons or indicators.
+ * @param variant - Controls the color scheme; "destructive" applies a red style for actions like delete.
+ */
 function ContextMenuItem({
   className,
   inset,
@@ -134,6 +177,13 @@ function ContextMenuItem({
   )
 }
 
+/**
+ * Renders a context menu item with a checkbox, allowing users to toggle a checked state within the menu.
+ *
+ * Displays a checkmark icon when checked and applies appropriate styles for focus and disabled states.
+ *
+ * @param checked - Whether the checkbox item is checked.
+ */
 function ContextMenuCheckboxItem({
   className,
   children,
@@ -160,6 +210,11 @@ function ContextMenuCheckboxItem({
   )
 }
 
+/**
+ * Renders a styled radio item for use within a context menu radio group.
+ *
+ * Displays a custom indicator icon when selected and applies focus and disabled styles.
+ */
 function ContextMenuRadioItem({
   className,
   children,
@@ -184,6 +239,11 @@ function ContextMenuRadioItem({
   )
 }
 
+/**
+ * Renders a styled label for grouping items within a context menu.
+ *
+ * @param inset - If true, applies additional left padding to the label.
+ */
 function ContextMenuLabel({
   className,
   inset,
@@ -204,6 +264,11 @@ function ContextMenuLabel({
   )
 }
 
+/**
+ * Renders a horizontal separator line within a context menu.
+ *
+ * Adds spacing and a border to visually divide groups of menu items.
+ */
 function ContextMenuSeparator({
   className,
   ...props
@@ -217,6 +282,12 @@ function ContextMenuSeparator({
   )
 }
 
+/**
+ * Renders a right-aligned keyboard shortcut indicator within a context menu item.
+ *
+ * @remarks
+ * Intended for displaying shortcut hints in context menus, styled with muted text and spacing.
+ */
 function ContextMenuShortcut({
   className,
   ...props

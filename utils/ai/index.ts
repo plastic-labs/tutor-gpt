@@ -74,6 +74,12 @@ export async function* respond({
 
   let currentSection: 'thought' | 'honchoQuery' | 'pdfQuery' = 'thought';
 
+  /**
+   * Appends the given text to the specified section accumulator.
+   *
+   * @param section - The section to which the text should be added: 'thought', 'honchoQuery', or 'pdfQuery'.
+   * @param text - The text to append to the selected section.
+   */
   function addToSection(
     section: 'thought' | 'honchoQuery' | 'pdfQuery',
     text: string

@@ -4,6 +4,12 @@ interface BloomLogoProps {
   className?: string;
 }
 
+/**
+ * Renders the Bloom logo as an SVG element.
+ *
+ * @param className - Optional CSS class name(s) to apply to the SVG for custom styling.
+ * @returns The SVG representation of the Bloom logo.
+ */
 export default function BloomLogo({ className }: BloomLogoProps) {
   return (
     <svg

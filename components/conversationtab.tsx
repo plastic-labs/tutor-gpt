@@ -37,6 +37,14 @@ type ConversationTabProps =
   | ConversationTabRegularProps
   | ConversationTabLoadingProps;
 
+/**
+ * Formats an ISO timestamp string into a human-readable relative or absolute date/time.
+ *
+ * Returns the time if the date is today, "Yesterday" if one day ago, "X days ago" if within the last week, or a short date string if older.
+ *
+ * @param timestamp - An optional ISO timestamp string to format.
+ * @returns A formatted string representing the relative or absolute time, or an empty string if no timestamp is provided.
+ */
 function formatTimestamp(timestamp?: string): string {
   if (!timestamp) return '';
 
@@ -66,6 +74,18 @@ function formatTimestamp(timestamp?: string): string {
   }
 }
 
+/**
+ * Renders a conversation tab with selectable, editable, and deletable actions, supporting both loading and regular display modes.
+ *
+ * Displays the conversation name, a formatted timestamp, and provides options to rename or delete via dropdown and context menus. Shows a skeleton placeholder when loading.
+ *
+ * @param conversation - The conversation data to display. If undefined, the tab is in loading mode.
+ * @param select - Callback invoked when the tab is selected.
+ * @param selected - Indicates if the tab is currently selected.
+ * @param edit - Callback invoked to trigger renaming the conversation.
+ * @param del - Callback invoked to trigger deleting the conversation.
+ * @param loading - If true, displays a loading skeleton instead of conversation details.
+ */
 export function ConversationTab({
   conversation,
   select,

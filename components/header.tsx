@@ -7,7 +7,11 @@ import { useEffect, useState } from 'react';
 import bloomIcon from '@/public/bloom_icon_large.jpg';
 import { departureMono } from '@/utils/fonts';
 // import lightBanner from '@/public/bloom2x1.svg';
-// import darkBanner from '@/public/bloom2x1dark.svg';
+/**
+ * Renders the application header with a logo, site title, and a dark mode toggle.
+ *
+ * Displays a loading placeholder until the component is mounted to prevent hydration mismatches. The dark mode toggle updates the site's theme by toggling the `dark` class on the root HTML element.
+ */
 
 export function Header() {
   // const { theme, setTheme } = useTheme();

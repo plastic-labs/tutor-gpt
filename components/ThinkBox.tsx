@@ -9,6 +9,14 @@ interface StreamingTextProps {
   finished: boolean;
 }
 
+/**
+ * Animates the appearance of streaming text by fading in and deblurring each word as it arrives.
+ *
+ * Displays words from the provided text chunks, updating in real time as new chunks are received. If streaming is not finished, the last partial word is excluded from display.
+ *
+ * @param stream - Array of string chunks representing the streaming text.
+ * @param finished - Indicates whether the streaming is complete.
+ */
 function StreamingText({ stream, finished }: StreamingTextProps) {
   const [words, setWords] = useState<string[]>([]);
 
@@ -54,6 +62,19 @@ export interface ThinkBoxProps {
   pdfResponse: string;
 }
 
+/**
+ * Displays a collapsible, animated container for streaming or completed thought content, with optional query and response sections for "Honcho" and "PDF" sources.
+ *
+ * The component animates its appearance and content transitions, supports both streaming and historical messages, and automatically collapses after displaying new content. It conditionally renders query/response columns for additional context and manages dynamic sizing for smooth expand/collapse behavior.
+ *
+ * @param thoughtChunks - Optional array of string chunks representing streaming thought content.
+ * @param thoughtContent - Optional complete string for historical thought content.
+ * @param finished - Indicates whether the thought content is complete.
+ * @param honchoQuery - Query string for the "Honcho" section.
+ * @param honchoResponse - Response string for the "Honcho" section.
+ * @param pdfQuery - Query string for the "PDF" section.
+ * @param pdfResponse - Response string for the "PDF" section.
+ */
 export default function ThinkBox({
   thoughtChunks,
   thoughtContent,

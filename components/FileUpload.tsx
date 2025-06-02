@@ -6,6 +6,11 @@ interface FileUploadProps {
   className?: string;
 }
 
+/**
+ * Displays a styled file preview with an icon, file name, and extension.
+ *
+ * Renders a container showing the file's icon based on its extension, the file name with truncation for long names, and the file extension in uppercase. Supports additional styling via the {@link className} prop and includes accessibility attributes for the icon.
+ */
 function FileUpload({ file, className = '' }: FileUploadProps) {
   const icon = getFileIcon(file.extension);
 

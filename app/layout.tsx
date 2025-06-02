@@ -58,6 +58,13 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
 };
 
+/**
+ * Root layout component that sets up global providers, metadata, and structure for all pages.
+ *
+ * Wraps the application in theme, analytics, and data-fetching providers, applies global styles, and includes UI notifications and performance insights.
+ *
+ * @param children - The page content to render within the layout.
+ */
 export default function RootLayout({
   children,
 }: {

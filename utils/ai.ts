@@ -70,6 +70,14 @@ export const assistant = (
   content: d(strings, ...values),
 });
 
+/**
+ * Streams AI-generated text based on the provided parameters and user metadata.
+ *
+ * Adds model selection, telemetry metadata, and provider fallback options before invoking the text streaming service.
+ *
+ * @param params - Parameters for text streaming, including user session metadata.
+ * @returns A stream of generated text from the AI provider.
+ */
 export function streamText(
   params: Omit<
     Parameters<typeof streamTextAi>[0],
@@ -105,6 +113,15 @@ export function streamText(
   return result;
 }
 
+/**
+ * Streams AI-generated structured objects validated against a provided Zod schema.
+ *
+ * Adds model selection, telemetry metadata, and provider fallback options before invoking the underlying streaming API.
+ *
+ * @param schema - The Zod schema used to validate the streamed object.
+ * @param metadata - Telemetry metadata including session ID, user ID, and type tag.
+ * @returns An object stream conforming to the provided schema.
+ */
 export function streamObject<OBJECT>(
   params: Omit<
     Parameters<typeof streamObjectAi<OBJECT>>[0],
@@ -142,7 +159,14 @@ export function streamObject<OBJECT>(
 }
 
 /**
- * @deprecated Use generateText instead
+ * Generates a text completion from a sequence of messages using the configured AI provider.
+ *
+ * @deprecated Use {@link generateText} instead.
+ *
+ * @param messages - The conversation history to provide context for the completion.
+ * @param metadata - Telemetry metadata including session, user, and type information.
+ * @param parameters - Optional generation parameters such as temperature and token limits.
+ * @returns The generated text completion.
  */
 export async function createCompletion(
   messages: Message[],
@@ -183,6 +207,13 @@ export async function createCompletion(
   return result.text;
 }
 
+/**
+ * Generates text using the configured AI provider with telemetry and metadata.
+ *
+ * Adds model selection, session and user metadata, Sentry release/environment, and provider fallback options to the generation request.
+ *
+ * @returns The result of the text generation operation.
+ */
 export function generateText(
   params: Omit<
     Parameters<typeof generateTextAi>[0],

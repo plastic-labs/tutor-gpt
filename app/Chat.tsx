@@ -133,6 +133,17 @@ class StreamReader {
   }
 }
 
+/**
+ * Sends a chat message and optional file to the server and returns the response stream.
+ *
+ * @param message - The chat message to send.
+ * @param conversationId - The ID of the conversation to associate with the message.
+ * @param file - An optional file to include with the message.
+ * @returns The response body as a readable stream.
+ *
+ * @throws {Error} If the user does not have an active subscription (HTTP 402).
+ * @throws {Error} If the server response is not OK or the response stream is missing.
+ */
 async function fetchConsolidatedStream(
   message: string,
   conversationId: string,
@@ -195,6 +206,25 @@ interface ChatProps {
   initialConversationId: string | null | undefined;
 }
 
+/**
+ * Renders the main chat interface for managing conversations, messages, file uploads, and streaming AI responses.
+ *
+ * Provides a responsive chat UI with a sidebar for conversation management, message list with real-time updates, file attachment support (PDF or text files up to 5MB), and streaming AI responses with structured thought data. Handles subscription gating, free message limits, and mobile-friendly layout with a toggleable sidebar.
+ *
+ * @param initialUserId - The user's unique identifier.
+ * @param initialEmail - The user's email address.
+ * @param initialConversations - List of the user's existing conversations.
+ * @param initialMessages - Messages for the initially selected conversation.
+ * @param initialConversationId - The ID of the conversation to display on load.
+ * @param initialChatAccess - Object containing subscription status, free message count, and chat permission.
+ *
+ * @returns The chat UI component.
+ *
+ * @remark
+ * - Only one file can be attached per message, and files larger than 5MB are rejected.
+ * - Users without a subscription are limited to a set number of free messages.
+ * - AI responses are streamed and may include structured thought, query, and response data for enhanced interactivity.
+ */
 export default function Chat({
   initialUserId,
   initialEmail,

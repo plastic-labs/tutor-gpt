@@ -26,6 +26,19 @@ export type FileUploadProps = {
   accept?: string
 }
 
+/**
+ * Provides file upload functionality with drag-and-drop and file input support.
+ *
+ * Wraps child components in a context that manages file selection and drag state. Invokes {@link onFilesAdded} when files are selected via the file dialog or dropped onto the window. Supports single or multiple file selection and accepts optional file type restrictions.
+ *
+ * @param onFilesAdded - Callback invoked with the selected or dropped files.
+ * @param children - Components that will have access to the file upload context.
+ * @param multiple - Whether multiple file selection is allowed. Defaults to true.
+ * @param accept - Optional string specifying accepted file types.
+ *
+ * @remark
+ * The component attaches global drag event listeners to the window and provides visual drag state via context. The file input element is hidden and controlled through the context.
+ */
 function FileUpload({
   onFilesAdded,
   children,
@@ -113,6 +126,15 @@ export type FileUploadTriggerProps =
     asChild?: boolean
   }
 
+/**
+ * Renders a button or custom element that triggers the file input dialog for file uploads.
+ *
+ * If `asChild` is true, clones and enhances a single child element to act as the trigger, preserving its original props and click handler.
+ *
+ * @param asChild - If true, uses the child element as the trigger instead of rendering a button.
+ * @param children - The content or element to use as the trigger.
+ * @param className - Additional class names to apply to the trigger element.
+ */
 function FileUploadTrigger({
   asChild = false,
   className,
@@ -151,6 +173,13 @@ function FileUploadTrigger({
 
 type FileUploadContentProps = React.HTMLAttributes<HTMLDivElement>
 
+/**
+ * Renders a full-screen overlay when files are being dragged over the window.
+ *
+ * The overlay provides visual feedback for drag-and-drop file upload operations and is only visible while a drag event is active.
+ *
+ * @returns A styled overlay div when dragging is active, or null otherwise.
+ */
 function FileUploadContent({ className, ...props }: FileUploadContentProps) {
   const context = useContext(FileUploadContext)
 

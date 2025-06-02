@@ -8,6 +8,13 @@ interface UserMessageProps {
   message: Message;
 }
 
+/**
+ * Renders a user message with optional file attachments and Markdown-formatted content.
+ *
+ * Displays any files attached to the message using {@link FileUpload}, followed by the message content rendered as Markdown.
+ *
+ * @param message - The message object containing text and optional file uploads.
+ */
 function UserMessage({ message }: UserMessageProps) {
   const { content, files } = parseFileUploads(message.content);
 

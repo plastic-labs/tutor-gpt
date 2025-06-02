@@ -15,6 +15,17 @@ interface AIMessageProps {
   error?: string;
 }
 
+/**
+ * Renders an AI-generated message with optional interactive elements, including reaction buttons, a copy-to-clipboard feature, and status indicators.
+ *
+ * Displays a "thinking" indicator if the AI is still generating a response or streaming content. Shows thumbs up/down buttons for user feedback and a button to copy the message content. If an error is provided, it is displayed below the action buttons.
+ *
+ * @param message - The AI message object containing content, metadata, and optional thinking state.
+ * @param messagesLoading - Indicates if messages are currently loading, disabling interaction if true.
+ * @param onReaction - Callback invoked when a reaction button is clicked, receiving the message ID and selected reaction.
+ * @param pendingReaction - The reaction currently being processed, if any.
+ * @param error - Optional error message to display below the action buttons.
+ */
 function AIMessage({
   message,
   messagesLoading,
