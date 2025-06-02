@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AIMessage as AIMessageType } from '@/utils/types';
-import { LuThumbsUp, LuThumbsDown, LuClipboard } from 'react-icons/lu';
+import { LuThumbsUp, LuThumbsDown, LuClipboard, LuCheck } from 'react-icons/lu';
 import MarkdownWrapper from '../markdownWrapper';
 import Spinner from '../spinner';
 import ThinkBox from '../ThinkBox';
@@ -25,6 +25,7 @@ function AIMessage({
   const { id: messageId, content, metadata, thinking } = message;
   const reaction = (metadata?.reaction as Reaction) || null;
   const shouldShowButtons = messageId !== '';
+  const [isCopied, setIsCopied] = useState(false);
 
   // Check if we should show the ThinkBox
   // Show for AI messages that either have thinking data OR are being streamed (empty content with thinking object)
@@ -37,9 +38,11 @@ function AIMessage({
       thinking.pdfResponse ||
       (!thinking.thoughtFinished && content === '')); // Show for new AI messages being streamed
 
-  const handleCopyToClipboard = () => {
+  const handleCopyToClipboard = async () => {
     if (navigator?.clipboard) {
-      navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(content);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     }
   };
 
@@ -103,13 +106,21 @@ function AIMessage({
               </div>
             </button>
             <button
-              className="group p-0 rounded-none border-none bg-transparent transition-colors text-gray-500 hover:text-black focus:outline-none"
+              className={`group p-0 rounded-none border-none bg-transparent transition-colors focus:outline-none ${
+                isCopied 
+                  ? 'text-green-500' 
+                  : 'text-gray-500 hover:text-black'
+              }`}
               onClick={handleCopyToClipboard}
-              title="Copy to clipboard"
-              aria-label="Copy to clipboard"
+              title={isCopied ? "Copied!" : "Copy to clipboard"}
+              aria-label={isCopied ? "Copied!" : "Copy to clipboard"}
             >
               <div className="w-5 h-6 flex items-center justify-center">
-                <LuClipboard className="w-5 h-5" />
+                {isCopied ? (
+                  <LuCheck className="w-5 h-5" />
+                ) : (
+                  <LuClipboard className="w-5 h-5" />
+                )}
               </div>
             </button>
           </div>
