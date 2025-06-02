@@ -14,7 +14,7 @@ function FileUpload({ file, className = '', onRemove, showRemove = false }: File
 
   return (
     <div
-      className={`inline-flex items-center gap-2 bg-white border border-gray-300 rounded-xl px-3 py-2 mx-1 my-1 hover:bg-gray-100 transition-colors relative ${className}`}
+      className={`inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 mx-1 my-1 hover:bg-muted transition-colors relative ${className}`}
     >
       <span
         className="text-lg"
@@ -23,18 +23,18 @@ function FileUpload({ file, className = '', onRemove, showRemove = false }: File
       >
         {icon}
       </span>
-      <span className="text-sm font-medium text-gray-700 truncate max-w-[200px]">
+      <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
         {file.name}
       </span>
-      <span className="text-xs text-gray-500 uppercase font-semibold">
+      <span className="text-xs text-muted-foreground uppercase font-semibold">
         {file.extension}
       </span>
       {showRemove && onRemove && (
         <button
           onClick={onRemove}
-          className="ml-1 hover:bg-gray-200 rounded-full p-1 transition-colors"
+          className="ml-1 hover:bg-muted-foreground/20 rounded-full p-1 transition-colors"
         >
-          <X className="size-3 text-gray-500" />
+          <X className="size-3 text-muted-foreground" />
         </button>
       )}
     </div>

@@ -20,7 +20,7 @@ function UserMessage({ message }: UserMessageProps) {
           ))}
         </div>
       )}
-      <div className="max-w-[80%] bg-secondary-background text-black rounded-2xl px-4 py-3">
+      <div className="max-w-[80%] bg-secondary-background text-foreground rounded-2xl px-4 py-3">
         <MarkdownWrapper text={content} />
       </div>
     </div>

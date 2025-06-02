@@ -220,13 +220,11 @@ export default function ThinkBox({
   const content = (
     <div ref={contentRef} className="flex flex-col">
       <motion.div
-        className="flex items-center p-5 justify-between h-14 border-b border-gray-200 cursor-pointer select-none"
+        className="flex items-center p-5 justify-between h-14 border-b border-border cursor-pointer select-none"
         id="top-bar"
         onClick={() => setCollapsed((c) => !c)}
         animate={{
-          borderBottomColor: collapsed
-            ? 'rgba(229, 231, 235, 0)'
-            : 'rgba(229, 231, 235, 1)',
+          borderBottomColor: collapsed ? 'transparent' : 'hsl(var(--border))',
         }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
@@ -247,7 +245,7 @@ export default function ThinkBox({
       </motion.div>
       <motion.div
         id="initial-text"
-        className="p-5 border-t border-gray-200 opacity-0 hidden"
+        className="p-5 border-t border-border opacity-0 hidden"
         animate={{ height: collapsed ? 0 : 'auto', opacity: collapsed ? 0 : 1 }}
         style={{
           overflow: 'hidden',
@@ -281,33 +279,33 @@ export default function ThinkBox({
             {((honchoQuery && honchoQuery !== 'None') ||
               (honchoResponse && honchoResponse !== 'None')) && (
               <div className="flex-1 min-w-[220px]">
-                <div className="flex items-center gap-1 mb-2 text-gray-500 text-sm">
+                <div className="flex items-center gap-1 mb-2 text-muted-foreground text-sm">
                   <Search className="w-4 h-4" />
                   <span className="font-semibold">Honcho</span>
                 </div>
                 {honchoQuery && honchoResponse ? (
                   <div className="relative flex flex-col items-stretch">
-                    <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line z-10">
+                    <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line z-10">
                       {honchoQuery}
                     </div>
                     {/* Vertical line */}
                     <div
-                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-gray-300 mx-auto"
+                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-border mx-auto"
                       style={{ transform: 'translateX(-50%)' }}
                     ></div>
-                    <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line z-10">
+                    <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line z-10">
                       {honchoResponse}
                     </div>
                   </div>
                 ) : (
                   <>
                     {honchoQuery && (
-                      <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line">
+                      <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line">
                         {honchoQuery}
                       </div>
                     )}
                     {honchoResponse && (
-                      <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line">
+                      <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line">
                         {honchoResponse}
                       </div>
                     )}
@@ -320,33 +318,33 @@ export default function ThinkBox({
             {((pdfQuery && pdfQuery !== 'None') ||
               (pdfResponse && pdfResponse !== 'None')) && (
               <div className="flex-1 min-w-[220px]">
-                <div className="flex items-center gap-1 mb-2 text-gray-500 text-sm">
+                <div className="flex items-center gap-1 mb-2 text-muted-foreground text-sm">
                   <Search className="w-4 h-4" />
                   <span className="font-semibold">PDF</span>
                 </div>
                 {pdfQuery && pdfResponse ? (
                   <div className="relative flex flex-col items-stretch">
-                    <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line z-10">
+                    <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line z-10">
                       {pdfQuery}
                     </div>
                     {/* Vertical line */}
                     <div
-                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-gray-300 mx-auto"
+                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-border mx-auto"
                       style={{ transform: 'translateX(-50%)' }}
                     ></div>
-                    <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line z-10">
+                    <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line z-10">
                       {pdfResponse}
                     </div>
                   </div>
                 ) : (
                   <>
                     {pdfQuery && (
-                      <div className="bg-stone-100 rounded-xl p-4 mb-3 text-gray-700 text-base whitespace-pre-line">
+                      <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line">
                         {pdfQuery}
                       </div>
                     )}
                     {pdfResponse && (
-                      <div className="bg-stone-100 rounded-xl p-4 text-gray-700 text-base whitespace-pre-line">
+                      <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line">
                         {pdfResponse}
                       </div>
                     )}
@@ -363,7 +361,7 @@ export default function ThinkBox({
   return (
     <div className="flex w-full justify-center mb-4">
       <motion.div
-        className={`bg-white rounded-2xl text-gray-500 flex flex-col blur-sm opacity-0 overflow-hidden ${
+        className={`bg-card rounded-2xl text-muted-foreground flex flex-col blur-sm opacity-0 overflow-hidden ${
           finished ? '' : 'shadow-2xl'
         }`}
         ref={scope}

@@ -63,8 +63,10 @@ export default function Sidebar({
   const supabase = createClient();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingConversation, setEditingConversation] = useState<Conversation | null>(null);
-  const [deletingConversation, setDeletingConversation] = useState<Conversation | null>(null);
+  const [editingConversation, setEditingConversation] =
+    useState<Conversation | null>(null);
+  const [deletingConversation, setDeletingConversation] =
+    useState<Conversation | null>(null);
   const [newName, setNewName] = useState('');
   const router = useRouter();
   const { mutate } = useSWRConfig();
@@ -89,7 +91,10 @@ export default function Sidebar({
     );
 
     try {
-      await updateConversation(editingConversation.conversationId, newName.trim());
+      await updateConversation(
+        editingConversation.conversationId,
+        newName.trim()
+      );
       setEditDialogOpen(false);
       setEditingConversation(null);
       setNewName('');
@@ -134,7 +139,7 @@ export default function Sidebar({
         setConversationId(newConv?.conversationId);
         mutateConversations([newConv!]);
       }
-      
+
       setDeleteDialogOpen(false);
       setDeletingConversation(null);
     } catch (error) {
@@ -191,7 +196,7 @@ export default function Sidebar({
 
   return (
     <div className={`${departureMono.className} h-full w-full`}>
-      <div className="h-full overflow-hidden bg-background border-r border-zinc-300 flex flex-col justify-between items-start">
+      <div className="h-full overflow-hidden bg-background border-r border-border flex flex-col justify-between items-start">
         {/* Top section with conversations */}
         <div className="self-stretch px-2.5 py-5 flex flex-col justify-start items-start overflow-y-auto flex-1 gap-2">
           {/* Header */}
@@ -249,13 +254,13 @@ export default function Sidebar({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="end" className="w-48">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => router.push('/settings')}
                 className="cursor-pointer"
               >
                 Account Settings
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={async () => {
                   clearSWRCache();
                   mutate(() => true, undefined, { revalidate: false });
@@ -273,7 +278,9 @@ export default function Sidebar({
 
       {/* Edit Conversation Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className={`sm:max-w-[425px] ${departureMono.className}`}>
+        <DialogContent
+          className={`sm:max-w-[425px] ${departureMono.className}`}
+        >
           <DialogHeader>
             <DialogTitle>Rename Conversation</DialogTitle>
             <DialogDescription>
@@ -293,14 +300,14 @@ export default function Sidebar({
             />
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setEditDialogOpen(false)}
               className="font-mono"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleEditSave}
               disabled={!newName.trim()}
               className="bg-black text-white hover:bg-gray-800 font-mono"
@@ -317,13 +324,14 @@ export default function Sidebar({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &ldquo;{deletingConversation?.name || 'this conversation'}&rdquo;? 
-              This action cannot be undone.
+              Are you sure you want to delete &ldquo;
+              {deletingConversation?.name || 'this conversation'}&rdquo;? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="font-mono">Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-red-600 hover:bg-red-700 focus-visible:ring-red-500 font-mono"
             >

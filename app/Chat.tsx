@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 
 import { FiMenu } from 'react-icons/fi';
 import { ArrowUp, Square, Paperclip, X, Menu, Plus } from 'lucide-react';
+import { DarkModeSwitch } from 'react-toggle-dark-mode';
 import BloomLogo from '@/components/bloomlogo';
 import { toast } from 'sonner';
 import { createClient } from '@/utils/supabase/client';
@@ -257,6 +258,7 @@ export default function Chat({
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] =
     useState<boolean>(false);
+  const [isDark, setIsDark] = useState(false);
 
   const posthog = usePostHog();
   const messageContainerRef = useRef<HTMLElement>(null);
@@ -317,6 +319,7 @@ What's on your mind? Let's dive in. 🌱`,
 
   useEffect(() => {
     setIsHydrated(true);
+    setIsDark(document.documentElement.classList.contains('dark'));
   }, []);
 
   const conversationsFetcher = async () => {
@@ -472,6 +475,11 @@ What's on your mind? Let's dive in. 🌱`,
 
   const removeFile = () => {
     setSelectedFiles([]);
+  };
+
+  const toggleDarkMode = (checked: boolean) => {
+    document.documentElement.classList.toggle('dark');
+    setIsDark(checked);
   };
 
   async function addChat() {
@@ -869,7 +877,7 @@ What's on your mind? Let's dive in. 🌱`,
         <ResizablePanel defaultSize={isMobile ? 100 : 75}>
           <div className="flex flex-col h-full w-full">
             {!isSubscribed && (
-              <section className="h-[63px] w-full bg-neon-green text-black text-center flex items-center justify-center shrink-0">
+              <section className="h-[63px] w-full bg-neon-green text-primary-foreground text-center flex items-center justify-center shrink-0">
                 <p>
                   {freeMessages === 0
                     ? "You've used all your free messages"
@@ -890,7 +898,7 @@ What's on your mind? Let's dive in. 🌱`,
 
             <div className="flex flex-col h-full relative">
               {/* Chat Header */}
-              <div className="px-4 py-3.5 border-b-2 border-zinc-300 flex justify-start items-center gap-3.5 overflow-hidden ">
+              <div className="px-4 py-3.5 border-b-2 border-border flex justify-start items-center gap-3.5 overflow-hidden ">
                 <button
                   onClick={() => {
                     if (isMobile) {
@@ -907,18 +915,18 @@ What's on your mind? Let's dive in. 🌱`,
                   }}
                   className="w-6 h-6 flex items-center justify-center"
                 >
-                  <Menu className="w-6 h-6 text-black" />
+                  <Menu className="w-6 h-6 text-foreground" />
                 </button>
                 <div className="flex flex-col justify-center items-start gap-1">
                   <div
-                    className={`text-black text-xl font-normal ${departureMono.className}`}
+                    className={`text-foreground text-xl font-normal ${departureMono.className}`}
                   >
                     {conversations?.find(
                       (c) => c.conversationId === conversationId
                     )?.name || 'New Chat'}
                   </div>
                   <div className="flex justify-start items-center gap-1.5">
-                    <span className="text-neutral-500 text-base font-normal font-mono">
+                    <span className="text-muted-foreground text-base font-normal font-mono">
                       A chat with{' '}
                       {isHydrated
                         ? user?.user_metadata?.full_name || 'You'
@@ -926,8 +934,8 @@ What's on your mind? Let's dive in. 🌱`,
                       and
                       <div className="inline-block pl-2">
                         <div className="flex justify-start items-center gap-1">
-                          <BloomLogo className="w-5 text-neutral-500" />
-                          <span className="text-neutral-500 text-base font-normal font-mono">
+                          <BloomLogo className="w-5 text-muted-foreground" />
+                          <span className="text-muted-foreground text-base font-normal font-mono">
                             Bloom
                           </span>
                         </div>
@@ -936,13 +944,20 @@ What's on your mind? Let's dive in. 🌱`,
                   </div>
                 </div>
                 <div className="flex-1" />
-                <div className="flex justify-start items-center gap-1.5">
+                <div className="flex justify-start items-center gap-5">
+                  {isHydrated && (
+                    <DarkModeSwitch
+                      checked={isDark}
+                      onChange={toggleDarkMode}
+                      size={24}
+                    />
+                  )}
                   <button
                     onClick={addChat}
                     disabled={!canUseApp}
-                    className="w-10 h-10 bg-lime-300 rounded-full flex justify-center items-center overflow-hidden hover:bg-lime-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-10 h-10 bg-primary rounded-full flex justify-center items-center overflow-hidden hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Plus className="w-4 h-4 text-black" />
+                    <Plus className="w-4 h-4 text-primary-foreground" />
                   </button>
                 </div>
               </div>
@@ -959,7 +974,7 @@ What's on your mind? Let's dive in. 🌱`,
                 <div className="h-3 lg:h-5  bg-gradient-to-b from-transparent to-background" />
                 <div className="bg-background py-3">
                   {messages!.length > 1 && (
-                    <div className="disclaimer-text text-center mb-2 text-gray-400">
+                    <div className="disclaimer-text text-center mb-2">
                       Bloom can make mistakes. Always double-check important
                       information.
                     </div>
@@ -980,7 +995,7 @@ What's on your mind? Let's dive in. 🌱`,
                             chat();
                           }
                         }}
-                        className="w-full border-border bg-white"
+                        className="w-full border-border bg-card"
                       >
                         {selectedFiles.length > 0 && (
                           <div className="flex flex-wrap gap-1 pb-2">
@@ -1005,25 +1020,27 @@ What's on your mind? Let's dive in. 🌱`,
                               : 'Subscribe to send messages'
                           }
                           disabled={!canUseApp}
-                          className="placeholder:text-gray-400"
+                          className="placeholder:text-muted-foreground"
                         />
                         <PromptInputActions className="justify-end pt-2">
                           <PromptInputAction tooltip="Attach files">
                             <FileUploadTrigger asChild>
                               <Button
                                 size="icon"
-                                className={`h-10 w-10 rounded-full bg-white border border-border hover:bg-gray-50 transition-colors`}
+                                className={`h-10 w-10 rounded-full bg-card border border-border hover:bg-muted transition-colors`}
                                 disabled={!canUseApp}
                                 type="button"
                               >
-                                <Paperclip className={`size-4 text-gray-600`} />
+                                <Paperclip
+                                  className={`size-4 text-muted-foreground`}
+                                />
                               </Button>
                             </FileUploadTrigger>
                           </PromptInputAction>
                           <Button
                             variant="default"
                             size="icon"
-                            className="h-10 w-10 rounded-full bg-black text-white hover:bg-gray-800 transition-colors"
+                            className="h-10 w-10 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
                             disabled={!canSend || !canUseApp}
                             type="button"
                             onClick={() => {
@@ -1044,11 +1061,11 @@ What's on your mind? Let's dive in. 🌱`,
 
                       <FileUploadContent>
                         <div className="flex min-h-[200px] w-full items-center justify-center">
-                          <div className="bg-white/95 backdrop-blur-sm m-4 w-full max-w-md rounded-xl border-2 border-dashed border-gray-300 p-8 shadow-xl">
+                          <div className="bg-card/95 backdrop-blur-sm m-4 w-full max-w-md rounded-xl border-2 border-dashed border-muted p-8 shadow-xl">
                             <div className="mb-4 flex justify-center">
-                              <div className="bg-blue-50 rounded-full p-3">
+                              <div className="bg-primary/10 rounded-full p-3">
                                 <svg
-                                  className="text-blue-500 size-8"
+                                  className="text-primary size-8"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
@@ -1062,13 +1079,13 @@ What's on your mind? Let's dive in. 🌱`,
                                 </svg>
                               </div>
                             </div>
-                            <h3 className="mb-2 text-center text-lg font-semibold text-gray-800">
+                            <h3 className="mb-2 text-center text-lg font-semibold text-foreground">
                               Drop a file to upload
                             </h3>
-                            <p className="text-gray-600 text-center text-sm">
+                            <p className="text-muted-foreground text-center text-sm">
                               Release to add a PDF or text file to your message
                             </p>
-                            <p className="text-gray-400 text-center text-xs mt-2">
+                            <p className="text-muted-foreground/70 text-center text-xs mt-2">
                               Maximum file size: 5MB
                             </p>
                           </div>
@@ -1088,22 +1105,22 @@ What's on your mind? Let's dive in. 🌱`,
         <div className="fixed inset-0 z-50 bg-background">
           <div className="h-full flex flex-col">
             {/* Mobile sidebar header */}
-            <div className="px-4 py-3.5 border-b-2 border-zinc-300 flex justify-between items-center">
+            <div className="px-4 py-3.5 border-b-2 border-border flex justify-between items-center">
               <button
                 onClick={() => {
                   addChat();
                   setIsMobileSidebarOpen(false);
                 }}
                 disabled={!canUseApp}
-                className="w-10 h-10 bg-lime-300 rounded-full flex justify-center items-center overflow-hidden hover:bg-lime-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-10 h-10 bg-primary rounded-full flex justify-center items-center overflow-hidden hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4 text-black" />
+                <Plus className="w-4 h-4 text-primary-foreground" />
               </button>
               <button
                 onClick={() => setIsMobileSidebarOpen(false)}
                 className="w-6 h-6 flex items-center justify-center"
               >
-                <X className="w-6 h-6 text-black" />
+                <X className="w-6 h-6 text-foreground" />
               </button>
             </div>
             {/* Mobile sidebar content */}

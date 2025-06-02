@@ -61,7 +61,7 @@ function AIMessage({
       )}
 
       {/* AI message content - no background, just text on page background */}
-      <div className="text-black mb-3">
+      <div className="text-foreground mb-3">
         <MarkdownWrapper text={content} />
       </div>
 
@@ -73,7 +73,7 @@ function AIMessage({
               className={`group p-0 transition-colors ${
                 reaction === 'thumbs_up'
                   ? 'text-blue-500'
-                  : 'text-gray-500 hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground'
               } ${pendingReaction === 'thumbs_up' ? 'opacity-50' : ''}`}
               onClick={() => onReaction(messageId, 'thumbs_up')}
               disabled={pendingReaction !== undefined}
@@ -91,7 +91,7 @@ function AIMessage({
               className={`group p-0 transition-colors ${
                 reaction === 'thumbs_down'
                   ? 'text-red-500'
-                  : 'text-gray-500 hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground'
               } ${pendingReaction === 'thumbs_down' ? 'opacity-50' : ''}`}
               onClick={() => onReaction(messageId, 'thumbs_down')}
               disabled={pendingReaction !== undefined}
@@ -109,7 +109,7 @@ function AIMessage({
               className={`group p-0 rounded-none border-none bg-transparent transition-colors focus:outline-none ${
                 isCopied 
                   ? 'text-green-500' 
-                  : 'text-gray-500 hover:text-black'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={handleCopyToClipboard}
               title={isCopied ? "Copied!" : "Copy to clipboard"}

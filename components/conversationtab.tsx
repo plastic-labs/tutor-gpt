@@ -101,10 +101,10 @@ export function ConversationTab({
           onClick={select}
         >
           <div className="flex flex-col justify-start items-start gap-0.5 flex-1 min-w-0">
-            <div className="text-black text-sm font-normal truncate w-full">
+            <div className="text-foreground text-sm font-normal truncate w-full">
               {conversation.name || 'Untitled'}
             </div>
-            <div className="text-neutral-500 text-[10px] font-normal">
+            <div className="text-muted-foreground text-[10px] font-normal">
               {/* TODO: Add timestamp to Conversation type */}
               {formatTimestamp(new Date().toISOString())}
             </div>
@@ -112,7 +112,7 @@ export function ConversationTab({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="w-4 h-4 flex items-center justify-center text-neutral-500 hover:text-neutral-700 transition-colors ml-2 flex-shrink-0"
+                className="w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ml-2 flex-shrink-0"
                 onClick={handleOptionsClick}
               >
                 <MoreHorizontal className="w-4 h-4" />
