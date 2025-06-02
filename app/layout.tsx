@@ -9,7 +9,6 @@ import {
   ViewportScaleProvider,
 } from './providers';
 import { Suspense } from 'react';
-import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { cn } from '@/utils/helpers';
@@ -79,7 +78,6 @@ export default function RootLayout({
           <PHProvider>
             <SWRProvider>
               <div className="h-full flex flex-col min-h-0">
-                {/* <Header /> */}
                 <ViewportScaleProvider />
                 {children}
               </div>
