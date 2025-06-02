@@ -24,6 +24,8 @@ import {
 import { getMessages, addOrRemoveReaction } from './actions/messages';
 import { Conversation, Message, ThinkingData } from '@/utils/types';
 import { localStorageProvider } from '@/utils/swrCache';
+import FileUploadComponent from '@/components/FileUpload';
+import { ParsedFile } from '@/utils/parseFiles';
 
 import useAutoScroll from '@/hooks/autoscroll';
 import MessageList from '@/components/MessageList';
@@ -221,6 +223,14 @@ function updateThinkingData(
         ? (currentThinking?.pdfQuery || '') + chunkText
         : currentThinking?.pdfQuery,
     pdfResponse: currentThinking?.pdfResponse,
+  };
+}
+
+function fileToParsedfFile(file: File): ParsedFile {
+  const extension = file.name.split('.').pop() || '';
+  return {
+    name: file.name,
+    extension,
   };
 }
 
@@ -973,26 +983,15 @@ What's on your mind? Let's dive in. 🌱`,
                         className="w-full border-border bg-white"
                       >
                         {selectedFiles.length > 0 && (
-                          <div className="flex flex-wrap gap-2 pb-2">
+                          <div className="flex flex-wrap gap-1 pb-2">
                             {selectedFiles.map((file, index) => (
-                              <div
+                              <FileUploadComponent
                                 key={index}
-                                className="bg-gray-100 flex items-center justify-between gap-2 rounded-2xl px-3 py-2 text-sm border"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Paperclip className="size-4 text-gray-600" />
-                                  <span className="max-w-[120px] truncate text-sm font-medium">
-                                    {file.name}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() => removeFile()}
-                                  className="hover:bg-gray-200 rounded-full p-1 transition-colors"
-                                  disabled={!canUseApp}
-                                >
-                                  <X className="size-4 text-gray-500" />
-                                </button>
-                              </div>
+                                file={fileToParsedfFile(file)}
+                                onRemove={removeFile}
+                                showRemove={true}
+                                className="m-0"
+                              />
                             ))}
                           </div>
                         )}
