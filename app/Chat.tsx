@@ -823,6 +823,7 @@ What's on your mind? Let's dive in. 🌱`,
   }
 
   return (
+
     <main className="relative flex flex-1 w-full bg-background min-h-0">
       <ResizablePanelGroup direction="horizontal" className="h-full">
         <ResizablePanel

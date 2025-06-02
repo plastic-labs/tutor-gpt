@@ -10,6 +10,11 @@ const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT;
 Sentry.init({
   dsn: SENTRY_DSN,
 
+  ignoreErrors: [
+    /Hydration failed/,
+    /server rendered HTML didn't match the client/,
+  ],
+
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: SENTRY_ENVIRONMENT === "production" ? 0.3 : 1,
 

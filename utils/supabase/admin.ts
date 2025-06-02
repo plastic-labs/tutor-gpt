@@ -9,7 +9,7 @@ type Price = Tables<'prices'>;
 
 // Change to control trial period length
 const TRIAL_PERIOD_DAYS = 0;
-const FREE_MESSAGE_LIMIT = 50;
+const FREE_MESSAGE_LIMIT = 10;
 
 let stripe: Stripe;
 
