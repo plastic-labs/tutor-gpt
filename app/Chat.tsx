@@ -52,6 +52,14 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 });
 
+const supabase = createClient();
+const fetchUser = async () => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+};
+
 interface StreamResponseChunk {
   type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery';
   text: string;
@@ -224,14 +232,6 @@ export default function Chat({
 
   const messageListRef = useRef<MessageListRef>(null);
   const sidebarPanelRef = useRef<any>(null);
-
-  const supabase = createClient();
-  const fetchUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    return user;
-  };
 
   const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
 
