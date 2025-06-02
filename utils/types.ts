@@ -9,10 +9,10 @@ interface BaseMessage {
 export interface ThinkingData {
   thoughtContent: string;
   thoughtFinished: boolean;
-  honchoQuery: string;
-  honchoResponse: string;
-  pdfQuery: string;
-  pdfResponse: string;
+  honchoQuery?: string;
+  honchoResponse?: string;
+  pdfQuery?: string;
+  pdfResponse?: string;
 }
 
 export interface UserMessage extends BaseMessage {

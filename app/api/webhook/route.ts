@@ -22,11 +22,18 @@ const relevantEvents = new Set([
   'customer.subscription.deleted',
 ]);
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-01-27.acacia',
-});
-
 export async function POST(req: Request) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.log(
+      'STRIPE_SECRET_KEY environment variable is not set, skipping webhook processing'
+    );
+    return new Response('Stripe not configured', { status: 200 });
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-01-27.acacia',
+  });
+
   const body = await req.text();
   const signature = (await headers()).get('Stripe-Signature') as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;

@@ -588,12 +588,15 @@ What's on your mind? Let's dive in. 🌱`,
                   const msgs = currentMessages || [];
                   const lastMessage = msgs[msgs.length - 1];
                   if (lastMessage && !lastMessage.isUser) {
-                    const updatedThinking = {
-                      ...lastMessage.thinking,
+                    const updatedThinking: ThinkingData = {
                       thoughtContent:
                         (lastMessage.thinking?.thoughtContent || '') +
                         chunk.text,
                       thoughtFinished: false,
+                      honchoQuery: lastMessage.thinking?.honchoQuery,
+                      honchoResponse: lastMessage.thinking?.honchoResponse,
+                      pdfQuery: lastMessage.thinking?.pdfQuery,
+                      pdfResponse: lastMessage.thinking?.pdfResponse,
                     };
                     return [
                       ...msgs.slice(0, -1),
@@ -616,11 +619,14 @@ What's on your mind? Let's dive in. 🌱`,
                 const msgs = currentMessages || [];
                 const lastMessage = msgs[msgs.length - 1];
                 if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking = {
-                    ...lastMessage.thinking,
+                  const updatedThinking: ThinkingData = {
+                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
+                    thoughtFinished: false,
                     honchoQuery:
                       (lastMessage.thinking?.honchoQuery || '') + chunk.text,
-                    thoughtFinished: false,
+                    honchoResponse: lastMessage.thinking?.honchoResponse,
+                    pdfQuery: lastMessage.thinking?.pdfQuery,
+                    pdfResponse: lastMessage.thinking?.pdfResponse,
                   };
                   return [
                     ...msgs.slice(0, -1),
@@ -642,11 +648,14 @@ What's on your mind? Let's dive in. 🌱`,
                 const msgs = currentMessages || [];
                 const lastMessage = msgs[msgs.length - 1];
                 if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking = {
-                    ...lastMessage.thinking,
+                  const updatedThinking: ThinkingData = {
+                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
+                    thoughtFinished: false,
+                    honchoQuery: lastMessage.thinking?.honchoQuery,
+                    honchoResponse: lastMessage.thinking?.honchoResponse,
                     pdfQuery:
                       (lastMessage.thinking?.pdfQuery || '') + chunk.text,
-                    thoughtFinished: false,
+                    pdfResponse: lastMessage.thinking?.pdfResponse,
                   };
                   return [
                     ...msgs.slice(0, -1),
@@ -668,11 +677,14 @@ What's on your mind? Let's dive in. 🌱`,
                 const msgs = currentMessages || [];
                 const lastMessage = msgs[msgs.length - 1];
                 if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking = {
-                    ...lastMessage.thinking,
+                  const updatedThinking: ThinkingData = {
+                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
+                    thoughtFinished: false,
+                    honchoQuery: lastMessage.thinking?.honchoQuery,
                     honchoResponse:
                       (lastMessage.thinking?.honchoResponse || '') + chunk.text,
-                    thoughtFinished: false,
+                    pdfQuery: lastMessage.thinking?.pdfQuery,
+                    pdfResponse: lastMessage.thinking?.pdfResponse,
                   };
                   return [
                     ...msgs.slice(0, -1),
@@ -695,11 +707,15 @@ What's on your mind? Let's dive in. 🌱`,
                   const msgs = currentMessages || [];
                   const lastMessage = msgs[msgs.length - 1];
                   if (lastMessage && !lastMessage.isUser) {
-                    const updatedThinking = {
-                      ...lastMessage.thinking,
+                    const updatedThinking: ThinkingData = {
+                      thoughtContent:
+                        lastMessage.thinking?.thoughtContent || '',
+                      thoughtFinished: false,
+                      honchoQuery: lastMessage.thinking?.honchoQuery,
+                      honchoResponse: lastMessage.thinking?.honchoResponse,
+                      pdfQuery: lastMessage.thinking?.pdfQuery,
                       pdfResponse:
                         (lastMessage.thinking?.pdfResponse || '') + chunk.text,
-                      thoughtFinished: false,
                     };
                     return [
                       ...msgs.slice(0, -1),
@@ -723,9 +739,13 @@ What's on your mind? Let's dive in. 🌱`,
                 const msgs = currentMessages || [];
                 const lastMessage = msgs[msgs.length - 1];
                 if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking = {
-                    ...lastMessage.thinking,
+                  const updatedThinking: ThinkingData = {
+                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
                     thoughtFinished: true,
+                    honchoQuery: lastMessage.thinking?.honchoQuery,
+                    honchoResponse: lastMessage.thinking?.honchoResponse,
+                    pdfQuery: lastMessage.thinking?.pdfQuery,
+                    pdfResponse: lastMessage.thinking?.pdfResponse,
                   };
                   return [
                     ...msgs.slice(0, -1),
@@ -764,9 +784,13 @@ What's on your mind? Let's dive in. 🌱`,
             const msgs = currentMessages || [];
             const lastMessage = msgs[msgs.length - 1];
             if (lastMessage && !lastMessage.isUser) {
-              const updatedThinking = {
-                ...lastMessage.thinking,
+              const updatedThinking: ThinkingData = {
+                thoughtContent: lastMessage.thinking?.thoughtContent || '',
                 thoughtFinished: true,
+                honchoQuery: lastMessage.thinking?.honchoQuery,
+                honchoResponse: lastMessage.thinking?.honchoResponse,
+                pdfQuery: lastMessage.thinking?.pdfQuery,
+                pdfResponse: lastMessage.thinking?.pdfResponse,
               };
               return [
                 ...msgs.slice(0, -1),
