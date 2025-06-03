@@ -10,11 +10,7 @@ import {
   fetchConversationHistory,
   saveConversation,
 } from '@/utils/ai/conversation';
-import {
-  buildThoughtPrompt,
-  buildResponsePrompt,
-  extractTagContent,
-} from '@/utils/ai/prompts';
+import { buildThoughtPrompt, buildResponsePrompt } from '@/utils/ai/prompts';
 import { checkAndGenerateSummary } from '@/utils/ai/summary';
 import { streamText } from '@/utils/ai';
 import { Collection } from 'honcho-ai/resources/apps/users/collections/collections.mjs';
@@ -72,18 +68,70 @@ export async function* respond({
   });
 
   let thought = '';
+  let initialThought = '';
+  let honchoQuery = '';
+  let pdfQuery = '';
+
+  let currentSection: 'thought' | 'honchoQuery' | 'pdfQuery' = 'thought';
+
+  function addToSection(
+    section: 'thought' | 'honchoQuery' | 'pdfQuery',
+    text: string
+  ) {
+    if (section === 'thought') {
+      initialThought += text;
+    } else if (section === 'honchoQuery') {
+      honchoQuery += text;
+    } else {
+      pdfQuery += text;
+    }
+  }
+
   for await (const chunk of thoughtStream) {
     thought += chunk;
-    yield formatStreamChunk({
-      type: 'thought',
-      text: chunk,
-    });
+    if (chunk.includes('␁')) {
+      const segments = chunk.split('␁');
+      
+      // Process first segment (before any delimiter)
+      const firstSegment = segments[0].trimEnd();
+      if (firstSegment) {
+        addToSection(currentSection, firstSegment);
+        yield formatStreamChunk({
+          type: currentSection,
+          text: firstSegment,
+        });
+      }
+      
+      // Process remaining segments (after each delimiter)
+      for (let i = 1; i < segments.length; i++) {
+        // Update section after each delimiter
+        if (currentSection === 'thought') {
+          currentSection = 'honchoQuery';
+        } else if (currentSection === 'honchoQuery') {
+          currentSection = 'pdfQuery';
+        }
+        
+        const segment = i === 1 ? segments[i].trimStart() : segments[i];
+        if (segment) {
+          addToSection(currentSection, segment);
+          yield formatStreamChunk({
+            type: currentSection,
+            text: segment,
+          });
+        }
+      }
+    } else {
+      addToSection(currentSection, chunk);
+      yield formatStreamChunk({
+        type: currentSection,
+        text: chunk,
+      });
+    }
   }
 
   const [honchoContent, { pdfContent, collectionId }] = await Promise.all([
     // HONCHO STUFF
     (async () => {
-      const honchoQuery = extractTagContent(thought, 'honcho');
       const { content: honchoContent } = await honcho.apps.users.sessions.chat(
         appId,
         userId,
@@ -168,9 +216,8 @@ export async function* respond({
           collectionId = existingCollectionId;
         }
 
-        // Get PDF query from thought stream
-        const pdfQuery = extractTagContent(thought, 'pdf-agent');
-        if (pdfQuery == 'None' || pdfQuery == '') {
+        // Get PDF query from thought stream - skip if empty or None
+        if (pdfQuery.trim().toLowerCase() === 'none' || pdfQuery.trim() === '') {
           return { pdfContent: '', collectionId };
         }
 

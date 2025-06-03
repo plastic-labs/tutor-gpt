@@ -5,6 +5,7 @@ import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
 import { SecuritySettings } from '@/components/settings/SecuritySettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
 import { SupportSettings } from '@/components/settings/SupportSettings';
+import { Header } from '@/components/header';
 import { Subscription, User } from '@supabase/supabase-js';
 
 interface SettingsProps {
@@ -47,6 +48,7 @@ export default function SettingsLayout({
 
   return (
     <div className={`flex-1 flex flex-col bg-background text-foreground`}>
+      <Header />
       <div className="flex-1 flex">
         <div className="py-4">
           <nav className="w-64 bg-background dark:bg-muted p-4 rounded-lg">

@@ -1,9 +1,12 @@
 'use client';
-import { useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 import { Message } from '@/utils/types';
-import MessageBox from '@/components/messagebox';
-import { getThought } from '@/app/actions/messages';
 import useAutoScroll from '@/hooks/autoscroll';
+import { useReactions } from '@/hooks/useReactions';
+import UserMessage from '@/components/messages/UserMessage';
+import AIMessage from '@/components/messages/AIMessage';
+import { Reaction } from '@/components/messages/AIMessage';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MessageListProps {
   messages: Message[] | undefined;
@@ -11,13 +14,7 @@ interface MessageListProps {
   userId: string;
   conversationId?: string;
   messagesLoading: boolean;
-  handleReactionAdded: (messageId: string, reaction: any) => Promise<void>;
-  setThoughtParent: (thought: string) => void;
-  setIsThoughtsOpen: (
-    isOpen: boolean,
-    messageId?: string | null | undefined
-  ) => void;
-  openThoughtMessageId: string | null;
+  handleReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
 }
 
 export interface MessageListRef {
@@ -33,20 +30,23 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
       conversationId,
       messagesLoading,
       handleReactionAdded,
-      setThoughtParent,
-      setIsThoughtsOpen,
-      openThoughtMessageId,
     },
     ref
   ) => {
-    const [isThoughtLoading, setIsThoughtLoading] = useState<boolean>(false);
-    const [thoughtError, setThoughtError] = useState<{
-      messageId: string;
-      error: string;
-    } | null>(null);
-
-    const messageContainerRef = useRef<HTMLElement>(null);
+    const messageContainerRef = useRef<HTMLDivElement>(null);
     const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+
+    // Custom hooks for managing reactions and thoughts
+    const {
+      pendingReactions,
+      errors: reactionErrors,
+      handleReaction,
+    } = useReactions({
+      messages,
+      conversationId,
+      userId,
+      handleReactionAdded,
+    });
 
     // Expose scrollToBottom method to parent
     useImperativeHandle(ref, () => ({
@@ -55,100 +55,32 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
       },
     }));
 
-    const handleGetThought = async (messageId: string) => {
-      if (!conversationId || !userId) return;
-
-      // Find the last user message before this AI message
-      const allMessages = [defaultMessage, ...(messages || [])];
-      const messageIndex = allMessages.findIndex((msg) => msg.id === messageId);
-
-      // Look backwards for the last user message
-      let lastUserMessageId = null;
-      for (let i = messageIndex; i >= 0; i--) {
-        if (allMessages[i].isUser) {
-          lastUserMessageId = allMessages[i].id;
-          break;
-        }
-      }
-
-      try {
-        // Try with last user message first
-        if (lastUserMessageId) {
-          const thought = await getThought(conversationId, lastUserMessageId);
-          if (thought) {
-            setThoughtParent(thought);
-            setIsThoughtsOpen(true, messageId);
-            return;
-          }
-        }
-
-        // If that didn't work, try with current AI message
-        const thought = await getThought(conversationId, messageId);
-        if (thought) {
-          setThoughtParent(thought);
-          setIsThoughtsOpen(true, messageId);
-          return;
-        }
-
-        // If neither worked
-        setThoughtError({ messageId, error: 'No thought data available.' });
-        console.log(messageId, 'No thought data available.');
-      } catch (error) {
-        console.error('Failed to fetch thought:', error);
-        setThoughtError({ messageId, error: 'Failed to fetch thought.' });
-      } finally {
-        setIsThoughtLoading(false);
-      }
-    };
+    const allMessages = [defaultMessage, ...(messages || [])];
 
     return (
-      <section
-        className="grow overflow-y-auto px-4 lg:px-5 dark:text-white"
-        ref={messageContainerRef}
-      >
-        {messages ? (
-          [defaultMessage, ...messages].map((message, i) => (
-            <MessageBox
-              key={message.id || i}
-              isUser={message.isUser}
-              userId={userId}
-              message={message}
-              loading={messagesLoading}
-              conversationId={conversationId}
-              isThoughtOpen={openThoughtMessageId === message.id}
-              setIsThoughtsOpen={(isOpen) =>
-                setIsThoughtsOpen(isOpen, message.id)
-              }
-              onReactionAdded={handleReactionAdded}
-              onGetThought={handleGetThought}
-              isThoughtLoading={
-                isThoughtLoading && openThoughtMessageId === message.id
-              }
-              thoughtError={
-                thoughtError?.messageId === message.id
-                  ? thoughtError.error
-                  : null
-              }
-            />
-          ))
-        ) : (
-          <MessageBox
-            isUser={false}
-            message={{
-              content: '',
-              id: '',
-              isUser: false,
-              metadata: { reaction: null },
-            }}
-            loading={true}
-            setIsThoughtsOpen={setIsThoughtsOpen}
-            onReactionAdded={handleReactionAdded}
-            onGetThought={handleGetThought}
-            userId={userId}
-            conversationId={conversationId}
-          />
-        )}
-      </section>
+      <ScrollArea className="flex-1 w-full min-h-0" ref={messageContainerRef}>
+        <div className="max-w-[740px] mx-auto pb-[50vh] pt-5 px-10">
+          {allMessages.map((message, index) => {
+            // Use a combination of id and index to ensure unique keys
+            const messageKey = message.id || `temp-${index}`;
+
+            if (message.isUser) {
+              return <UserMessage key={messageKey} message={message} />;
+            } else {
+              return (
+                <AIMessage
+                  key={messageKey}
+                  message={message}
+                  messagesLoading={messagesLoading}
+                  onReaction={handleReaction}
+                  pendingReaction={pendingReactions[message.id]}
+                  error={reactionErrors[message.id]}
+                />
+              );
+            }
+          })}
+        </div>
+      </ScrollArea>
     );
   }
 );
