@@ -1,7 +1,50 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
+import { checkBotProtection } from "@/utils/arcjet";
 
 export async function middleware(request: NextRequest) {
+  // First, run Arcjet bot protection
+  try {
+    const botProtectionResult = await checkBotProtection(request);
+
+    if (!botProtectionResult.allowed) {
+      // Log the blocked request for monitoring
+      console.warn('🛡️ Arcjet: Blocked bot request', {
+        path: request.nextUrl.pathname,
+        userAgent: request.headers.get('user-agent'),
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        reason: botProtectionResult.reason
+      });
+
+      // Return a 403 Forbidden response for blocked bots
+      return NextResponse.json(
+        {
+          error: 'Access denied',
+          message: 'Automated requests are not permitted'
+        },
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          }
+        }
+      );
+    }
+
+    // Log allowed requests in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🛡️ Arcjet: Request allowed', {
+        path: request.nextUrl.pathname,
+        reason: botProtectionResult.reason
+      });
+    }
+  } catch (error) {
+    // Fail open - if Arcjet fails, continue with the request
+    console.error('🛡️ Arcjet: Error in bot protection, failing open:', error);
+  }
+
+  // Continue with existing Supabase session management
   const response = await updateSession(request);
   return response;
 }
