@@ -1,11 +1,30 @@
 // import { type Reaction } from '@/components/messagebox';
 
-export interface Message {
+interface BaseMessage {
   id: string;
   content: string;
-  isUser: boolean;
   metadata: Record<string, unknown>;
 }
+
+export interface ThinkingData {
+  thoughtContent: string;
+  thoughtFinished: boolean;
+  honchoQuery?: string;
+  honchoResponse?: string;
+  pdfQuery?: string;
+  pdfResponse?: string;
+}
+
+export interface UserMessage extends BaseMessage {
+  isUser: true;
+}
+
+export interface AIMessage extends BaseMessage {
+  isUser: false;
+  thinking?: ThinkingData;
+}
+
+export type Message = UserMessage | AIMessage;
 
 export interface Conversation {
   name: string;

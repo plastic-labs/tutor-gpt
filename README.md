@@ -1,6 +1,6 @@
 # Tutor-GPT
 
-![Static Badge](https://img.shields.io/badge/Version-0.7.1-blue)
+![Static Badge](https://img.shields.io/badge/Version-0.8.0-blue)
 [![Discord](https://img.shields.io/discord/1076192451997474938?logo=discord&logoColor=%23ffffff&label=Bloom&labelColor=%235865F2)](https://discord.gg/bloombotai)
 ![GitHub License](https://img.shields.io/github/license/plastic-labs/tutor-gpt)
 ![GitHub Repo stars](https://img.shields.io/github/stars/plastic-labs/tutor-gpt)

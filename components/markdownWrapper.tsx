@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import Typing from './typing';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -113,7 +112,7 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
   const remarkPlugins = useMemo(() => [remarkMath] as Array<any>, []);
   const rehypePlugins = useMemo(() => [rehypeKatex] as Array<any>, []);
 
-  if (!text) return <Typing />;
+  if (!text) return null;
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>

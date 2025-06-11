@@ -9,10 +9,10 @@ import {
   ViewportScaleProvider,
 } from './providers';
 import { Suspense } from 'react';
-import { Header } from '@/components/header';
 import { ThemeProvider } from 'next-themes';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { cn } from '@/utils/helpers';
+import { Toaster } from '@/components/ui/sonner';
 
 const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
 
@@ -22,12 +22,12 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   ),
   description:
-    'Bloom is your always-on, always-engaged learning companion. You can chat with Bloom about any topic, whenever you want. It’s designed to help you build critical skills and follow your curiosity.',
+    "Bloom is your always-on, always-engaged learning companion. You can chat with Bloom about any topic, whenever you want. It's designed to help you build critical skills and follow your curiosity.",
   authors: [{ name: 'Plastic Labs', url: 'https://plasticlabs.ai' }],
   openGraph: {
     title: 'Bloombot',
     description:
-      'Bloom is your always-on, always-engaged learning companion. You can chat with Bloom about any topic, whenever you want. It’s designed to help you build critical skills and follow your curiosity.',
+      "Bloom is your always-on, always-engaged learning companion. You can chat with Bloom about any topic, whenever you want. It's designed to help you build critical skills and follow your curiosity.",
     siteName: 'Bloombot',
     type: 'website',
     url: 'https://chat.bloombot.ai',
@@ -77,14 +77,14 @@ export default function RootLayout({
           </Suspense>
           <PHProvider>
             <SWRProvider>
-              <div className="h-full flex flex-col">
-                <Header />
+              <div className="h-full flex flex-col min-h-0">
                 <ViewportScaleProvider />
-                <main className="flex-1 overflow-y-auto">{children}</main>
+                {children}
               </div>
             </SWRProvider>
           </PHProvider>
         </ThemeProvider>
+        <Toaster />
         <SpeedInsights />
       </body>
     </html>
