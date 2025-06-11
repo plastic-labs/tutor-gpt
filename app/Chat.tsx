@@ -174,6 +174,27 @@ async function fetchConsolidatedStream(
         });
         throw new Error(`Subscription is required to chat: ${response.status}`);
       }
+
+      if (response.status === 429) {
+        // Parse the error response to get rate limit details
+        let errorDetails;
+        try {
+          errorDetails = await response.json();
+        } catch {
+          errorDetails = { message: 'Rate limit exceeded. Please try again in a moment.' };
+        }
+
+        toast.error('Rate Limit Exceeded', {
+          description: errorDetails.details || 'You can make up to 8 chat requests per minute. Please wait before sending another message.',
+          duration: 8000, // Show for 8 seconds
+          action: {
+            label: 'Got it',
+            onClick: () => { },
+          },
+        });
+        throw new Error(`Rate limit exceeded: ${response.status}`);
+      }
+
       const errorText = await response.text();
       console.error(`Stream error:`, {
         status: response.status,
@@ -814,38 +835,47 @@ What's on your mind? Let's dive in. 🌱`,
       // Clear selected files in error case as well
       setSelectedFiles([]);
 
-      // Preserve the message even in case of error if we have content
-      if (currentModelOutput) {
-        mutateMessages(
-          (currentMessages) => {
-            const msgs = currentMessages || [];
-            const lastMessage = msgs[msgs.length - 1];
-            if (lastMessage && !lastMessage.isUser) {
-              const updatedThinking: ThinkingData = {
-                thoughtContent: lastMessage.thinking?.thoughtContent || '',
-                thoughtFinished: true,
-                honchoQuery: lastMessage.thinking?.honchoQuery,
-                honchoResponse: lastMessage.thinking?.honchoResponse,
-                pdfQuery: lastMessage.thinking?.pdfQuery,
-                pdfResponse: lastMessage.thinking?.pdfResponse,
-              };
-              return [
-                ...msgs.slice(0, -1),
-                {
-                  ...lastMessage,
-                  content:
-                    currentModelOutput ||
-                    'Sorry, there was an error generating a response.',
-                  thinking: updatedThinking,
-                },
-              ];
-            }
-            return msgs;
-          },
-          { revalidate: false }
-        );
-      } else {
+      // Check if this is a rate limit error
+      const isRateLimitError = error instanceof Error && error.message.includes('Rate limit exceeded');
+
+      // For rate limit errors, remove the pending message and show a clean UI
+      if (isRateLimitError) {
+        // Remove the empty pending message that was added at the start
         await mutateMessages();
+      } else {
+        // Preserve the message even in case of error if we have content
+        if (currentModelOutput) {
+          mutateMessages(
+            (currentMessages) => {
+              const msgs = currentMessages || [];
+              const lastMessage = msgs[msgs.length - 1];
+              if (lastMessage && !lastMessage.isUser) {
+                const updatedThinking: ThinkingData = {
+                  thoughtContent: lastMessage.thinking?.thoughtContent || '',
+                  thoughtFinished: true,
+                  honchoQuery: lastMessage.thinking?.honchoQuery,
+                  honchoResponse: lastMessage.thinking?.honchoResponse,
+                  pdfQuery: lastMessage.thinking?.pdfQuery,
+                  pdfResponse: lastMessage.thinking?.pdfResponse,
+                };
+                return [
+                  ...msgs.slice(0, -1),
+                  {
+                    ...lastMessage,
+                    content:
+                      currentModelOutput ||
+                      'Sorry, there was an error generating a response.',
+                    thinking: updatedThinking,
+                  },
+                ];
+              }
+              return msgs;
+            },
+            { revalidate: false }
+          );
+        } else {
+          await mutateMessages();
+        }
       }
 
       messageListRef.current?.scrollToBottom();
@@ -870,7 +900,7 @@ What's on your mind? Let's dive in. 🌱`,
             conversationId={conversationId}
             setConversationId={setConversationId}
             canUseApp={canUseApp}
-            onNewChat={() => {}}
+            onNewChat={() => { }}
           />
         </ResizablePanel>
         {!isMobile && <ResizableHandle />}
@@ -979,6 +1009,9 @@ What's on your mind? Let's dive in. 🌱`,
                       information.
                     </div>
                   )}
+                  <div className="text-center text-xs text-muted-foreground mb-2">
+                    Rate limit: 8 messages per minute
+                  </div>
                   <div className="relative max-w-[740px] mx-auto px-10">
                     <FileUpload
                       onFilesAdded={handleFilesAdded}

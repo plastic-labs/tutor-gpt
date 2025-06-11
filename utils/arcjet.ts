@@ -14,42 +14,7 @@ if (!ARCJET_KEY) {
     );
 }
 
-// Search engine user agents that should always be allowed
-const SEARCH_ENGINE_PATTERNS = [
-    // Google
-    /googlebot/i,
-    /google/i,
-    /bingbot/i,
-    /msnbot/i,
-    // Yahoo
-    /slurp/i,
-    /yahoo/i,
-    // DuckDuckGo
-    /duckduckbot/i,
-    /duckduckgo/i,
-    // Baidu
-    /baiduspider/i,
-    /baidu/i,
-    // Yandex
-    /yandexbot/i,
-    /yandex/i,
-    // Other legitimate search engines
-    /facebookexternalhit/i, // Facebook crawler for link previews
-    /twitterbot/i,          // Twitter crawler for link previews
-    /linkedinbot/i,         // LinkedIn crawler
-    /telegrambot/i,         // Telegram crawler
-    /whatsapp/i,            // WhatsApp crawler
-    /discordbot/i,          // Discord crawler
-    /applebot/i,            // Apple crawler
-];
 
-/**
- * Check if a user agent is from a legitimate search engine crawler
- */
-function isSearchEngineCrawler(userAgent: string | null): boolean {
-    if (!userAgent) return false;
-    return SEARCH_ENGINE_PATTERNS.some(pattern => pattern.test(userAgent));
-}
 
 /**
  * Log bot protection events for monitoring and analysis
@@ -134,13 +99,7 @@ export async function checkBotProtection(request: Request): Promise<{
     reason?: string;
 }> {
     try {
-        const userAgent = request.headers.get('user-agent');
-        if (isSearchEngineCrawler(userAgent)) {
-            logBotProtectionEvent(request, { conclusion: 'ALLOW' }, 'ALLOWED', 'Search engine crawler detected');
-            return { allowed: true, reason: 'Search engine crawler' };
-        }
-
-        // Run Arcjet bot detection
+        // Run Arcjet bot detection (includes built-in search engine allowlist)
         const decision = await aj.protect(request);
 
         // Log result
@@ -179,34 +138,27 @@ export async function checkChatRateLimit(request: Request): Promise<{
     resetTime?: number;
 }> {
     try {
-        // Check if it's a search engine crawler first (they bypass rate limits)
-        const userAgent = request.headers.get('user-agent');
-        if (isSearchEngineCrawler(userAgent)) {
-            return {
-                allowed: true,
-                reason: 'Search engine crawler - rate limit bypassed'
-            };
-        }
-
         // Run Arcjet protection (bot detection + rate limiting)
+        // Search engines are automatically allowed via CATEGORY:SEARCH_ENGINE
         const decision = await chatRateLimitClient.protect(request);
 
         // Extract rate limiting information from decision
-        const rateLimitResult = decision.results.find(result =>
-            result.reason.isRateLimit?.()
+        const rateLimitResult = decision.results.find(
+            r => r.reason?.isRateLimit?.()
         );
 
         let remaining: number | undefined;
         let resetTime: number | undefined;
 
-        if (rateLimitResult && rateLimitResult.reason.isRateLimit?.()) {
-            const reason = rateLimitResult.reason as any;
-            remaining = reason.remaining;
-            resetTime = reason.reset;
+        if (rateLimitResult?.reason?.isRateLimit?.()) {
+            const rl = rateLimitResult.reason as any;
+            remaining = rl.remaining;
+            resetTime = rl.reset;
         }
 
         // Log the decision
         const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+        const userAgent = request.headers.get('user-agent');
         console.info('💬 Chat Rate Limit Check:', {
             ip,
             userAgent,
@@ -218,19 +170,19 @@ export async function checkChatRateLimit(request: Request): Promise<{
 
         if (decision.isDenied()) {
             // Check if it was denied due to rate limiting or bot detection
-            const isRateLimit = decision.reason.isRateLimit?.();
-            const isBot = decision.reason.isBot?.();
+            const isRateLimit = decision.reason?.isRateLimit?.() ?? false;
+            const isBot = decision.reason?.isBot?.() ?? false;
 
-            let reason = 'Request denied';
+            let denialReason = 'Request denied';
             if (isRateLimit) {
-                reason = 'Rate limit exceeded - you can make 8 requests per minute';
+                denialReason = 'Rate limit exceeded - you can make 8 requests per minute';
             } else if (isBot) {
-                reason = 'Bot detected';
+                denialReason = 'Bot detected';
             }
 
             return {
                 allowed: false,
-                reason,
+                reason: denialReason,
                 remaining,
                 resetTime
             };
@@ -298,24 +250,13 @@ export async function checkChatWAF(request: Request): Promise<{
 }
 
 // Development helper to test different user agents
+// Note: This now relies exclusively on Arcjet's built-in CATEGORY:SEARCH_ENGINE detection
 export function testUserAgent(userAgent: string): {
-    isSearchEngine: boolean;
-    wouldBlock: boolean;
-    matchedPatterns: string[];
+    userAgent: string;
+    note: string;
 } {
-    const isSearchEngine = isSearchEngineCrawler(userAgent);
-    const matchedPatterns: string[] = [];
-
-    // Check against search engine patterns
-    SEARCH_ENGINE_PATTERNS.forEach((pattern, index) => {
-        if (pattern.test(userAgent)) {
-            matchedPatterns.push(pattern.source);
-        }
-    });
-
     return {
-        isSearchEngine,
-        wouldBlock: !isSearchEngine,
-        matchedPatterns
+        userAgent,
+        note: 'Search engine detection now handled exclusively by Arcjet CATEGORY:SEARCH_ENGINE. Use Arcjet dashboard for testing and monitoring.'
     };
 } 
