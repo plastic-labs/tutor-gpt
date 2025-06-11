@@ -1,6 +1,6 @@
 {
   "name": "tutor-gpt",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "dev": "SENTRY_SUPPRESS_TURBOPACK_WARNING=1 next dev --turbopack",
@@ -115,3 +115,4 @@
     }
   }
 }
+
