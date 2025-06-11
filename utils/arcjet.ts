@@ -1,6 +1,7 @@
 import arcjet, {
     detectBot,
-    fixedWindow
+    fixedWindow,
+    shield
 } from '@arcjet/next';
 import { captureException } from '@sentry/nextjs';
 
@@ -99,6 +100,19 @@ const chatRateLimitClient = arcjet({
             mode: 'LIVE',
             window: '1m',
             max: 8,
+        })
+    ]
+});
+
+/**
+ * Arcjet client for WAF protection on chat endpoints
+ */
+const chatWAFClient = arcjet({
+    key: process.env.ARCJET_KEY!,
+    rules: [
+        // Shield WAF protection
+        shield({
+            mode: 'LIVE'
         })
     ]
 });
@@ -226,6 +240,50 @@ export async function checkChatRateLimit(request: Request): Promise<{
         return {
             allowed: true,
             reason: 'Rate limiting service unavailable - failing open'
+        };
+    }
+}
+
+/**
+ * Check WAF protection specifically for chat endpoints
+ */
+export async function checkChatWAF(request: Request): Promise<{
+    allowed: boolean;
+    reason?: string;
+}> {
+    try {
+        // Run Arcjet Shield WAF protection
+        const decision = await chatWAFClient.protect(request);
+
+        // Log the decision
+        const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+        const userAgent = request.headers.get('user-agent');
+
+        console.info('🛡️ Chat WAF Check:', {
+            ip,
+            userAgent,
+            path: new URL(request.url).pathname,
+            decision: decision.conclusion,
+            reason: decision.reason?.toString(),
+            timestamp: new Date().toISOString()
+        });
+
+        if (decision.isDenied()) {
+            return {
+                allowed: false,
+                reason: `WAF protection triggered: ${decision.reason?.toString() || 'Suspicious request detected'}`
+            };
+        }
+
+        return { allowed: true };
+    } catch (error) {
+        // Log error but fail open for security
+        console.error('🚨 Arcjet WAF protection error:', error);
+        captureException(error);
+
+        return {
+            allowed: true,
+            reason: 'WAF protection service unavailable - failing open'
         };
     }
 }

@@ -9,7 +9,9 @@
     "test": "vitest",
     "lint": "eslint components/ app/ utils/",
     "pretty": "prettier --write components/ app/ utils/",
-    "sync-stripe": "node scripts/stripeSync.mjs"
+    "sync-stripe": "node scripts/stripeSync.mjs",
+    "test:security": "node tests/arcjet/test-bot-protection.js",
+    "test:bot-protection": "node tests/arcjet/test-bot-protection.js"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^0.2.13",
@@ -94,6 +96,7 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "supabase": "^2.12.1",
     "tailwindcss": "4.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "5.7.3",
     "typescript-eslint": "^8.24.1",
     "vite-tsconfig-paths": "^5.1.4",
