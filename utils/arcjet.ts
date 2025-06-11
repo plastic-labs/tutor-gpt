@@ -5,6 +5,15 @@ import arcjet, {
 } from '@arcjet/next';
 import { captureException } from '@sentry/nextjs';
 
+// Validate ARCJET_KEY is available at module load time
+const ARCJET_KEY = process.env.ARCJET_KEY;
+if (!ARCJET_KEY) {
+    throw new Error(
+        'ARCJET_KEY environment variable is required. Please add it to your .env.local file.\n' +
+        'Get Bloom Key from p1password or create your own for testing: https://app.arcjet.com/auth/signin'
+    );
+}
+
 // Search engine user agents that should always be allowed
 const SEARCH_ENGINE_PATTERNS = [
     // Google
@@ -69,7 +78,7 @@ function logBotProtectionEvent(
  * Main Arcjet client for global bot protection
  */
 const aj = arcjet({
-    key: process.env.ARCJET_KEY!,
+    key: ARCJET_KEY,
     rules: [
         detectBot({
             mode: 'LIVE',
@@ -85,7 +94,7 @@ const aj = arcjet({
  * Arcjet client specifically for chat endpoint rate limiting
  */
 const chatRateLimitClient = arcjet({
-    key: process.env.ARCJET_KEY!,
+    key: ARCJET_KEY,
     characteristics: ['ip.src'], // Track by IP address
     rules: [
         // Allow search engines but block other bots
@@ -108,7 +117,7 @@ const chatRateLimitClient = arcjet({
  * Arcjet client for WAF protection on chat endpoints
  */
 const chatWAFClient = arcjet({
-    key: process.env.ARCJET_KEY!,
+    key: ARCJET_KEY,
     rules: [
         // Shield WAF protection
         shield({

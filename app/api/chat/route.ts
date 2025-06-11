@@ -4,6 +4,18 @@ import { respond } from '@/utils/ai/index';
 import { stream } from '@/utils/ai/stream';
 import { checkChatRateLimit } from '@/utils/arcjet';
 
+interface RateLimitResult {
+  remaining?: number;
+  resetTime?: number;
+}
+
+function rateLimitHeaders({ remaining, resetTime }: RateLimitResult) {
+  return {
+    ...(remaining !== undefined && { 'X-RateLimit-Remaining': remaining.toString() }),
+    ...(resetTime !== undefined && { 'X-RateLimit-Reset': resetTime.toString() }),
+  };
+}
+
 export const runtime = 'nodejs';
 export const maxDuration = 300; // TODO: increase when fluid compute turns on
 export const dynamic = 'force-dynamic'; // always run dynamically
@@ -14,17 +26,6 @@ export async function POST(req: NextRequest) {
     const rateLimitResult = await checkChatRateLimit(req);
 
     if (!rateLimitResult.allowed) {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (rateLimitResult.remaining !== undefined) {
-        headers['X-RateLimit-Remaining'] = rateLimitResult.remaining.toString();
-      }
-      if (rateLimitResult.resetTime !== undefined) {
-        headers['X-RateLimit-Reset'] = rateLimitResult.resetTime.toString();
-      }
-
       return new NextResponse(
         JSON.stringify({
           error: 'Rate limit exceeded',
@@ -33,7 +34,10 @@ export async function POST(req: NextRequest) {
         }),
         {
           status: 429,
-          headers
+          headers: {
+            'Content-Type': 'application/json',
+            ...rateLimitHeaders(rateLimitResult)
+          }
         }
       );
     }
@@ -79,12 +83,7 @@ export async function POST(req: NextRequest) {
           'Cache-Control': 'no-cache',
           Connection: 'keep-alive',
           'Transfer-Encoding': 'chunked',
-          ...(rateLimitResult.remaining !== undefined && {
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString()
-          }),
-          ...(rateLimitResult.resetTime !== undefined && {
-            'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
-          })
+          ...rateLimitHeaders(rateLimitResult)
         },
       }
     );
