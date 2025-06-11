@@ -1,5 +1,6 @@
 import arcjet, {
-    detectBot
+    detectBot,
+    fixedWindow
 } from '@arcjet/next';
 import { captureException } from '@sentry/nextjs';
 
@@ -29,124 +30,204 @@ const SEARCH_ENGINE_PATTERNS = [
     /telegrambot/i,         // Telegram crawler
     /whatsapp/i,            // WhatsApp crawler
     /discordbot/i,          // Discord crawler
-    /applebot/i,            // Apple Spotlight
-    /petalbot/i,            // Huawei search
-    /sogou/i,               // Sogou search
-    /bingpreview/i,         // Bing link preview
+    /applebot/i,            // Apple crawler
 ];
 
-// Check if a user agent represents a legitimate search engine crawler
-function isSearchEngineCrawler(userAgent: string): boolean {
+/**
+ * Check if a user agent is from a legitimate search engine crawler
+ */
+function isSearchEngineCrawler(userAgent: string | null): boolean {
     if (!userAgent) return false;
-
-    return SEARCH_ENGINE_PATTERNS.some(pattern =>
-        pattern.test(userAgent)
-    );
+    return SEARCH_ENGINE_PATTERNS.some(pattern => pattern.test(userAgent));
 }
 
-// Create the main Arcjet instance
-export const aj = arcjet({
+/**
+ * Log bot protection events for monitoring and analysis
+ */
+function logBotProtectionEvent(
+    request: Request,
+    decision: any,
+    action: 'ALLOWED' | 'BLOCKED',
+    reason: string
+): void {
+    const userAgent = request.headers.get('user-agent');
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+
+    console.info('🛡️ Arcjet Bot Protection:', {
+        action,
+        reason,
+        userAgent,
+        ip,
+        path: new URL(request.url).pathname,
+        decision: decision.conclusion,
+        timestamp: new Date().toISOString()
+    });
+}
+
+/**
+ * Main Arcjet client for global bot protection
+ */
+const aj = arcjet({
     key: process.env.ARCJET_KEY!,
-    characteristics: ['ip.src'],
     rules: [
         detectBot({
-            mode: process.env.NODE_ENV === 'production' ? 'LIVE' : 'DRY_RUN',
-            // Block all bots except search engine crawlers
+            mode: 'LIVE',
+            // Allow search engines but block all other bots
             allow: [
-                'CATEGORY:SEARCH_ENGINE', // Google, Bing, etc
-                // Additional legitimate bot categories (uncomment as needed)
-                // 'CATEGORY:MONITOR',    // Uptime monitoring services
-                // 'CATEGORY:PREVIEW',    // Link previews e.g. Slack, Discord
+                'CATEGORY:SEARCH_ENGINE'
             ]
         })
     ]
 });
 
-// Enhanced logging function for bot protection events
-export function logBotProtectionEvent(
-    request: any,
-    decision: any,
-    action: 'ALLOWED' | 'BLOCKED',
-    reason: string
-) {
-    const userAgent = request.headers?.get?.('user-agent') ||
-        request.headers?.['user-agent'] ||
-        'unknown';
+/**
+ * Arcjet client specifically for chat endpoint rate limiting
+ */
+const chatRateLimitClient = arcjet({
+    key: process.env.ARCJET_KEY!,
+    characteristics: ['ip.src'], // Track by IP address
+    rules: [
+        // Allow search engines but block other bots
+        detectBot({
+            mode: 'LIVE',
+            allow: [
+                'CATEGORY:SEARCH_ENGINE'
+            ]
+        }),
+        // Rate limit: 8 requests per minute
+        fixedWindow({
+            mode: 'LIVE',
+            window: '1m',
+            max: 8,
+        })
+    ]
+});
 
-    const logData = {
-        timestamp: new Date().toISOString(),
-        action,
-        reason,
-        ip: request.ip || 'unknown',
-        userAgent,
-        path: request.url || request.nextUrl?.pathname || 'unknown',
-        method: request.method || 'unknown',
-        isSearchEngine: isSearchEngineCrawler(userAgent),
-        arcjetResult: {
-            id: decision.id,
-            conclusion: decision.conclusion,
-            reason: decision.reason,
-            ttl: decision.ttl
+/**
+ * Check bot protection for global middleware use
+ */
+export async function checkBotProtection(request: Request): Promise<{
+    allowed: boolean;
+    reason?: string;
+}> {
+    try {
+        const userAgent = request.headers.get('user-agent');
+        if (isSearchEngineCrawler(userAgent)) {
+            logBotProtectionEvent(request, { conclusion: 'ALLOW' }, 'ALLOWED', 'Search engine crawler detected');
+            return { allowed: true, reason: 'Search engine crawler' };
         }
-    };
 
-    // Log to console for development
-    if (process.env.NODE_ENV === 'development') {
-        console.log('🛡️ Arcjet Bot Protection:', JSON.stringify(logData, null, 2));
-    }
+        // Run Arcjet bot detection
+        const decision = await aj.protect(request);
 
-    // Log to Sentry for production monitoring
-    if (action === 'BLOCKED') {
-        captureException(new Error('Bot Protection: Request Blocked'), {
-            tags: {
-                component: 'arcjet',
-                action: 'bot_blocked'
-            },
-            extra: logData
-        });
-    }
+        // Log result
+        const action = decision.conclusion === 'ALLOW' ? 'ALLOWED' : 'BLOCKED';
+        const reason = decision.reason?.toString() || 'Arcjet bot detection';
 
-    // You could also send to your analytics service here
-    // analytics.track('bot_protection_event', logData);
-}
+        logBotProtectionEvent(request, decision, action, reason);
 
-// Main function to check bot protection with enhanced logic
-export async function checkBotProtection(request: any) {
-    const userAgent = request.headers?.get?.('user-agent') ||
-        request.headers?.['user-agent'] ||
-        '';
+        if (decision.isDenied()) {
+            return {
+                allowed: false,
+                reason: `Bot detected: ${reason}`
+            };
+        }
 
-    // First, check if this is a legitimate search engine crawler
-    if (isSearchEngineCrawler(userAgent)) {
-        logBotProtectionEvent(request, {
-            id: 'search-engine-allow',
-            conclusion: 'ALLOW',
-            reason: 'Search engine crawler detected',
-            ttl: 0
-        }, 'ALLOWED', 'Search engine crawler');
+        return { allowed: true };
+    } catch (error) {
+        // Log error but fail open for security
+        console.error('🚨 Arcjet bot protection error:', error);
+        captureException(error);
 
         return {
             allowed: true,
-            reason: 'Search engine crawler',
-            conclusion: 'ALLOW' as const
+            reason: 'Bot protection service unavailable - failing open'
         };
     }
+}
 
-    // Run Arcjet bot detection
-    const decision = await aj.protect(request);
+/**
+ * Check rate limiting specifically for chat endpoints
+ */
+export async function checkChatRateLimit(request: Request): Promise<{
+    allowed: boolean;
+    reason?: string;
+    remaining?: number;
+    resetTime?: number;
+}> {
+    try {
+        // Check if it's a search engine crawler first (they bypass rate limits)
+        const userAgent = request.headers.get('user-agent');
+        if (isSearchEngineCrawler(userAgent)) {
+            return {
+                allowed: true,
+                reason: 'Search engine crawler - rate limit bypassed'
+            };
+        }
 
-    // Log the result
-    const action = decision.conclusion === 'ALLOW' ? 'ALLOWED' : 'BLOCKED';
-    const reason = decision.reason?.toString() || 'Arcjet bot detection';
+        // Run Arcjet protection (bot detection + rate limiting)
+        const decision = await chatRateLimitClient.protect(request);
 
-    logBotProtectionEvent(request, decision, action, reason);
+        // Extract rate limiting information from decision
+        const rateLimitResult = decision.results.find(result =>
+            result.reason.isRateLimit?.()
+        );
 
-    return {
-        allowed: decision.conclusion === 'ALLOW',
-        reason: decision.reason || 'Bot detected',
-        conclusion: decision.conclusion,
-        decision
-    };
+        let remaining: number | undefined;
+        let resetTime: number | undefined;
+
+        if (rateLimitResult && rateLimitResult.reason.isRateLimit?.()) {
+            const reason = rateLimitResult.reason as any;
+            remaining = reason.remaining;
+            resetTime = reason.reset;
+        }
+
+        // Log the decision
+        const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+        console.info('💬 Chat Rate Limit Check:', {
+            ip,
+            userAgent,
+            decision: decision.conclusion,
+            remaining,
+            resetTime,
+            timestamp: new Date().toISOString()
+        });
+
+        if (decision.isDenied()) {
+            // Check if it was denied due to rate limiting or bot detection
+            const isRateLimit = decision.reason.isRateLimit?.();
+            const isBot = decision.reason.isBot?.();
+
+            let reason = 'Request denied';
+            if (isRateLimit) {
+                reason = 'Rate limit exceeded - you can make 8 requests per minute';
+            } else if (isBot) {
+                reason = 'Bot detected';
+            }
+
+            return {
+                allowed: false,
+                reason,
+                remaining,
+                resetTime
+            };
+        }
+
+        return {
+            allowed: true,
+            remaining,
+            resetTime
+        };
+    } catch (error) {
+        // Log error but fail open for security
+        console.error('🚨 Chat rate limit error:', error);
+        captureException(error);
+
+        return {
+            allowed: true,
+            reason: 'Rate limiting service unavailable - failing open'
+        };
+    }
 }
 
 // Development helper to test different user agents
