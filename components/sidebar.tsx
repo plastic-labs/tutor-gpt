@@ -43,6 +43,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { ScrollArea } from './ui/scroll-area';
 
 export default function Sidebar({
   conversations,
@@ -195,7 +196,7 @@ export default function Sidebar({
   const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
 
   return (
-    <div className={`${departureMono.className} h-full w-full`}>
+    <ScrollArea className={`${departureMono.className} h-full w-full`}>
       <div className="h-full overflow-hidden bg-background border-r border-border flex flex-col justify-between items-start">
         {/* Top section with conversations */}
         <div className="self-stretch px-2.5 py-5 flex flex-col justify-start items-start overflow-y-auto flex-1 gap-2">
@@ -340,6 +341,6 @@ export default function Sidebar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </ScrollArea>
   );
 }
