@@ -26,19 +26,19 @@ export function Header() {
 
   if (!mounted) {
     return (
-      <header className="bg-background border-b border-gray-200 dark:border-gray-700">
-        <nav className="flex justify-between items-center p-4">
-          <div className="h-10 w-40 bg-gray-200 animate-pulse"></div>
-          <div className="h-6 w-6 bg-gray-200 animate-pulse rounded-full"></div>
+      <header className="border-gray-200 border-b bg-background dark:border-gray-700">
+        <nav className="flex items-center justify-between p-4">
+          <div className="h-10 w-40 animate-pulse bg-gray-200"></div>
+          <div className="h-6 w-6 animate-pulse rounded-full bg-gray-200"></div>
         </nav>
       </header>
     )
   }
 
   return (
-    <header className="bg-background border-b border-gray-200 dark:border-gray-700">
-      <nav className="flex justify-between items-center p-4">
-        <Link href="/" className="flex items-center gap-2 cursor-pointer">
+    <header className="border-gray-200 border-b bg-background dark:border-gray-700">
+      <nav className="flex items-center justify-between p-4">
+        <Link href="/" className="flex cursor-pointer items-center gap-2">
           <Image
             src={bloomIcon}
             alt="Bloom Logo"
@@ -47,12 +47,12 @@ export function Header() {
             className="rounded-full"
           />
           <span
-            className={`text-foreground text-xl font-departure ${departureMono.className}`}
+            className={`font-departure text-foreground text-xl ${departureMono.className}`}
           >
             BLOOM
           </span>
         </Link>
-        <div className="flex justify-between items-center gap-4">
+        <div className="flex items-center justify-between gap-4">
           <DarkModeSwitch
             checked={isDark}
             onChange={toggleDarkMode}

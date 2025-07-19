@@ -83,7 +83,7 @@ function FileUpload({
       window.removeEventListener('dragover', handleDrag)
       window.removeEventListener('drop', handleDrop)
     }
-  }, [handleFiles, onFilesAdded, multiple])
+  }, [handleFiles])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
@@ -157,8 +157,8 @@ function FileUploadContent({ className, ...props }: FileUploadContentProps) {
   return context?.isDragging ? (
     <div
       className={cn(
-        'bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm',
-        'animate-in fade-in-0 slide-in-from-bottom-10 zoom-in-90 duration-150',
+        'fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm',
+        'fade-in-0 slide-in-from-bottom-10 zoom-in-90 animate-in duration-150',
         className
       )}
       {...props}

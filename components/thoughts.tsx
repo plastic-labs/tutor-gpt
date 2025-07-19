@@ -18,8 +18,8 @@ export default function Thoughts({
   return (
     <section
       className={
-        'absolute h-[100dvh] flex flex-col lg:w-3/5 w-4/5 right-0 top-0 bg-neon-green transition-all duration-300 ease-in-out text-black ' +
-        (isThoughtsOpen ? 'translate-x-0 shadow-lg z-30' : 'translate-x-full')
+        'absolute top-0 right-0 flex h-[100dvh] w-4/5 flex-col bg-neon-green text-black transition-all duration-300 ease-in-out lg:w-3/5 ' +
+        (isThoughtsOpen ? 'z-30 translate-x-0 shadow-lg' : 'translate-x-full')
       }
     >
       <div className="flex flex-row-reverse p-4">
@@ -32,8 +32,8 @@ export default function Thoughts({
           <GrClose className="inline" />
         </button>
       </div>
-      <div className="flex flex-col flex-1 overflow-y-auto px-4 gap-2">
-        <h1 className={`${departureMono.className} text-2xl font-bold`}>
+      <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4">
+        <h1 className={`${departureMono.className} font-bold text-2xl`}>
           Thoughts
         </h1>
         <ReactMarkdown>{thought}</ReactMarkdown>

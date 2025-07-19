@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { LuCheck, LuClipboard, LuThumbsDown, LuThumbsUp } from 'react-icons/lu'
 import type { AIMessage as AIMessageType } from '@/utils/types'
 import MarkdownWrapper from '../markdownWrapper'
@@ -61,7 +61,7 @@ function AIMessage({
       )}
 
       {/* AI message content - no background, just text on page background */}
-      <div className="text-foreground mb-3">
+      <div className="mb-3 text-foreground">
         <MarkdownWrapper text={content} />
       </div>
 
@@ -79,11 +79,11 @@ function AIMessage({
               disabled={pendingReaction !== undefined}
               aria-label="Thumbs up"
             >
-              <div className="w-5 h-6 flex items-center justify-center">
+              <div className="flex h-6 w-5 items-center justify-center">
                 {pendingReaction === 'thumbs_up' ? (
                   <Spinner size={22} />
                 ) : (
-                  <LuThumbsUp className="w-5 h-5" />
+                  <LuThumbsUp className="h-5 w-5" />
                 )}
               </div>
             </button>
@@ -97,16 +97,16 @@ function AIMessage({
               disabled={pendingReaction !== undefined}
               aria-label="Thumbs down"
             >
-              <div className="w-5 h-6 flex items-center justify-center">
+              <div className="flex h-6 w-5 items-center justify-center">
                 {pendingReaction === 'thumbs_down' ? (
                   <Spinner size={22} />
                 ) : (
-                  <LuThumbsDown className="w-5 h-5" />
+                  <LuThumbsDown className="h-5 w-5" />
                 )}
               </div>
             </button>
             <button
-              className={`group p-0 rounded-none border-none bg-transparent transition-colors focus:outline-none ${
+              className={`group rounded-none border-none bg-transparent p-0 transition-colors focus:outline-none ${
                 isCopied
                   ? 'text-green-500'
                   : 'text-muted-foreground hover:text-foreground'
@@ -115,11 +115,11 @@ function AIMessage({
               title={isCopied ? 'Copied!' : 'Copy to clipboard'}
               aria-label={isCopied ? 'Copied!' : 'Copy to clipboard'}
             >
-              <div className="w-5 h-6 flex items-center justify-center">
+              <div className="flex h-6 w-5 items-center justify-center">
                 {isCopied ? (
-                  <LuCheck className="w-5 h-5" />
+                  <LuCheck className="h-5 w-5" />
                 ) : (
-                  <LuClipboard className="w-5 h-5" />
+                  <LuClipboard className="h-5 w-5" />
                 )}
               </div>
             </button>

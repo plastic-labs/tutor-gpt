@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -49,7 +48,7 @@ export default function PriceCard({ price }: PriceCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="text-center text-lg">
-          {price.interval == 'month' ? 'Monthly' : 'Yearly'}
+          {price.interval === 'month' ? 'Monthly' : 'Yearly'}
         </CardTitle>
       </CardHeader>
       <CardContent className="text-center text-lg">
@@ -57,7 +56,7 @@ export default function PriceCard({ price }: PriceCardProps) {
       </CardContent>
       <CardFooter>
         <Button
-          className="bg-primary dark:bg-neon-green text-primary-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
+          className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-neon-green dark:text-dark-green dark:hover:bg-neon-green/90"
           onClick={subscribe}
         >
           Subscribe

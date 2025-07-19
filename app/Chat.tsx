@@ -7,7 +7,6 @@ import Link from 'next/link'
 // import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FiMenu } from 'react-icons/fi'
 import { DarkModeSwitch } from 'react-toggle-dark-mode'
 import { toast } from 'sonner'
 import useSWR from 'swr'
@@ -98,7 +97,7 @@ class StreamReader {
               parsed,
               remaining: this.buffer.substring(i + 1),
             }
-          } catch (e) {}
+          } catch (_e) {}
         }
       }
     }
@@ -501,7 +500,7 @@ What's on your mind? Let's dive in. 🌱`,
 
   async function addChat() {
     // Create a temporary conversation with a loading state
-    const tempId = 'temp-' + Date.now()
+    const tempId = `temp-${Date.now()}`
     const tempConversation: Conversation = {
       conversationId: tempId,
       name: 'Untitled',
@@ -518,7 +517,7 @@ What's on your mind? Let's dive in. 🌱`,
       // Replace temporary conversation with the real one
       mutateConversations([
         newConversation!,
-        ...conversations!.filter((c) => c.conversationId !== tempId),
+        ...conversations?.filter((c) => c.conversationId !== tempId),
       ])
       setConversationId(newConversation?.conversationId)
     } catch (error) {
@@ -881,7 +880,7 @@ What's on your mind? Let's dive in. 🌱`,
   }
 
   return (
-    <main className="relative flex flex-1 w-full bg-background min-h-0">
+    <main className="relative flex min-h-0 w-full flex-1 bg-background">
       <ResizablePanelGroup direction="horizontal" className="h-full">
         <ResizablePanel
           ref={sidebarPanelRef}
@@ -902,16 +901,16 @@ What's on your mind? Let's dive in. 🌱`,
         </ResizablePanel>
         {!isMobile && <ResizableHandle />}
         <ResizablePanel defaultSize={isMobile ? 100 : 75}>
-          <div className="flex flex-col h-full w-full">
+          <div className="flex h-full w-full flex-col">
             {!isSubscribed && (
-              <section className="h-[63px] w-full bg-neon-green text-primary-foreground text-center flex items-center justify-center shrink-0">
+              <section className="flex h-[63px] w-full shrink-0 items-center justify-center bg-neon-green text-center text-primary-foreground">
                 <p>
                   {freeMessages === 0
                     ? "You've used all your free messages"
                     : `${freeMessages} free messages remaining`}
                   .{' '}
                   <Link
-                    className="cursor-pointer hover:cursor-pointer font-bold underline"
+                    className="cursor-pointer font-bold underline hover:cursor-pointer"
                     href="/settings"
                   >
                     Subscribe now
@@ -923,9 +922,9 @@ What's on your mind? Let's dive in. 🌱`,
               </section>
             )}
 
-            <div className="flex flex-col h-full relative">
+            <div className="relative flex h-full flex-col">
               {/* Chat Header */}
-              <div className="px-4 py-3.5 border-b-2 border-border flex justify-start items-center gap-3.5 overflow-hidden ">
+              <div className="flex items-center justify-start gap-3.5 overflow-hidden border-border border-b-2 px-4 py-3.5 ">
                 <button
                   onClick={() => {
                     if (isMobile) {
@@ -940,29 +939,29 @@ What's on your mind? Let's dive in. 🌱`,
                       }
                     }
                   }}
-                  className="w-6 h-6 flex items-center justify-center"
+                  className="flex h-6 w-6 items-center justify-center"
                 >
-                  <Menu className="w-6 h-6 text-foreground" />
+                  <Menu className="h-6 w-6 text-foreground" />
                 </button>
-                <div className="flex flex-col justify-center items-start gap-1">
+                <div className="flex flex-col items-start justify-center gap-1">
                   <div
-                    className={`text-foreground text-xl font-normal ${departureMono.className}`}
+                    className={`font-normal text-foreground text-xl ${departureMono.className}`}
                   >
                     {conversations?.find(
                       (c) => c.conversationId === conversationId
                     )?.name || 'New Chat'}
                   </div>
-                  <div className="flex justify-start items-center gap-1.5">
-                    <span className="text-muted-foreground text-base font-normal font-mono">
+                  <div className="flex items-center justify-start gap-1.5">
+                    <span className="font-mono font-normal text-base text-muted-foreground">
                       A chat with{' '}
                       {isHydrated
                         ? user?.user_metadata?.full_name || 'You'
                         : 'You'}{' '}
                       and
                       <div className="inline-block pl-2">
-                        <div className="flex justify-start items-center gap-1">
+                        <div className="flex items-center justify-start gap-1">
                           <BloomLogo className="w-5 text-muted-foreground" />
-                          <span className="text-muted-foreground text-base font-normal font-mono">
+                          <span className="font-mono font-normal text-base text-muted-foreground">
                             Bloom
                           </span>
                         </div>
@@ -971,7 +970,7 @@ What's on your mind? Let's dive in. 🌱`,
                   </div>
                 </div>
                 <div className="flex-1" />
-                <div className="flex justify-start items-center gap-5">
+                <div className="flex items-center justify-start gap-5">
                   {isHydrated && (
                     <DarkModeSwitch
                       checked={isDark}
@@ -982,9 +981,9 @@ What's on your mind? Let's dive in. 🌱`,
                   <button
                     onClick={addChat}
                     disabled={!canUseApp}
-                    className="w-10 h-10 bg-primary rounded-full flex justify-center items-center overflow-hidden hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Plus className="w-4 h-4 text-primary-foreground" />
+                    <Plus className="h-4 w-4 text-primary-foreground" />
                   </button>
                 </div>
               </div>
@@ -997,19 +996,19 @@ What's on your mind? Let's dive in. 🌱`,
                 messagesLoading={messagesLoading}
                 handleReactionAdded={handleReactionAdded}
               />
-              <div className="absolute bottom-0 left-0 right-0 z-10">
-                <div className="h-3 lg:h-5  bg-gradient-to-b from-transparent to-background" />
+              <div className="absolute right-0 bottom-0 left-0 z-10">
+                <div className="h-3 bg-gradient-to-b from-transparent to-background lg:h-5" />
                 <div className="bg-background py-3">
-                  {messages!.length > 1 && (
-                    <div className="disclaimer-text text-center mb-2">
+                  {messages?.length > 1 && (
+                    <div className="disclaimer-text mb-2 text-center">
                       Bloom can make mistakes. Always double-check important
                       information.
                     </div>
                   )}
-                  <div className="text-center text-xs text-muted-foreground mb-2">
+                  <div className="mb-2 text-center text-muted-foreground text-xs">
                     Rate limit: 8 messages per minute
                   </div>
-                  <div className="relative max-w-[740px] mx-auto px-10">
+                  <div className="relative mx-auto max-w-[740px] px-10">
                     <FileUpload
                       onFilesAdded={handleFilesAdded}
                       accept=".pdf,.txt"
@@ -1057,7 +1056,7 @@ What's on your mind? Let's dive in. 🌱`,
                             <FileUploadTrigger asChild>
                               <Button
                                 size="icon"
-                                className={`h-10 w-10 rounded-full bg-card border border-border hover:bg-muted transition-colors`}
+                                className={`h-10 w-10 rounded-full border border-border bg-card transition-colors hover:bg-muted`}
                                 disabled={!canUseApp}
                                 type="button"
                               >
@@ -1070,7 +1069,7 @@ What's on your mind? Let's dive in. 🌱`,
                           <Button
                             variant="default"
                             size="icon"
-                            className="h-10 w-10 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
+                            className="h-10 w-10 rounded-full bg-foreground text-background transition-colors hover:bg-foreground/90"
                             disabled={!canSend || !canUseApp}
                             type="button"
                             onClick={() => {
@@ -1091,11 +1090,11 @@ What's on your mind? Let's dive in. 🌱`,
 
                       <FileUploadContent>
                         <div className="flex min-h-[200px] w-full items-center justify-center">
-                          <div className="bg-card/95 backdrop-blur-sm m-4 w-full max-w-md rounded-xl border-2 border-dashed border-muted p-8 shadow-xl">
+                          <div className="m-4 w-full max-w-md rounded-xl border-2 border-muted border-dashed bg-card/95 p-8 shadow-xl backdrop-blur-sm">
                             <div className="mb-4 flex justify-center">
-                              <div className="bg-primary/10 rounded-full p-3">
+                              <div className="rounded-full bg-primary/10 p-3">
                                 <svg
-                                  className="text-primary size-8"
+                                  className="size-8 text-primary"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
@@ -1109,13 +1108,13 @@ What's on your mind? Let's dive in. 🌱`,
                                 </svg>
                               </div>
                             </div>
-                            <h3 className="mb-2 text-center text-lg font-semibold text-foreground">
+                            <h3 className="mb-2 text-center font-semibold text-foreground text-lg">
                               Drop a file to upload
                             </h3>
-                            <p className="text-muted-foreground text-center text-sm">
+                            <p className="text-center text-muted-foreground text-sm">
                               Release to add a PDF or text file to your message
                             </p>
-                            <p className="text-muted-foreground/70 text-center text-xs mt-2">
+                            <p className="mt-2 text-center text-muted-foreground/70 text-xs">
                               Maximum file size: 5MB
                             </p>
                           </div>
@@ -1133,24 +1132,24 @@ What's on your mind? Let's dive in. 🌱`,
       {/* Mobile Sidebar Overlay */}
       {isMobile && isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 bg-background">
-          <div className="h-full flex flex-col overflow-hidden">
+          <div className="flex h-full flex-col overflow-hidden">
             {/* Mobile sidebar header */}
-            <div className="px-4 py-3.5 border-b-2 border-border flex justify-between items-center shrink-0">
+            <div className="flex shrink-0 items-center justify-between border-border border-b-2 px-4 py-3.5">
               <button
                 onClick={() => {
                   addChat()
                   setIsMobileSidebarOpen(false)
                 }}
                 disabled={!canUseApp}
-                className="w-10 h-10 bg-primary rounded-full flex justify-center items-center overflow-hidden hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Plus className="w-4 h-4 text-primary-foreground" />
+                <Plus className="h-4 w-4 text-primary-foreground" />
               </button>
               <button
                 onClick={() => setIsMobileSidebarOpen(false)}
-                className="w-6 h-6 flex items-center justify-center"
+                className="flex h-6 w-6 items-center justify-center"
               >
-                <X className="w-6 h-6 text-foreground" />
+                <X className="h-6 w-6 text-foreground" />
               </button>
             </div>
             {/* Mobile sidebar content */}

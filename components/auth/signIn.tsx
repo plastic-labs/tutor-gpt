@@ -48,7 +48,7 @@ export default function SignIn(props: any) {
         <div>
           <label
             htmlFor="email"
-            className={`block text-sm font-medium text-foreground`}
+            className={`block font-medium text-foreground text-sm`}
           >
             Email
           </label>
@@ -57,7 +57,7 @@ export default function SignIn(props: any) {
             type="email"
             id="email"
             name="email"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-xs bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
+            className={`mt-1 w-full rounded-md bg-accent p-2 text-foreground text-sm shadow-xs ${error ? 'border-2 border-red-500' : ''}`}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -66,7 +66,7 @@ export default function SignIn(props: any) {
         <div>
           <label
             htmlFor="password"
-            className={`block text-sm font-medium text-foreground`}
+            className={`block font-medium text-foreground text-sm`}
           >
             Password
           </label>
@@ -75,7 +75,7 @@ export default function SignIn(props: any) {
             type="password"
             id="password"
             name="password"
-            className={`p-2 mt-1 w-full rounded-md text-sm shadow-xs bg-accent text-foreground ${error ? 'border-2 border-red-500' : ''}`}
+            className={`mt-1 w-full rounded-md bg-accent p-2 text-foreground text-sm shadow-xs ${error ? 'border-2 border-red-500' : ''}`}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -83,10 +83,10 @@ export default function SignIn(props: any) {
 
         <div className="sm:flex sm:items-center sm:gap-4">
           <button
-            className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-hidden focus:ring-3 text-black bg-accent hover:border-neon-green hover:bg-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent`}
+            className={`inline-block w-full shrink-0 rounded-md border bg-accent px-12 py-3 font-medium text-black text-sm transition hover:border-neon-green hover:bg-neon-green hover:bg-neon-green focus:outline-hidden focus:ring-3 sm:w-auto dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent dark:hover:text-neon-green`}
           >
             {isLoading ? (
-              <svg className="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24">
+              <svg className="mx-auto h-5 w-5 animate-spin" viewBox="0 0 24 24">
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -106,13 +106,13 @@ export default function SignIn(props: any) {
             )}
           </button>
 
-          <div className="mt-4 space-y-2 sm:mt-0 text-sm">
+          <div className="mt-4 space-y-2 text-sm sm:mt-0">
             <p className="text-foreground">
               Don&apos;t have an account?{' '}
               <a
                 href="#"
                 onClick={() => stateSync('SIGNUP')}
-                className={`underline text-foreground`}
+                className={`text-foreground underline`}
               >
                 Sign Up Now
               </a>
@@ -122,7 +122,7 @@ export default function SignIn(props: any) {
               <a
                 href="#"
                 onClick={() => stateSync('FORGOT')}
-                className={`underline text-foreground`}
+                className={`text-foreground underline`}
               >
                 Recover
               </a>

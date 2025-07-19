@@ -1,5 +1,5 @@
 'use client'
-import React, { forwardRef, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useImperativeHandle, useRef } from 'react'
 import AIMessage, { type Reaction } from '@/components/messages/AIMessage'
 import UserMessage from '@/components/messages/UserMessage'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -57,8 +57,8 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
     const allMessages = [defaultMessage, ...(messages || [])]
 
     return (
-      <ScrollArea className="flex-1 w-full min-h-0" ref={messageContainerRef}>
-        <div className="max-w-[740px] mx-auto pb-[50vh] pt-5 px-10">
+      <ScrollArea className="min-h-0 w-full flex-1" ref={messageContainerRef}>
+        <div className="mx-auto max-w-[740px] px-10 pt-5 pb-[50vh]">
           {allMessages.map((message, index) => {
             // Use a combination of id and index to ensure unique keys
             const messageKey = message.id || `temp-${index}`

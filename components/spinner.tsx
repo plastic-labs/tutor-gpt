@@ -1,4 +1,3 @@
-import React from 'react'
 import { FaCircleNotch } from 'react-icons/fa'
 
 interface SpinnerProps {

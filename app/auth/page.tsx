@@ -22,15 +22,18 @@ export default function Auth() {
         router.push('/')
       }
     })
-  }, [supabase])
+  }, [
+    supabase, // Can't access this page if you're logged in
+    router.push,
+  ])
 
   return (
     <section
       className="h-[calc(100vh-72px)] w-full bg-background"
       suppressHydrationWarning={true}
     >
-      <div className="flex flex-col lg:flex-row h-full w-full">
-        <aside className="h-48 lg:h-full lg:flex-1 lg:order-last relative">
+      <div className="flex h-full w-full flex-col lg:flex-row">
+        <aside className="relative h-48 lg:order-last lg:h-full lg:flex-1">
           <Image
             alt="Pattern"
             src="/auth_banner.jpg"
@@ -41,8 +44,7 @@ export default function Auth() {
         </aside>
 
         <main
-          className={`flex-1 flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8 bg-background'
-            }`}
+          className={`} flex flex-1 items-center justify-center bg-background' px-4 py-8 sm:px-6 lg:px-8`}
         >
           <div className="w-full max-w-xl">
             <a className="block text-blue-600" href="/">
@@ -52,16 +54,16 @@ export default function Auth() {
                 alt="banner"
                 width={40}
                 height={40}
-                className="h-10 sm:h-10 w-auto rounded-full"
+                className="h-10 w-auto rounded-full sm:h-10"
               />
             </a>
             <h1
-              className={`mt-6 text-2xl font-bold sm:text-3xl md:text-4xl text-foreground`}
+              className={`mt-6 font-bold text-2xl text-foreground sm:text-3xl md:text-4xl`}
             >
               Welcome to Bloom 🌱
             </h1>
 
-            <p className={`mt-4 leading-relaxed text-foreground`}>
+            <p className={`mt-4 text-foreground leading-relaxed`}>
               Your Aristotelian learning companion — here to help you follow
               your curiosity in whatever direction you like.
             </p>

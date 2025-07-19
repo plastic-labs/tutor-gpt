@@ -1,7 +1,7 @@
 'use client'
 import { ChevronDown, Search } from 'lucide-react'
 import { motion, useAnimate } from 'motion/react'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import BloomLogo from '@/components/bloomlogo'
 
 interface StreamingTextProps {
@@ -160,6 +160,7 @@ export default function ThinkBox({
     pdfQuery,
     pdfResponse,
     hasContentAnimated,
+    runContentAnimation,
   ])
 
   async function runContentAnimation() {
@@ -220,7 +221,7 @@ export default function ThinkBox({
   const content = (
     <div ref={contentRef} className="flex flex-col">
       <motion.div
-        className="flex items-center p-5 justify-between h-14 border-b border-border cursor-pointer select-none"
+        className="flex h-14 cursor-pointer select-none items-center justify-between border-border border-b p-5"
         id="top-bar"
         onClick={() => setCollapsed((c) => !c)}
         animate={{
@@ -240,12 +241,12 @@ export default function ThinkBox({
           animate={{ rotate: collapsed ? 180 : 0 }}
           transition={{ duration: 0.4, ease: 'easeInOut' }}
         >
-          <ChevronDown className="w-5 h-5" />
+          <ChevronDown className="h-5 w-5" />
         </motion.div>
       </motion.div>
       <motion.div
         id="initial-text"
-        className="p-5 border-t border-border opacity-0 hidden"
+        className="hidden border-border border-t p-5 opacity-0"
         animate={{ height: collapsed ? 0 : 'auto', opacity: collapsed ? 0 : 1 }}
         style={{
           overflow: 'hidden',
@@ -268,7 +269,7 @@ export default function ThinkBox({
           (pdfQuery && pdfQuery !== 'None') ||
           (pdfResponse && pdfResponse !== 'None')) && (
           <div
-            className={`flex flex-col gap-6 w-full ${
+            className={`flex w-full flex-col gap-6 ${
               (pdfQuery && pdfQuery !== 'None') ||
               (pdfResponse && pdfResponse !== 'None')
                 ? 'md:flex-row'
@@ -278,34 +279,34 @@ export default function ThinkBox({
             {/* Honcho Column */}
             {((honchoQuery && honchoQuery !== 'None') ||
               (honchoResponse && honchoResponse !== 'None')) && (
-              <div className="flex-1 min-w-[220px]">
-                <div className="flex items-center gap-1 mb-2 text-muted-foreground text-sm">
-                  <Search className="w-4 h-4" />
+              <div className="min-w-[220px] flex-1">
+                <div className="mb-2 flex items-center gap-1 text-muted-foreground text-sm">
+                  <Search className="h-4 w-4" />
                   <span className="font-semibold">Honcho</span>
                 </div>
                 {honchoQuery && honchoResponse ? (
                   <div className="relative flex flex-col items-stretch">
-                    <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line z-10">
+                    <div className="z-10 mb-3 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                       {honchoQuery}
                     </div>
                     {/* Vertical line */}
                     <div
-                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-border mx-auto"
+                      className="absolute top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] left-1/2 mx-auto w-0.5 bg-border"
                       style={{ transform: 'translateX(-50%)' }}
                     ></div>
-                    <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line z-10">
+                    <div className="z-10 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                       {honchoResponse}
                     </div>
                   </div>
                 ) : (
                   <>
                     {honchoQuery && (
-                      <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line">
+                      <div className="mb-3 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                         {honchoQuery}
                       </div>
                     )}
                     {honchoResponse && (
-                      <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line">
+                      <div className="whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                         {honchoResponse}
                       </div>
                     )}
@@ -317,34 +318,34 @@ export default function ThinkBox({
             {/* PDF Column - only show if there's PDF content */}
             {((pdfQuery && pdfQuery !== 'None') ||
               (pdfResponse && pdfResponse !== 'None')) && (
-              <div className="flex-1 min-w-[220px]">
-                <div className="flex items-center gap-1 mb-2 text-muted-foreground text-sm">
-                  <Search className="w-4 h-4" />
+              <div className="min-w-[220px] flex-1">
+                <div className="mb-2 flex items-center gap-1 text-muted-foreground text-sm">
+                  <Search className="h-4 w-4" />
                   <span className="font-semibold">PDF</span>
                 </div>
                 {pdfQuery && pdfResponse ? (
                   <div className="relative flex flex-col items-stretch">
-                    <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line z-10">
+                    <div className="z-10 mb-3 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                       {pdfQuery}
                     </div>
                     {/* Vertical line */}
                     <div
-                      className="absolute left-1/2 top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] w-0.5 bg-border mx-auto"
+                      className="absolute top-[calc(2.5rem+1.5rem)] bottom-[2.5rem] left-1/2 mx-auto w-0.5 bg-border"
                       style={{ transform: 'translateX(-50%)' }}
                     ></div>
-                    <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line z-10">
+                    <div className="z-10 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                       {pdfResponse}
                     </div>
                   </div>
                 ) : (
                   <>
                     {pdfQuery && (
-                      <div className="bg-muted rounded-xl p-4 mb-3 text-foreground text-base whitespace-pre-line">
+                      <div className="mb-3 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                         {pdfQuery}
                       </div>
                     )}
                     {pdfResponse && (
-                      <div className="bg-muted rounded-xl p-4 text-foreground text-base whitespace-pre-line">
+                      <div className="whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                         {pdfResponse}
                       </div>
                     )}
@@ -359,9 +360,9 @@ export default function ThinkBox({
   )
 
   return (
-    <div className="flex w-full justify-center mb-4">
+    <div className="mb-4 flex w-full justify-center">
       <motion.div
-        className={`bg-card rounded-2xl text-muted-foreground flex flex-col blur-sm opacity-0 overflow-hidden ${
+        className={`flex flex-col overflow-hidden rounded-2xl bg-card text-muted-foreground opacity-0 blur-sm ${
           finished ? '' : 'shadow-2xl'
         }`}
         ref={scope}

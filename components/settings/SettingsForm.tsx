@@ -146,26 +146,24 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {type === 'account' && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="displayName" className="text-foreground">
-                Display Name
-              </Label>
-              <Input
-                id="displayName"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="bg-input text-foreground grow"
-              />
-              <Button
-                onClick={handleProfileUpdate}
-                className="bg-neon-green text-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90 mt-2"
-              >
-                Save
-              </Button>
-            </div>
-          </>
+          <div className="space-y-2">
+            <Label htmlFor="displayName" className="text-foreground">
+              Display Name
+            </Label>
+            <Input
+              id="displayName"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="grow bg-input text-foreground"
+            />
+            <Button
+              onClick={handleProfileUpdate}
+              className="mt-2 bg-neon-green text-foreground hover:bg-primary/90 dark:text-dark-green dark:hover:bg-neon-green/90"
+            >
+              Save
+            </Button>
+          </div>
         )}
         {type === 'security' && (
           <>
@@ -220,12 +218,12 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-input text-foreground w-full"
+                className="w-full bg-input text-foreground"
               />
             </div>
             <Button
               onClick={handleEmailChange}
-              className="bg-neon-green text-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
+              className="bg-neon-green text-foreground hover:bg-primary/90 dark:text-dark-green dark:hover:bg-neon-green/90"
             >
               Save
             </Button>
@@ -233,7 +231,7 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         ) : (
           <Button
             onClick={handlePasswordChange}
-            className="bg-neon-green text-foreground dark:text-dark-green hover:bg-primary/90 dark:hover:bg-neon-green/90"
+            className="bg-neon-green text-foreground hover:bg-primary/90 dark:text-dark-green dark:hover:bg-neon-green/90"
           >
             Save Password
           </Button>

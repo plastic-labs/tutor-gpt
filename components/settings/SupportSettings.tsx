@@ -11,7 +11,7 @@ import {
 export function SupportSettings() {
   return (
     <div className="space-y-4">
-      <h2 className="text-3xl font-bold text-primary">Contact Support</h2>
+      <h2 className="font-bold text-3xl text-primary">Contact Support</h2>
       <Card className="bg-card text-card-foreground">
         <CardHeader>
           <CardTitle className="text-primary">Need Help?</CardTitle>

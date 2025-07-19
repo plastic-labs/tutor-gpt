@@ -1,5 +1,4 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import * as Sentry from '@sentry/nextjs'
 import {
   generateText as generateTextAi,
   streamObject as streamObjectAi,

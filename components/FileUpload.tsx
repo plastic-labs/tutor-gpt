@@ -1,5 +1,4 @@
 import { X } from 'lucide-react'
-import React from 'react'
 import { getFileIcon, type ParsedFile } from '@/utils/parseFiles'
 
 interface FileUploadProps {
@@ -19,7 +18,7 @@ function FileUpload({
 
   return (
     <div
-      className={`inline-flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 mx-1 my-1 hover:bg-muted transition-colors relative ${className}`}
+      className={`relative mx-1 my-1 inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 transition-colors hover:bg-muted ${className}`}
     >
       <span
         className="text-lg"
@@ -28,16 +27,16 @@ function FileUpload({
       >
         {icon}
       </span>
-      <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
+      <span className="max-w-[200px] truncate font-medium text-foreground text-sm">
         {file.name}
       </span>
-      <span className="text-xs text-muted-foreground uppercase font-semibold">
+      <span className="font-semibold text-muted-foreground text-xs uppercase">
         {file.extension}
       </span>
       {showRemove && onRemove && (
         <button
           onClick={onRemove}
-          className="ml-1 hover:bg-muted-foreground/20 rounded-full p-1 transition-colors"
+          className="ml-1 rounded-full p-1 transition-colors hover:bg-muted-foreground/20"
         >
           <X className="size-3 text-muted-foreground" />
         </button>

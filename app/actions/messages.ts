@@ -243,11 +243,11 @@ export async function getThought(conversationId: string, messageId: string) {
         let completeThought = thoughtText ?? ''
 
         if (dialecticText) {
-          completeThought += '\n\nDialectic Response:\n\n' + dialecticText
+          completeThought += `\n\nDialectic Response:\n\n${dialecticText}`
         }
 
         if (pdfText) {
-          completeThought += '\n\nPDF Agent Response:\n\n' + pdfText
+          completeThought += `\n\nPDF Agent Response:\n\n${pdfText}`
         }
 
         return completeThought

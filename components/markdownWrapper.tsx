@@ -21,7 +21,7 @@ const CopyButton = memo(({ text }: { text: string }) => {
   return (
     <button
       onClick={copyToClipboard}
-      className="absolute top-2 right-2 p-1 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+      className="absolute top-2 right-2 rounded-md bg-gray-700 p-1 transition-colors hover:bg-gray-600"
     >
       {isCopied ? (
         <FiCheck className="h-4 w-4 text-green-500" />
@@ -61,13 +61,13 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
         ordered,
         ...props
       }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ol'>) => (
-        <ol className="list-decimal pl-6 space-y-2" {...props} />
+        <ol className="list-decimal space-y-2 pl-6" {...props} />
       ),
       ul: ({
         ordered,
         ...props
       }: { ordered?: boolean } & React.ComponentPropsWithoutRef<'ul'>) => (
-        <ul className="list-disc pl-6 space-y-2" {...props} />
+        <ul className="list-disc space-y-2 pl-6" {...props} />
       ),
       li: ({
         ordered,
@@ -92,7 +92,7 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
         ) : (
           <code
             {...props}
-            className={`${className} bg-gray-100 dark:bg-gray-800 rounded px-1`}
+            className={`${className} rounded bg-gray-100 px-1 dark:bg-gray-800`}
           >
             {children}
           </code>
@@ -109,7 +109,7 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
   if (!text) return null
 
   return (
-    <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>
+    <Suspense fallback={<div className="h-32 animate-pulse bg-gray-100" />}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

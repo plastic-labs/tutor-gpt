@@ -1,7 +1,7 @@
 import { Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { FaUser } from 'react-icons/fa'
 import { toast } from 'sonner'
 import useSWR, { type KeyedMutator, useSWRConfig } from 'swr'
@@ -39,7 +39,7 @@ import { Input } from '@/components/ui/input'
 import { departureMono } from '@/utils/fonts'
 import { createClient } from '@/utils/supabase/client'
 import { clearSWRCache } from '@/utils/swrCache'
-import type { Conversation, Message } from '@/utils/types'
+import type { Conversation } from '@/utils/types'
 import { ConversationTab } from './conversationtab'
 
 export default function Sidebar({
@@ -117,7 +117,7 @@ export default function Sidebar({
 
     // Optimistically update UI
     const newConversations = conversations.filter(
-      (cur) => cur.conversationId != deletingConversation.conversationId
+      (cur) => cur.conversationId !== deletingConversation.conversationId
     )
     mutateConversations(newConversations, false)
 
@@ -151,9 +151,9 @@ export default function Sidebar({
     }
   }
 
-  async function addChat() {
+  async function _addChat() {
     // Create a temporary conversation with a loading state
-    const tempId = 'temp-' + Date.now()
+    const tempId = `temp-${Date.now()}`
     const tempConversation: Conversation = {
       conversationId: tempId,
       name: 'Untitled',
@@ -194,19 +194,19 @@ export default function Sidebar({
 
   return (
     <div className={`${departureMono.className} h-full w-full`}>
-      <div className="h-full overflow-hidden bg-background border-r border-border flex flex-col justify-between items-start">
+      <div className="flex h-full flex-col items-start justify-between overflow-hidden border-border border-r bg-background">
         {/* Top section with conversations */}
-        <div className="self-stretch px-2.5 py-5 flex flex-col justify-start items-start overflow-hidden flex-1 gap-2 min-h-0">
+        <div className="flex min-h-0 flex-1 flex-col items-start justify-start gap-2 self-stretch overflow-hidden px-2.5 py-5">
           {/* Header */}
-          <div className="px-2.5 py-1 flex justify-center items-center gap-2.5 shrink-0">
-            <div className="text-muted-foreground text-xs font-normal">
+          <div className="flex shrink-0 items-center justify-center gap-2.5 px-2.5 py-1">
+            <div className="font-normal text-muted-foreground text-xs">
               Past Chats
             </div>
           </div>
 
           {/* Conversation list */}
-          <div className="group flex flex-col gap-2 w-full overflow-y-auto min-h-0 scrollbar-hover-only">
-            <div className="flex flex-col gap-2 w-full">
+          <div className="group scrollbar-hover-only flex min-h-0 w-full flex-col gap-2 overflow-y-auto">
+            <div className="flex w-full flex-col gap-2">
               {conversations.length > 0
                 ? conversations.map((cur, i) => (
                     <div key={i} className="shrink-0">
@@ -229,22 +229,22 @@ export default function Sidebar({
         </div>
 
         {/* Bottom section with user info */}
-        <div className="self-stretch px-5 py-2.5 flex justify-between items-center overflow-hidden">
-          <div className="flex justify-start items-center gap-2.5">
+        <div className="flex items-center justify-between self-stretch overflow-hidden px-5 py-2.5">
+          <div className="flex items-center justify-start gap-2.5">
             {isUserLoading ? (
-              <div className="w-10 h-10 rounded-full bg-muted animate-pulse"></div>
+              <div className="h-10 w-10 animate-pulse rounded-full bg-muted"></div>
             ) : user?.user_metadata?.avatar_url ? (
               <img
                 src={user.user_metadata.avatar_url}
                 alt="Profile"
-                className="w-10 h-10 rounded-full"
+                className="h-10 w-10 rounded-full"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <FaUser className="w-5 h-5 text-muted-foreground" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                <FaUser className="h-5 w-5 text-muted-foreground" />
               </div>
             )}
-            <div className="text-foreground text-base font-normal">
+            <div className="font-normal text-base text-foreground">
               {isUserLoading
                 ? 'Loading...'
                 : user?.user_metadata?.full_name || user?.email || 'User Name'}
@@ -254,8 +254,8 @@ export default function Sidebar({
           {/* Settings dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-6 h-6 flex items-center justify-center text-foreground hover:text-muted-foreground transition-colors">
-                <Settings className="w-5 h-5" />
+              <button className="flex h-6 w-6 items-center justify-center text-foreground transition-colors hover:text-muted-foreground">
+                <Settings className="h-5 w-5" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="end" className="w-48">
@@ -315,7 +315,7 @@ export default function Sidebar({
             <Button
               onClick={handleEditSave}
               disabled={!newName.trim()}
-              className="bg-foreground text-background hover:bg-foreground/90 font-mono"
+              className="bg-foreground font-mono text-background hover:bg-foreground/90"
             >
               Save
             </Button>
@@ -338,7 +338,7 @@ export default function Sidebar({
             <AlertDialogCancel className="font-mono">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700 focus-visible:ring-red-500 font-mono"
+              className="bg-red-600 font-mono hover:bg-red-700 focus-visible:ring-red-500"
             >
               Delete
             </AlertDialogAction>

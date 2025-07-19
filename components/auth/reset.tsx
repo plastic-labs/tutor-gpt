@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Swal from 'sweetalert2'
 import { createClient } from '@/utils/supabase/client'
 
-export default function Forgot(props: any) {
+export default function Forgot(_props: any) {
   const [password, setPassword] = useState('')
 
   const supabase = createClient()
@@ -52,7 +52,7 @@ export default function Forgot(props: any) {
       <div className="col-span-6">
         <label
           htmlFor="Password"
-          className="block text-sm font-medium text-foreground"
+          className="block font-medium text-foreground text-sm"
         >
           Password
         </label>
@@ -61,7 +61,7 @@ export default function Forgot(props: any) {
           type="password"
           id="Password"
           name="password"
-          className="p-2 mt-1 w-full rounded-md border-gray-200 bg-white text-sm text-foreground shadow-xs"
+          className="mt-1 w-full rounded-md border-gray-200 bg-white p-2 text-foreground text-sm shadow-xs"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -69,7 +69,7 @@ export default function Forgot(props: any) {
 
       <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
         <button
-          className={`inline-block w-full sm:w-auto shrink-0 rounded-md border px-12 py-3 text-sm font-medium transition focus:outline-hidden focus:ring-3 text-black bg-accent hover:border-neon-green hover:bg-neon-green hover:bg-neon-green dark:hover:text-neon-green dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent`}
+          className={`inline-block w-full shrink-0 rounded-md border bg-accent px-12 py-3 font-medium text-black text-sm transition hover:border-neon-green hover:bg-neon-green hover:bg-neon-green focus:outline-hidden focus:ring-3 sm:w-auto dark:border-neon-green dark:bg-neon-green dark:hover:bg-transparent dark:hover:text-neon-green`}
           onClick={handleReset}
         >
           Reset

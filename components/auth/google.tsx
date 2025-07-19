@@ -24,9 +24,9 @@ export default function GoogleSignIn({ text }: GoogleSignInProps) {
   return (
     <button
       onClick={handleGoogleSignIn}
-      className="flex items-center justify-center w-full px-4 py-2 mt-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-neon-green"
+      className="mt-4 flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 text-sm shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-neon-green focus:ring-offset-2"
     >
-      <FcGoogle className="w-5 h-5 mr-2" />
+      <FcGoogle className="mr-2 h-5 w-5" />
       {text} with Google
     </button>
   )

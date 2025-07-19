@@ -11,7 +11,7 @@ const posthogHost: string = process.env.NEXT_PUBLIC_POSTHOG_HOST || ''
 
 if (
   typeof window !== 'undefined' &&
-  process.env.NEXT_PUBLIC_SITE_URL != 'http://localhost:3000'
+  process.env.NEXT_PUBLIC_SITE_URL !== 'http://localhost:3000'
 ) {
   posthog.init(posthogKey, {
     api_host: posthogHost,
@@ -26,8 +26,8 @@ export function PostHogPageview(): JSX.Element {
   useEffect(() => {
     if (pathname) {
       let url = window.origin + pathname
-      if (searchParams && searchParams.toString()) {
-        url = url + `?${searchParams.toString()}`
+      if (searchParams?.toString()) {
+        url = `${url}?${searchParams.toString()}`
       }
       posthog.capture('$pageview', {
         $current_url: url,

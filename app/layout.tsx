@@ -77,7 +77,7 @@ export default function RootLayout({
           </Suspense>
           <PHProvider>
             <SWRProvider>
-              <div className="h-full flex flex-col min-h-0">
+              <div className="flex h-full min-h-0 flex-col">
                 <ViewportScaleProvider />
                 {children}
               </div>

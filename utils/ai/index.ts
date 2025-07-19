@@ -10,7 +10,6 @@ import { formatStreamChunk } from '@/utils/ai/stream'
 import { checkAndGenerateSummary } from '@/utils/ai/summary'
 import { validateUser } from '@/utils/ai/validation'
 import { honcho } from '@/utils/honcho'
-import { parsePDF } from '@/utils/parsePdf'
 import { collectionChat } from '@/utils/pdfChat'
 import type { ChatCallProps } from './types'
 
@@ -67,7 +66,7 @@ export async function* respond({
   })
 
   let thought = ''
-  let initialThought = ''
+  let _initialThought = ''
   let honchoQuery = ''
   let pdfQuery = ''
 
@@ -78,7 +77,7 @@ export async function* respond({
     text: string
   ) {
     if (section === 'thought') {
-      initialThought += text
+      _initialThought += text
     } else if (section === 'honchoQuery') {
       honchoQuery += text
     } else {

@@ -81,7 +81,7 @@ export function ConversationTab({
   if (loading) {
     return (
       <div
-        className={`${departureMono.className} px-2.5 py-2 rounded-xl flex justify-between items-center overflow-hidden w-full min-h-[48px]`}
+        className={`${departureMono.className} flex min-h-[48px] w-full items-center justify-between overflow-hidden rounded-xl px-2.5 py-2`}
       >
         <div className="flex-1">
           <Skeleton height={20} className="mb-1" />
@@ -95,16 +95,16 @@ export function ConversationTab({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className={`${departureMono.className} px-2.5 py-2 rounded-xl flex justify-between items-center overflow-hidden cursor-pointer hover:bg-secondary-background transition-colors w-full min-h-[48px] ${
+          className={`${departureMono.className} flex min-h-[48px] w-full cursor-pointer items-center justify-between overflow-hidden rounded-xl px-2.5 py-2 transition-colors hover:bg-secondary-background ${
             selected ? 'bg-secondary-background' : ''
           }`}
           onClick={select}
         >
-          <div className="flex flex-col justify-start items-start gap-0.5 flex-1 min-w-0">
-            <div className="text-foreground text-sm font-normal truncate w-full">
+          <div className="flex min-w-0 flex-1 flex-col items-start justify-start gap-0.5">
+            <div className="w-full truncate font-normal text-foreground text-sm">
               {conversation.name || 'Untitled'}
             </div>
-            <div className="text-muted-foreground text-[10px] font-normal">
+            <div className="font-normal text-[10px] text-muted-foreground">
               {/* TODO: Add timestamp to Conversation type */}
               {formatTimestamp(new Date().toISOString())}
             </div>
@@ -112,10 +112,10 @@ export function ConversationTab({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ml-2 flex-shrink-0"
+                className="ml-2 flex h-4 w-4 flex-shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
                 onClick={handleOptionsClick}
               >
-                <MoreHorizontal className="w-4 h-4" />
+                <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
@@ -123,14 +123,14 @@ export function ConversationTab({
                 onClick={edit}
                 className="flex items-center gap-2"
               >
-                <Edit className="w-4 h-4" />
+                <Edit className="h-4 w-4" />
                 Rename
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={del}
                 className="flex items-center gap-2 text-red-600"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -139,14 +139,14 @@ export function ConversationTab({
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem onClick={edit} className="flex items-center gap-2">
-          <Edit className="w-4 h-4" />
+          <Edit className="h-4 w-4" />
           Rename
         </ContextMenuItem>
         <ContextMenuItem
           onClick={del}
           className="flex items-center gap-2 text-red-600"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="h-4 w-4" />
           Delete
         </ContextMenuItem>
       </ContextMenuContent>
