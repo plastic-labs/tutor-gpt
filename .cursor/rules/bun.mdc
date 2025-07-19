@@ -1,0 +1,6 @@
+---
+description: for installing any packages: USE BUN.
+globs: 
+alwaysApply: false
+---
+Use bun for manipulating packages

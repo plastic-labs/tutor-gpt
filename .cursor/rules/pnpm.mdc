@@ -1,6 +1,0 @@
----
-description: for installing any packages: USE PNPM.
-globs: 
-alwaysApply: false
----
-Use pnpm for manipulating packages
