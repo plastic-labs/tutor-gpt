@@ -1,4 +1,4 @@
-import { Message, user, assistant } from '@/utils/ai';
+import { assistant, type Message, user } from '@/utils/ai'
 export const namePrompt: Message[] = [
   user`Your task is to create a 5-word or less summary of the conversation topic, starting with an action verb. If the conversation hasn't specified a topic yet, please respond with "NA" and nothing else.
 
@@ -24,4 +24,4 @@ export const namePrompt: Message[] = [
   
   Do you understand?`,
   assistant`Yes, I understand, send the first message whenever you're ready.`,
-];
+]

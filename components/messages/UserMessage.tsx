@@ -1,15 +1,15 @@
-import React from 'react';
-import { Message } from '@/utils/types';
-import MarkdownWrapper from '../markdownWrapper';
-import FileUpload from '../FileUpload';
-import { parseFileUploads } from '@/utils/parseFiles';
+import React from 'react'
+import { parseFileUploads } from '@/utils/parseFiles'
+import type { Message } from '@/utils/types'
+import FileUpload from '../FileUpload'
+import MarkdownWrapper from '../markdownWrapper'
 
 interface UserMessageProps {
-  message: Message;
+  message: Message
 }
 
 function UserMessage({ message }: UserMessageProps) {
-  const { content, files } = parseFileUploads(message.content);
+  const { content, files } = parseFileUploads(message.content)
 
   return (
     <div className="flex flex-col items-end mb-4 gap-1">
@@ -24,7 +24,7 @@ function UserMessage({ message }: UserMessageProps) {
         <MarkdownWrapper text={content} />
       </div>
     </div>
-  );
+  )
 }
 
-export default UserMessage;
+export default UserMessage

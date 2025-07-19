@@ -1,6 +1,5 @@
-"use client"
+'use client'
 
-import { cn } from "@/utils/helpers"
 import {
   Children,
   cloneElement,
@@ -9,7 +8,8 @@ import {
   useEffect,
   useRef,
   useState,
-} from "react"
+} from 'react'
+import { cn } from '@/utils/helpers'
 
 type FileUploadContextValue = {
   isDragging: boolean
@@ -72,23 +72,23 @@ function FileUpload({
       }
     }
 
-    window.addEventListener("dragenter", handleDragIn)
-    window.addEventListener("dragleave", handleDragOut)
-    window.addEventListener("dragover", handleDrag)
-    window.addEventListener("drop", handleDrop)
+    window.addEventListener('dragenter', handleDragIn)
+    window.addEventListener('dragleave', handleDragOut)
+    window.addEventListener('dragover', handleDrag)
+    window.addEventListener('drop', handleDrop)
 
     return () => {
-      window.removeEventListener("dragenter", handleDragIn)
-      window.removeEventListener("dragleave", handleDragOut)
-      window.removeEventListener("dragover", handleDrag)
-      window.removeEventListener("drop", handleDrop)
+      window.removeEventListener('dragenter', handleDragIn)
+      window.removeEventListener('dragleave', handleDragOut)
+      window.removeEventListener('dragover', handleDrag)
+      window.removeEventListener('drop', handleDrop)
     }
   }, [handleFiles, onFilesAdded, multiple])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       handleFiles(e.target.files)
-      e.target.value = ""
+      e.target.value = ''
     }
   }
 
@@ -109,7 +109,7 @@ function FileUpload({
 }
 
 export type FileUploadTriggerProps =
-  React.ComponentPropsWithoutRef<"button"> & {
+  React.ComponentPropsWithoutRef<'button'> & {
     asChild?: boolean
   }
 
@@ -128,7 +128,7 @@ function FileUploadTrigger({
     >
     return cloneElement(child, {
       ...props,
-      role: "button",
+      role: 'button',
       className: cn(className, child.props.className),
       onClick: (e: React.MouseEvent) => {
         handleClick()
@@ -157,8 +157,8 @@ function FileUploadContent({ className, ...props }: FileUploadContentProps) {
   return context?.isDragging ? (
     <div
       className={cn(
-        "bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm",
-        "animate-in fade-in-0 slide-in-from-bottom-10 zoom-in-90 duration-150",
+        'bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm',
+        'animate-in fade-in-0 slide-in-from-bottom-10 zoom-in-90 duration-150',
         className
       )}
       {...props}

@@ -1,29 +1,29 @@
-'use client';
-import React, { useRef, useState, useEffect } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
-import { motion, useAnimate } from 'motion/react';
-import BloomLogo from '@/components/bloomlogo';
+'use client'
+import { ChevronDown, Search } from 'lucide-react'
+import { motion, useAnimate } from 'motion/react'
+import React, { useEffect, useRef, useState } from 'react'
+import BloomLogo from '@/components/bloomlogo'
 
 interface StreamingTextProps {
-  stream: string[];
-  finished: boolean;
+  stream: string[]
+  finished: boolean
 }
 
 function StreamingText({ stream, finished }: StreamingTextProps) {
-  const [words, setWords] = useState<string[]>([]);
+  const [words, setWords] = useState<string[]>([])
 
   useEffect(() => {
     // Combine all chunks into a single string
-    const combinedText = stream.join('');
+    const combinedText = stream.join('')
 
     // Split the combined text into words
-    let wordList = combinedText.split(' ');
+    let wordList = combinedText.split(' ')
     if (!finished) {
-      wordList = wordList.slice(0, wordList.length - 1);
+      wordList = wordList.slice(0, wordList.length - 1)
     }
 
-    setWords(wordList);
-  }, [stream, finished]);
+    setWords(wordList)
+  }, [stream, finished])
 
   return (
     <div>
@@ -41,17 +41,17 @@ function StreamingText({ stream, finished }: StreamingTextProps) {
         </motion.span>
       ))}
     </div>
-  );
+  )
 }
 
 export interface ThinkBoxProps {
-  thoughtChunks?: string[]; // For streaming (live messages)
-  thoughtContent?: string; // For complete content (past messages)
-  finished: boolean;
-  honchoQuery: string;
-  honchoResponse: string;
-  pdfQuery: string;
-  pdfResponse: string;
+  thoughtChunks?: string[] // For streaming (live messages)
+  thoughtContent?: string // For complete content (past messages)
+  finished: boolean
+  honchoQuery: string
+  honchoResponse: string
+  pdfQuery: string
+  pdfResponse: string
 }
 
 export default function ThinkBox({
@@ -63,51 +63,51 @@ export default function ThinkBox({
   pdfQuery,
   pdfResponse,
 }: ThinkBoxProps) {
-  const [scope, animate] = useAnimate();
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState<number | 'auto'>('auto');
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const [hasContentAnimated, setHasContentAnimated] = useState(false);
-  const [collapsed, setCollapsed] = useState(finished); // Start collapsed if already finished
+  const [scope, animate] = useAnimate()
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number | 'auto'>('auto')
+  const [hasAnimated, setHasAnimated] = useState(false)
+  const [hasContentAnimated, setHasContentAnimated] = useState(false)
+  const [collapsed, setCollapsed] = useState(finished) // Start collapsed if already finished
 
   // Collapse automatically when finished, after a short delay (only for new messages, not historical)
   useEffect(() => {
     if (finished && hasContentAnimated) {
       // Only auto-collapse if we actually animated the content (meaning it's a new message)
-      const timer = setTimeout(() => setCollapsed(true), 1200);
-      return () => clearTimeout(timer);
+      const timer = setTimeout(() => setCollapsed(true), 1200)
+      return () => clearTimeout(timer)
     } else if (!finished) {
-      setCollapsed(false);
+      setCollapsed(false)
     }
-  }, [finished, hasContentAnimated]);
+  }, [finished, hasContentAnimated])
 
   // Initial animation when component mounts - show immediately
   useEffect(() => {
     if (!hasAnimated) {
-      setHasAnimated(true);
+      setHasAnimated(true)
       if (finished) {
         // For finished messages (historical), show everything immediately without animation
         animate(
           scope.current,
           { filter: 'blur(0px)', opacity: 1 },
           { duration: 0 }
-        );
+        )
         animate(
           '#thinking-text',
           { opacity: 1, display: 'block', filter: 'blur(0px)' },
           { duration: 0 }
-        );
+        )
         animate(
           '#chevron-icon',
           { opacity: 1, display: 'block', filter: 'blur(0px)' },
           { duration: 0 }
-        );
+        )
         animate(
           '#initial-text',
           { opacity: 1, display: 'block' },
           { duration: 0 }
-        );
-        setHasContentAnimated(true);
+        )
+        setHasContentAnimated(true)
       } else {
         // For new messages, show just the basic container
         animate(
@@ -117,26 +117,26 @@ export default function ThinkBox({
             opacity: 1,
           },
           { duration: 0.5, ease: 'easeInOut' }
-        );
+        )
       }
     }
-  }, [animate, scope, hasAnimated, finished]);
+  }, [animate, scope, hasAnimated, finished])
 
   // Set up ResizeObserver to track content height
   useEffect(() => {
     if (contentRef.current) {
       const resizeObserver = new ResizeObserver((entries) => {
-        const observedHeight = entries[0].contentRect.height;
-        setHeight(observedHeight);
-      });
+        const observedHeight = entries[0].contentRect.height
+        setHeight(observedHeight)
+      })
 
-      resizeObserver.observe(contentRef.current);
+      resizeObserver.observe(contentRef.current)
 
       return () => {
-        resizeObserver.disconnect();
-      };
+        resizeObserver.disconnect()
+      }
     }
-  }, []);
+  }, [])
 
   // Animation when content starts streaming
   useEffect(() => {
@@ -149,8 +149,8 @@ export default function ThinkBox({
         pdfResponse) &&
       !hasContentAnimated
     ) {
-      setHasContentAnimated(true);
-      runContentAnimation();
+      setHasContentAnimated(true)
+      runContentAnimation()
     }
   }, [
     thoughtChunks,
@@ -160,7 +160,7 @@ export default function ThinkBox({
     pdfQuery,
     pdfResponse,
     hasContentAnimated,
-  ]);
+  ])
 
   async function runContentAnimation() {
     // First expand the box and show header elements
@@ -171,12 +171,12 @@ export default function ThinkBox({
         filter: 'blur(4px)',
       },
       { duration: 0 }
-    );
+    )
     animate(
       '#chevron-icon',
       { opacity: 0, filter: 'blur(4px)' },
       { duration: 0 }
-    );
+    )
     await Promise.all([
       animate(
         scope.current,
@@ -203,7 +203,7 @@ export default function ThinkBox({
         },
         { delay: 0.1, duration: 0.5, ease: [0.11, 0, 0.5, 0] }
       ),
-    ]);
+    ])
 
     // Then show the content area
     animate(
@@ -213,7 +213,7 @@ export default function ThinkBox({
         display: 'block',
       },
       { duration: 0.5, ease: 'easeInOut' }
-    );
+    )
   }
 
   // Animate height for collapse/expand
@@ -356,7 +356,7 @@ export default function ThinkBox({
         )}
       </motion.div>
     </div>
-  );
+  )
 
   return (
     <div className="flex w-full justify-center mb-4">
@@ -374,5 +374,5 @@ export default function ThinkBox({
         {content}
       </motion.div>
     </div>
-  );
+  )
 }

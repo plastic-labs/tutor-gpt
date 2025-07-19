@@ -1,24 +1,23 @@
-'use client';
-import React, { useRef, forwardRef, useImperativeHandle } from 'react';
-import { Message } from '@/utils/types';
-import useAutoScroll from '@/hooks/autoscroll';
-import { useReactions } from '@/hooks/useReactions';
-import UserMessage from '@/components/messages/UserMessage';
-import AIMessage from '@/components/messages/AIMessage';
-import { Reaction } from '@/components/messages/AIMessage';
-import { ScrollArea } from '@/components/ui/scroll-area';
+'use client'
+import React, { forwardRef, useImperativeHandle, useRef } from 'react'
+import AIMessage, { type Reaction } from '@/components/messages/AIMessage'
+import UserMessage from '@/components/messages/UserMessage'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import useAutoScroll from '@/hooks/autoscroll'
+import { useReactions } from '@/hooks/useReactions'
+import type { Message } from '@/utils/types'
 
 interface MessageListProps {
-  messages: Message[] | undefined;
-  defaultMessage: Message;
-  userId: string;
-  conversationId?: string;
-  messagesLoading: boolean;
-  handleReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>;
+  messages: Message[] | undefined
+  defaultMessage: Message
+  userId: string
+  conversationId?: string
+  messagesLoading: boolean
+  handleReactionAdded: (messageId: string, reaction: Reaction) => Promise<void>
 }
 
 export interface MessageListRef {
-  scrollToBottom: () => void;
+  scrollToBottom: () => void
 }
 
 const MessageList = forwardRef<MessageListRef, MessageListProps>(
@@ -33,8 +32,8 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
     },
     ref
   ) => {
-    const messageContainerRef = useRef<HTMLDivElement>(null);
-    const [, scrollToBottom] = useAutoScroll(messageContainerRef);
+    const messageContainerRef = useRef<HTMLDivElement>(null)
+    const [, scrollToBottom] = useAutoScroll(messageContainerRef)
 
     // Custom hooks for managing reactions and thoughts
     const {
@@ -46,26 +45,26 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
       conversationId,
       userId,
       handleReactionAdded,
-    });
+    })
 
     // Expose scrollToBottom method to parent
     useImperativeHandle(ref, () => ({
       scrollToBottom: () => {
-        scrollToBottom();
+        scrollToBottom()
       },
-    }));
+    }))
 
-    const allMessages = [defaultMessage, ...(messages || [])];
+    const allMessages = [defaultMessage, ...(messages || [])]
 
     return (
       <ScrollArea className="flex-1 w-full min-h-0" ref={messageContainerRef}>
         <div className="max-w-[740px] mx-auto pb-[50vh] pt-5 px-10">
           {allMessages.map((message, index) => {
             // Use a combination of id and index to ensure unique keys
-            const messageKey = message.id || `temp-${index}`;
+            const messageKey = message.id || `temp-${index}`
 
             if (message.isUser) {
-              return <UserMessage key={messageKey} message={message} />;
+              return <UserMessage key={messageKey} message={message} />
             } else {
               return (
                 <AIMessage
@@ -76,15 +75,15 @@ const MessageList = forwardRef<MessageListRef, MessageListProps>(
                   pendingReaction={pendingReactions[message.id]}
                   error={reactionErrors[message.id]}
                 />
-              );
+              )
             }
           })}
         </div>
       </ScrollArea>
-    );
+    )
   }
-);
+)
 
-MessageList.displayName = 'MessageList';
+MessageList.displayName = 'MessageList'
 
-export default MessageList;
+export default MessageList

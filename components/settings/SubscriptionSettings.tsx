@@ -1,42 +1,41 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import PriceCard from '@/components/PriceCard'
+import { Button } from '@/components/ui/button'
+import type { Tables } from '@/utils/database.types'
+import { createStripePortal } from '@/utils/stripe/actions'
 
-import { createStripePortal } from '@/utils/stripe/actions';
-import { Tables } from '@/utils/database.types';
-
-import PriceCard from '@/components/PriceCard';
-import { Button } from '@/components/ui/button';
-type Price = Tables<'prices'>;
+type Price = Tables<'prices'>
 // type Subscription = Tables<'subscriptions'>;
 
 interface Props {
-  subscription: any | null;
+  subscription: any | null
 
-  products: any[] | null;
+  products: any[] | null
 }
 
 export default function SubscriptionManager({ subscription, products }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false)
 
-  const prices = products?.[0]?.prices ?? [];
+  const prices = products?.[0]?.prices ?? []
 
-  const router = useRouter();
+  const router = useRouter()
 
   const handleManage = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const url = await createStripePortal();
+      const url = await createStripePortal()
 
       if (url) {
-        router.push(url);
+        router.push(url)
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error:', error)
     }
-    setLoading(false);
-  };
+    setLoading(false)
+  }
 
   return (
     <div className="space-y-4">
@@ -67,5 +66,5 @@ export default function SubscriptionManager({ subscription, products }: Props) {
         )}
       </div>
     </div>
-  );
+  )
 }

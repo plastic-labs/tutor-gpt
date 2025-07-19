@@ -1,28 +1,26 @@
-import { getHonchoApp, getHonchoUser } from '@/utils/honcho';
-import { createClient } from '@/utils/supabase/server';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import * as Sentry from '@sentry/nextjs'
 import {
   generateText as generateTextAi,
-  streamText as streamTextAi,
   streamObject as streamObjectAi,
-} from 'ai';
-import d from 'dedent-js';
-
-import * as Sentry from '@sentry/nextjs';
-import { ZodTypeDef } from 'zod';
-import { ZodType } from 'zod';
+  streamText as streamTextAi,
+} from 'ai'
+import d from 'dedent-js'
+import type { ZodType, ZodTypeDef } from 'zod'
+import { getHonchoApp, getHonchoUser } from '@/utils/honcho'
+import { createClient } from '@/utils/supabase/server'
 
 export interface Message {
-  role: 'user' | 'assistant';
-  content: string;
+  role: 'user' | 'assistant'
+  content: string
 }
 
-const AI_PROVIDER = process.env.AI_PROVIDER || 'openrouter';
-const AI_API_KEY = process.env.AI_API_KEY;
-const AI_BASE_URL = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
-const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
-const SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'dev';
-const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'local';
+const AI_PROVIDER = process.env.AI_PROVIDER || 'openrouter'
+const AI_API_KEY = process.env.AI_API_KEY
+const AI_BASE_URL = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1'
+const MODEL = process.env.MODEL || 'gpt-3.5-turbo'
+const SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'dev'
+const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'local'
 
 const provider = createOpenAICompatible({
   name: AI_PROVIDER,
@@ -32,26 +30,26 @@ const provider = createOpenAICompatible({
     'HTTP-Referer': 'https://chat.bloombot.ai',
     'X-Title': 'Bloombot',
   },
-});
+})
 
 export async function getUserData() {
-  const supabase = await createClient();
+  const supabase = await createClient()
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
   if (!user) {
-    return null;
+    return null
   }
 
-  const honchoApp = await getHonchoApp();
-  const honchoUser = await getHonchoUser(user.id);
+  const honchoApp = await getHonchoApp()
+  const honchoUser = await getHonchoUser(user.id)
 
   return {
     appId: honchoApp.id,
     userId: honchoUser.id,
-  };
+  }
 }
 
 export const user = (
@@ -60,7 +58,7 @@ export const user = (
 ): Message => ({
   role: 'user',
   content: d(strings, ...values),
-});
+})
 
 export const assistant = (
   strings: TemplateStringsArray,
@@ -68,7 +66,7 @@ export const assistant = (
 ): Message => ({
   role: 'assistant',
   content: d(strings, ...values),
-});
+})
 
 export function streamText(
   params: Omit<
@@ -76,10 +74,10 @@ export function streamText(
     'model' | 'experimental_telemetry'
   > & {
     metadata: {
-      sessionId: string;
-      userId: string;
-      type: string;
-    };
+      sessionId: string
+      userId: string
+      type: string
+    }
   }
 ) {
   const result = streamTextAi({
@@ -100,9 +98,9 @@ export function streamText(
         order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
       },
     },
-  });
+  })
 
-  return result;
+  return result
 }
 
 export function streamObject<OBJECT>(
@@ -110,12 +108,12 @@ export function streamObject<OBJECT>(
     Parameters<typeof streamObjectAi<OBJECT>>[0],
     'model' | 'experimental_telemetry' | 'schema'
   > & {
-    schema: ZodType<OBJECT, ZodTypeDef, any>;
+    schema: ZodType<OBJECT, ZodTypeDef, any>
     metadata: {
-      sessionId: string;
-      userId: string;
-      type: string;
-    };
+      sessionId: string
+      userId: string
+      type: string
+    }
   }
 ) {
   const result = streamObjectAi({
@@ -136,9 +134,9 @@ export function streamObject<OBJECT>(
         order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
       },
     },
-  });
+  })
 
-  return result;
+  return result
 }
 
 /**
@@ -147,16 +145,16 @@ export function streamObject<OBJECT>(
 export async function createCompletion(
   messages: Message[],
   metadata: {
-    sessionId: string;
-    userId: string;
-    type: string;
+    sessionId: string
+    userId: string
+    type: string
   },
   parameters?: {
-    temperature?: number;
-    max_tokens?: number;
-    top_p?: number;
-    frequency_penalty?: number;
-    presence_penalty?: number;
+    temperature?: number
+    max_tokens?: number
+    top_p?: number
+    frequency_penalty?: number
+    presence_penalty?: number
   }
 ) {
   const result = await generateTextAi({
@@ -178,9 +176,9 @@ export async function createCompletion(
         order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
       },
     },
-  });
+  })
 
-  return result.text;
+  return result.text
 }
 
 export function generateText(
@@ -189,10 +187,10 @@ export function generateText(
     'model' | 'experimental_telemetry'
   > & {
     metadata: {
-      sessionId: string;
-      userId: string;
-      type: string;
-    };
+      sessionId: string
+      userId: string
+      type: string
+    }
   }
 ) {
   const result = generateTextAi({
@@ -213,7 +211,7 @@ export function generateText(
         order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
       },
     },
-  });
+  })
 
-  return result;
+  return result
 }

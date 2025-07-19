@@ -1,146 +1,139 @@
-'use client';
-import useSWR from 'swr';
+'use client'
+import { ArrowUp, Menu, Paperclip, Plus, Square, X } from 'lucide-react'
 
-import dynamic from 'next/dynamic';
-
-import { FiMenu } from 'react-icons/fi';
-import { ArrowUp, Square, Paperclip, X, Menu, Plus } from 'lucide-react';
-import { DarkModeSwitch } from 'react-toggle-dark-mode';
-import BloomLogo from '@/components/bloomlogo';
-import { toast } from 'sonner';
-import { createClient } from '@/utils/supabase/client';
-
-import { useRef, useEffect, useState, useMemo } from 'react';
-// import { useRouter } from 'next/navigation';
-import { usePostHog } from 'posthog-js/react';
-
+import dynamic from 'next/dynamic'
 // import { createClient } from '@/utils/supabase/client';
-import Link from 'next/link';
-import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions';
+import Link from 'next/link'
+// import { useRouter } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { FiMenu } from 'react-icons/fi'
+import { DarkModeSwitch } from 'react-toggle-dark-mode'
+import { toast } from 'sonner'
+import useSWR from 'swr'
+import BloomLogo from '@/components/bloomlogo'
+import FileUploadComponent from '@/components/FileUpload'
+import MessageList, { type MessageListRef } from '@/components/MessageList'
+import type { Reaction } from '@/components/messages/AIMessage'
+import { Button } from '@/components/ui/button'
 import {
-  getConversations,
-  createConversation,
-  updateConversation,
-} from './actions/conversations';
-import { getMessages, addOrRemoveReaction } from './actions/messages';
-import { Conversation, Message, ThinkingData } from '@/utils/types';
-import { localStorageProvider } from '@/utils/swrCache';
-import FileUploadComponent from '@/components/FileUpload';
-import { ParsedFile } from '@/utils/parseFiles';
-
-import useAutoScroll from '@/hooks/autoscroll';
-import MessageList from '@/components/MessageList';
-import { MessageListRef } from '@/components/MessageList';
-import { Reaction } from '@/components/messages/AIMessage';
+  FileUpload,
+  FileUploadContent,
+  FileUploadTrigger,
+} from '@/components/ui/file-upload'
 import {
   PromptInput,
   PromptInputAction,
   PromptInputActions,
   PromptInputTextarea,
-} from '@/components/ui/prompt-input';
-import { Button } from '@/components/ui/button';
-import {
-  FileUpload,
-  FileUploadContent,
-  FileUploadTrigger,
-} from '@/components/ui/file-upload';
+} from '@/components/ui/prompt-input'
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from '@/components/ui/resizable';
-import { departureMono } from '@/utils/fonts';
+} from '@/components/ui/resizable'
+
+import useAutoScroll from '@/hooks/autoscroll'
+import { departureMono } from '@/utils/fonts'
+import type { ParsedFile } from '@/utils/parseFiles'
+import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions'
+import { createClient } from '@/utils/supabase/client'
+import { localStorageProvider } from '@/utils/swrCache'
+import type { Conversation, Message, ThinkingData } from '@/utils/types'
+import {
+  createConversation,
+  getConversations,
+  updateConversation,
+} from './actions/conversations'
+import { addOrRemoveReaction, getMessages } from './actions/messages'
 
 const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
-});
+})
 
-const supabase = createClient();
+const supabase = createClient()
 const fetchUser = async () => {
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  return user;
-};
+  } = await supabase.auth.getUser()
+  return user
+}
 
 interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery';
-  text: string;
+  type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery'
+  text: string
 }
 
 class StreamReader {
-  private reader: ReadableStreamDefaultReader<Uint8Array>;
-  private decoder: TextDecoder;
-  private buffer: string;
+  private reader: ReadableStreamDefaultReader<Uint8Array>
+  private decoder: TextDecoder
+  private buffer: string
 
   constructor(stream: ReadableStream<Uint8Array>) {
-    this.reader = stream.getReader();
-    this.decoder = new TextDecoder();
-    this.buffer = '';
+    this.reader = stream.getReader()
+    this.decoder = new TextDecoder()
+    this.buffer = ''
   }
 
   private tryParseNextJSON(): {
-    parsed: StreamResponseChunk | null;
-    remaining: string;
+    parsed: StreamResponseChunk | null
+    remaining: string
   } {
-    let curlyBraceCount = 0;
-    let startIndex = -1;
+    let curlyBraceCount = 0
+    let startIndex = -1
 
     // Find the start of the next JSON object
     for (let i = 0; i < this.buffer.length; i++) {
       if (this.buffer[i] === '{') {
-        if (startIndex === -1) startIndex = i;
-        curlyBraceCount++;
+        if (startIndex === -1) startIndex = i
+        curlyBraceCount++
       } else if (this.buffer[i] === '}') {
-        curlyBraceCount--;
+        curlyBraceCount--
         if (curlyBraceCount === 0 && startIndex !== -1) {
           // We found a complete JSON object
           try {
-            const jsonStr = this.buffer.substring(startIndex, i + 1);
-            const parsed = JSON.parse(jsonStr) as StreamResponseChunk;
+            const jsonStr = this.buffer.substring(startIndex, i + 1)
+            const parsed = JSON.parse(jsonStr) as StreamResponseChunk
             return {
               parsed,
               remaining: this.buffer.substring(i + 1),
-            };
-          } catch (e) {
-            // If we can't parse this as JSON, keep looking
-            continue;
-          }
+            }
+          } catch (e) {}
         }
       }
     }
 
     // No complete JSON object found
-    return { parsed: null, remaining: this.buffer };
+    return { parsed: null, remaining: this.buffer }
   }
 
   async read(): Promise<{ done: boolean; chunk?: StreamResponseChunk }> {
     while (true) {
       // Try to parse any complete JSON object from our buffer
-      const { parsed, remaining } = this.tryParseNextJSON();
+      const { parsed, remaining } = this.tryParseNextJSON()
       if (parsed) {
-        this.buffer = remaining;
-        return { done: false, chunk: parsed };
+        this.buffer = remaining
+        return { done: false, chunk: parsed }
       }
 
       // If we couldn't parse anything, we need more data
-      const { done, value } = await this.reader.read();
+      const { done, value } = await this.reader.read()
 
       if (done) {
         // Only return done if the reader is actually finished and we have no remaining buffer
         if (this.buffer.trim()) {
-          console.warn('Stream ended with unparsed data:', this.buffer);
+          console.warn('Stream ended with unparsed data:', this.buffer)
         }
-        return { done: true };
+        return { done: true }
       }
 
       // Append new data to our buffer and continue trying to parse
-      this.buffer += this.decoder.decode(value, { stream: true });
+      this.buffer += this.decoder.decode(value, { stream: true })
     }
   }
 
   release() {
-    this.reader.releaseLock();
+    this.reader.releaseLock()
   }
 }
 
@@ -150,17 +143,17 @@ async function fetchConsolidatedStream(
   file?: File
 ) {
   try {
-    const formData = new FormData();
-    formData.append('message', message);
-    formData.append('conversationId', conversationId);
+    const formData = new FormData()
+    formData.append('message', message)
+    formData.append('conversationId', conversationId)
     if (file) {
-      formData.append('file', file);
+      formData.append('file', file)
     }
 
     const response = await fetch(`/api/chat`, {
       method: 'POST',
       body: formData,
-    });
+    })
 
     if (!response.ok) {
       if (response.status === 402) {
@@ -171,60 +164,64 @@ async function fetchConsolidatedStream(
             label: 'Subscribe',
             onClick: () => (window.location.href = '/settings'),
           },
-        });
-        throw new Error(`Subscription is required to chat: ${response.status}`);
+        })
+        throw new Error(`Subscription is required to chat: ${response.status}`)
       }
 
       if (response.status === 429) {
         // Parse the error response to get rate limit details
-        let errorDetails;
+        let errorDetails
         try {
-          errorDetails = await response.json();
+          errorDetails = await response.json()
         } catch {
-          errorDetails = { message: 'Rate limit exceeded. Please try again in a moment.' };
+          errorDetails = {
+            message: 'Rate limit exceeded. Please try again in a moment.',
+          }
         }
 
         toast.error('Rate Limit Exceeded', {
-          description: errorDetails.details || 'You can make up to 8 chat requests per minute. Please wait before sending another message.',
+          description:
+            errorDetails.details ||
+            'You can make up to 8 chat requests per minute. Please wait before sending another message.',
           duration: 8000, // Show for 8 seconds
           action: {
             label: 'Got it',
-            onClick: () => { },
+            onClick: () => {},
           },
-        });
-        throw new Error(`Rate limit exceeded: ${response.status}`);
+        })
+        throw new Error(`Rate limit exceeded: ${response.status}`)
       }
 
-      const errorText = await response.text();
+      const errorText = await response.text()
       console.error(`Stream error:`, {
         status: response.status,
         statusText: response.statusText,
         error: errorText,
-      });
-      console.error(response);
-      throw new Error(`Failed to fetch stream: ${response.status}`);
+      })
+      console.error(response)
+      throw new Error(`Failed to fetch stream: ${response.status}`)
     }
 
-    const stream = response.body;
-    if (!stream) throw new Error('Failed to get stream');
-    return stream;
+    const stream = response.body
+    if (!stream) throw new Error('Failed to get stream')
+    return stream
   } catch (error) {
-    console.error(`Error in fetchConsolidatedStream:`, error);
-    throw error;
+    console.error(`Error in fetchConsolidatedStream:`, error)
+    throw error
   }
 }
 
 interface ChatProps {
-  initialUserId: string;
-  initialEmail: string | undefined;
-  initialConversations: Conversation[];
+  initialUserId: string
+  initialEmail: string | undefined
+  initialConversations: Conversation[]
   initialChatAccess: {
-    isSubscribed: boolean;
-    freeMessages: number;
-    canChat: boolean;
-  };
-  initialMessages: Message[];
-  initialConversationId: string | null | undefined;
+    isSubscribed: boolean
+    freeMessages: number
+    canChat: boolean
+  }
+  initialMessages: Message[]
+  initialConversationId: string | null | undefined
 }
 
 function updateThinkingData(
@@ -245,15 +242,15 @@ function updateThinkingData(
         ? (currentThinking?.pdfQuery || '') + chunkText
         : currentThinking?.pdfQuery,
     pdfResponse: currentThinking?.pdfResponse,
-  };
+  }
 }
 
 function fileToParsedfFile(file: File): ParsedFile {
-  const extension = file.name.split('.').pop() || '';
+  const extension = file.name.split('.').pop() || ''
   return {
     name: file.name,
     extension,
-  };
+  }
 }
 
 export default function Chat({
@@ -264,43 +261,42 @@ export default function Chat({
   initialConversationId,
   initialChatAccess,
 }: ChatProps) {
-  const [userId] = useState(initialUserId);
-  const [isSubscribed] = useState(initialChatAccess.isSubscribed);
+  const [userId] = useState(initialUserId)
+  const [isSubscribed] = useState(initialChatAccess.isSubscribed)
   const [freeMessages, setFreeMessages] = useState(
     initialChatAccess.freeMessages
-  );
+  )
   const [conversationId, setConversationId] = useState<string | undefined>(
     initialConversationId || undefined
-  );
-  const [inputValue, setInputValue] = useState('');
-  const [isHydrated, setIsHydrated] = useState(false);
+  )
+  const [inputValue, setInputValue] = useState('')
+  const [isHydrated, setIsHydrated] = useState(false)
 
-  const [canSend, setCanSend] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] =
-    useState<boolean>(false);
-  const [isDark, setIsDark] = useState(false);
+  const [canSend, setCanSend] = useState<boolean>(false)
+  const [isMobile, setIsMobile] = useState<boolean>(false)
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false)
+  const [isDark, setIsDark] = useState(false)
 
-  const posthog = usePostHog();
-  const messageContainerRef = useRef<HTMLElement>(null);
-  useAutoScroll(messageContainerRef);
+  const posthog = usePostHog()
+  const messageContainerRef = useRef<HTMLElement>(null)
+  useAutoScroll(messageContainerRef)
 
-  const messageListRef = useRef<MessageListRef>(null);
-  const sidebarPanelRef = useRef<any>(null);
+  const messageListRef = useRef<MessageListRef>(null)
+  const sidebarPanelRef = useRef<any>(null)
 
-  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
+  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser)
 
   const firstChat = useMemo(() => {
     return (
       !initialConversations?.length ||
       (initialConversations.length === 1 && !initialMessages?.length) ||
       initialChatAccess.freeMessages === 50
-    );
+    )
   }, [
     initialConversations?.length,
     initialMessages?.length,
     initialChatAccess.freeMessages,
-  ]);
+  ])
 
   // Since this message is just rendered in the UI, this naive check may result in edge cases where the incorrect message is shown.
   // (Ex. will show on all chats after creating a new session or messaging Bloom, even the first chat).
@@ -314,41 +310,41 @@ What's on your mind? Let's dive in. 🌱`,
     isUser: false,
     id: '',
     metadata: {},
-  };
+  }
 
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      posthog?.identify(initialUserId, { email: initialEmail });
+      posthog?.identify(initialUserId, { email: initialEmail })
       posthog?.capture('page_view', {
         page: 'chat',
-      });
+      })
     }
-  }, [posthog, initialUserId, initialEmail]);
+  }, [posthog, initialUserId, initialEmail])
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // md breakpoint
-    };
+      setIsMobile(window.innerWidth < 768) // md breakpoint
+    }
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
 
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
-    setIsHydrated(true);
-    setIsDark(document.documentElement.classList.contains('dark'));
-  }, []);
+    setIsHydrated(true)
+    setIsDark(document.documentElement.classList.contains('dark'))
+  }, [])
 
   const conversationsFetcher = async () => {
-    const result = await getConversations();
-    return result;
-  };
+    const result = await getConversations()
+    return result
+  }
 
-  const conversationsKey = useMemo(() => userId, [userId]);
+  const conversationsKey = useMemo(() => userId, [userId])
 
   const { data: conversations, mutate: mutateConversations } = useSWR(
     conversationsKey,
@@ -365,17 +361,17 @@ What's on your mind? Let's dive in. 🌱`,
             !conversationId ||
             !conversations.find((c) => c.conversationId === conversationId)
           ) {
-            setConversationId(conversations[0].conversationId);
+            setConversationId(conversations[0].conversationId)
           }
-          setCanSend(true);
+          setCanSend(true)
         } else {
           // If no conversations exist:
           // 1. Create a new conversation
           // 2. Set it as the current conversation
           // 3. Refresh the conversations list
-          const newConvo = await createConversation();
-          setConversationId(newConvo?.conversationId);
-          await mutateConversations();
+          const newConvo = await createConversation()
+          setConversationId(newConvo?.conversationId)
+          await mutateConversations()
         }
       },
       revalidateOnFocus: false,
@@ -383,20 +379,20 @@ What's on your mind? Let's dive in. 🌱`,
       revalidateIfStale: false,
       revalidateOnMount: true,
     }
-  );
+  )
 
   const messagesFetcher = async (conversationId: string) => {
-    if (!userId) return Promise.resolve([]);
-    if (!conversationId) return Promise.resolve([]);
-    if (conversationId.startsWith('temp-')) return Promise.resolve([]);
+    if (!userId) return Promise.resolve([])
+    if (!conversationId) return Promise.resolve([])
+    if (conversationId.startsWith('temp-')) return Promise.resolve([])
 
-    return getMessages(conversationId);
-  };
+    return getMessages(conversationId)
+  }
 
   const messagesKey = useMemo(
     () => (conversationId ? ['messages', conversationId] : null),
     [conversationId]
-  );
+  )
 
   const {
     data: messages,
@@ -410,21 +406,21 @@ What's on your mind? Let's dive in. 🌱`,
     dedupingInterval: 60000,
     onSuccess: () => {
       if (conversationId?.startsWith('temp-')) {
-        mutateMessages([], false);
+        mutateMessages([], false)
       }
     },
-  });
+  })
 
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
-    if (!userId || !conversationId) return;
+    if (!userId || !conversationId) return
 
     try {
-      await addOrRemoveReaction(conversationId, messageId, reaction);
+      await addOrRemoveReaction(conversationId, messageId, reaction)
 
       // Optimistically update the local data
       mutateMessages(
         (currentMessages) => {
-          if (!currentMessages) return currentMessages;
+          if (!currentMessages) return currentMessages
           return currentMessages.map((msg) => {
             if (msg.id === messageId) {
               return {
@@ -433,17 +429,17 @@ What's on your mind? Let's dive in. 🌱`,
                   ...msg.metadata,
                   reaction,
                 },
-              };
+              }
             }
-            return msg;
-          });
+            return msg
+          })
         },
         { revalidate: false }
-      );
+      )
     } catch (error) {
-      console.error('Failed to update reaction:', error);
+      console.error('Failed to update reaction:', error)
     }
-  };
+  }
 
   async function processName(messageToSend: string, conversationId: string) {
     try {
@@ -455,124 +451,124 @@ What's on your mind? Let's dive in. 🌱`,
         body: JSON.stringify({
           message: messageToSend,
         }),
-      });
+      })
 
       if (nameResponse.ok) {
-        const { name } = await nameResponse.json();
+        const { name } = await nameResponse.json()
         if (name !== 'NA') {
-          await updateConversation(conversationId, name);
-          await mutateConversations();
+          await updateConversation(conversationId, name)
+          await mutateConversations()
         }
       }
     } catch (error) {
-      console.error('Failed to process name:', error);
+      console.error('Failed to process name:', error)
     }
   }
 
   const handleFilesAdded = (newFiles: File[]) => {
-    const fileSizeLimit = 5 * 1024 * 1024; // 5MB
-    const validFiles: File[] = [];
-    const invalidFiles: string[] = [];
+    const fileSizeLimit = 5 * 1024 * 1024 // 5MB
+    const validFiles: File[] = []
+    const invalidFiles: string[] = []
 
     newFiles.forEach((file) => {
       if (file.size > fileSizeLimit) {
-        invalidFiles.push(file.name);
+        invalidFiles.push(file.name)
       } else {
-        validFiles.push(file);
+        validFiles.push(file)
       }
-    });
+    })
 
     if (invalidFiles.length > 0) {
       toast.error('File Too Large', {
         description: `The following files are larger than 5MB and cannot be uploaded: ${invalidFiles.join(', ')}`,
-      });
+      })
     }
 
     if (validFiles.length > 0) {
       // Only allow one file - take the first valid file and replace any existing files
-      setSelectedFiles([validFiles[0]]);
+      setSelectedFiles([validFiles[0]])
     }
-  };
+  }
 
   const removeFile = () => {
-    setSelectedFiles([]);
-  };
+    setSelectedFiles([])
+  }
 
   const toggleDarkMode = (checked: boolean) => {
-    document.documentElement.classList.toggle('dark');
-    setIsDark(checked);
-  };
+    document.documentElement.classList.toggle('dark')
+    setIsDark(checked)
+  }
 
   async function addChat() {
     // Create a temporary conversation with a loading state
-    const tempId = 'temp-' + Date.now();
+    const tempId = 'temp-' + Date.now()
     const tempConversation: Conversation = {
       conversationId: tempId,
       name: 'Untitled',
-    };
+    }
 
     // Optimistically add the temporary conversation
-    mutateConversations([tempConversation, ...conversations!], false);
-    setConversationId(tempId);
+    mutateConversations([tempConversation, ...conversations!], false)
+    setConversationId(tempId)
 
     try {
-      const newConversation = await createConversation();
-      posthog?.capture('user_created_conversation');
+      const newConversation = await createConversation()
+      posthog?.capture('user_created_conversation')
 
       // Replace temporary conversation with the real one
       mutateConversations([
         newConversation!,
         ...conversations!.filter((c) => c.conversationId !== tempId),
-      ]);
-      setConversationId(newConversation?.conversationId);
+      ])
+      setConversationId(newConversation?.conversationId)
     } catch (error) {
       // Remove temporary conversation on error
-      mutateConversations(conversations!);
-      setConversationId(conversationId);
-      toast.error('Failed to create new chat');
-      console.error('Failed to create new chat:', error);
+      mutateConversations(conversations!)
+      setConversationId(conversationId)
+      toast.error('Failed to create new chat')
+      console.error('Failed to create new chat:', error)
     }
   }
 
   const canUseApp = useMemo(
     () => isSubscribed || freeMessages > 0,
     [isSubscribed, freeMessages]
-  );
+  )
 
   useEffect(() => {
     if (conversationId?.startsWith('temp-') || messagesLoading) {
-      setCanSend(false);
+      setCanSend(false)
     } else {
-      setCanSend(true);
+      setCanSend(true)
     }
-  }, [conversationId, messagesLoading]);
+  }, [conversationId, messagesLoading])
 
   useEffect(() => {
     // Collapse sidebar by default on mobile
     if (isMobile && sidebarPanelRef.current) {
-      sidebarPanelRef.current.collapse();
-      setIsMobileSidebarOpen(false);
+      sidebarPanelRef.current.collapse()
+      setIsMobileSidebarOpen(false)
     }
-  }, [isMobile]);
+  }, [isMobile])
 
   async function chat(message?: string) {
-    const rawMessage = message || inputValue;
-    if (!userId || !rawMessage) return;
+    const rawMessage = message || inputValue
+    if (!userId || !rawMessage) return
 
     // Process message to have double newline for markdown
-    let messageToSend = rawMessage.replace(/\n/g, '\n\n');
+    let messageToSend = rawMessage.replace(/\n/g, '\n\n')
 
     if (selectedFiles.length > 0) {
-      const fileName = selectedFiles[0].name;
-      messageToSend += `\n\n<file-name>${fileName}</file-name>`;
+      const fileName = selectedFiles[0].name
+      messageToSend += `\n\n<file-name>${fileName}</file-name>`
     }
 
     // Clear selected files immediately after appending to message to prevent re-attachment
-    setSelectedFiles([]);
+    setSelectedFiles([])
 
-    if (inputValue) setInputValue('');
+    if (inputValue) setInputValue('')
 
-    setCanSend(false);
+    setCanSend(false)
 
     const newMessages = [
       ...messages!,
@@ -596,24 +592,24 @@ What's on your mind? Let's dive in. 🌱`,
           pdfResponse: '',
         },
       },
-    ];
-    await mutateMessages(newMessages, { revalidate: false });
-    messageListRef.current?.scrollToBottom();
+    ]
+    await mutateMessages(newMessages, { revalidate: false })
+    messageListRef.current?.scrollToBottom()
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    let currentModelOutput = '';
+    let currentModelOutput = ''
 
     try {
       // Check if we should generate a summary (name) for the conversation
-      const isFirstChat = messages?.length === 0;
+      const isFirstChat = messages?.length === 0
       const isUntitledConversation =
         conversations?.find((c) => c.conversationId === conversationId)
-          ?.name === 'Untitled';
-      const shouldGenerateSummary = isFirstChat || isUntitledConversation;
+          ?.name === 'Untitled'
+      const shouldGenerateSummary = isFirstChat || isUntitledConversation
 
       if (shouldGenerateSummary) {
-        processName(messageToSend, conversationId!).catch(console.error);
+        processName(messageToSend, conversationId!).catch(console.error)
       }
 
       // Get the consolidated stream - use first file if multiple files are selected
@@ -621,26 +617,26 @@ What's on your mind? Let's dive in. 🌱`,
         messageToSend,
         conversationId!,
         selectedFiles[0] || undefined
-      );
+      )
 
-      const streamReader = new StreamReader(stream);
+      const streamReader = new StreamReader(stream)
 
       // Process the stream
       while (true) {
-        const { done, chunk } = await streamReader.read();
+        const { done, chunk } = await streamReader.read()
         if (done) {
           if (!isSubscribed) {
-            const success = await useFreeTrial(userId);
+            const success = await useFreeTrial(userId)
             if (success) {
-              const newCount = await getFreeMessageCount(userId);
-              setFreeMessages(newCount);
+              const newCount = await getFreeMessageCount(userId)
+              setFreeMessages(newCount)
             }
           }
-          break;
+          break
         }
 
         if (!chunk) {
-          continue;
+          continue
         }
 
         switch (chunk.type) {
@@ -649,8 +645,8 @@ What's on your mind? Let's dive in. 🌱`,
             if (chunk.text.trim()) {
               mutateMessages(
                 (currentMessages) => {
-                  const msgs = currentMessages || [];
-                  const lastMessage = msgs[msgs.length - 1];
+                  const msgs = currentMessages || []
+                  const lastMessage = msgs[msgs.length - 1]
                   if (lastMessage && !lastMessage.isUser) {
                     const updatedThinking: ThinkingData = {
                       thoughtContent:
@@ -661,77 +657,77 @@ What's on your mind? Let's dive in. 🌱`,
                       honchoResponse: lastMessage.thinking?.honchoResponse,
                       pdfQuery: lastMessage.thinking?.pdfQuery,
                       pdfResponse: lastMessage.thinking?.pdfResponse,
-                    };
+                    }
                     return [
                       ...msgs.slice(0, -1),
                       {
                         ...lastMessage,
                         thinking: updatedThinking,
                       },
-                    ];
+                    ]
                   }
-                  return msgs;
+                  return msgs
                 },
                 { revalidate: false }
-              );
+              )
             }
-            break;
+            break
 
           case 'honchoQuery':
             mutateMessages(
               (currentMessages) => {
-                const msgs = currentMessages || [];
-                const lastMessage = msgs[msgs.length - 1];
+                const msgs = currentMessages || []
+                const lastMessage = msgs[msgs.length - 1]
                 if (lastMessage && !lastMessage.isUser) {
                   const updatedThinking = updateThinkingData(
                     lastMessage.thinking,
                     chunk.text,
                     'honchoQuery'
-                  );
+                  )
                   return [
                     ...msgs.slice(0, -1),
                     {
                       ...lastMessage,
                       thinking: updatedThinking,
                     },
-                  ];
+                  ]
                 }
-                return msgs;
+                return msgs
               },
               { revalidate: false }
-            );
-            break;
+            )
+            break
 
           case 'pdfQuery':
             mutateMessages(
               (currentMessages) => {
-                const msgs = currentMessages || [];
-                const lastMessage = msgs[msgs.length - 1];
+                const msgs = currentMessages || []
+                const lastMessage = msgs[msgs.length - 1]
                 if (lastMessage && !lastMessage.isUser) {
                   const updatedThinking = updateThinkingData(
                     lastMessage.thinking,
                     chunk.text,
                     'pdfQuery'
-                  );
+                  )
                   return [
                     ...msgs.slice(0, -1),
                     {
                       ...lastMessage,
                       thinking: updatedThinking,
                     },
-                  ];
+                  ]
                 }
-                return msgs;
+                return msgs
               },
               { revalidate: false }
-            );
-            break;
+            )
+            break
 
           case 'honcho':
             mutateMessages(
               (currentMessages) => {
-                const msgs = currentMessages || [];
-                const lastMessage = msgs[msgs.length - 1];
+                const msgs = currentMessages || []
+                const lastMessage = msgs[msgs.length - 1]
                 if (lastMessage && !lastMessage.isUser) {
                   const updatedThinking: ThinkingData = {
                     thoughtContent: lastMessage.thinking?.thoughtContent || '',
@@ -741,27 +737,27 @@ What's on your mind? Let's dive in. 🌱`,
                       (lastMessage.thinking?.honchoResponse || '') + chunk.text,
                     pdfQuery: lastMessage.thinking?.pdfQuery,
                     pdfResponse: lastMessage.thinking?.pdfResponse,
-                  };
+                  }
                   return [
                     ...msgs.slice(0, -1),
                     {
                       ...lastMessage,
                       thinking: updatedThinking,
                     },
-                  ];
+                  ]
                 }
-                return msgs;
+                return msgs
               },
               { revalidate: false }
-            );
-            break;
+            )
+            break
 
           case 'pdf':
             if (chunk.text.length > 0) {
               mutateMessages(
                 (currentMessages) => {
-                  const msgs = currentMessages || [];
-                  const lastMessage = msgs[msgs.length - 1];
+                  const msgs = currentMessages || []
+                  const lastMessage = msgs[msgs.length - 1]
                   if (lastMessage && !lastMessage.isUser) {
                     const updatedThinking: ThinkingData = {
                       thoughtContent:
@@ -772,28 +768,28 @@ What's on your mind? Let's dive in. 🌱`,
                       pdfQuery: lastMessage.thinking?.pdfQuery,
                       pdfResponse:
                         (lastMessage.thinking?.pdfResponse || '') + chunk.text,
-                    };
+                    }
                     return [
                       ...msgs.slice(0, -1),
                       {
                         ...lastMessage,
                         thinking: updatedThinking,
                       },
-                    ];
+                    ]
                   }
-                  return msgs;
+                  return msgs
                 },
                 { revalidate: false }
-              );
+              )
             }
-            break;
+            break
 
           case 'response':
-            currentModelOutput += chunk.text;
+            currentModelOutput += chunk.text
             mutateMessages(
               (currentMessages) => {
-                const msgs = currentMessages || [];
-                const lastMessage = msgs[msgs.length - 1];
+                const msgs = currentMessages || []
+                const lastMessage = msgs[msgs.length - 1]
                 if (lastMessage && !lastMessage.isUser) {
                   const updatedThinking: ThinkingData = {
                     thoughtContent: lastMessage.thinking?.thoughtContent || '',
@@ -802,7 +798,7 @@ What's on your mind? Let's dive in. 🌱`,
                     honchoResponse: lastMessage.thinking?.honchoResponse,
                     pdfQuery: lastMessage.thinking?.pdfQuery,
                     pdfResponse: lastMessage.thinking?.pdfResponse,
-                  };
+                  }
                   return [
                     ...msgs.slice(0, -1),
                     {
@@ -810,45 +806,46 @@ What's on your mind? Let's dive in. 🌱`,
                       content: currentModelOutput,
                       thinking: updatedThinking,
                     },
-                  ];
+                  ]
                 }
-                return msgs;
+                return msgs
               },
               { revalidate: false }
-            );
-            messageListRef.current?.scrollToBottom();
-            break;
+            )
+            messageListRef.current?.scrollToBottom()
+            break
         }
       }
 
-      streamReader.release();
+      streamReader.release()
 
       // selectedFiles already cleared above to prevent re-attachment
 
-      await mutateMessages();
+      await mutateMessages()
 
-      messageListRef.current?.scrollToBottom();
-      setCanSend(true);
+      messageListRef.current?.scrollToBottom()
+      setCanSend(true)
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Chat error:', error)
 
       // Clear selected files in error case as well
-      setSelectedFiles([]);
+      setSelectedFiles([])
 
       // Check if this is a rate limit error
-      const isRateLimitError = error instanceof Error && error.message.includes('Rate limit exceeded');
+      const isRateLimitError =
+        error instanceof Error && error.message.includes('Rate limit exceeded')
 
       // For rate limit errors, remove the pending message and show a clean UI
       if (isRateLimitError) {
         // Remove the empty pending message that was added at the start
-        await mutateMessages();
+        await mutateMessages()
       } else {
         // Preserve the message even in case of error if we have content
         if (currentModelOutput) {
           mutateMessages(
             (currentMessages) => {
-              const msgs = currentMessages || [];
-              const lastMessage = msgs[msgs.length - 1];
+              const msgs = currentMessages || []
+              const lastMessage = msgs[msgs.length - 1]
               if (lastMessage && !lastMessage.isUser) {
                 const updatedThinking: ThinkingData = {
                   thoughtContent: lastMessage.thinking?.thoughtContent || '',
@@ -857,7 +854,7 @@ What's on your mind? Let's dive in. 🌱`,
                   honchoResponse: lastMessage.thinking?.honchoResponse,
                   pdfQuery: lastMessage.thinking?.pdfQuery,
                   pdfResponse: lastMessage.thinking?.pdfResponse,
-                };
+                }
                 return [
                   ...msgs.slice(0, -1),
                   {
@@ -867,19 +864,19 @@ What's on your mind? Let's dive in. 🌱`,
                       'Sorry, there was an error generating a response.',
                     thinking: updatedThinking,
                   },
-                ];
+                ]
               }
-              return msgs;
+              return msgs
             },
             { revalidate: false }
-          );
+          )
         } else {
-          await mutateMessages();
+          await mutateMessages()
         }
       }
 
-      messageListRef.current?.scrollToBottom();
-      setCanSend(true);
+      messageListRef.current?.scrollToBottom()
+      setCanSend(true)
     }
   }
 
@@ -900,7 +897,7 @@ What's on your mind? Let's dive in. 🌱`,
             conversationId={conversationId}
             setConversationId={setConversationId}
             canUseApp={canUseApp}
-            onNewChat={() => { }}
+            onNewChat={() => {}}
           />
         </ResizablePanel>
         {!isMobile && <ResizableHandle />}
@@ -932,13 +929,13 @@ What's on your mind? Let's dive in. 🌱`,
                 <button
                   onClick={() => {
                     if (isMobile) {
-                      setIsMobileSidebarOpen(!isMobileSidebarOpen);
+                      setIsMobileSidebarOpen(!isMobileSidebarOpen)
                     } else {
                       if (sidebarPanelRef.current) {
                         if (sidebarPanelRef.current.isCollapsed()) {
-                          sidebarPanelRef.current.expand();
+                          sidebarPanelRef.current.expand()
                         } else {
-                          sidebarPanelRef.current.collapse();
+                          sidebarPanelRef.current.collapse()
                         }
                       }
                     }
@@ -1024,8 +1021,8 @@ What's on your mind? Let's dive in. 🌱`,
                         isLoading={!canSend}
                         onSubmit={() => {
                           if (canSend && inputValue && canUseApp) {
-                            posthog.capture('user_sent_message');
-                            chat();
+                            posthog.capture('user_sent_message')
+                            chat()
                           }
                         }}
                         className="w-full border-border bg-card"
@@ -1078,8 +1075,8 @@ What's on your mind? Let's dive in. 🌱`,
                             type="button"
                             onClick={() => {
                               if (canSend && inputValue && canUseApp) {
-                                posthog.capture('user_sent_message');
-                                chat();
+                                posthog.capture('user_sent_message')
+                                chat()
                               }
                             }}
                           >
@@ -1141,8 +1138,8 @@ What's on your mind? Let's dive in. 🌱`,
             <div className="px-4 py-3.5 border-b-2 border-border flex justify-between items-center shrink-0">
               <button
                 onClick={() => {
-                  addChat();
-                  setIsMobileSidebarOpen(false);
+                  addChat()
+                  setIsMobileSidebarOpen(false)
                 }}
                 disabled={!canUseApp}
                 className="w-10 h-10 bg-primary rounded-full flex justify-center items-center overflow-hidden hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1163,12 +1160,12 @@ What's on your mind? Let's dive in. 🌱`,
                 mutateConversations={mutateConversations}
                 conversationId={conversationId}
                 setConversationId={(id) => {
-                  setConversationId(id);
-                  setIsMobileSidebarOpen(false); // Close sidebar when selecting conversation
+                  setConversationId(id)
+                  setIsMobileSidebarOpen(false) // Close sidebar when selecting conversation
                 }}
                 canUseApp={canUseApp}
                 onNewChat={() => {
-                  setIsMobileSidebarOpen(false);
+                  setIsMobileSidebarOpen(false)
                 }}
               />
             </div>
@@ -1176,5 +1173,5 @@ What's on your mind? Let's dive in. 🌱`,
         </div>
       )}
     </main>
-  );
+  )
 }

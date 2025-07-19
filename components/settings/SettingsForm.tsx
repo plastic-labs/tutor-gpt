@@ -1,11 +1,9 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { User } from '@supabase/supabase-js';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import type { User } from '@supabase/supabase-js'
+import { useEffect, useState } from 'react'
+import Swal from 'sweetalert2'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -13,89 +11,91 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import Swal from 'sweetalert2';
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { createClient } from '@/utils/supabase/client'
 
 interface SettingsFormProps {
-  user: User | null | undefined;
-  type: 'account' | 'security';
+  user: User | null | undefined
+  type: 'account' | 'security'
 }
 
 export function SettingsForm({ user, type }: SettingsFormProps) {
-  const [email, setEmail] = useState<string>(user?.email || '');
+  const [email, setEmail] = useState<string>(user?.email || '')
   const [displayName, setDisplayName] = useState<string>(
     user?.user_metadata?.full_name || ''
-  );
-  const [currentPassword, setCurrentPassword] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  )
+  const [currentPassword, setCurrentPassword] = useState<string>('')
+  const [newPassword, setNewPassword] = useState<string>('')
+  const [confirmPassword, setConfirmPassword] = useState<string>('')
 
-  const supabase = createClient();
+  const supabase = createClient()
 
   useEffect(() => {
     if (user) {
-      setEmail(user.email || '');
-      setDisplayName(user.user_metadata?.full_name || '');
+      setEmail(user.email || '')
+      setDisplayName(user.user_metadata?.full_name || '')
     }
-  }, [user]);
+  }, [user])
 
   const handleEmailChange = async (e: React.MouseEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
       const { error } = await supabase.auth.updateUser(
         { email: email },
         {
           emailRedirectTo: `${location.origin}/settings`,
         }
-      );
-      if (error) throw error;
+      )
+      if (error) throw error
       Swal.fire({
         title: 'Success!',
         text: 'Please check your new email for a confirmation link',
         icon: 'success',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
+      })
     } catch (error) {
-      console.error(error);
+      console.error(error)
       Swal.fire({
         title: 'Error!',
         text: 'Something went wrong while updating your email',
         icon: 'error',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
+      })
     }
-  };
+  }
 
   const handleProfileUpdate = async (e: React.MouseEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
       const { error } = await supabase.auth.updateUser({
         data: { full_name: displayName },
-      });
-      if (error) throw error;
+      })
+      if (error) throw error
       Swal.fire({
         title: 'Success!',
         text: 'Your profile has been updated',
         icon: 'success',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
+      })
     } catch (error) {
-      console.error(error);
+      console.error(error)
       Swal.fire({
         title: 'Error!',
         text: 'Something went wrong while updating your profile',
         icon: 'error',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
+      })
     }
-  };
+  }
 
   const handlePasswordChange = async (e: React.MouseEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (newPassword !== confirmPassword) {
       Swal.fire({
         title: 'Error!',
@@ -103,34 +103,34 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         icon: 'error',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
-      return;
+      })
+      return
     }
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
-      });
-      if (error) throw error;
+      })
+      if (error) throw error
       Swal.fire({
         title: 'Success!',
         text: 'Your password has been updated',
         icon: 'success',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
-      setNewPassword('');
-      setConfirmPassword('');
+      })
+      setNewPassword('')
+      setConfirmPassword('')
     } catch (error) {
-      console.error(error);
+      console.error(error)
       Swal.fire({
         title: 'Error!',
         text: 'Something went wrong while updating your password',
         icon: 'error',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
+      })
     }
-  };
+  }
 
   return (
     <Card className="bg-card text-card-foreground">
@@ -240,5 +240,5 @@ export function SettingsForm({ user, type }: SettingsFormProps) {
         )}
       </CardFooter>
     </Card>
-  );
+  )
 }

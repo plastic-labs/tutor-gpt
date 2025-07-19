@@ -1,29 +1,15 @@
-import React from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import { Settings } from 'lucide-react';
-
-import { usePostHog } from 'posthog-js/react';
-import { ConversationTab } from './conversationtab';
-import { useState } from 'react';
-import useSWR, { KeyedMutator, useSWRConfig } from 'swr';
-import { FaUser } from 'react-icons/fa';
+import { Settings } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { usePostHog } from 'posthog-js/react'
+import React, { useState } from 'react'
+import { FaUser } from 'react-icons/fa'
+import { toast } from 'sonner'
+import useSWR, { type KeyedMutator, useSWRConfig } from 'swr'
 import {
   createConversation,
   deleteConversation,
   updateConversation,
-} from '@/app/actions/conversations';
-import { type Conversation, type Message } from '@/utils/types';
-import { clearSWRCache } from '@/utils/swrCache';
-import { departureMono } from '@/utils/fonts';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+} from '@/app/actions/conversations'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,16 +19,28 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { departureMono } from '@/utils/fonts'
+import { createClient } from '@/utils/supabase/client'
+import { clearSWRCache } from '@/utils/swrCache'
+import type { Conversation, Message } from '@/utils/types'
+import { ConversationTab } from './conversationtab'
 
 export default function Sidebar({
   conversations,
@@ -52,33 +50,33 @@ export default function Sidebar({
   canUseApp,
   onNewChat,
 }: {
-  conversations: Conversation[];
-  mutateConversations: KeyedMutator<Conversation[]>;
-  conversationId: string | undefined;
-  setConversationId: (id: typeof conversationId) => void;
-  canUseApp: boolean;
-  onNewChat: () => void;
+  conversations: Conversation[]
+  mutateConversations: KeyedMutator<Conversation[]>
+  conversationId: string | undefined
+  setConversationId: (id: typeof conversationId) => void
+  canUseApp: boolean
+  onNewChat: () => void
 }) {
-  const postHog = usePostHog();
-  const supabase = createClient();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const postHog = usePostHog()
+  const supabase = createClient()
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [editingConversation, setEditingConversation] =
-    useState<Conversation | null>(null);
+    useState<Conversation | null>(null)
   const [deletingConversation, setDeletingConversation] =
-    useState<Conversation | null>(null);
-  const [newName, setNewName] = useState('');
-  const router = useRouter();
-  const { mutate } = useSWRConfig();
+    useState<Conversation | null>(null)
+  const [newName, setNewName] = useState('')
+  const router = useRouter()
+  const { mutate } = useSWRConfig()
 
   function editConversation(cur: Conversation) {
-    setEditingConversation(cur);
-    setNewName(cur.name || '');
-    setEditDialogOpen(true);
+    setEditingConversation(cur)
+    setNewName(cur.name || '')
+    setEditDialogOpen(true)
   }
 
   async function handleEditSave() {
-    if (!editingConversation || !newName.trim()) return;
+    if (!editingConversation || !newName.trim()) return
 
     // Optimistically update the UI
     mutateConversations(
@@ -88,111 +86,111 @@ export default function Sidebar({
           : conversation
       ),
       false // Skip revalidation
-    );
+    )
 
     try {
       await updateConversation(
         editingConversation.conversationId,
         newName.trim()
-      );
-      setEditDialogOpen(false);
-      setEditingConversation(null);
-      setNewName('');
+      )
+      setEditDialogOpen(false)
+      setEditingConversation(null)
+      setNewName('')
     } catch (error) {
       // Revert on error
-      mutateConversations(conversations);
-      toast.error('Failed to update conversation name');
-      console.error('Failed to update conversation name:', error);
+      mutateConversations(conversations)
+      toast.error('Failed to update conversation name')
+      console.error('Failed to update conversation name:', error)
     }
   }
 
   function removeConversation(conversation: Conversation) {
-    setDeletingConversation(conversation);
-    setDeleteDialogOpen(true);
+    setDeletingConversation(conversation)
+    setDeleteDialogOpen(true)
   }
 
   async function handleDeleteConfirm() {
-    if (!deletingConversation) return;
+    if (!deletingConversation) return
 
     // Store original state for rollback
-    const originalConversations = conversations;
+    const originalConversations = conversations
 
     // Optimistically update UI
     const newConversations = conversations.filter(
       (cur) => cur.conversationId != deletingConversation.conversationId
-    );
-    mutateConversations(newConversations, false);
+    )
+    mutateConversations(newConversations, false)
 
     if (deletingConversation.conversationId === conversationId) {
       if (newConversations.length >= 1) {
-        setConversationId(newConversations[0].conversationId);
+        setConversationId(newConversations[0].conversationId)
       }
     }
 
     try {
-      await deleteConversation(deletingConversation.conversationId);
-      postHog?.capture('user_deleted_conversation');
+      await deleteConversation(deletingConversation.conversationId)
+      postHog?.capture('user_deleted_conversation')
 
       // If we need to create a new conversation because we deleted the last one
       if (newConversations.length === 0) {
-        const newConv = await createConversation();
-        setConversationId(newConv?.conversationId);
-        mutateConversations([newConv!]);
+        const newConv = await createConversation()
+        setConversationId(newConv?.conversationId)
+        mutateConversations([newConv!])
       }
 
-      setDeleteDialogOpen(false);
-      setDeletingConversation(null);
+      setDeleteDialogOpen(false)
+      setDeletingConversation(null)
     } catch (error) {
       // Revert on error
-      mutateConversations(originalConversations);
-      setConversationId(conversationId);
-      toast.error('Failed to delete conversation');
-      console.error('Failed to delete conversation:', error);
-      setDeleteDialogOpen(false);
-      setDeletingConversation(null);
+      mutateConversations(originalConversations)
+      setConversationId(conversationId)
+      toast.error('Failed to delete conversation')
+      console.error('Failed to delete conversation:', error)
+      setDeleteDialogOpen(false)
+      setDeletingConversation(null)
     }
   }
 
   async function addChat() {
     // Create a temporary conversation with a loading state
-    const tempId = 'temp-' + Date.now();
+    const tempId = 'temp-' + Date.now()
     const tempConversation: Conversation = {
       conversationId: tempId,
       name: 'Untitled',
-    };
+    }
 
     // Optimistically add the temporary conversation
-    mutateConversations([tempConversation, ...conversations], false);
-    setConversationId(tempId);
-    onNewChat();
+    mutateConversations([tempConversation, ...conversations], false)
+    setConversationId(tempId)
+    onNewChat()
 
     try {
-      const newConversation = await createConversation();
-      postHog?.capture('user_created_conversation');
+      const newConversation = await createConversation()
+      postHog?.capture('user_created_conversation')
 
       // Replace temporary conversation with the real one
       mutateConversations([
         newConversation!,
         ...conversations.filter((c) => c.conversationId !== tempId),
-      ]);
-      setConversationId(newConversation?.conversationId);
+      ])
+      setConversationId(newConversation?.conversationId)
     } catch (error) {
       // Remove temporary conversation on error
-      mutateConversations(conversations);
-      setConversationId(conversationId);
-      toast.error('Failed to create new chat');
-      console.error('Failed to create new chat:', error);
+      mutateConversations(conversations)
+      setConversationId(conversationId)
+      toast.error('Failed to create new chat')
+      console.error('Failed to create new chat:', error)
     }
   }
 
   const fetchUser = async () => {
     const {
       data: { user },
-    } = await supabase.auth.getUser();
-    return user;
-  };
+    } = await supabase.auth.getUser()
+    return user
+  }
 
-  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser);
+  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser)
 
   return (
     <div className={`${departureMono.className} h-full w-full`}>
@@ -206,28 +204,28 @@ export default function Sidebar({
             </div>
           </div>
 
-        {/* Conversation list */}
-        <div className="group flex flex-col gap-2 w-full overflow-y-auto min-h-0 scrollbar-hover-only">
-          <div className="flex flex-col gap-2 w-full">
-            {conversations.length > 0
-              ? conversations.map((cur, i) => (
-                  <div key={i} className="shrink-0">
-                    <ConversationTab
-                      conversation={cur}
-                      select={() => setConversationId(cur.conversationId)}
-                      selected={conversationId === cur.conversationId}
-                      edit={() => editConversation(cur)}
-                      del={() => removeConversation(cur)}
-                    />
-                  </div>
-                ))
-              : Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="shrink-0">
-                    <ConversationTab loading />
-                  </div>
-                ))}
+          {/* Conversation list */}
+          <div className="group flex flex-col gap-2 w-full overflow-y-auto min-h-0 scrollbar-hover-only">
+            <div className="flex flex-col gap-2 w-full">
+              {conversations.length > 0
+                ? conversations.map((cur, i) => (
+                    <div key={i} className="shrink-0">
+                      <ConversationTab
+                        conversation={cur}
+                        select={() => setConversationId(cur.conversationId)}
+                        selected={conversationId === cur.conversationId}
+                        edit={() => editConversation(cur)}
+                        del={() => removeConversation(cur)}
+                      />
+                    </div>
+                  ))
+                : Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="shrink-0">
+                      <ConversationTab loading />
+                    </div>
+                  ))}
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Bottom section with user info */}
@@ -269,10 +267,10 @@ export default function Sidebar({
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={async () => {
-                  clearSWRCache();
-                  mutate(() => true, undefined, { revalidate: false });
-                  await supabase.auth.signOut();
-                  window.location.href = '/';
+                  clearSWRCache()
+                  mutate(() => true, undefined, { revalidate: false })
+                  await supabase.auth.signOut()
+                  window.location.href = '/'
                 }}
                 className="cursor-pointer"
               >
@@ -301,7 +299,7 @@ export default function Sidebar({
               placeholder="Conversation name"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  handleEditSave();
+                  handleEditSave()
                 }
               }}
             />
@@ -348,5 +346,5 @@ export default function Sidebar({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  )
 }

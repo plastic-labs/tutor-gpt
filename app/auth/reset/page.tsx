@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import Image from 'next/image';
-import icon from '@/public/bloomicon.jpg';
-import Reset from '@/components/auth/reset';
+import Image from 'next/image'
+import Reset from '@/components/auth/reset'
+import icon from '@/public/bloomicon.jpg'
 
 export default function ResetPage() {
   return (
@@ -49,5 +49,5 @@ export default function ResetPage() {
         </main>
       </div>
     </section>
-  );
+  )
 }

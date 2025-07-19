@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest",
-    "lint": "eslint components/ app/ utils/",
-    "pretty": "prettier --write components/ app/ utils/",
+    "lint": "biome check components/ app/ utils/",
+    "lint:fix": "biome check components/ app/ utils/ --write",
+    "format": "biome format components/ app/ utils/ --write",
     "sync-stripe": "node scripts/stripeSync.mjs",
     "test:security": "node tests/arcjet/test-bot-protection.js",
     "test:bot-protection": "node tests/arcjet/test-bot-protection.js"
@@ -46,7 +47,7 @@
     "langfuse-vercel": "^3.35.2",
     "lucide-react": "^0.508.0",
     "motion": "^12.10.1",
-    "next": "15.1.7",
+    "next": "15.4.2",
     "next-themes": "^0.4.4",
     "openai": "^4.85.1",
     "posthog-js": "^1.240.6",
@@ -73,8 +74,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.20.0",
-    "@next/eslint-plugin-next": "^15.1.7",
+    "@biomejs/biome": "^2.1.2",
     "@shadcn/ui": "^0.0.4",
     "@tailwindcss/postcss": "^4.0.6",
     "@types/jsonwebtoken": "^9.0.8",
@@ -87,32 +87,13 @@
     "@vitejs/plugin-react": "^4.3.4",
     "dotenv": "^16.4.7",
     "encoding": "^0.1.13",
-    "eslint": "^9.20.1",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-react": "^7.37.4",
     "globals": "^15.15.0",
     "postcss": "8.4.28",
-    "prettier": "^3.5.1",
-    "prettier-plugin-tailwindcss": "^0.6.11",
     "supabase": "^2.12.1",
     "tailwindcss": "4.0.0",
     "ts-node": "^10.9.2",
     "typescript": "5.7.3",
-    "typescript-eslint": "^8.24.1",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.8"
-  },
-  "prettier": {
-    "trailingComma": "es5",
-    "tabWidth": 2,
-    "semi": true,
-    "singleQuote": true
-  },
-  "pnpm": {
-    "overrides": {
-      "@types/react": "19.0.10",
-      "@types/react-dom": "19.0.4"
-    }
   }
 }
-

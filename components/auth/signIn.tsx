@@ -1,41 +1,41 @@
-'use client';
-import { useState, useRef } from 'react';
-import { useTheme } from 'next-themes';
-import Swal from 'sweetalert2';
-import GoogleSignIn from './google';
-import DiscordSignIn from './discord';
+'use client'
+import { useTheme } from 'next-themes'
+import { useRef, useState } from 'react'
+import Swal from 'sweetalert2'
+import DiscordSignIn from './discord'
+import GoogleSignIn from './google'
 
 export default function SignIn(props: any) {
-  const { stateSync, handler } = props;
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-  const { theme } = useTheme();
+  const { stateSync, handler } = props
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const { theme } = useTheme()
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!formRef.current) return;
+    e.preventDefault()
+    if (!formRef.current) return
 
-    setIsLoading(true);
-    const formData = new FormData(formRef.current);
+    setIsLoading(true)
+    const formData = new FormData(formRef.current)
     try {
-      const error = await handler(formData);
+      const error = await handler(formData)
       if (error) {
-        setError(true);
+        setError(true)
         Swal.fire({
           title: 'Error!',
           text: 'Incorrect Credentials',
           icon: 'error',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
-        });
+        })
       }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <>
@@ -135,5 +135,5 @@ export default function SignIn(props: any) {
         <DiscordSignIn text="Sign In" />
       </div>
     </>
-  );
+  )
 }

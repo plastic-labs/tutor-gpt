@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { AIMessage as AIMessageType } from '@/utils/types';
-import { LuThumbsUp, LuThumbsDown, LuClipboard, LuCheck } from 'react-icons/lu';
-import MarkdownWrapper from '../markdownWrapper';
-import Spinner from '../spinner';
-import ThinkBox from '../ThinkBox';
+import React, { useState } from 'react'
+import { LuCheck, LuClipboard, LuThumbsDown, LuThumbsUp } from 'react-icons/lu'
+import type { AIMessage as AIMessageType } from '@/utils/types'
+import MarkdownWrapper from '../markdownWrapper'
+import Spinner from '../spinner'
+import ThinkBox from '../ThinkBox'
 
-export type Reaction = 'thumbs_up' | 'thumbs_down' | null;
+export type Reaction = 'thumbs_up' | 'thumbs_down' | null
 
 interface AIMessageProps {
-  message: AIMessageType;
-  messagesLoading: boolean;
-  onReaction: (messageId: string, reaction: Exclude<Reaction, null>) => void;
-  pendingReaction?: Reaction;
-  error?: string;
+  message: AIMessageType
+  messagesLoading: boolean
+  onReaction: (messageId: string, reaction: Exclude<Reaction, null>) => void
+  pendingReaction?: Reaction
+  error?: string
 }
 
 function AIMessage({
@@ -22,10 +22,10 @@ function AIMessage({
   pendingReaction,
   error,
 }: AIMessageProps) {
-  const { id: messageId, content, metadata, thinking } = message;
-  const reaction = (metadata?.reaction as Reaction) || null;
-  const shouldShowButtons = messageId !== '';
-  const [isCopied, setIsCopied] = useState(false);
+  const { id: messageId, content, metadata, thinking } = message
+  const reaction = (metadata?.reaction as Reaction) || null
+  const shouldShowButtons = messageId !== ''
+  const [isCopied, setIsCopied] = useState(false)
 
   // Check if we should show the ThinkBox
   // Show for AI messages that either have thinking data OR are being streamed (empty content with thinking object)
@@ -36,15 +36,15 @@ function AIMessage({
       thinking.honchoResponse ||
       thinking.pdfQuery ||
       thinking.pdfResponse ||
-      (!thinking.thoughtFinished && content === '')); // Show for new AI messages being streamed
+      (!thinking.thoughtFinished && content === '')) // Show for new AI messages being streamed
 
   const handleCopyToClipboard = async () => {
     if (navigator?.clipboard) {
-      await navigator.clipboard.writeText(content);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      await navigator.clipboard.writeText(content)
+      setIsCopied(true)
+      setTimeout(() => setIsCopied(false), 2000)
     }
-  };
+  }
 
   return (
     <div className="mb-6">
@@ -107,13 +107,13 @@ function AIMessage({
             </button>
             <button
               className={`group p-0 rounded-none border-none bg-transparent transition-colors focus:outline-none ${
-                isCopied 
-                  ? 'text-green-500' 
+                isCopied
+                  ? 'text-green-500'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={handleCopyToClipboard}
-              title={isCopied ? "Copied!" : "Copy to clipboard"}
-              aria-label={isCopied ? "Copied!" : "Copy to clipboard"}
+              title={isCopied ? 'Copied!' : 'Copy to clipboard'}
+              aria-label={isCopied ? 'Copied!' : 'Copy to clipboard'}
             >
               <div className="w-5 h-6 flex items-center justify-center">
                 {isCopied ? (
@@ -128,7 +128,7 @@ function AIMessage({
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default AIMessage;
+export default AIMessage

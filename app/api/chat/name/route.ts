@@ -1,22 +1,22 @@
-import { createCompletion, getUserData, user } from '@/utils/ai';
-import { namePrompt } from '@/utils/prompts/name';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server'
+import { createCompletion, getUserData, user } from '@/utils/ai'
+import { namePrompt } from '@/utils/prompts/name'
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const { message } = await req.json();
+  const { message } = await req.json()
 
-  const userData = await getUserData();
+  const userData = await getUserData()
   if (!userData) {
-    return new NextResponse('Unauthorized', { status: 401 });
+    return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const { userId } = userData;
+  const { userId } = userData
 
-  const finalMessage = user`${message}`;
-  const prompt = [...namePrompt, finalMessage];
+  const finalMessage = user`${message}`
+  const prompt = [...namePrompt, finalMessage]
 
   const name = await createCompletion(
     prompt,
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     {
       max_tokens: 10,
     }
-  );
+  )
 
-  return NextResponse.json({ name });
+  return NextResponse.json({ name })
 }

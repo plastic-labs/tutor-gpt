@@ -1,28 +1,28 @@
-'use client';
-import { createClient } from '@/utils/supabase/client';
-import { useState } from 'react';
-import Swal from 'sweetalert2';
+'use client'
+import { useState } from 'react'
+import Swal from 'sweetalert2'
+import { createClient } from '@/utils/supabase/client'
 
 export default function Forgot(props: any) {
-  const { stateSync } = props;
-  const [email, setEmail] = useState('');
-  const supabase = createClient();
+  const { stateSync } = props
+  const [email, setEmail] = useState('')
+  const supabase = createClient()
 
   const handleForgotPassword = async (e: any) => {
-    e.preventDefault();
+    e.preventDefault()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${location.origin}/auth/reset`,
-    });
+    })
     if (error) {
-      console.error(error);
+      console.error(error)
       Swal.fire({
         title: 'Error!',
         text: 'Something went wrong',
         icon: 'error',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
-      return;
+      })
+      return
     }
     Swal.fire({
       title: 'Success!',
@@ -30,8 +30,8 @@ export default function Forgot(props: any) {
       icon: 'success',
       confirmButtonColor: '#3085d6',
       confirmButtonText: 'Close',
-    });
-  };
+    })
+  }
 
   return (
     <form action="#" className="mt-8 space-y-6 text-foreground">
@@ -71,5 +71,5 @@ export default function Forgot(props: any) {
         </p>
       </div>
     </form>
-  );
+  )
 }

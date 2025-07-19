@@ -1,16 +1,21 @@
-import React from 'react';
-import { ParsedFile, getFileIcon } from '@/utils/parseFiles';
-import { X } from 'lucide-react';
+import { X } from 'lucide-react'
+import React from 'react'
+import { getFileIcon, type ParsedFile } from '@/utils/parseFiles'
 
 interface FileUploadProps {
-  file: ParsedFile;
-  className?: string;
-  onRemove?: () => void;
-  showRemove?: boolean;
+  file: ParsedFile
+  className?: string
+  onRemove?: () => void
+  showRemove?: boolean
 }
 
-function FileUpload({ file, className = '', onRemove, showRemove = false }: FileUploadProps) {
-  const icon = getFileIcon(file.extension);
+function FileUpload({
+  file,
+  className = '',
+  onRemove,
+  showRemove = false,
+}: FileUploadProps) {
+  const icon = getFileIcon(file.extension)
 
   return (
     <div
@@ -38,7 +43,7 @@ function FileUpload({ file, className = '', onRemove, showRemove = false }: File
         </button>
       )}
     </div>
-  );
+  )
 }
 
-export default FileUpload;
+export default FileUpload

@@ -1,5 +1,5 @@
-import { cache } from 'react';
-import { unstable_cache as next_unstable_cache } from 'next/cache';
+import { unstable_cache as next_unstable_cache } from 'next/cache'
+import { cache } from 'react'
 
 export const unstable_cache = <Args extends any[], Output>(
   callback: (...args: Args) => Promise<Output>,
@@ -12,5 +12,5 @@ export const unstable_cache = <Args extends any[], Output>(
       key,
       options
     )
-  );
-};
+  )
+}

@@ -1,24 +1,24 @@
-import { NextResponse } from 'next/server';
-import { StreamResponseChunk } from './types';
+import type { NextResponse } from 'next/server'
+import type { StreamResponseChunk } from './types'
 
-const encoder = new TextEncoder();
+const encoder = new TextEncoder()
 
 export function stream(
   iterator: AsyncGenerator<Uint8Array, NextResponse | undefined, unknown>
 ) {
   return new ReadableStream({
     async pull(controller) {
-      const { value, done } = await iterator.next();
+      const { value, done } = await iterator.next()
 
       if (done) {
-        controller.close();
+        controller.close()
       } else {
-        controller.enqueue(value);
+        controller.enqueue(value)
       }
     },
-  });
+  })
 }
 
 export function formatStreamChunk(chunk: StreamResponseChunk): Uint8Array {
-  return encoder.encode(JSON.stringify(chunk));
+  return encoder.encode(JSON.stringify(chunk))
 }

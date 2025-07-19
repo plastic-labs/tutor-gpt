@@ -1,28 +1,22 @@
-import React, {
-  useState,
-  useCallback,
-  useMemo,
-  memo,
-  lazy,
-  Suspense,
-} from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import 'katex/dist/katex.min.css';
-import { FiCopy, FiCheck } from 'react-icons/fi';
+import type React from 'react'
+import { lazy, memo, Suspense, useCallback, useMemo, useState } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import rehypeKatex from 'rehype-katex'
+import remarkMath from 'remark-math'
+import 'katex/dist/katex.min.css'
+import { FiCheck, FiCopy } from 'react-icons/fi'
 
-const ReactMarkdown = lazy(() => import('react-markdown'));
+const ReactMarkdown = lazy(() => import('react-markdown'))
 
 const CopyButton = memo(({ text }: { text: string }) => {
-  const [isCopied, setIsCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState(false)
 
   const copyToClipboard = useCallback(async () => {
-    await navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  }, [text]);
+    await navigator.clipboard.writeText(text)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000)
+  }, [text])
 
   return (
     <button
@@ -35,8 +29,8 @@ const CopyButton = memo(({ text }: { text: string }) => {
         <FiCopy className="h-4 w-4 text-gray-300" />
       )}
     </button>
-  );
-});
+  )
+})
 
 const CodeBlock = memo(
   ({ language, value }: { language: string; value: string }) => {
@@ -52,12 +46,12 @@ const CodeBlock = memo(
         </SyntaxHighlighter>
         <CopyButton text={value} />
       </div>
-    );
+    )
   }
-);
+)
 
 interface MarkdownWrapperProps {
-  text: string;
+  text: string
 }
 
 const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
@@ -87,9 +81,9 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
         children,
         ...props
       }: React.ComponentPropsWithoutRef<'code'> & {
-        inline?: boolean;
+        inline?: boolean
       }) => {
-        const match = /language-(\w+)/.exec(className || '');
+        const match = /language-(\w+)/.exec(className || '')
         return !inline && match ? (
           <CodeBlock
             language={match[1]}
@@ -102,17 +96,17 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
           >
             {children}
           </code>
-        );
+        )
       },
     }),
     []
-  );
+  )
 
   // Memoize plugins
-  const remarkPlugins = useMemo(() => [remarkMath] as Array<any>, []);
-  const rehypePlugins = useMemo(() => [rehypeKatex] as Array<any>, []);
+  const remarkPlugins = useMemo(() => [remarkMath] as Array<any>, [])
+  const rehypePlugins = useMemo(() => [rehypeKatex] as Array<any>, [])
 
-  if (!text) return null;
+  if (!text) return null
 
   return (
     <Suspense fallback={<div className="animate-pulse bg-gray-100 h-32" />}>
@@ -124,11 +118,11 @@ const MarkdownWrapper = memo(({ text }: MarkdownWrapperProps) => {
         {text}
       </ReactMarkdown>
     </Suspense>
-  );
-});
+  )
+})
 
-CopyButton.displayName = 'CopyButton';
-CodeBlock.displayName = 'CodeBlock';
-MarkdownWrapper.displayName = 'MarkdownWrapper';
+CopyButton.displayName = 'CopyButton'
+CodeBlock.displayName = 'CodeBlock'
+MarkdownWrapper.displayName = 'MarkdownWrapper'
 
-export default MarkdownWrapper;
+export default MarkdownWrapper

@@ -1,28 +1,28 @@
-'use client';
+'use client'
 // import { useTheme } from 'next-themes';
-import Image from 'next/image';
-import Link from 'next/link';
-import { DarkModeSwitch } from 'react-toggle-dark-mode';
-import { useEffect, useState } from 'react';
-import bloomIcon from '@/public/bloom_icon_large.jpg';
-import { departureMono } from '@/utils/fonts';
+import Image from 'next/image'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { DarkModeSwitch } from 'react-toggle-dark-mode'
+import bloomIcon from '@/public/bloom_icon_large.jpg'
+import { departureMono } from '@/utils/fonts'
 // import lightBanner from '@/public/bloom2x1.svg';
 // import darkBanner from '@/public/bloom2x1dark.svg';
 
 export function Header() {
   // const { theme, setTheme } = useTheme();
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isDark, setIsDark] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true);
-    setIsDark(document.documentElement.classList.contains('dark'));
-  }, []);
+    setMounted(true)
+    setIsDark(document.documentElement.classList.contains('dark'))
+  }, [])
 
   const toggleDarkMode = (checked: boolean) => {
-    document.documentElement.classList.toggle('dark');
-    setIsDark(checked);
-  };
+    document.documentElement.classList.toggle('dark')
+    setIsDark(checked)
+  }
 
   if (!mounted) {
     return (
@@ -32,7 +32,7 @@ export function Header() {
           <div className="h-6 w-6 bg-gray-200 animate-pulse rounded-full"></div>
         </nav>
       </header>
-    );
+    )
   }
 
   return (
@@ -61,5 +61,5 @@ export function Header() {
         </div>
       </nav>
     </header>
-  );
+  )
 }

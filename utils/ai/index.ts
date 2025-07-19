@@ -1,21 +1,20 @@
-import { NextResponse } from 'next/server';
-import { after } from 'next/server';
-import { honcho } from '@/utils/honcho';
-import { collectionChat } from '@/utils/pdfChat';
-import { parsePDF } from '@/utils/parsePdf';
-import { ChatCallProps } from './types';
-import { formatStreamChunk } from '@/utils/ai/stream';
-import { validateUser } from '@/utils/ai/validation';
+import type { Collection } from 'honcho-ai/resources/apps/users/collections/collections.mjs'
+import { after, NextResponse } from 'next/server'
+import { streamText } from '@/utils/ai'
 import {
   fetchConversationHistory,
   saveConversation,
-} from '@/utils/ai/conversation';
-import { buildThoughtPrompt, buildResponsePrompt } from '@/utils/ai/prompts';
-import { checkAndGenerateSummary } from '@/utils/ai/summary';
-import { streamText } from '@/utils/ai';
-import { Collection } from 'honcho-ai/resources/apps/users/collections/collections.mjs';
+} from '@/utils/ai/conversation'
+import { buildResponsePrompt, buildThoughtPrompt } from '@/utils/ai/prompts'
+import { formatStreamChunk } from '@/utils/ai/stream'
+import { checkAndGenerateSummary } from '@/utils/ai/summary'
+import { validateUser } from '@/utils/ai/validation'
+import { honcho } from '@/utils/honcho'
+import { parsePDF } from '@/utils/parsePdf'
+import { collectionChat } from '@/utils/pdfChat'
+import type { ChatCallProps } from './types'
 
-const MAX_COLLECTION_SIZE_IN_MB = 5;
+const MAX_COLLECTION_SIZE_IN_MB = 5
 
 // Main chat response generator
 export async function* respond({
@@ -24,20 +23,20 @@ export async function* respond({
   fileContent,
 }: ChatCallProps) {
   // Validate user and permissions
-  const userValidation = await validateUser();
+  const userValidation = await validateUser()
   if (!userValidation.isAuthorized) {
     return new NextResponse(userValidation.error, {
       status: userValidation.status,
-    });
+    })
   }
 
   // We know userData exists if isAuthorized is true
-  const { userData } = userValidation;
+  const { userData } = userValidation
   if (!userData) {
-    return new NextResponse('User data not found', { status: 500 });
+    return new NextResponse('User data not found', { status: 500 })
   }
 
-  const { appId, userId } = userData;
+  const { appId, userId } = userData
 
   // Fetch conversation history
   const {
@@ -47,7 +46,7 @@ export async function* respond({
     pdfMessages: pdfHistory,
     summaries: summaryHistory,
     collectionId: existingCollectionId,
-  } = await fetchConversationHistory(appId, userId, conversationId);
+  } = await fetchConversationHistory(appId, userId, conversationId)
 
   // Generate thought
   const thoughtPrompt = buildThoughtPrompt(
@@ -57,7 +56,7 @@ export async function* respond({
     pdfHistory,
     message,
     Boolean(fileContent || existingCollectionId)
-  );
+  )
   const { textStream: thoughtStream } = streamText({
     messages: thoughtPrompt,
     metadata: {
@@ -65,67 +64,67 @@ export async function* respond({
       userId,
       type: 'thought',
     },
-  });
+  })
 
-  let thought = '';
-  let initialThought = '';
-  let honchoQuery = '';
-  let pdfQuery = '';
+  let thought = ''
+  let initialThought = ''
+  let honchoQuery = ''
+  let pdfQuery = ''
 
-  let currentSection: 'thought' | 'honchoQuery' | 'pdfQuery' = 'thought';
+  let currentSection: 'thought' | 'honchoQuery' | 'pdfQuery' = 'thought'
 
   function addToSection(
     section: 'thought' | 'honchoQuery' | 'pdfQuery',
     text: string
   ) {
     if (section === 'thought') {
-      initialThought += text;
+      initialThought += text
     } else if (section === 'honchoQuery') {
-      honchoQuery += text;
+      honchoQuery += text
     } else {
-      pdfQuery += text;
+      pdfQuery += text
     }
   }
 
   for await (const chunk of thoughtStream) {
-    thought += chunk;
+    thought += chunk
     if (chunk.includes('␁')) {
-      const segments = chunk.split('␁');
-      
+      const segments = chunk.split('␁')
+
       // Process first segment (before any delimiter)
-      const firstSegment = segments[0].trimEnd();
+      const firstSegment = segments[0].trimEnd()
       if (firstSegment) {
-        addToSection(currentSection, firstSegment);
+        addToSection(currentSection, firstSegment)
         yield formatStreamChunk({
           type: currentSection,
           text: firstSegment,
-        });
+        })
       }
-      
+
       // Process remaining segments (after each delimiter)
       for (let i = 1; i < segments.length; i++) {
         // Update section after each delimiter
         if (currentSection === 'thought') {
-          currentSection = 'honchoQuery';
+          currentSection = 'honchoQuery'
         } else if (currentSection === 'honchoQuery') {
-          currentSection = 'pdfQuery';
+          currentSection = 'pdfQuery'
         }
-        
-        const segment = i === 1 ? segments[i].trimStart() : segments[i];
+
+        const segment = i === 1 ? segments[i].trimStart() : segments[i]
         if (segment) {
-          addToSection(currentSection, segment);
+          addToSection(currentSection, segment)
           yield formatStreamChunk({
             type: currentSection,
             text: segment,
-          });
+          })
         }
       }
     } else {
-      addToSection(currentSection, chunk);
+      addToSection(currentSection, chunk)
       yield formatStreamChunk({
         type: currentSection,
         text: chunk,
-      });
+      })
     }
   }
 
@@ -137,30 +136,30 @@ export async function* respond({
         userId,
         conversationId,
         { queries: honchoQuery }
-      );
-      return honchoContent;
+      )
+      return honchoContent
     })(),
     // PDF STUFF
     (async () => {
       // Get PDF response if needed
-      let pdfContent = '';
-      let collectionId: string | undefined;
-      const fileContentArray = await fileContent;
+      let pdfContent = ''
+      let collectionId: string | undefined
+      const fileContentArray = await fileContent
       if (fileContentArray || existingCollectionId) {
         // If we have a new file, create a collection and add documents
         if (fileContentArray) {
-          let collection: Collection;
+          let collection: Collection
           const sizeInMB = fileContentArray.reduce((acc, content) => {
-            return acc + content.length / 1024 / 1024;
-          }, 0);
+            return acc + content.length / 1024 / 1024
+          }, 0)
           if (existingCollectionId) {
             collection = await honcho.apps.users.collections.get(
               appId,
               userId,
               { collection_id: existingCollectionId }
-            );
-            const currentSizeInMB = collection.metadata.size as number;
-            console.log('new size', currentSizeInMB + sizeInMB);
+            )
+            const currentSizeInMB = collection.metadata.size as number
+            console.log('new size', currentSizeInMB + sizeInMB)
             if (currentSizeInMB + sizeInMB < MAX_COLLECTION_SIZE_IN_MB) {
               await honcho.apps.users.collections.update(
                 appId,
@@ -171,13 +170,13 @@ export async function* respond({
                     size: currentSizeInMB + sizeInMB,
                   },
                 }
-              );
+              )
             } else {
               return {
                 pdfContent:
                   'The user has reached the maximum file amount for this chat. Bloom, please inform them that they need to start a new conversation if they want to upload the new file that they just tried to upload. Thank you!',
                 collectionId: undefined,
-              };
+              }
             }
           } else {
             collection = await honcho.apps.users.collections.create(
@@ -189,9 +188,9 @@ export async function* respond({
                   size: sizeInMB,
                 },
               }
-            );
+            )
           }
-          collectionId = collection.id;
+          collectionId = collection.id
 
           // Add each page of the PDF as a document to the collection
           await Promise.all(
@@ -210,15 +209,18 @@ export async function* respond({
                 }
               )
             )
-          );
+          )
         } else {
           // Use existing collection if no new file
-          collectionId = existingCollectionId;
+          collectionId = existingCollectionId
         }
 
         // Get PDF query from thought stream - skip if empty or None
-        if (pdfQuery.trim().toLowerCase() === 'none' || pdfQuery.trim() === '') {
-          return { pdfContent: '', collectionId };
+        if (
+          pdfQuery.trim().toLowerCase() === 'none' ||
+          pdfQuery.trim() === ''
+        ) {
+          return { pdfContent: '', collectionId }
         }
 
         // Use collectionChat to get response from the collection
@@ -231,35 +233,35 @@ export async function* respond({
               userId,
               appId,
             },
-          });
+          })
 
-          pdfContent = collectionResponse;
+          pdfContent = collectionResponse
         } catch (error) {
-          console.error('Error in collectionChat:', error);
+          console.error('Error in collectionChat:', error)
           return {
             pdfContent: 'There was an error processing your PDF.',
             collectionId,
-          };
+          }
         }
 
-        return { pdfContent, collectionId };
+        return { pdfContent, collectionId }
       }
-      return { pdfContent: '', collectionId: undefined };
+      return { pdfContent: '', collectionId: undefined }
     })(),
-  ]);
+  ])
 
   yield formatStreamChunk({
     type: 'honcho',
     text: honchoContent,
-  });
+  })
 
   yield formatStreamChunk({
     type: 'pdf',
     text: pdfContent,
-  });
+  })
 
   // Get last summary
-  const lastSummary = summaryHistory[0]?.content;
+  const lastSummary = summaryHistory[0]?.content
 
   // Schedule summary generation if needed
   after(async () => {
@@ -270,8 +272,8 @@ export async function* respond({
       messageHistory,
       summaryHistory,
       lastSummary
-    );
-  });
+    )
+  })
 
   // Generate response
   const responsePrompt = buildResponsePrompt(
@@ -282,7 +284,7 @@ export async function* respond({
     honchoContent,
     pdfContent,
     lastSummary
-  );
+  )
 
   const { textStream: responseStream } = streamText({
     messages: responsePrompt,
@@ -291,15 +293,15 @@ export async function* respond({
       userId,
       type: 'response',
     },
-  });
+  })
 
-  let response = '';
+  let response = ''
   for await (const chunk of responseStream) {
-    response += chunk;
+    response += chunk
     yield formatStreamChunk({
       type: 'response',
       text: chunk,
-    });
+    })
   }
 
   // Save conversation data
@@ -313,7 +315,7 @@ export async function* respond({
     pdfContent,
     response,
     collectionId
-  );
+  )
 
-  return new NextResponse(response);
+  return new NextResponse(response)
 }

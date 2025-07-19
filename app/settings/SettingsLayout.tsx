@@ -1,17 +1,17 @@
-'use client';
+'use client'
 
-import { useEffect, useMemo, useState } from 'react';
-import SubscriptionSettings from '@/components/settings/SubscriptionSettings';
-import { SecuritySettings } from '@/components/settings/SecuritySettings';
-import { AccountSettings } from '@/components/settings/AccountSettings';
-import { SupportSettings } from '@/components/settings/SupportSettings';
-import { Header } from '@/components/header';
-import { Subscription, User } from '@supabase/supabase-js';
+import type { Subscription, User } from '@supabase/supabase-js'
+import { useEffect, useMemo, useState } from 'react'
+import { Header } from '@/components/header'
+import { AccountSettings } from '@/components/settings/AccountSettings'
+import { SecuritySettings } from '@/components/settings/SecuritySettings'
+import SubscriptionSettings from '@/components/settings/SubscriptionSettings'
+import { SupportSettings } from '@/components/settings/SupportSettings'
 
 interface SettingsProps {
-  user: User | null;
-  subscription?: Subscription | null; // Change this to the correct type when available
-  products?: unknown[] | null; // Change this to the correct type when available
+  user: User | null
+  subscription?: Subscription | null // Change this to the correct type when available
+  products?: unknown[] | null // Change this to the correct type when available
 }
 
 export default function SettingsLayout({
@@ -27,24 +27,24 @@ export default function SettingsLayout({
       { id: 'support', label: 'Support' },
     ],
     []
-  );
+  )
 
-  const [activeTab, setActiveTab] = useState('account'); // Default to 'account' initially
+  const [activeTab, setActiveTab] = useState('account') // Default to 'account' initially
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
+      const hash = window.location.hash.replace('#', '')
       if (navItems.some((item) => item.id === hash)) {
-        setActiveTab(hash);
+        setActiveTab(hash)
       }
-    };
+    }
 
     // Check initial hash
-    handleHashChange();
+    handleHashChange()
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [navItems]);
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [navItems])
 
   return (
     <div className={`flex-1 flex flex-col bg-background text-foreground`}>
@@ -58,8 +58,8 @@ export default function SettingsLayout({
                 <li key={item.id} className="mb-2">
                   <button
                     onClick={() => {
-                      setActiveTab(item.id);
-                      window.location.hash = item.id;
+                      setActiveTab(item.id)
+                      window.location.hash = item.id
                     }}
                     className={`w-full text-left p-2 rounded transition-colors ${
                       activeTab === item.id
@@ -87,5 +87,5 @@ export default function SettingsLayout({
         </div>
       </div>
     </div>
-  );
+  )
 }

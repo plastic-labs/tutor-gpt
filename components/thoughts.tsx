@@ -1,19 +1,19 @@
-import { GrClose } from 'react-icons/gr';
-import ReactMarkdown from 'react-markdown';
-import localFont from 'next/font/local';
+import localFont from 'next/font/local'
+import { GrClose } from 'react-icons/gr'
+import ReactMarkdown from 'react-markdown'
 
 const departureMono = localFont({
   src: '../fonts/DepartureMono-Regular.woff2',
-});
+})
 
 export default function Thoughts({
   thought,
   isThoughtsOpen,
   setIsThoughtsOpen,
 }: {
-  thought: string;
-  isThoughtsOpen: boolean;
-  setIsThoughtsOpen: (isOpen: boolean) => void;
+  thought: string
+  isThoughtsOpen: boolean
+  setIsThoughtsOpen: (isOpen: boolean) => void
 }) {
   return (
     <section
@@ -26,7 +26,7 @@ export default function Thoughts({
         <button
           className="text-dark-green text-xl"
           onClick={() => {
-            setIsThoughtsOpen(false);
+            setIsThoughtsOpen(false)
           }}
         >
           <GrClose className="inline" />
@@ -44,5 +44,5 @@ export default function Thoughts({
  */}{' '}
       </div>
     </section>
-  );
+  )
 }

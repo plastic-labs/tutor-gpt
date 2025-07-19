@@ -1,4 +1,4 @@
-import { Message, user, assistant } from '@/utils/ai';
+import { assistant, type Message, user } from '@/utils/ai'
 
 const responsePrompt: Message[] = [
   user`who are you?`,
@@ -36,6 +36,6 @@ const responsePrompt: Message[] = [
   </instructions>
   Ok, the first learner is ready for you. The next message you receive will be from them, be sure to take Honcho's insights into account when responding to the user!`,
   assistant`Understood, I'm ready to begin tutoring again. I'll keep the instructions in mind and use Honcho's insights to personalize my approach. Please connect me with the first student whenever they're ready. I'm excited to dive in and help them learn!`,
-];
+]
 
-export default responsePrompt;
+export default responsePrompt

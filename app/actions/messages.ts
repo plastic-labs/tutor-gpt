@@ -1,8 +1,8 @@
-'use server';
-import { createClient } from '@/utils/supabase/server';
-import { honcho, getHonchoApp, getHonchoUser } from '@/utils/honcho';
-import { Message, ThinkingData } from '@/utils/types';
-import * as Sentry from '@sentry/nextjs';
+'use server'
+import * as Sentry from '@sentry/nextjs'
+import { getHonchoApp, getHonchoUser, honcho } from '@/utils/honcho'
+import { createClient } from '@/utils/supabase/server'
+import type { Message, ThinkingData } from '@/utils/types'
 
 async function buildThinkingDataMap(
   appId: string,
@@ -12,23 +12,23 @@ async function buildThinkingDataMap(
 ): Promise<Map<string, ThinkingData>> {
   try {
     // Create a mapping from user messages to their following AI messages
-    const userToAiMessageMap = new Map<string, string>();
+    const userToAiMessageMap = new Map<string, string>()
 
     for (let i = 0; i < messages.length - 1; i++) {
-      const currentMessage = messages[i];
-      const nextMessage = messages[i + 1];
+      const currentMessage = messages[i]
+      const nextMessage = messages[i + 1]
 
       // If current is user and next is AI, map them
       if (currentMessage.is_user && !nextMessage.is_user) {
-        userToAiMessageMap.set(currentMessage.id, nextMessage.id);
+        userToAiMessageMap.set(currentMessage.id, nextMessage.id)
       }
     }
 
     // Get all user message IDs that have corresponding AI messages
-    const userMessageIds = Array.from(userToAiMessageMap.keys());
+    const userMessageIds = Array.from(userToAiMessageMap.keys())
 
     if (userMessageIds.length === 0) {
-      return new Map();
+      return new Map()
     }
 
     // Fetch all metamessages attached to user messages in parallel
@@ -48,56 +48,56 @@ async function buildThinkingDataMap(
         metamessage_type: 'pdf',
         filter: { type: 'assistant' },
       }),
-    ]);
+    ])
 
     // Build maps for quick lookup by user message_id
-    const thoughtsMap = new Map<string, string>();
-    const honchoMap = new Map<string, string>();
-    const pdfMap = new Map<string, string>();
+    const thoughtsMap = new Map<string, string>()
+    const honchoMap = new Map<string, string>()
+    const pdfMap = new Map<string, string>()
 
     allThoughts.items.forEach((item) => {
       if (item.message_id && userMessageIds.includes(item.message_id)) {
-        thoughtsMap.set(item.message_id, item.content);
+        thoughtsMap.set(item.message_id, item.content)
       }
-    });
+    })
 
     allHoncho.items.forEach((item) => {
       if (item.message_id && userMessageIds.includes(item.message_id)) {
-        honchoMap.set(item.message_id, item.content);
+        honchoMap.set(item.message_id, item.content)
       }
-    });
+    })
 
     allPdf.items.forEach((item) => {
       if (item.message_id && userMessageIds.includes(item.message_id)) {
-        pdfMap.set(item.message_id, item.content);
+        pdfMap.set(item.message_id, item.content)
       }
-    });
+    })
 
     // Create thinking data map keyed by AI message IDs
-    const thinkingDataMap = new Map<string, ThinkingData>();
+    const thinkingDataMap = new Map<string, ThinkingData>()
 
     userToAiMessageMap.forEach((aiMessageId, userMessageId) => {
-      const thoughtData = thoughtsMap.get(userMessageId) || '';
-      const honchoData = honchoMap.get(userMessageId) || '';
-      const pdfData = pdfMap.get(userMessageId) || '';
+      const thoughtData = thoughtsMap.get(userMessageId) || ''
+      const honchoData = honchoMap.get(userMessageId) || ''
+      const pdfData = pdfMap.get(userMessageId) || ''
 
       // Parse the thought content to extract XML if present
-      let thoughtContent = '';
-      let honchoQuery = '';
-      let pdfQuery = '';
+      let thoughtContent = ''
+      let honchoQuery = ''
+      let pdfQuery = ''
 
       if (thoughtData) {
         // Parse using new delimiter style from thought.ts
-        const parts = thoughtData.split('␁');
+        const parts = thoughtData.split('␁')
 
-        thoughtContent = parts[0].trim();
-        honchoQuery = parts[1]?.trim() || '';
-        pdfQuery = parts[2]?.trim() || '';
+        thoughtContent = parts[0].trim()
+        honchoQuery = parts[1]?.trim() || ''
+        pdfQuery = parts[2]?.trim() || ''
       }
 
       // Use the raw honcho and pdf data as responses
-      const honchoResponse = honchoData;
-      const pdfResponse = pdfData;
+      const honchoResponse = honchoData
+      const pdfResponse = pdfData
 
       // Only create thinking data if any content exists
       if (
@@ -114,14 +114,14 @@ async function buildThinkingDataMap(
           honchoResponse,
           pdfQuery,
           pdfResponse,
-        });
+        })
       }
-    });
+    })
 
-    return thinkingDataMap;
+    return thinkingDataMap
   } catch (error) {
-    console.error('Error building thinking data map:', error);
-    return new Map();
+    console.error('Error building thinking data map:', error)
+    return new Map()
   }
 }
 
@@ -129,28 +129,28 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   return Sentry.startSpan(
     { name: 'server-action.getMessages', op: 'server.action' },
     async () => {
-      const supabase = await createClient();
+      const supabase = await createClient()
 
-      const honchoApp = await getHonchoApp();
+      const honchoApp = await getHonchoApp()
 
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getUser()
 
       if (!user) {
-        throw new Error('Unauthorized');
+        throw new Error('Unauthorized')
       }
-      const honchoUser = await getHonchoUser(user.id);
+      const honchoUser = await getHonchoUser(user.id)
 
       // First, collect all raw messages
-      const rawMessages = [];
+      const rawMessages = []
       for await (const message of honcho.apps.users.sessions.messages.list(
         honchoApp.id,
         honchoUser.id,
         conversationId,
         {}
       )) {
-        rawMessages.push(message);
+        rawMessages.push(message)
       }
 
       // Build thinking data map using the message sequence
@@ -159,10 +159,10 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         honchoUser.id,
         conversationId,
         rawMessages
-      );
+      )
 
       // Build final message array with thinking data properly attached
-      const messages: Message[] = [];
+      const messages: Message[] = []
 
       rawMessages.forEach((message) => {
         if (message.is_user) {
@@ -172,10 +172,10 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
             content: message.content,
             isUser: true,
             metadata: message.metadata,
-          });
+          })
         } else {
           // AI message - get thinking data from map
-          const thinking = thinkingDataMap.get(message.id);
+          const thinking = thinkingDataMap.get(message.id)
 
           messages.push({
             id: message.id,
@@ -183,32 +183,32 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
             isUser: false,
             metadata: message.metadata,
             thinking,
-          });
+          })
         }
-      });
+      })
 
-      return messages;
+      return messages
     }
-  );
+  )
 }
 
 export async function getThought(conversationId: string, messageId: string) {
   return Sentry.startSpan(
     { name: 'server-action.getThought', op: 'server.action' },
     async () => {
-      const supabase = await createClient();
+      const supabase = await createClient()
 
-      const honchoApp = await getHonchoApp();
+      const honchoApp = await getHonchoApp()
 
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getUser()
 
       if (!user) {
-        throw new Error('Unauthorized');
+        throw new Error('Unauthorized')
       }
 
-      const honchoUser = await getHonchoUser(user.id);
+      const honchoUser = await getHonchoUser(user.id)
 
       try {
         const [thoughts, dialectic, pdf] = await Promise.all([
@@ -230,33 +230,33 @@ export async function getThought(conversationId: string, messageId: string) {
             metamessage_type: 'pdf',
             filter: { type: 'assistant' },
           }),
-        ]);
+        ])
 
-        const thoughtText = thoughts.items[0]?.content;
-        const dialecticText = dialectic.items[0]?.content;
-        const pdfText = pdf.items[0]?.content;
+        const thoughtText = thoughts.items[0]?.content
+        const dialecticText = dialectic.items[0]?.content
+        const pdfText = pdf.items[0]?.content
 
         if (!thoughtText && !dialecticText && !pdfText) {
-          return null;
+          return null
         }
 
-        let completeThought = thoughtText ?? '';
+        let completeThought = thoughtText ?? ''
 
         if (dialecticText) {
-          completeThought += '\n\nDialectic Response:\n\n' + dialecticText;
+          completeThought += '\n\nDialectic Response:\n\n' + dialecticText
         }
 
         if (pdfText) {
-          completeThought += '\n\nPDF Agent Response:\n\n' + pdfText;
+          completeThought += '\n\nPDF Agent Response:\n\n' + pdfText
         }
 
-        return completeThought;
+        return completeThought
       } catch (error) {
-        console.error('Error in getThought:', error);
-        throw new Error('Internal server error');
+        console.error('Error in getThought:', error)
+        throw new Error('Internal server error')
       }
     }
-  );
+  )
 }
 
 export async function addOrRemoveReaction(
@@ -267,41 +267,41 @@ export async function addOrRemoveReaction(
   return Sentry.startSpan(
     { name: 'server-action.addOrRemoveReaction', op: 'server.action' },
     async () => {
-      const supabase = await createClient();
+      const supabase = await createClient()
 
-      const honchoApp = await getHonchoApp();
+      const honchoApp = await getHonchoApp()
 
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getUser()
 
       if (!user) {
-        throw new Error('Unauthorized');
+        throw new Error('Unauthorized')
       }
 
       if (reaction && !['thumbs_up', 'thumbs_down'].includes(reaction)) {
-        throw new Error('Invalid reaction type');
+        throw new Error('Invalid reaction type')
       }
 
-      const honchoUser = await getHonchoUser(user.id);
+      const honchoUser = await getHonchoUser(user.id)
 
       const message = await honcho.apps.users.sessions.messages.get(
         honchoApp.id,
         honchoUser.id,
         conversationId,
         messageId
-      );
+      )
 
       if (!message) {
-        throw new Error('Message not found');
+        throw new Error('Message not found')
       }
 
-      const metadata = message.metadata || {};
+      const metadata = message.metadata || {}
 
       if (reaction === null) {
-        delete metadata.reaction;
+        delete metadata.reaction
       } else {
-        metadata.reaction = reaction;
+        metadata.reaction = reaction
       }
 
       await honcho.apps.users.sessions.messages.update(
@@ -310,7 +310,7 @@ export async function addOrRemoveReaction(
         conversationId,
         messageId,
         { metadata }
-      );
+      )
     }
-  );
+  )
 }

@@ -1,12 +1,12 @@
-import { createClient } from '@/utils/supabase/client';
-import { FaDiscord } from 'react-icons/fa';
+import { FaDiscord } from 'react-icons/fa'
+import { createClient } from '@/utils/supabase/client'
 
 type DiscordSignInProps = {
-  text: string;
-};
+  text: string
+}
 
 export default function DiscordSignIn({ text }: DiscordSignInProps) {
-  const supabase = createClient();
+  const supabase = createClient()
 
   const handleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -14,12 +14,12 @@ export default function DiscordSignIn({ text }: DiscordSignInProps) {
       options: {
         redirectTo: `${location.origin}/auth/callback`,
       },
-    });
+    })
 
     if (error) {
-      console.error('Error signing in with Discord:', error);
+      console.error('Error signing in with Discord:', error)
     }
-  };
+  }
 
   return (
     <button
@@ -29,5 +29,5 @@ export default function DiscordSignIn({ text }: DiscordSignInProps) {
       <FaDiscord className="mr-2 h-4 w-4" />
       {text} with Discord
     </button>
-  );
+  )
 }

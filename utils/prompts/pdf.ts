@@ -1,4 +1,4 @@
-import { assistant, Message, user } from '@/utils/ai';
+import { assistant, type Message, user } from '@/utils/ai'
 
 const pdfPrompt = (pdfContext: string, question: string): Message[] => [
   user`who are you?`,
@@ -33,6 +33,6 @@ ${pdfContext}
 And here's the user's question:
 
 ${question}`,
-];
+]
 
-export default pdfPrompt;
+export default pdfPrompt

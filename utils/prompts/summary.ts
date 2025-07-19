@@ -1,9 +1,9 @@
-import { user, assistant, Message } from '@/utils/ai';
+import { assistant, type Message, user } from '@/utils/ai'
 
-const MAXIMUM_SUMMARY_SIZE: string = '6 sentences';
+const MAXIMUM_SUMMARY_SIZE: string = '6 sentences'
 
-export const MAX_CONTEXT_SIZE = 11;
-export const SUMMARY_SIZE = 5;
+export const MAX_CONTEXT_SIZE = 11
+export const SUMMARY_SIZE = 5
 
 const summaryPrompt: Message[] = [
   user`You are an AI assistant tasked with creating or updating conversation history summaries. Your goal is to produce concise, information-dense summaries that capture key points while adhering to a specified size limit.
@@ -60,6 +60,6 @@ const summaryPrompt: Message[] = [
 
   Remember, your goal is to create a dense, informative summary that captures the key points of the conversation within the specified size constraint.`,
   assistant`Got it. I'm ready for any summarization tasks you have for me!`,
-];
+]
 
-export default summaryPrompt;
+export default summaryPrompt

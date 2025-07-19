@@ -1,12 +1,12 @@
-import { createClient } from '@/utils/supabase/client';
-import { FcGoogle } from 'react-icons/fc';
+import { FcGoogle } from 'react-icons/fc'
+import { createClient } from '@/utils/supabase/client'
 
 type GoogleSignInProps = {
-  text: string;
-};
+  text: string
+}
 
 export default function GoogleSignIn({ text }: GoogleSignInProps) {
-  const supabase = createClient();
+  const supabase = createClient()
 
   const handleGoogleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -14,12 +14,12 @@ export default function GoogleSignIn({ text }: GoogleSignInProps) {
       options: {
         redirectTo: `${location.origin}/auth/callback`,
       },
-    });
+    })
 
     if (error) {
-      console.error('Error signing in with Google:', error);
+      console.error('Error signing in with Google:', error)
     }
-  };
+  }
 
   return (
     <button
@@ -29,5 +29,5 @@ export default function GoogleSignIn({ text }: GoogleSignInProps) {
       <FcGoogle className="w-5 h-5 mr-2" />
       {text} with Google
     </button>
-  );
+  )
 }

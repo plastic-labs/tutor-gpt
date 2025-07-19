@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 /* @custom-variant dark (&:where(.dark, .dark *)); */
@@ -174,7 +174,7 @@ button:hover {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
   }
-  
+
   .scrollbar-hover-only::-webkit-scrollbar {
     width: 6px; /* Always reserve 6px space */
   }

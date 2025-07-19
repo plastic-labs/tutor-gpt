@@ -1,40 +1,40 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+'use client'
+import { useRouter } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
 
 export function CookieConsentBanner() {
-  const [isVisible, setIsVisible] = useState<boolean>(true);
-  const router = useRouter();
+  const [isVisible, setIsVisible] = useState<boolean>(true)
+  const router = useRouter()
 
   useEffect(() => {
-    const storedConsent = localStorage.getItem('cookieConsent');
+    const storedConsent = localStorage.getItem('cookieConsent')
     if (storedConsent !== null) {
-      setIsVisible(false);
+      setIsVisible(false)
     }
-  }, []);
+  }, [])
 
   const acceptCookies = () => {
-    setIsVisible(false);
-    localStorage.setItem('cookieConsent', JSON.stringify(true));
+    setIsVisible(false)
+    localStorage.setItem('cookieConsent', JSON.stringify(true))
     // TODO: Log file or sentry record
     // onAccept();
-  };
+  }
 
   const declineCookies = () => {
-    router.push('https://bloombot.ai');
+    router.push('https://bloombot.ai')
     // setIsVisible(false);
     // localStorage.setItem("cookieConsent", JSON.stringify(false));
     // Log file or sentry record
     // onDecline();
-  };
+  }
 
   const closeBanner = () => {
-    setIsVisible(false);
+    setIsVisible(false)
     // TODO: Log file or sentry record
     // onDecline();
-  };
+  }
 
-  if (!isVisible) return null;
+  if (!isVisible) return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 flex justify-center items-center p-4 z-50">
@@ -83,5 +83,5 @@ export function CookieConsentBanner() {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,49 +1,49 @@
-import { Conversation } from '@/utils/types';
-import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-import Skeleton from 'react-loading-skeleton';
-import { departureMono } from '@/utils/fonts';
+import { Edit, MoreHorizontal, Trash2 } from 'lucide-react'
+import Skeleton from 'react-loading-skeleton'
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+} from '@/components/ui/context-menu'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui/dropdown-menu'
+import { departureMono } from '@/utils/fonts'
+import type { Conversation } from '@/utils/types'
 
 interface ConversationTabRegularProps {
-  conversation: Conversation;
-  select: () => void;
-  selected: boolean;
-  edit: () => void;
-  del: () => void;
-  loading?: false;
+  conversation: Conversation
+  select: () => void
+  selected: boolean
+  edit: () => void
+  del: () => void
+  loading?: false
 }
 
 interface ConversationTabLoadingProps {
-  conversation?: undefined;
-  select?: undefined;
-  selected?: undefined;
-  edit?: undefined;
-  del?: undefined;
-  loading: true;
+  conversation?: undefined
+  select?: undefined
+  selected?: undefined
+  edit?: undefined
+  del?: undefined
+  loading: true
 }
 
 type ConversationTabProps =
   | ConversationTabRegularProps
-  | ConversationTabLoadingProps;
+  | ConversationTabLoadingProps
 
 function formatTimestamp(timestamp?: string): string {
-  if (!timestamp) return '';
+  if (!timestamp) return ''
 
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
   if (days === 0) {
     // Today - show time
@@ -51,18 +51,18 @@ function formatTimestamp(timestamp?: string): string {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
-    });
+    })
   } else if (days === 1) {
-    return 'Yesterday';
+    return 'Yesterday'
   } else if (days < 7) {
-    return `${days} days ago`;
+    return `${days} days ago`
   } else {
     // Older - show date
     return date.toLocaleDateString('en-US', {
       month: 'numeric',
       day: 'numeric',
       year: '2-digit',
-    });
+    })
   }
 }
 
@@ -75,8 +75,8 @@ export function ConversationTab({
   loading,
 }: ConversationTabProps) {
   const handleOptionsClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
+    e.stopPropagation()
+  }
 
   if (loading) {
     return (
@@ -88,7 +88,7 @@ export function ConversationTab({
           <Skeleton height={12} width={60} />
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -119,11 +119,17 @@ export function ConversationTab({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
-              <DropdownMenuItem onClick={edit} className="flex items-center gap-2">
+              <DropdownMenuItem
+                onClick={edit}
+                className="flex items-center gap-2"
+              >
                 <Edit className="w-4 h-4" />
                 Rename
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={del} className="flex items-center gap-2 text-red-600">
+              <DropdownMenuItem
+                onClick={del}
+                className="flex items-center gap-2 text-red-600"
+              >
                 <Trash2 className="w-4 h-4" />
                 Delete
               </DropdownMenuItem>
@@ -145,5 +151,5 @@ export function ConversationTab({
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-  );
+  )
 }

@@ -1,7 +1,7 @@
-import { cn } from '@/utils/helpers';
+import { cn } from '@/utils/helpers'
 
 interface BloomLogoProps {
-  className?: string;
+  className?: string
 }
 
 export default function BloomLogo({ className }: BloomLogoProps) {
@@ -19,5 +19,5 @@ export default function BloomLogo({ className }: BloomLogoProps) {
         className="fill-current"
       />
     </svg>
-  );
+  )
 }

@@ -1,7 +1,7 @@
-import { Mistral } from '@mistralai/mistralai';
+import { Mistral } from '@mistralai/mistralai'
 
-const apiKey = process.env.MISTRAL_API_KEY;
-const client = new Mistral({ apiKey: apiKey });
+const apiKey = process.env.MISTRAL_API_KEY
+const client = new Mistral({ apiKey: apiKey })
 
 export async function parsePDF(
   buffer: ArrayBuffer,
@@ -9,7 +9,7 @@ export async function parsePDF(
 ): Promise<string[]> {
   try {
     // Convert ArrayBuffer to Buffer for file upload
-    const fileBuffer = Buffer.from(buffer);
+    const fileBuffer = Buffer.from(buffer)
 
     // Upload the file to Mistral
     const uploadedFile = await client.files.upload({
@@ -17,14 +17,13 @@ export async function parsePDF(
         fileName: fileName,
         content: fileBuffer,
       },
-      // @ts-expect-error - library is not updated
       purpose: 'ocr',
-    });
+    })
 
     // Get signed URL for the uploaded file
     const signedUrl = await client.files.getSignedUrl({
       fileId: uploadedFile.id,
-    });
+    })
 
     // Process the document with OCR
     const ocrResponse = await client.ocr.process({
@@ -33,21 +32,21 @@ export async function parsePDF(
         type: 'document_url',
         documentUrl: signedUrl.url,
       },
-    });
+    })
 
     // Extract text from OCR response
     // Note: The exact structure of ocrResponse will depend on Mistral's API response format
     // You may need to adjust this based on the actual response structure
-    const extractedText = ocrResponse.pages.map((page) => page.markdown);
+    const extractedText = ocrResponse.pages.map((page) => page.markdown)
 
     // Clean up: Delete the uploaded file
     await client.files.delete({
       fileId: uploadedFile.id,
-    });
+    })
 
-    return extractedText;
+    return extractedText
   } catch (error) {
-    console.error('Error parsing PDF:', error);
-    throw new Error('Failed to parse PDF file');
+    console.error('Error parsing PDF:', error)
+    throw new Error('Failed to parse PDF file')
   }
 }

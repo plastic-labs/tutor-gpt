@@ -1,27 +1,27 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { useRouter } from 'next/navigation';
-import Swal from 'sweetalert2';
+'use client'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import Swal from 'sweetalert2'
+import { createClient } from '@/utils/supabase/client'
 
 export default function Forgot(props: any) {
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('')
 
-  const supabase = createClient();
-  const router = useRouter();
+  const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
         // Can't access this page if you're not logged in
-        router.push('/auth');
+        router.push('/auth')
       }
-    });
-  }, [supabase, router]);
+    })
+  }, [supabase, router])
 
   const handleReset = async (e: any) => {
-    e.preventDefault();
-    const { data, error } = await supabase.auth.updateUser({ password });
+    e.preventDefault()
+    const { data, error } = await supabase.auth.updateUser({ password })
 
     if (error) {
       await Swal.fire({
@@ -30,9 +30,9 @@ export default function Forgot(props: any) {
         icon: 'error',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
-      console.error(error);
-      return;
+      })
+      console.error(error)
+      return
     }
 
     if (data) {
@@ -42,10 +42,10 @@ export default function Forgot(props: any) {
         icon: 'success',
         confirmButtonColor: '#3085d6',
         confirmButtonText: 'Close',
-      });
-      router.push(`/`);
+      })
+      router.push(`/`)
     }
-  };
+  }
 
   return (
     <form action="#" className="mt-8 grid grid-cols-6 gap-6 text-foreground">
@@ -76,5 +76,5 @@ export default function Forgot(props: any) {
         </button>
       </div>
     </form>
-  );
+  )
 }

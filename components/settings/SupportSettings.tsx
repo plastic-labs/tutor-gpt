@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import {
   Card,
@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from '@/components/ui/card'
 
 export function SupportSettings() {
   return (
@@ -33,5 +33,5 @@ export function SupportSettings() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

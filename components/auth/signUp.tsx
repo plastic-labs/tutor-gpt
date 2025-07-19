@@ -1,30 +1,30 @@
-'use client';
-import { useState, useRef } from 'react';
-import { useTheme } from 'next-themes';
-import Swal from 'sweetalert2';
-import GoogleSignIn from './google';
-import DiscordSignIn from './discord';
+'use client'
+import { useTheme } from 'next-themes'
+import { useRef, useState } from 'react'
+import Swal from 'sweetalert2'
+import DiscordSignIn from './discord'
+import GoogleSignIn from './google'
 
 export default function SignUp(props: {
-  stateSync: (state: string) => void;
-  handler: (formData: FormData) => Promise<any>;
+  stateSync: (state: string) => void
+  handler: (formData: FormData) => Promise<any>
 }) {
-  const { stateSync, handler } = props;
-  const { theme } = useTheme();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [opt, setOpt] = useState<boolean>(true);
-  const [age, setAge] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { stateSync, handler } = props
+  const { theme } = useTheme()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [opt, setOpt] = useState<boolean>(true)
+  const [age, setAge] = useState<boolean>(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!formRef.current) return;
-    setIsLoading(true);
+    e.preventDefault()
+    if (!formRef.current) return
+    setIsLoading(true)
     try {
-      const formData = new FormData(formRef.current);
+      const formData = new FormData(formRef.current)
       if (!age) {
         await Swal.fire({
           title: 'Age Verification Required',
@@ -32,8 +32,8 @@ export default function SignUp(props: {
           text: 'Please confirm that you are 13 years or older',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
-        });
-        return;
+        })
+        return
       }
       if (password !== passwordConfirmation) {
         await Swal.fire({
@@ -42,8 +42,8 @@ export default function SignUp(props: {
           text: 'Re-confirm your password and try again',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
-        });
-        return;
+        })
+        return
       }
       if (password.length < 6) {
         await Swal.fire({
@@ -52,11 +52,11 @@ export default function SignUp(props: {
           text: 'Make sure the password is at least 6 characters long',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
-        });
-        return;
+        })
+        return
       }
 
-      const error = await handler(formData);
+      const error = await handler(formData)
       if (error) {
         Swal.fire({
           title: 'Something went wrong',
@@ -64,8 +64,8 @@ export default function SignUp(props: {
           text: 'Please try again and make sure the password is at least 6 characters long',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
-        });
-        console.error(error);
+        })
+        console.error(error)
       } else {
         Swal.fire({
           title: 'Success',
@@ -73,12 +73,12 @@ export default function SignUp(props: {
           text: 'Please check your email for a verification link',
           confirmButtonText: 'Close',
           confirmButtonColor: '#3085d6',
-        });
+        })
       }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <>
@@ -249,5 +249,5 @@ export default function SignUp(props: {
         <DiscordSignIn text="Sign Up" />
       </div>
     </>
-  );
+  )
 }

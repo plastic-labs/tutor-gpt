@@ -1,20 +1,20 @@
-import './globals.css';
-import 'react-loading-skeleton/dist/skeleton.css';
-import type { Metadata } from 'next';
-import { Roboto_Mono } from 'next/font/google';
+import './globals.css'
+import 'react-loading-skeleton/dist/skeleton.css'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import type { Metadata } from 'next'
+import { Roboto_Mono } from 'next/font/google'
+import { ThemeProvider } from 'next-themes'
+import { Suspense } from 'react'
+import { Toaster } from '@/components/ui/sonner'
+import { cn } from '@/utils/helpers'
 import {
   PHProvider,
   PostHogPageview,
   SWRProvider,
   ViewportScaleProvider,
-} from './providers';
-import { Suspense } from 'react';
-import { ThemeProvider } from 'next-themes';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { cn } from '@/utils/helpers';
-import { Toaster } from '@/components/ui/sonner';
+} from './providers'
 
-const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] });
+const roboto = Roboto_Mono({ weight: '400', subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Bloombot - Learning. Reimagined.',
@@ -55,12 +55,12 @@ export const metadata: Metadata = {
     },
   },
   manifest: '/site.webmanifest',
-};
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en" suppressHydrationWarning className="h-[100dvh]">
@@ -88,5 +88,5 @@ export default function RootLayout({
         <SpeedInsights />
       </body>
     </html>
-  );
+  )
 }

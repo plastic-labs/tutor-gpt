@@ -1,11 +1,11 @@
-import retry from 'retry';
-import { captureException, captureMessage } from '@sentry/nextjs';
+import { captureException, captureMessage } from '@sentry/nextjs'
+import retry from 'retry'
 
 interface RetryOptions {
-  retries: number;
-  factor: number;
-  minTimeout: number;
-  maxTimeout: number;
+  retries: number
+  factor: number
+  minTimeout: number
+  maxTimeout: number
 }
 
 const dbOptions: RetryOptions = {
@@ -13,17 +13,17 @@ const dbOptions: RetryOptions = {
   factor: 1.5,
   minTimeout: 1000,
   maxTimeout: 10000,
-};
+}
 
 const openAIOptions: RetryOptions = {
   retries: 5,
   factor: 2,
   minTimeout: 4000,
   maxTimeout: 60000,
-};
+}
 
 function isRateLimitError(error: any): boolean {
-  return error?.response?.data?.error === 'rate_limit_exceeded';
+  return error?.response?.data?.error === 'rate_limit_exceeded'
 }
 
 function retryOperation<T>(
@@ -32,12 +32,12 @@ function retryOperation<T>(
   isOpenAI: boolean
 ): Promise<T> {
   return new Promise((resolve, reject) => {
-    const retryOperation = retry.operation(options);
+    const retryOperation = retry.operation(options)
 
     retryOperation.attempt(async (currentAttempt) => {
       try {
-        const result = await operation();
-        resolve(result);
+        const result = await operation()
+        resolve(result)
       } catch (error: any) {
         if (isOpenAI && isRateLimitError(error)) {
           captureMessage('OpenAI Rate Limit Hit', {
@@ -46,27 +46,27 @@ function retryOperation<T>(
               attempt: currentAttempt,
               error: error.message,
             },
-          });
+          })
         } else {
-          captureException(error);
+          captureException(error)
         }
 
         if (retryOperation.retry(error)) {
-          return;
+          return
         }
 
-        reject(retryOperation.mainError());
+        reject(retryOperation.mainError())
       }
-    });
-  });
+    })
+  })
 }
 
 export function retryDBOperation<T>(operation: () => Promise<T>): Promise<T> {
-  return retryOperation(operation, dbOptions, false);
+  return retryOperation(operation, dbOptions, false)
 }
 
 export function retryOpenAIOperation<T>(
   operation: () => Promise<T>
 ): Promise<T> {
-  return retryOperation(operation, openAIOptions, true);
+  return retryOperation(operation, openAIOptions, true)
 }

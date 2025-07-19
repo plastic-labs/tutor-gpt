@@ -1,28 +1,27 @@
-'use server';
+'use server'
 
-import { createClient } from '@/utils/supabase/server';
-import { createOrRetrieveCustomer } from '@/utils/supabase/admin';
+import Stripe from 'stripe'
+//
+import type { Tables } from '@/utils/database.types'
 
 import {
-  getURL,
-  getErrorRedirect,
   calculateTrialEndUnixTimestamp,
-} from '@/utils/helpers';
+  getErrorRedirect,
+  getURL,
+} from '@/utils/helpers'
+import { createOrRetrieveCustomer } from '@/utils/supabase/admin'
+import { createClient } from '@/utils/supabase/server'
 
-import Stripe from 'stripe';
-//
-import { Tables } from '@/utils/database.types';
-
-type Price = Tables<'prices'>;
+type Price = Tables<'prices'>
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-01-27.acacia',
-});
+  apiVersion: '2025-02-24.acacia',
+})
 
 type CheckoutResponse = {
-  errorRedirect?: string;
-  sessionId?: string;
-};
+  errorRedirect?: string
+  sessionId?: string
+}
 
 export async function checkoutWithStripe(
   price: Price,
@@ -30,27 +29,27 @@ export async function checkoutWithStripe(
 ): Promise<CheckoutResponse> {
   try {
     // Get the user from Supabase auth
-    const supabase = await createClient();
+    const supabase = await createClient()
     const {
       error,
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser()
 
     if (error || !user) {
-      console.error(error);
-      throw new Error('Could not get user session.');
+      console.error(error)
+      throw new Error('Could not get user session.')
     }
 
     // Retrieve or create the customer in Stripe
-    let customer: string;
+    let customer: string
     try {
       customer = await createOrRetrieveCustomer({
         uuid: user?.id || '',
         email: user?.email || '',
-      });
+      })
     } catch (err) {
-      console.error(err);
-      throw new Error('Unable to access customer record.');
+      console.error(err)
+      throw new Error('Unable to access customer record.')
     }
 
     let params: Stripe.Checkout.SessionCreateParams = {
@@ -68,12 +67,12 @@ export async function checkoutWithStripe(
       ],
       cancel_url: getURL(redirectPath),
       success_url: getURL(redirectPath),
-    };
+    }
 
     console.log(
       'Trial end:',
       calculateTrialEndUnixTimestamp(price.trial_period_days)
-    );
+    )
 
     if (price.type === 'recurring') {
       params = {
@@ -82,32 +81,32 @@ export async function checkoutWithStripe(
         subscription_data: {
           trial_end: calculateTrialEndUnixTimestamp(price.trial_period_days),
         },
-      };
+      }
     } else if (price.type === 'one_time') {
       params = {
         ...params,
         mode: 'payment',
-      };
+      }
     }
 
     // Create a checkout session in Stripe
-    let session;
+    let session
     try {
-      session = await stripe.checkout.sessions.create(params);
+      session = await stripe.checkout.sessions.create(params)
     } catch (err) {
-      console.error(err);
-      throw new Error('Unable to create checkout session.');
+      console.error(err)
+      throw new Error('Unable to create checkout session.')
     }
 
     // Instead of returning a Response, just return the data or error.
     if (session) {
-      console.log('It is working');
-      return { sessionId: session.id };
+      console.log('It is working')
+      return { sessionId: session.id }
     } else {
-      throw new Error('Unable to create checkout session.');
+      throw new Error('Unable to create checkout session.')
     }
   } catch (error) {
-    console.error(error);
+    console.error(error)
     if (error instanceof Error) {
       return {
         errorRedirect: getErrorRedirect(
@@ -115,7 +114,7 @@ export async function checkoutWithStripe(
           error.message,
           'Please try again later or contact a system administrator.'
         ),
-      };
+      }
     } else {
       return {
         errorRedirect: getErrorRedirect(
@@ -123,57 +122,57 @@ export async function checkoutWithStripe(
           'An unknown error occurred.',
           'Please try again later or contact a system administrator.'
         ),
-      };
+      }
     }
   }
 }
 
 export async function createStripePortal() {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient()
     const {
       error,
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser()
 
     if (!user) {
       if (error) {
-        console.error(error);
+        console.error(error)
       }
-      throw new Error('Could not get user session.');
+      throw new Error('Could not get user session.')
     }
 
-    let customer;
+    let customer
     try {
       customer = await createOrRetrieveCustomer({
         uuid: user.id || '',
         email: user.email || '',
-      });
+      })
     } catch (err) {
-      console.error(err);
-      throw new Error('Unable to access customer record.');
+      console.error(err)
+      throw new Error('Unable to access customer record.')
     }
 
     if (!customer) {
-      throw new Error('Could not get customer.');
+      throw new Error('Could not get customer.')
     }
 
     try {
       const { url } = await stripe.billingPortal.sessions.create({
         customer,
         return_url: getURL('/settings'),
-      });
+      })
       if (!url) {
-        throw new Error('Could not create billing portal');
+        throw new Error('Could not create billing portal')
       }
-      return url;
+      return url
     } catch (err) {
-      console.error(err);
-      throw new Error('Could not create billing portal');
+      console.error(err)
+      throw new Error('Could not create billing portal')
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error(error);
+      console.error(error)
       // TODO
       // return getErrorRedirect(
       //   currentPath,

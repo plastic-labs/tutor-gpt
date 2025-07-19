@@ -1,28 +1,28 @@
-'use client';
-import { createClient } from '@/utils/supabase/client';
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
+'use client'
+import Image from 'next/image'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+
 // import { useTheme } from 'next-themes';
 
-import { SignIn, SignUp, Forgot } from '@/components/auth';
-
-import { login, signup } from './actions';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'
+import { Forgot, SignIn, SignUp } from '@/components/auth'
+import { login, signup } from './actions'
 
 export default function Auth() {
-  const [formType, setFormType] = useState('LOGIN');
-  const supabase = createClient();
+  const [formType, setFormType] = useState('LOGIN')
+  const supabase = createClient()
   // const { theme } = useTheme();
-  const router = useRouter();
+  const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         // Can't access this page if you're logged in
-        router.push('/');
+        router.push('/')
       }
-    });
-  }, [supabase]);
+    })
+  }, [supabase])
 
   return (
     <section
@@ -78,5 +78,5 @@ export default function Auth() {
         </main>
       </div>
     </section>
-  );
+  )
 }

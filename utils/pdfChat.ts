@@ -1,30 +1,30 @@
-import { generateText } from '@/utils/ai';
-import pdfPrompt from '@/utils/prompts/pdf';
-import { honcho } from '@/utils/honcho';
+import { generateText } from '@/utils/ai'
+import { honcho } from '@/utils/honcho'
+import pdfPrompt from '@/utils/prompts/pdf'
 
 export interface PdfChatParams {
-  pdfContext: string;
-  question: string;
+  pdfContext: string
+  question: string
   metadata: {
-    sessionId: string;
-    userId: string;
-  };
+    sessionId: string
+    userId: string
+  }
 }
 
 export interface CollectionChatParams {
-  collectionId: string;
-  question: string;
+  collectionId: string
+  question: string
   metadata: {
-    sessionId: string;
-    userId: string;
-    appId: string;
-  };
+    sessionId: string
+    userId: string
+    appId: string
+  }
 }
 
 interface HonchoDocument {
-  id: string;
-  content: string;
-  metadata?: Record<string, unknown>;
+  id: string
+  content: string
+  metadata?: Record<string, unknown>
 }
 
 export async function pdfChat({
@@ -32,7 +32,7 @@ export async function pdfChat({
   question,
   metadata,
 }: PdfChatParams): Promise<string> {
-  const messages = pdfPrompt(pdfContext, question);
+  const messages = pdfPrompt(pdfContext, question)
 
   const response = await generateText({
     messages,
@@ -42,9 +42,9 @@ export async function pdfChat({
       ...metadata,
       type: 'pdf_chat',
     },
-  });
+  })
 
-  return response.text;
+  return response.text
 }
 
 export async function collectionChat({
@@ -58,12 +58,12 @@ export async function collectionChat({
     metadata.userId,
     collectionId,
     { query: question }
-  )) as HonchoDocument[];
+  )) as HonchoDocument[]
 
   // Combine all document contents into a single context
   const collectionContent = documents
     .map((doc: HonchoDocument) => doc.content)
-    .join('\n\n');
+    .join('\n\n')
 
   // Use the collection content as context for the PDF chat
   return pdfChat({
@@ -73,5 +73,5 @@ export async function collectionChat({
       sessionId: metadata.sessionId,
       userId: metadata.userId,
     },
-  });
+  })
 }

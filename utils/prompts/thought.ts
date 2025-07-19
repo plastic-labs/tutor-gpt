@@ -1,4 +1,4 @@
-import { assistant, Message, user } from '@/utils/ai';
+import { assistant, type Message, user } from '@/utils/ai'
 
 const thoughtWithPDFPrompt: Message[] = [
   user`who are you?`,
@@ -76,6 +76,6 @@ const thoughtWithPDFPrompt: Message[] = [
   I will then output my internal thinking process. This will be followed by '␁' and my Honcho query. If a PDF is available, I will then add another '␁' and my PDF Agent query. If there is no PDF available, I won't delimit the 3rd section. I'll seperate with just '␁', not a new line/space. I won't attempt to answer my own questions.
 
   Please go ahead and send over the first set of inputs whenever you're ready. I'm looking forward to diving in and seeing what insights I can surface from both the user's psychology and their documents to enhance their experience with Bloom the tutor! Let the experiment begin.`,
-];
+]
 
-export default thoughtWithPDFPrompt;
+export default thoughtWithPDFPrompt
