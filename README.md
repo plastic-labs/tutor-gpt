@@ -6,6 +6,11 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/plastic-labs/tutor-gpt)
 [![X (formerly Twitter) URL](https://img.shields.io/twitter/url?url=https%3A%2F%2Ftwitter.com%2FBloomBotAI&label=Twitter)](https://twitter.com/BloomBotAI)
 [![arXiv](https://img.shields.io/badge/arXiv-2310.06983-b31b1b.svg)](https://arxiv.org/abs/2310.06983)
+<br />
+<br />
+<a href="https://vercel.com/oss">
+<img alt="Vercel OSS Program" src="https://vercel.com/oss/program-badge.svg" />
+</a>
 
 Tutor-GPT is an LLM powered learning companion developed by [Plastic
 Labs](https://plasticlabs.ai). It dynamically reasons about your learning needs
