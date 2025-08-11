@@ -165,3 +165,53 @@ button:hover {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom scrollbar styling */
+@layer utilities {
+  /* Scrollbar always reserves space, but only visible on hover */
+  .scrollbar-hover-only {
+    /* Firefox - always show thin scrollbar but transparent */
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  
+  .scrollbar-hover-only::-webkit-scrollbar {
+    width: 6px; /* Always reserve 6px space */
+  }
+
+  .scrollbar-hover-only::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-hover-only::-webkit-scrollbar-thumb {
+    background-color: transparent; /* Hidden by default */
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+  }
+
+  /* Show scrollbar on hover */
+  .scrollbar-hover-only:hover {
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent; /* Firefox */
+  }
+
+  .scrollbar-hover-only:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+  }
+
+  .scrollbar-hover-only:hover::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.8);
+  }
+
+  /* Dark mode for hover-only scrollbar */
+  .dark .scrollbar-hover-only:hover {
+    scrollbar-color: rgba(75, 85, 99, 0.5) transparent; /* Firefox */
+  }
+
+  .dark .scrollbar-hover-only:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.5);
+  }
+
+  .dark .scrollbar-hover-only:hover::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(75, 85, 99, 0.8);
+  }
+}

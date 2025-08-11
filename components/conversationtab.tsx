@@ -81,7 +81,7 @@ export function ConversationTab({
   if (loading) {
     return (
       <div
-        className={`${departureMono.className} px-2.5 py-2 rounded-xl flex justify-between items-center overflow-hidden w-full`}
+        className={`${departureMono.className} px-2.5 py-2 rounded-xl flex justify-between items-center overflow-hidden w-full min-h-[48px]`}
       >
         <div className="flex-1">
           <Skeleton height={20} className="mb-1" />
@@ -95,7 +95,7 @@ export function ConversationTab({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className={`${departureMono.className} px-2.5 py-2 rounded-xl flex justify-between items-center overflow-hidden cursor-pointer hover:bg-secondary-background transition-colors w-full ${
+          className={`${departureMono.className} px-2.5 py-2 rounded-xl flex justify-between items-center overflow-hidden cursor-pointer hover:bg-secondary-background transition-colors w-full min-h-[48px] ${
             selected ? 'bg-secondary-background' : ''
           }`}
           onClick={select}

@@ -1136,9 +1136,9 @@ What's on your mind? Let's dive in. 🌱`,
       {/* Mobile Sidebar Overlay */}
       {isMobile && isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 bg-background">
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col overflow-hidden">
             {/* Mobile sidebar header */}
-            <div className="px-4 py-3.5 border-b-2 border-border flex justify-between items-center">
+            <div className="px-4 py-3.5 border-b-2 border-border flex justify-between items-center shrink-0">
               <button
                 onClick={() => {
                   addChat();
@@ -1157,7 +1157,7 @@ What's on your mind? Let's dive in. 🌱`,
               </button>
             </div>
             {/* Mobile sidebar content */}
-            <div className="flex-1">
+            <div className="flex-1 overflow-y-auto">
               <Sidebar
                 conversations={conversations || []}
                 mutateConversations={mutateConversations}

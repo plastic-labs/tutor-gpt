@@ -198,29 +198,36 @@ export default function Sidebar({
     <div className={`${departureMono.className} h-full w-full`}>
       <div className="h-full overflow-hidden bg-background border-r border-border flex flex-col justify-between items-start">
         {/* Top section with conversations */}
-        <div className="self-stretch px-2.5 py-5 flex flex-col justify-start items-start overflow-y-auto flex-1 gap-2">
+        <div className="self-stretch px-2.5 py-5 flex flex-col justify-start items-start overflow-hidden flex-1 gap-2 min-h-0">
           {/* Header */}
-          <div className="px-2.5 py-1 flex justify-center items-center gap-2.5">
+          <div className="px-2.5 py-1 flex justify-center items-center gap-2.5 shrink-0">
             <div className="text-muted-foreground text-xs font-normal">
               Past Chats
             </div>
           </div>
 
-          {/* Conversation list */}
-          {conversations.length > 0
-            ? conversations.map((cur, i) => (
-                <ConversationTab
-                  conversation={cur}
-                  select={() => setConversationId(cur.conversationId)}
-                  selected={conversationId === cur.conversationId}
-                  edit={() => editConversation(cur)}
-                  del={() => removeConversation(cur)}
-                  key={i}
-                />
-              ))
-            : Array.from({ length: 5 }).map((_, i) => (
-                <ConversationTab loading key={i} />
-              ))}
+        {/* Conversation list */}
+        <div className="group flex flex-col gap-2 w-full overflow-y-auto min-h-0 scrollbar-hover-only">
+          <div className="flex flex-col gap-2 w-full">
+            {conversations.length > 0
+              ? conversations.map((cur, i) => (
+                  <div key={i} className="shrink-0">
+                    <ConversationTab
+                      conversation={cur}
+                      select={() => setConversationId(cur.conversationId)}
+                      selected={conversationId === cur.conversationId}
+                      edit={() => editConversation(cur)}
+                      del={() => removeConversation(cur)}
+                    />
+                  </div>
+                ))
+              : Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="shrink-0">
+                    <ConversationTab loading />
+                  </div>
+                ))}
+          </div>
+        </div>
         </div>
 
         {/* Bottom section with user info */}
