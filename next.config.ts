@@ -111,18 +111,7 @@ const nextConfig: NextConfig = {
 
   output: 'standalone',
 
-  // experimental: {
-  //   instrumentationHook: true,
-  // }
-  // webpack: (config, { isServer }) => {
-  //   // Add a fallback for the https scheme
-  //   config.resolve.fallback = {
-  //     ...config.resolve.fallback,
-  //     https: false,
-  //   };
-  //
-  //   return config;
-  // },
+  serverExternalPackages: ['import-in-the-middle'],
 }
 
 const sentryConfig = withSentryConfig(nextConfig, {
