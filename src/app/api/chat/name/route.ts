@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { createCompletion, getUserData, user } from '@/utils/ai'
+import { createCompletion, user } from '@/utils/ai'
+import { validateUser } from '@/utils/ai/validation'
 import { namePrompt } from '@/utils/prompts/name'
 
 export const runtime = 'nodejs'
@@ -8,12 +9,12 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   const { message } = await req.json()
 
-  const userData = await getUserData()
-  if (!userData) {
+  const validation = await validateUser()
+  if (!validation.isAuthorized) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const { userId } = userData
+  const { userId } = validation.userData!
 
   const finalMessage = user`${message}`
   const prompt = [...namePrompt, finalMessage]

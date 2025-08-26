@@ -1,78 +1,55 @@
-import { generateText, user } from '@/utils/ai'
-import { honcho } from '@/utils/honcho'
-import summaryPrompt from '@/utils/prompts/summary'
-import { MAX_CONTEXT_SIZE, SUMMARY_SIZE } from './conversation'
-import { extractTagContent } from './prompts'
-import type { Message, MetaMessage } from './types'
+// Imports commented out since summarization is disabled
+// import { streamText } from '@/utils/ai'
+// import { buildSummaryPrompt } from '@/utils/ai/prompts'
+// import { honcho, summarizer } from '@/utils/honcho'
 
 export async function checkAndGenerateSummary(
-  appId: string,
+  sessionId: string,
   userId: string,
-  conversationId: string,
-  messageHistory: Message[],
-  summaryHistory: MetaMessage[],
-  lastSummary?: string
+  messageHistory: any[]
 ) {
-  const lastSummaryMessageIndex = messageHistory.findIndex(
-    (m) => m.id === summaryHistory[0]?.message_id
-  )
+  // Commented out - letting honcho handle auto-summarization
+  return
 
-  const messagesSinceLastSummary =
-    lastSummaryMessageIndex === -1
-      ? messageHistory.length
-      : messageHistory.length - lastSummaryMessageIndex
-
-  const needsSummary = messagesSinceLastSummary >= MAX_CONTEXT_SIZE
-
-  if (!needsSummary) {
-    return
-  }
-
-  const lastMessageOfSummary =
-    messageHistory[messageHistory.length - MAX_CONTEXT_SIZE + SUMMARY_SIZE]
-  if (!lastMessageOfSummary) {
-    return
-  }
-
-  const recentMessages = messageHistory.slice(-MAX_CONTEXT_SIZE)
-  const messagesToSummarize = recentMessages.slice(0, SUMMARY_SIZE)
-
-  const formattedMessages = messagesToSummarize.map((msg) => {
-    if (msg.is_user) {
-      return `User: ${msg.content}`
+  /* 
+  try {
+    // Check if we need to generate a summary (every 10 messages)
+    if (messageHistory.length % 10 !== 0) {
+      return
     }
-    return `Assistant: ${msg.content}`
-  })
 
-  const summaryMessages = [
-    ...summaryPrompt,
-    user`<new_messages>
-    ${formattedMessages}
-    </new_messages>
+    const session = await honcho.session(sessionId)
 
-    <existing_summary>
-    ${lastSummary || ''}
-    </existing_summary>`,
-  ]
-
-  const summary = await generateText({
-    messages: summaryMessages,
-    metadata: {
-      sessionId: conversationId,
-      userId,
-      type: 'summary',
-    },
-  })
-
-  const newSummary = extractTagContent(summary.text, 'summary')
-
-  if (newSummary) {
-    await honcho.apps.users.metamessages.create(appId, userId, {
-      session_id: conversationId,
-      message_id: lastMessageOfSummary.id,
-      metamessage_type: 'summary',
-      content: newSummary,
-      metadata: { type: 'assistant' },
+    // Get context for summary generation
+    const context = await session.getContext({
+      summary: false,
+      tokens: 4000,
     })
+
+    // Generate summary prompt
+    const summaryPrompt = buildSummaryPrompt(context.messages)
+
+    // Generate summary
+    const { textStream: summaryStream } = streamText({
+      messages: summaryPrompt,
+      metadata: {
+        sessionId,
+        userId,
+        type: 'summary',
+      },
+    })
+
+    let summary = ''
+    for await (const chunk of summaryStream) {
+      summary += chunk
+    }
+
+    // Add summary message to session
+    await session.addMessages([summarizer.message(summary)])
+
+    console.log('Generated summary for session:', sessionId)
+  } catch (error) {
+    console.error('Error generating summary:', error)
   }
+  */
 }

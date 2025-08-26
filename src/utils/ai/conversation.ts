@@ -1,4 +1,4 @@
-import { honcho } from '@/utils/honcho'
+import { bloom, honcho, honchoAgent, pdf, thinker } from '@/utils/honcho'
 import type { ConversationHistory } from './types'
 
 // Constants
@@ -6,68 +6,48 @@ export const MAX_CONTEXT_SIZE = 11
 export const SUMMARY_SIZE = 5
 
 export async function fetchConversationHistory(
-  appId: string,
-  userId: string,
-  conversationId: string
+  sessionId: string,
+  userId: string
 ): Promise<ConversationHistory> {
-  const [
-    messageIter,
-    thoughtIter,
-    honchoIter,
-    pdfIter,
-    summaryIter,
-    collectionIter,
-  ] = await Promise.all([
-    honcho.apps.users.sessions.messages.list(appId, userId, conversationId, {
-      reverse: true,
-      size: MAX_CONTEXT_SIZE,
-    }),
-    honcho.apps.users.metamessages.list(appId, userId, {
-      session_id: conversationId,
-      metamessage_type: 'thought',
-      reverse: true,
-      size: MAX_CONTEXT_SIZE,
-    }),
-    honcho.apps.users.metamessages.list(appId, userId, {
-      session_id: conversationId,
-      metamessage_type: 'honcho',
-      reverse: true,
-      size: MAX_CONTEXT_SIZE,
-    }),
-    honcho.apps.users.metamessages.list(appId, userId, {
-      session_id: conversationId,
-      metamessage_type: 'pdf',
-      reverse: true,
-      size: MAX_CONTEXT_SIZE,
-    }),
-    honcho.apps.users.metamessages.list(appId, userId, {
-      session_id: conversationId,
-      metamessage_type: 'summary',
-      reverse: true,
-      size: 1,
-    }),
-    honcho.apps.users.metamessages.list(appId, userId, {
-      session_id: conversationId,
-      metamessage_type: 'collection',
-      reverse: true,
-      size: 1,
-    }),
-  ])
+  const session = await honcho.session(sessionId)
+
+  // Get context from the session
+  // const context = await session.getContext({
+  //   summary: true,
+  //   tokens: 2000,
+  // })
+
+  // Get recent messages
+  const messagesPage = await session.getMessages()
+  const messages: any[] = []
+  for await (const message of messagesPage) {
+    messages.push(message)
+  }
+  const recentMessages = messages.slice(-MAX_CONTEXT_SIZE)
+
+  // Extract peer messages by type
+  const thoughts = recentMessages.filter((msg) => msg.peer_id === 'thinker')
+  const honchoMessages = recentMessages.filter(
+    (msg) => msg.peer_id === 'honcho-agent'
+  )
+  const pdfMessages = recentMessages.filter((msg) => msg.peer_id === 'pdf')
+
+  // Get collection ID from session metadata if available
+  const metadata = await session.getMetadata()
+  const collectionId = metadata?.collectionId as string | undefined
 
   return {
-    messages: Array.from(messageIter.items || []).reverse(),
-    thoughts: Array.from(thoughtIter.items || []).reverse(),
-    honchoMessages: Array.from(honchoIter.items || []).reverse(),
-    pdfMessages: Array.from(pdfIter.items || []).reverse(),
-    summaries: Array.from(summaryIter.items || []),
-    collectionId: collectionIter.items?.[0]?.content,
+    messages: recentMessages,
+    thoughts,
+    honchoMessages,
+    pdfMessages,
+    collectionId,
   }
 }
 
 export async function saveConversation(
-  appId: string,
+  sessionId: string,
   userId: string,
-  conversationId: string,
   userMessage: string,
   thought: string,
   honchoContent: string,
@@ -75,63 +55,43 @@ export async function saveConversation(
   response: string,
   collectionId?: string
 ) {
-  // Save the user message and related metamessages
-  const newUserMessage = await honcho.apps.users.sessions.messages.create(
-    appId,
-    userId,
-    conversationId,
-    {
-      is_user: true,
-      content: userMessage,
-    }
-  )
+  const session = await honcho.session(sessionId)
 
-  // Save the thought metamessage
-  await honcho.apps.users.metamessages.create(appId, userId, {
-    session_id: conversationId,
-    message_id: newUserMessage.id,
-    metamessage_type: 'thought',
-    content: thought || '',
-    metadata: { type: 'assistant' },
-  })
+  // Create user peer for this specific user
+  const userPeer = await honcho.peer(userId)
 
-  // Save honcho metamessage
-  await honcho.apps.users.metamessages.create(appId, userId, {
-    session_id: conversationId,
-    message_id: newUserMessage.id,
-    metamessage_type: 'honcho',
-    content: honchoContent || '',
-    metadata: { type: 'assistant' },
-  })
+  // Prepare all messages to add atomically - only add non-empty messages
+  const messages = [(await userPeer).message(userMessage)]
 
-  // Save PDF metamessage
-  await honcho.apps.users.metamessages.create(appId, userId, {
-    session_id: conversationId,
-    message_id: newUserMessage.id,
-    metamessage_type: 'pdf',
-    content: pdfContent || '',
-    metadata: { type: 'assistant' },
-  })
-
-  // Save collection ID metamessage if available
-  if (collectionId) {
-    await honcho.apps.users.metamessages.create(appId, userId, {
-      session_id: conversationId,
-      message_id: newUserMessage.id,
-      metamessage_type: 'collection',
-      content: collectionId,
-      metadata: { type: 'assistant' },
-    })
+  // Only add thought if it's not empty
+  if (thought && thought.trim()) {
+    messages.push((await thinker).message(thought))
   }
 
-  // Save the assistant response
-  await honcho.apps.users.sessions.messages.create(
-    appId,
-    userId,
-    conversationId,
-    {
-      is_user: false,
-      content: response,
-    }
-  )
+  // Only add honcho content if it's not empty
+  if (honchoContent && honchoContent.trim()) {
+    messages.push((await honchoAgent).message(honchoContent))
+  }
+
+  // Only add PDF content if it's not empty
+  if (pdfContent && pdfContent.trim()) {
+    messages.push((await pdf).message(pdfContent))
+  }
+
+  // Only add response if it's not empty
+  if (response && response.trim()) {
+    messages.push((await bloom).message(response))
+  }
+
+  // Add all messages at once
+  await session.addMessages(messages)
+
+  // Update session metadata with collection ID if available
+  if (collectionId) {
+    const metadata = await session.getMetadata()
+    await session.setMetadata({
+      ...metadata,
+      collectionId,
+    })
+  }
 }

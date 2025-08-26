@@ -60,7 +60,8 @@ const fetchUser = async () => {
 
 interface StreamResponseChunk {
   type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery'
-  text: string
+  content: string
+  finished: boolean
 }
 
 class StreamReader {
@@ -404,6 +405,7 @@ What's on your mind? Let's dive in. 🌱`,
     revalidateOnReconnect: false,
     dedupingInterval: 60000,
     onSuccess: () => {
+      console.log(messages)
       if (conversationId?.startsWith('temp-')) {
         mutateMessages([], false)
       }
@@ -597,8 +599,6 @@ What's on your mind? Let's dive in. 🌱`,
 
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    let currentModelOutput = ''
-
     try {
       // Check if we should generate a summary (name) for the conversation
       const isFirstChat = messages?.length === 0
@@ -640,8 +640,8 @@ What's on your mind? Let's dive in. 🌱`,
 
         switch (chunk.type) {
           case 'thought':
-            // Add thought content directly since server now sends clean content
-            if (chunk.text.trim()) {
+            // Add thought content to the thinking section
+            if (chunk.content.trim()) {
               mutateMessages(
                 (currentMessages) => {
                   const msgs = currentMessages || []
@@ -649,13 +649,82 @@ What's on your mind? Let's dive in. 🌱`,
                   if (lastMessage && !lastMessage.isUser) {
                     const updatedThinking: ThinkingData = {
                       thoughtContent:
-                        (lastMessage.thinking?.thoughtContent || '') +
-                        chunk.text,
-                      thoughtFinished: false,
-                      honchoQuery: lastMessage.thinking?.honchoQuery,
-                      honchoResponse: lastMessage.thinking?.honchoResponse,
-                      pdfQuery: lastMessage.thinking?.pdfQuery,
-                      pdfResponse: lastMessage.thinking?.pdfResponse,
+                        lastMessage.thinking?.thoughtContent + chunk.content,
+                      thoughtFinished: chunk.finished,
+                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
+                      honchoResponse:
+                        lastMessage.thinking?.honchoResponse || '',
+                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
+                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
+                    }
+                    return [
+                      ...msgs.slice(0, -1),
+                      {
+                        ...lastMessage,
+                        thinking: updatedThinking,
+                      },
+                    ]
+                  }
+                  return msgs
+                },
+                { revalidate: false }
+              )
+            }
+            break
+
+          case 'honcho':
+            // Add honcho content to the thinking section
+            if (chunk.content.trim()) {
+              mutateMessages(
+                (currentMessages) => {
+                  const msgs = currentMessages || []
+                  const lastMessage = msgs[msgs.length - 1]
+                  if (lastMessage && !lastMessage.isUser) {
+                    const updatedThinking: ThinkingData = {
+                      thoughtContent:
+                        lastMessage.thinking?.thoughtContent || '',
+                      thoughtFinished:
+                        lastMessage.thinking?.thoughtFinished || false,
+                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
+                      honchoResponse:
+                        lastMessage.thinking?.honchoResponse + chunk.content,
+                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
+                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
+                    }
+                    return [
+                      ...msgs.slice(0, -1),
+                      {
+                        ...lastMessage,
+                        thinking: updatedThinking,
+                      },
+                    ]
+                  }
+                  return msgs
+                },
+                { revalidate: false }
+              )
+            }
+            break
+
+          case 'pdf':
+            // Add PDF content to the thinking section
+            if (chunk.content.trim()) {
+              mutateMessages(
+                (currentMessages) => {
+                  const msgs = currentMessages || []
+                  const lastMessage = msgs[msgs.length - 1]
+                  if (lastMessage && !lastMessage.isUser) {
+                    const updatedThinking: ThinkingData = {
+                      thoughtContent:
+                        lastMessage.thinking?.thoughtContent || '',
+                      thoughtFinished:
+                        lastMessage.thinking?.thoughtFinished || false,
+                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
+                      honchoResponse:
+                        lastMessage.thinking?.honchoResponse || '',
+                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
+                      pdfResponse:
+                        lastMessage.thinking?.pdfResponse + chunk.content,
                     }
                     return [
                       ...msgs.slice(0, -1),
@@ -673,86 +742,8 @@ What's on your mind? Let's dive in. 🌱`,
             break
 
           case 'honchoQuery':
-            mutateMessages(
-              (currentMessages) => {
-                const msgs = currentMessages || []
-                const lastMessage = msgs[msgs.length - 1]
-                if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking = updateThinkingData(
-                    lastMessage.thinking,
-                    chunk.text,
-                    'honchoQuery'
-                  )
-                  return [
-                    ...msgs.slice(0, -1),
-                    {
-                      ...lastMessage,
-                      thinking: updatedThinking,
-                    },
-                  ]
-                }
-                return msgs
-              },
-              { revalidate: false }
-            )
-            break
-
-          case 'pdfQuery':
-            mutateMessages(
-              (currentMessages) => {
-                const msgs = currentMessages || []
-                const lastMessage = msgs[msgs.length - 1]
-                if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking = updateThinkingData(
-                    lastMessage.thinking,
-                    chunk.text,
-                    'pdfQuery'
-                  )
-                  return [
-                    ...msgs.slice(0, -1),
-                    {
-                      ...lastMessage,
-                      thinking: updatedThinking,
-                    },
-                  ]
-                }
-                return msgs
-              },
-              { revalidate: false }
-            )
-            break
-
-          case 'honcho':
-            mutateMessages(
-              (currentMessages) => {
-                const msgs = currentMessages || []
-                const lastMessage = msgs[msgs.length - 1]
-                if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking: ThinkingData = {
-                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
-                    thoughtFinished: false,
-                    honchoQuery: lastMessage.thinking?.honchoQuery,
-                    honchoResponse:
-                      (lastMessage.thinking?.honchoResponse || '') + chunk.text,
-                    pdfQuery: lastMessage.thinking?.pdfQuery,
-                    pdfResponse: lastMessage.thinking?.pdfResponse,
-                  }
-                  return [
-                    ...msgs.slice(0, -1),
-                    {
-                      ...lastMessage,
-                      thinking: updatedThinking,
-                    },
-                  ]
-                }
-                return msgs
-              },
-              { revalidate: false }
-            )
-            break
-
-          case 'pdf':
-            if (chunk.text.length > 0) {
+            // Add honcho query to the thinking section
+            if (chunk.content.trim()) {
               mutateMessages(
                 (currentMessages) => {
                   const msgs = currentMessages || []
@@ -761,12 +752,48 @@ What's on your mind? Let's dive in. 🌱`,
                     const updatedThinking: ThinkingData = {
                       thoughtContent:
                         lastMessage.thinking?.thoughtContent || '',
-                      thoughtFinished: false,
-                      honchoQuery: lastMessage.thinking?.honchoQuery,
-                      honchoResponse: lastMessage.thinking?.honchoResponse,
-                      pdfQuery: lastMessage.thinking?.pdfQuery,
-                      pdfResponse:
-                        (lastMessage.thinking?.pdfResponse || '') + chunk.text,
+                      thoughtFinished:
+                        lastMessage.thinking?.thoughtFinished || false,
+                      honchoQuery:
+                        lastMessage.thinking?.honchoQuery + chunk.content,
+                      honchoResponse:
+                        lastMessage.thinking?.honchoResponse || '',
+                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
+                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
+                    }
+                    return [
+                      ...msgs.slice(0, -1),
+                      {
+                        ...lastMessage,
+                        thinking: updatedThinking,
+                      },
+                    ]
+                  }
+                  return msgs
+                },
+                { revalidate: false }
+              )
+            }
+            break
+
+          case 'pdfQuery':
+            // Add PDF query to the thinking section
+            if (chunk.content.trim()) {
+              mutateMessages(
+                (currentMessages) => {
+                  const msgs = currentMessages || []
+                  const lastMessage = msgs[msgs.length - 1]
+                  if (lastMessage && !lastMessage.isUser) {
+                    const updatedThinking: ThinkingData = {
+                      thoughtContent:
+                        lastMessage.thinking?.thoughtContent || '',
+                      thoughtFinished:
+                        lastMessage.thinking?.thoughtFinished || false,
+                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
+                      honchoResponse:
+                        lastMessage.thinking?.honchoResponse || '',
+                      pdfQuery: lastMessage.thinking?.pdfQuery + chunk.content,
+                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
                     }
                     return [
                       ...msgs.slice(0, -1),
@@ -784,34 +811,27 @@ What's on your mind? Let's dive in. 🌱`,
             break
 
           case 'response':
-            currentModelOutput += chunk.text
-            mutateMessages(
-              (currentMessages) => {
-                const msgs = currentMessages || []
-                const lastMessage = msgs[msgs.length - 1]
-                if (lastMessage && !lastMessage.isUser) {
-                  const updatedThinking: ThinkingData = {
-                    thoughtContent: lastMessage.thinking?.thoughtContent || '',
-                    thoughtFinished: true,
-                    honchoQuery: lastMessage.thinking?.honchoQuery,
-                    honchoResponse: lastMessage.thinking?.honchoResponse,
-                    pdfQuery: lastMessage.thinking?.pdfQuery,
-                    pdfResponse: lastMessage.thinking?.pdfResponse,
+            // Update the response content
+            if (chunk.content.trim()) {
+              mutateMessages(
+                (currentMessages) => {
+                  const msgs = currentMessages || []
+                  const lastMessage = msgs[msgs.length - 1]
+                  if (lastMessage && !lastMessage.isUser) {
+                    return [
+                      ...msgs.slice(0, -1),
+                      {
+                        ...lastMessage,
+                        content: (lastMessage.content || '') + chunk.content,
+                      },
+                    ]
                   }
-                  return [
-                    ...msgs.slice(0, -1),
-                    {
-                      ...lastMessage,
-                      content: currentModelOutput,
-                      thinking: updatedThinking,
-                    },
-                  ]
-                }
-                return msgs
-              },
-              { revalidate: false }
-            )
-            messageListRef.current?.scrollToBottom()
+                  return msgs
+                },
+                { revalidate: false }
+              )
+              messageListRef.current?.scrollToBottom()
+            }
             break
         }
       }
@@ -926,6 +946,7 @@ What's on your mind? Let's dive in. 🌱`,
               {/* Chat Header */}
               <div className="flex items-center justify-start gap-3.5 overflow-hidden border-border border-b-2 px-4 py-3.5 ">
                 <button
+                  type="button"
                   onClick={() => {
                     if (isMobile) {
                       setIsMobileSidebarOpen(!isMobileSidebarOpen)
@@ -979,6 +1000,7 @@ What's on your mind? Let's dive in. 🌱`,
                     />
                   )}
                   <button
+                    type="button"
                     onClick={addChat}
                     disabled={!canUseApp}
                     className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1098,6 +1120,7 @@ What's on your mind? Let's dive in. 🌱`,
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
+                                  alt="Upload file"
                                 >
                                   <path
                                     strokeLinecap="round"

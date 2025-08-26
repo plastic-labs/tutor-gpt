@@ -1,28 +1,36 @@
+export interface Message {
+  id: string
+  content: string
+  isUser: boolean
+  metadata?: Record<string, unknown>
+  thinking?: ThinkingData
+}
+
+export interface ThinkingData {
+  thoughtContent: string
+  thoughtFinished: boolean
+  honchoQuery: string
+  honchoResponse: string
+  pdfQuery: string
+  pdfResponse: string
+}
+
+export interface MetaMessage {
+  id: string
+  content: string
+  metadata?: Record<string, unknown>
+}
+
+export interface StreamResponseChunk {
+  type: 'thought' | 'response' | 'honcho' | 'pdf' | 'honchoQuery' | 'pdfQuery'
+  content: string
+  finished: boolean
+}
+
 export interface ChatCallProps {
   message: string
   conversationId: string
   fileContent?: Promise<string[]>
-}
-
-export interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery'
-  text: string
-}
-
-export interface Message {
-  id: string
-  is_user: boolean
-  content: string
-}
-
-export interface MetaMessage {
-  message_id: string | null
-  content: string
-}
-
-export interface UserData {
-  appId: string
-  userId: string
 }
 
 export interface ValidationResult {
@@ -31,6 +39,10 @@ export interface ValidationResult {
   status?: number
   userData?: UserData
   supabaseUser?: any
+}
+
+export interface UserData {
+  userId: string
 }
 
 export interface ConversationHistory {

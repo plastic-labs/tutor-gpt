@@ -6,8 +6,6 @@ import {
 } from 'ai'
 import d from 'dedent-js'
 import type { ZodType, ZodTypeDef } from 'zod'
-import { getHonchoApp, getHonchoUser } from '@/utils/honcho'
-import { createClient } from '@/utils/supabase/server'
 
 export interface Message {
   role: 'user' | 'assistant'
@@ -30,26 +28,6 @@ const provider = createOpenAICompatible({
     'X-Title': 'Bloombot',
   },
 })
-
-export async function getUserData() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return null
-  }
-
-  const honchoApp = await getHonchoApp()
-  const honchoUser = await getHonchoUser(user.id)
-
-  return {
-    appId: honchoApp.id,
-    userId: honchoUser.id,
-  }
-}
 
 export const user = (
   strings: TemplateStringsArray,

@@ -4,7 +4,7 @@ import type { StreamResponseChunk } from './types'
 const encoder = new TextEncoder()
 
 export function stream(
-  iterator: AsyncGenerator<Uint8Array, NextResponse | undefined, unknown>
+  iterator: AsyncGenerator<string, NextResponse | undefined, unknown>
 ) {
   return new ReadableStream({
     async pull(controller) {
@@ -13,12 +13,12 @@ export function stream(
       if (done) {
         controller.close()
       } else {
-        controller.enqueue(value)
+        controller.enqueue(encoder.encode(value))
       }
     },
   })
 }
 
-export function formatStreamChunk(chunk: StreamResponseChunk): Uint8Array {
-  return encoder.encode(JSON.stringify(chunk))
+export function formatStreamChunk(chunk: StreamResponseChunk): string {
+  return `data: ${JSON.stringify(chunk)}\n\n`
 }

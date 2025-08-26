@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/utils/supabase/middleware'
 import { checkBotProtection, checkChatWAF } from '@/utils/arcjet'
+import { updateSession } from '@/utils/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
   // First, run Arcjet bot protection

@@ -1,33 +1,14 @@
-import { Honcho } from 'honcho-ai'
-import { unstable_cache } from 'next/cache'
+import { Honcho } from '@honcho-ai/sdk'
 
 export const honcho = new Honcho({
   baseURL: process.env.HONCHO_URL!,
+  workspaceId: process.env.HONCHO_WORKSPACE!,
 })
 
-export const getHonchoApp = unstable_cache(
-  async () => {
-    return await honcho.apps.getOrCreate(process.env.HONCHO_APP_NAME!, {
-      timeout: 5 * 1000,
-      maxRetries: 5,
-    })
-  },
-  [],
-  {
-    revalidate: 300, // 5 minutes
-  }
-)
-
-export const getHonchoUser = unstable_cache(
-  async (userId: string) => {
-    const app = await getHonchoApp()
-    return await honcho.apps.users.getOrCreate(app.id, userId, {
-      timeout: 5 * 1000,
-      maxRetries: 5,
-    })
-  },
-  [],
-  {
-    revalidate: 300,
-  }
-)
+// Create peers with observe_me: false for non-user peers
+export const bloom = honcho.peer('bloom', { config: { observe_me: false } })
+export const thinker = honcho.peer('thinker', { config: { observe_me: false } })
+export const honchoAgent = honcho.peer('honcho-agent', {
+  config: { observe_me: false },
+})
+export const pdf = honcho.peer('pdf', { config: { observe_me: false } })

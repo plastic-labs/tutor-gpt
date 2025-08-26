@@ -1,7 +1,8 @@
 'use server'
 
 import * as Sentry from '@sentry/nextjs'
-import { getHonchoApp, getHonchoUser, honcho } from '@/utils/honcho'
+import { nanoid } from 'nanoid'
+import { bloom, honcho, honchoAgent, pdf, thinker } from '@/utils/honcho'
 import { createClient } from '@/utils/supabase/server'
 import type { Conversation } from '@/utils/types'
 
@@ -21,23 +22,25 @@ export async function getConversations() {
         throw new Error('Unauthorized')
       }
 
-      const honchoApp = await getHonchoApp()
-      const honchoUser = await getHonchoUser(user.id)
+      const acc: Conversation[] = []
 
-      const acc = []
-      for await (const convo of honcho.apps.users.sessions.list(
-        honchoApp.id,
-        honchoUser.id,
-        { is_active: true, reverse: true }
-      )) {
-        const name = (convo.metadata?.name as string) ?? 'Untitled'
+      // Get all sessions for this user's peer
+      const userPeer = await honcho.peer(user.id)
+      const sessions = await userPeer.getSessions()
+
+      for await (const session of sessions) {
+        const metadata = await session.getMetadata()
+        const name = (metadata?.name as string) ?? 'Untitled'
         const instance: Conversation = {
-          conversationId: convo.id,
+          conversationId: session.id,
           name,
         }
         acc.push(instance)
       }
-      return acc
+
+      return acc.sort((a, b) =>
+        b.conversationId.localeCompare(a.conversationId)
+      )
     }
   )
 }
@@ -56,44 +59,25 @@ export async function createConversation() {
         throw new Error('Unauthorized')
       }
 
-      const honchoApp = await getHonchoApp()
-      const honchoUser = await getHonchoUser(user.id)
+      // Generate a unique session ID
+      const sessionId = nanoid()
 
-      const session = await honcho.apps.users.sessions.create(
-        honchoApp.id,
-        honchoUser.id,
-        {}
-      )
+      // Create session with all peers
+      const session = await honcho.session(sessionId)
 
-      return { conversationId: session.id, name: 'Untitled' }
-    }
-  )
-}
+      // Create user peer for this specific user
+      const userPeer = await honcho.peer(user.id)
 
-export async function deleteConversation(conversationId: string) {
-  return Sentry.startSpan(
-    { name: 'server-action.deleteConversation', op: 'server.action' },
-    async () => {
-      const supabase = await createClient()
+      // Add all peers to the session
+      await session.addPeers([
+        userPeer,
+        await bloom,
+        await thinker,
+        await honchoAgent,
+        await pdf,
+      ])
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        throw new Error('Unauthorized')
-      }
-
-      const honchoApp = await getHonchoApp()
-      const honchoUser = await getHonchoUser(user.id)
-
-      await honcho.apps.users.sessions.delete(
-        honchoApp.id,
-        honchoUser.id,
-        conversationId
-      )
-
-      return true
+      return { conversationId: sessionId, name: 'Untitled' }
     }
   )
 }
@@ -112,17 +96,37 @@ export async function updateConversation(conversationId: string, name: string) {
         throw new Error('Unauthorized')
       }
 
-      const honchoApp = await getHonchoApp()
-      const honchoUser = await getHonchoUser(user.id)
+      // Get the session and update its metadata
+      const session = await honcho.session(conversationId)
+      const metadata = await session.getMetadata()
+      await session.setMetadata({
+        ...metadata,
+        name,
+      })
 
-      await honcho.apps.users.sessions.update(
-        honchoApp.id,
-        honchoUser.id,
-        conversationId,
-        { metadata: { name } }
-      )
+      return { success: true }
+    }
+  )
+}
 
-      return true
+// TODO: Implement deleteConversation when we have the correct SDK method
+export async function deleteConversation(conversationId: string) {
+  return Sentry.startSpan(
+    { name: 'server-action.deleteConversation', op: 'server.action' },
+    async () => {
+      const supabase = await createClient()
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        throw new Error('Unauthorized')
+      }
+
+      // TODO: Implement session deletion when we have the correct SDK method
+      console.log('Delete conversation not yet implemented with new SDK')
+      return { success: true }
     }
   )
 }

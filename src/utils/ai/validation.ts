@@ -1,17 +1,15 @@
-import { getUserData } from '@/utils/ai'
 import { getChatAccessWithUser } from '@/utils/supabase/actions'
 import { createClient } from '@/utils/supabase/server'
-import type { ValidationResult } from './types'
+import type { UserData, ValidationResult } from './types'
 
 export async function validateUser(): Promise<ValidationResult> {
   const supabase = await createClient()
-  const honchoUserData = await getUserData()
 
   const {
     data: { user: supabaseUser },
   } = await supabase.auth.getUser()
 
-  if (!honchoUserData || !supabaseUser) {
+  if (!supabaseUser) {
     return { isAuthorized: false, error: 'Unauthorized', status: 401 }
   }
 
@@ -24,8 +22,7 @@ export async function validateUser(): Promise<ValidationResult> {
   return {
     isAuthorized: true,
     userData: {
-      appId: honchoUserData.appId,
-      userId: honchoUserData.userId,
+      userId: supabaseUser.id, // User ID is now the peer ID
     },
     supabaseUser,
   }
