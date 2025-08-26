@@ -1,7 +1,7 @@
-import { withSentryConfig } from '@sentry/nextjs';
-import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs'
+import type { NextConfig } from 'next'
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV === 'development'
 
 // Generate CSP directives based on environment
 const getCSPDirectives = () => {
@@ -36,10 +36,10 @@ const getCSPDirectives = () => {
     ...(isDevelopment ? [] : ['upgrade-insecure-requests']),
     // Block mixed content
     'block-all-mixed-content',
-  ];
+  ]
 
-  return directives.join('; ');
-};
+  return directives.join('; ')
+}
 
 const nextConfig: NextConfig = {
   // Enables strict mode for enhanced security
@@ -106,24 +106,13 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-    ];
+    ]
   },
 
   output: 'standalone',
 
-  // experimental: {
-  //   instrumentationHook: true,
-  // }
-  // webpack: (config, { isServer }) => {
-  //   // Add a fallback for the https scheme
-  //   config.resolve.fallback = {
-  //     ...config.resolve.fallback,
-  //     https: false,
-  //   };
-  //
-  //   return config;
-  // },
-};
+  serverExternalPackages: ['import-in-the-middle'],
+}
 
 const sentryConfig = withSentryConfig(nextConfig, {
   // For all available options, see:
@@ -163,7 +152,7 @@ const sentryConfig = withSentryConfig(nextConfig, {
     key: 'Document-Policy',
     value: 'js-profiling',
   },
-});
+})
 
-export default sentryConfig;
+export default sentryConfig
 // export default MillionLint.next({ rsc: true })(sentryConfig);

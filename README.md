@@ -40,7 +40,7 @@ The tutor-gpt project is a Next.js application using the app router.
 - `supabase/` - contains SQL scripts necessary for setting up local supabase
 - `scripts/` - Lifecycle scripts that help setup and sync the project
 
-We use [pnpm](https://pnpm.io/) for dependency management.
+We use [bun](https://bun.sh/) for dependency management.
 
 The project also makes use of several third party services
 
@@ -56,14 +56,14 @@ Clone the repo and install the necessary Node.js dependencies
 
 ```bash
 git clone https://github.com/plastic-labs/tutor-gpt.git && cd tutor-gpt
-pnpm install
+bun install
 ```
 
 Set up your [environment variables](#environment-variables) in a `.env.local`
 file. Then launch the development server.
 
 ```bash
-pnpm run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
