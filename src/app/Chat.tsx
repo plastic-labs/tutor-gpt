@@ -599,18 +599,9 @@ What's on your mind? Let's dive in. 🌱`,
 
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
+    let currentModelOutput = ''
+
     try {
-      // Check if we should generate a summary (name) for the conversation
-      const isFirstChat = messages?.length === 0
-      const isUntitledConversation =
-        conversations?.find((c) => c.conversationId === conversationId)
-          ?.name === 'Untitled'
-      const shouldGenerateSummary = isFirstChat || isUntitledConversation
-
-      if (shouldGenerateSummary) {
-        processName(messageToSend, conversationId!).catch(console.error)
-      }
-
       // Get the consolidated stream - use first file if multiple files are selected
       const stream = await fetchConsolidatedStream(
         messageToSend,
@@ -813,6 +804,7 @@ What's on your mind? Let's dive in. 🌱`,
           case 'response':
             // Update the response content
             if (chunk.content.trim()) {
+              currentModelOutput += chunk.content
               mutateMessages(
                 (currentMessages) => {
                   const msgs = currentMessages || []
@@ -822,7 +814,7 @@ What's on your mind? Let's dive in. 🌱`,
                       ...msgs.slice(0, -1),
                       {
                         ...lastMessage,
-                        content: (lastMessage.content || '') + chunk.content,
+                        content: currentModelOutput,
                       },
                     ]
                   }
@@ -1120,7 +1112,6 @@ What's on your mind? Let's dive in. 🌱`,
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
-                                  alt="Upload file"
                                 >
                                   <path
                                     strokeLinecap="round"
@@ -1159,6 +1150,7 @@ What's on your mind? Let's dive in. 🌱`,
             {/* Mobile sidebar header */}
             <div className="flex shrink-0 items-center justify-between border-border border-b-2 px-4 py-3.5">
               <button
+                type="button"
                 onClick={() => {
                   addChat()
                   setIsMobileSidebarOpen(false)
@@ -1169,6 +1161,7 @@ What's on your mind? Let's dive in. 🌱`,
                 <Plus className="h-4 w-4 text-primary-foreground" />
               </button>
               <button
+                type="button"
                 onClick={() => setIsMobileSidebarOpen(false)}
                 className="flex h-6 w-6 items-center justify-center"
               >

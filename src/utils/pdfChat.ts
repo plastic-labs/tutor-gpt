@@ -53,25 +53,27 @@ export async function collectionChat({
   metadata,
 }: CollectionChatParams): Promise<string> {
   // Get collection content from Honcho
-  const documents = (await honcho.apps.users.collections.documents.query(
-    metadata.appId,
-    metadata.userId,
-    collectionId,
-    { query: question }
-  )) as HonchoDocument[]
-
-  // Combine all document contents into a single context
-  const collectionContent = documents
-    .map((doc: HonchoDocument) => doc.content)
-    .join('\n\n')
-
-  // Use the collection content as context for the PDF chat
-  return pdfChat({
-    pdfContext: collectionContent,
-    question,
-    metadata: {
-      sessionId: metadata.sessionId,
-      userId: metadata.userId,
-    },
-  })
+  // TODO reimplement
+  //   const documents = (await honcho.apps.users.collections.documents.query(
+  //     metadata.appId,
+  //     metadata.userId,
+  //     collectionId,
+  //     { query: question }
+  //   )) as HonchoDocument[]
+  //
+  //   // Combine all document contents into a single context
+  //   const collectionContent = documents
+  //     .map((doc: HonchoDocument) => doc.content)
+  //     .join('\n\n')
+  //
+  //   // Use the collection content as context for the PDF chat
+  //   return pdfChat({
+  //     pdfContext: collectionContent,
+  //     question,
+  //     metadata: {
+  //       sessionId: metadata.sessionId,
+  //       userId: metadata.userId,
+  //     },
+  //   })
+  return ''
 }

@@ -50,6 +50,5 @@ export interface ConversationHistory {
   thoughts: MetaMessage[]
   honchoMessages: MetaMessage[]
   pdfMessages: MetaMessage[]
-  summaries: MetaMessage[]
   collectionId?: string
 }
