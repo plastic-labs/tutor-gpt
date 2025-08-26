@@ -31,11 +31,11 @@ function AIMessage({
   // Show for AI messages that either have thinking data OR are being streamed (empty content with thinking object)
   const shouldShowThinkBox =
     thinking &&
-    (thinking.thoughtContent ||
+    (thinking.thought ||
       thinking.honchoQuery ||
-      thinking.honchoResponse ||
+      thinking.honcho ||
       thinking.pdfQuery ||
-      thinking.pdfResponse ||
+      thinking.pdf ||
       (!thinking.thoughtFinished && content === '')) // Show for new AI messages being streamed
 
   const handleCopyToClipboard = async () => {
@@ -51,12 +51,12 @@ function AIMessage({
       {/* ThinkBox - render before AI message content */}
       {shouldShowThinkBox && thinking && (
         <ThinkBox
-          thoughtContent={thinking.thoughtContent}
+          thought={thinking.thought}
           finished={thinking.thoughtFinished || false}
           honchoQuery={thinking.honchoQuery || ''}
-          honchoResponse={thinking.honchoResponse || ''}
+          honcho={thinking.honcho || ''}
           pdfQuery={thinking.pdfQuery || ''}
-          pdfResponse={thinking.pdfResponse || ''}
+          pdf={thinking.pdf || ''}
         />
       )}
 

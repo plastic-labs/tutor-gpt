@@ -1,10 +1,9 @@
 'use client'
+import type { User } from '@supabase/supabase-js'
 import { ArrowUp, Menu, Paperclip, Plus, Square, X } from 'lucide-react'
 
 import dynamic from 'next/dynamic'
-// import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link'
-// import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DarkModeSwitch } from 'react-toggle-dark-mode'
@@ -35,8 +34,12 @@ import {
 import useAutoScroll from '@/hooks/autoscroll'
 import { departureMono } from '@/utils/fonts'
 import type { ParsedFile } from '@/utils/parseFiles'
+import {
+  fetchConsolidatedStream,
+  StreamReader,
+  updateMessageWithThinking,
+} from '@/utils/streamClient'
 import { getFreeMessageCount, useFreeTrial } from '@/utils/supabase/actions'
-import { createClient } from '@/utils/supabase/client'
 import { localStorageProvider } from '@/utils/swrCache'
 import type { Conversation, Message, ThinkingData } from '@/utils/types'
 import {
@@ -50,170 +53,8 @@ const Sidebar = dynamic(() => import('@/components/sidebar'), {
   ssr: false,
 })
 
-const supabase = createClient()
-const fetchUser = async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user
-}
-
-interface StreamResponseChunk {
-  type: 'thought' | 'honcho' | 'response' | 'pdf' | 'honchoQuery' | 'pdfQuery'
-  content: string
-  finished: boolean
-}
-
-class StreamReader {
-  private reader: ReadableStreamDefaultReader<Uint8Array>
-  private decoder: TextDecoder
-  private buffer: string
-
-  constructor(stream: ReadableStream<Uint8Array>) {
-    this.reader = stream.getReader()
-    this.decoder = new TextDecoder()
-    this.buffer = ''
-  }
-
-  private tryParseNextJSON(): {
-    parsed: StreamResponseChunk | null
-    remaining: string
-  } {
-    let curlyBraceCount = 0
-    let startIndex = -1
-
-    // Find the start of the next JSON object
-    for (let i = 0; i < this.buffer.length; i++) {
-      if (this.buffer[i] === '{') {
-        if (startIndex === -1) startIndex = i
-        curlyBraceCount++
-      } else if (this.buffer[i] === '}') {
-        curlyBraceCount--
-        if (curlyBraceCount === 0 && startIndex !== -1) {
-          // We found a complete JSON object
-          try {
-            const jsonStr = this.buffer.substring(startIndex, i + 1)
-            const parsed = JSON.parse(jsonStr) as StreamResponseChunk
-            return {
-              parsed,
-              remaining: this.buffer.substring(i + 1),
-            }
-          } catch (_e) {}
-        }
-      }
-    }
-
-    // No complete JSON object found
-    return { parsed: null, remaining: this.buffer }
-  }
-
-  async read(): Promise<{ done: boolean; chunk?: StreamResponseChunk }> {
-    while (true) {
-      // Try to parse any complete JSON object from our buffer
-      const { parsed, remaining } = this.tryParseNextJSON()
-      if (parsed) {
-        this.buffer = remaining
-        return { done: false, chunk: parsed }
-      }
-
-      // If we couldn't parse anything, we need more data
-      const { done, value } = await this.reader.read()
-
-      if (done) {
-        // Only return done if the reader is actually finished and we have no remaining buffer
-        if (this.buffer.trim()) {
-          console.warn('Stream ended with unparsed data:', this.buffer)
-        }
-        return { done: true }
-      }
-
-      // Append new data to our buffer and continue trying to parse
-      this.buffer += this.decoder.decode(value, { stream: true })
-    }
-  }
-
-  release() {
-    this.reader.releaseLock()
-  }
-}
-
-async function fetchConsolidatedStream(
-  message: string,
-  conversationId: string,
-  file?: File
-) {
-  try {
-    const formData = new FormData()
-    formData.append('message', message)
-    formData.append('conversationId', conversationId)
-    if (file) {
-      formData.append('file', file)
-    }
-
-    const response = await fetch(`/api/chat`, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      if (response.status === 402) {
-        toast.error('Subscription Required', {
-          description:
-            'You have no active subscription. Subscribe to continue using Bloom!',
-          action: {
-            label: 'Subscribe',
-            onClick: () => (window.location.href = '/settings'),
-          },
-        })
-        throw new Error(`Subscription is required to chat: ${response.status}`)
-      }
-
-      if (response.status === 429) {
-        // Parse the error response to get rate limit details
-        let errorDetails
-        try {
-          errorDetails = await response.json()
-        } catch {
-          errorDetails = {
-            message: 'Rate limit exceeded. Please try again in a moment.',
-          }
-        }
-
-        toast.error('Rate Limit Exceeded', {
-          description:
-            errorDetails.details ||
-            'You can make up to 8 chat requests per minute. Please wait before sending another message.',
-          duration: 8000, // Show for 8 seconds
-          action: {
-            label: 'Got it',
-            onClick: () => {},
-          },
-        })
-        throw new Error(`Rate limit exceeded: ${response.status}`)
-      }
-
-      const errorText = await response.text()
-      console.error(`Stream error:`, {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-      })
-      console.error(response)
-      throw new Error(`Failed to fetch stream: ${response.status}`)
-    }
-
-    const stream = response.body
-    if (!stream) throw new Error('Failed to get stream')
-    return stream
-  } catch (error) {
-    console.error(`Error in fetchConsolidatedStream:`, error)
-    throw error
-  }
-}
-
 interface ChatProps {
-  initialUserId: string
-  initialEmail: string | undefined
+  user: User
   initialConversations: Conversation[]
   initialChatAccess: {
     isSubscribed: boolean
@@ -222,27 +63,6 @@ interface ChatProps {
   }
   initialMessages: Message[]
   initialConversationId: string | null | undefined
-}
-
-function updateThinkingData(
-  currentThinking: ThinkingData | undefined,
-  chunkText: string,
-  queryType: 'honchoQuery' | 'pdfQuery'
-): ThinkingData {
-  return {
-    thoughtContent: currentThinking?.thoughtContent || '',
-    thoughtFinished: false,
-    honchoQuery:
-      queryType === 'honchoQuery'
-        ? (currentThinking?.honchoQuery || '') + chunkText
-        : currentThinking?.honchoQuery,
-    honchoResponse: currentThinking?.honchoResponse,
-    pdfQuery:
-      queryType === 'pdfQuery'
-        ? (currentThinking?.pdfQuery || '') + chunkText
-        : currentThinking?.pdfQuery,
-    pdfResponse: currentThinking?.pdfResponse,
-  }
 }
 
 function fileToParsedfFile(file: File): ParsedFile {
@@ -254,14 +74,12 @@ function fileToParsedfFile(file: File): ParsedFile {
 }
 
 export default function Chat({
-  initialUserId,
-  initialEmail,
+  user,
   initialConversations,
   initialMessages,
   initialConversationId,
   initialChatAccess,
 }: ChatProps) {
-  const [userId] = useState(initialUserId)
   const [isSubscribed] = useState(initialChatAccess.isSubscribed)
   const [freeMessages, setFreeMessages] = useState(
     initialChatAccess.freeMessages
@@ -283,8 +101,6 @@ export default function Chat({
 
   const messageListRef = useRef<MessageListRef>(null)
   const sidebarPanelRef = useRef<any>(null)
-
-  const { data: user, isLoading: isUserLoading } = useSWR('user', fetchUser)
 
   const firstChat = useMemo(() => {
     return (
@@ -316,14 +132,15 @@ What's on your mind? Let's dive in. 🌱`,
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      posthog?.identify(initialUserId, { email: initialEmail })
+      posthog?.identify(user.id, { email: user.email })
       posthog?.capture('page_view', {
         page: 'chat',
       })
     }
-  }, [posthog, initialUserId, initialEmail])
+  }, [posthog, user])
 
   useEffect(() => {
+    // Check if we should render a mobile layout
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768) // md breakpoint
     }
@@ -331,12 +148,11 @@ What's on your mind? Let's dive in. 🌱`,
     checkMobile()
     window.addEventListener('resize', checkMobile)
 
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  useEffect(() => {
+    // Set is hydrated and check for dark mode
     setIsHydrated(true)
     setIsDark(document.documentElement.classList.contains('dark'))
+
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   const conversationsFetcher = async () => {
@@ -344,7 +160,7 @@ What's on your mind? Let's dive in. 🌱`,
     return result
   }
 
-  const conversationsKey = useMemo(() => userId, [userId])
+  const conversationsKey = user?.id
 
   const { data: conversations, mutate: mutateConversations } = useSWR(
     conversationsKey,
@@ -382,7 +198,7 @@ What's on your mind? Let's dive in. 🌱`,
   )
 
   const messagesFetcher = async (conversationId: string) => {
-    if (!userId) return Promise.resolve([])
+    if (!user.id) return Promise.resolve([])
     if (!conversationId) return Promise.resolve([])
     if (conversationId.startsWith('temp-')) return Promise.resolve([])
 
@@ -413,7 +229,7 @@ What's on your mind? Let's dive in. 🌱`,
   })
 
   const handleReactionAdded = async (messageId: string, reaction: Reaction) => {
-    if (!userId || !conversationId) return
+    if (!user.id || !conversationId) return
 
     try {
       await addOrRemoveReaction(conversationId, messageId, reaction)
@@ -554,7 +370,7 @@ What's on your mind? Let's dive in. 🌱`,
 
   async function chat(message?: string) {
     const rawMessage = message || inputValue
-    if (!userId || !rawMessage) return
+    if (!user.id || !rawMessage) return
 
     // Process message to have double newline for markdown
     let messageToSend = rawMessage.replace(/\n/g, '\n\n')
@@ -585,12 +401,12 @@ What's on your mind? Let's dive in. 🌱`,
         id: '',
         metadata: {},
         thinking: {
-          thoughtContent: '',
+          thought: '',
           thoughtFinished: false,
           honchoQuery: '',
-          honchoResponse: '',
+          honcho: '',
           pdfQuery: '',
-          pdfResponse: '',
+          pdf: '',
         },
       },
     ]
@@ -602,6 +418,17 @@ What's on your mind? Let's dive in. 🌱`,
     let currentModelOutput = ''
 
     try {
+      // Check if we should generate a summary (name) for the conversation
+      const isFirstChat = messages?.length === 0
+      const isUntitledConversation =
+        conversations?.find((c) => c.conversationId === conversationId)
+          ?.name === 'Untitled'
+      const shouldGenerateSummary = isFirstChat || isUntitledConversation
+
+      if (shouldGenerateSummary) {
+        processName(messageToSend, conversationId!).catch(console.error)
+      }
+
       // Get the consolidated stream - use first file if multiple files are selected
       const stream = await fetchConsolidatedStream(
         messageToSend,
@@ -616,9 +443,9 @@ What's on your mind? Let's dive in. 🌱`,
         const { done, chunk } = await streamReader.read()
         if (done) {
           if (!isSubscribed) {
-            const success = await useFreeTrial(userId)
+            const success = await useFreeTrial(user.id)
             if (success) {
-              const newCount = await getFreeMessageCount(userId)
+              const newCount = await getFreeMessageCount(user.id)
               setFreeMessages(newCount)
             }
           }
@@ -629,202 +456,38 @@ What's on your mind? Let's dive in. 🌱`,
           continue
         }
 
-        switch (chunk.type) {
-          case 'thought':
-            // Add thought content to the thinking section
-            if (chunk.content.trim()) {
-              mutateMessages(
-                (currentMessages) => {
-                  const msgs = currentMessages || []
-                  const lastMessage = msgs[msgs.length - 1]
-                  if (lastMessage && !lastMessage.isUser) {
-                    const updatedThinking: ThinkingData = {
-                      thoughtContent:
-                        lastMessage.thinking?.thoughtContent + chunk.content,
-                      thoughtFinished: chunk.finished,
-                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
-                      honchoResponse:
-                        lastMessage.thinking?.honchoResponse || '',
-                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
-                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
-                    }
-                    return [
-                      ...msgs.slice(0, -1),
-                      {
-                        ...lastMessage,
-                        thinking: updatedThinking,
-                      },
-                    ]
-                  }
-                  return msgs
-                },
-                { revalidate: false }
-              )
-            }
-            break
-
-          case 'honcho':
-            // Add honcho content to the thinking section
-            if (chunk.content.trim()) {
-              mutateMessages(
-                (currentMessages) => {
-                  const msgs = currentMessages || []
-                  const lastMessage = msgs[msgs.length - 1]
-                  if (lastMessage && !lastMessage.isUser) {
-                    const updatedThinking: ThinkingData = {
-                      thoughtContent:
-                        lastMessage.thinking?.thoughtContent || '',
-                      thoughtFinished:
-                        lastMessage.thinking?.thoughtFinished || false,
-                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
-                      honchoResponse:
-                        lastMessage.thinking?.honchoResponse + chunk.content,
-                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
-                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
-                    }
-                    return [
-                      ...msgs.slice(0, -1),
-                      {
-                        ...lastMessage,
-                        thinking: updatedThinking,
-                      },
-                    ]
-                  }
-                  return msgs
-                },
-                { revalidate: false }
-              )
-            }
-            break
-
-          case 'pdf':
-            // Add PDF content to the thinking section
-            if (chunk.content.trim()) {
-              mutateMessages(
-                (currentMessages) => {
-                  const msgs = currentMessages || []
-                  const lastMessage = msgs[msgs.length - 1]
-                  if (lastMessage && !lastMessage.isUser) {
-                    const updatedThinking: ThinkingData = {
-                      thoughtContent:
-                        lastMessage.thinking?.thoughtContent || '',
-                      thoughtFinished:
-                        lastMessage.thinking?.thoughtFinished || false,
-                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
-                      honchoResponse:
-                        lastMessage.thinking?.honchoResponse || '',
-                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
-                      pdfResponse:
-                        lastMessage.thinking?.pdfResponse + chunk.content,
-                    }
-                    return [
-                      ...msgs.slice(0, -1),
-                      {
-                        ...lastMessage,
-                        thinking: updatedThinking,
-                      },
-                    ]
-                  }
-                  return msgs
-                },
-                { revalidate: false }
-              )
-            }
-            break
-
-          case 'honchoQuery':
-            // Add honcho query to the thinking section
-            if (chunk.content.trim()) {
-              mutateMessages(
-                (currentMessages) => {
-                  const msgs = currentMessages || []
-                  const lastMessage = msgs[msgs.length - 1]
-                  if (lastMessage && !lastMessage.isUser) {
-                    const updatedThinking: ThinkingData = {
-                      thoughtContent:
-                        lastMessage.thinking?.thoughtContent || '',
-                      thoughtFinished:
-                        lastMessage.thinking?.thoughtFinished || false,
-                      honchoQuery:
-                        lastMessage.thinking?.honchoQuery + chunk.content,
-                      honchoResponse:
-                        lastMessage.thinking?.honchoResponse || '',
-                      pdfQuery: lastMessage.thinking?.pdfQuery || '',
-                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
-                    }
-                    return [
-                      ...msgs.slice(0, -1),
-                      {
-                        ...lastMessage,
-                        thinking: updatedThinking,
-                      },
-                    ]
-                  }
-                  return msgs
-                },
-                { revalidate: false }
-              )
-            }
-            break
-
-          case 'pdfQuery':
-            // Add PDF query to the thinking section
-            if (chunk.content.trim()) {
-              mutateMessages(
-                (currentMessages) => {
-                  const msgs = currentMessages || []
-                  const lastMessage = msgs[msgs.length - 1]
-                  if (lastMessage && !lastMessage.isUser) {
-                    const updatedThinking: ThinkingData = {
-                      thoughtContent:
-                        lastMessage.thinking?.thoughtContent || '',
-                      thoughtFinished:
-                        lastMessage.thinking?.thoughtFinished || false,
-                      honchoQuery: lastMessage.thinking?.honchoQuery || '',
-                      honchoResponse:
-                        lastMessage.thinking?.honchoResponse || '',
-                      pdfQuery: lastMessage.thinking?.pdfQuery + chunk.content,
-                      pdfResponse: lastMessage.thinking?.pdfResponse || '',
-                    }
-                    return [
-                      ...msgs.slice(0, -1),
-                      {
-                        ...lastMessage,
-                        thinking: updatedThinking,
-                      },
-                    ]
-                  }
-                  return msgs
-                },
-                { revalidate: false }
-              )
-            }
-            break
-
-          case 'response':
-            // Update the response content
-            if (chunk.content.trim()) {
-              currentModelOutput += chunk.content
-              mutateMessages(
-                (currentMessages) => {
-                  const msgs = currentMessages || []
-                  const lastMessage = msgs[msgs.length - 1]
-                  if (lastMessage && !lastMessage.isUser) {
-                    return [
-                      ...msgs.slice(0, -1),
-                      {
-                        ...lastMessage,
-                        content: currentModelOutput,
-                      },
-                    ]
-                  }
-                  return msgs
-                },
-                { revalidate: false }
-              )
-              messageListRef.current?.scrollToBottom()
-            }
-            break
+        // Handle all thinking-related chunks in a data-driven way
+        if (chunk.type !== 'response' && chunk.content.trim()) {
+          updateMessageWithThinking(mutateMessages, {
+            appendToField: chunk.type as keyof ThinkingData,
+            appendText: chunk.content,
+            ...(chunk.type === 'thought'
+              ? { thoughtFinished: chunk.finished }
+              : {}),
+          })
+        } else if (chunk.type === 'response') {
+          // Update the response content
+          if (chunk.content.trim()) {
+            currentModelOutput += chunk.content
+            mutateMessages(
+              (currentMessages) => {
+                const msgs = currentMessages || []
+                const lastMessage = msgs[msgs.length - 1]
+                if (lastMessage && !lastMessage.isUser) {
+                  return [
+                    ...msgs.slice(0, -1),
+                    {
+                      ...lastMessage,
+                      content: currentModelOutput,
+                    },
+                  ]
+                }
+                return msgs
+              },
+              { revalidate: false }
+            )
+            messageListRef.current?.scrollToBottom()
+          }
         }
       }
 
@@ -859,12 +522,12 @@ What's on your mind? Let's dive in. 🌱`,
               const lastMessage = msgs[msgs.length - 1]
               if (lastMessage && !lastMessage.isUser) {
                 const updatedThinking: ThinkingData = {
-                  thoughtContent: lastMessage.thinking?.thoughtContent || '',
+                  thought: lastMessage.thinking?.thought || '',
                   thoughtFinished: true,
                   honchoQuery: lastMessage.thinking?.honchoQuery,
-                  honchoResponse: lastMessage.thinking?.honchoResponse,
+                  honcho: lastMessage.thinking?.honcho,
                   pdfQuery: lastMessage.thinking?.pdfQuery,
-                  pdfResponse: lastMessage.thinking?.pdfResponse,
+                  pdf: lastMessage.thinking?.pdf,
                 }
                 return [
                   ...msgs.slice(0, -1),
@@ -1005,7 +668,7 @@ What's on your mind? Let's dive in. 🌱`,
                 ref={messageListRef}
                 messages={messages}
                 defaultMessage={defaultMessage}
-                userId={userId}
+                userId={user.id}
                 conversationId={conversationId}
                 messagesLoading={messagesLoading}
                 handleReactionAdded={handleReactionAdded}

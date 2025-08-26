@@ -7,12 +7,12 @@ interface BaseMessage {
 }
 
 export interface ThinkingData {
-  thoughtContent: string
+  thought: string
   thoughtFinished: boolean
   honchoQuery?: string
-  honchoResponse?: string
+  honcho?: string
   pdfQuery?: string
-  pdfResponse?: string
+  pdf?: string
 }
 
 export interface UserMessage extends BaseMessage {

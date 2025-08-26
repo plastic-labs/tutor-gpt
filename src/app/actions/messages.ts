@@ -70,14 +70,21 @@ async function buildThinkingData(
         msg.peer_id !== bloomMessage.peer_id &&
         Math.abs(
           new Date(msg.created_at).getTime() -
-            new Date(bloomMessage.created_at).getTime()
+          new Date(bloomMessage.created_at).getTime()
         ) < 10000 // 10 second window to account for processing time
     )
 
-    // Extract thinking data from peer messages
     const thoughtContent =
       relatedMessages.find((msg: any) => msg.peer_id === 'thinker')?.content ||
       ''
+
+    // Split by the delimiter character '␁'
+    const segments = thoughtContent.split('␁')
+
+    const initialThoughtContent = segments[0]?.trim() || ''
+    const honchoQuery = segments[1]?.trim() || ''
+    const pdfQuery = segments[2]?.trim() || ''
+
     const honchoResponse =
       relatedMessages.find((msg: any) => msg.peer_id === 'honcho-agent')
         ?.content || ''
@@ -85,54 +92,17 @@ async function buildThinkingData(
       relatedMessages.find((msg: any) => msg.peer_id === 'pdf')?.content || ''
 
     return {
-      thoughtContent,
-      thoughtFinished: true, // Assume finished since it's a stored message
-      honchoQuery: '', // We don't store the query, just the response
-      honchoResponse,
-      pdfQuery: '', // We don't store the query, just the response
-      pdfResponse,
+      thought: initialThoughtContent,
+      thoughtFinished: true,
+      honchoQuery,
+      honcho: honchoResponse,
+      pdfQuery,
+      pdf: pdfResponse,
     }
   } catch (error) {
     console.error('Error building thinking data:', error)
     return undefined
   }
-}
-
-export async function getThought(conversationId: string, messageId: string) {
-  return Sentry.startSpan(
-    { name: 'server-action.getThought', op: 'server.action' },
-    async () => {
-      const supabase = await createClient()
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        throw new Error('Unauthorized')
-      }
-
-      // Get the session
-      const session = await honcho.session(conversationId)
-
-      // Get the specific message
-      const messagesPage = await session.getMessages()
-      const messages: any[] = []
-      for await (const message of messagesPage) {
-        messages.push(message)
-      }
-      const message = messages.find((msg: any) => msg.id === messageId)
-
-      if (!message) {
-        throw new Error('Message not found')
-      }
-
-      // Get thinking data for this message
-      const thinking = await buildThinkingData(messages, message)
-
-      return thinking?.thoughtContent || ''
-    }
-  )
 }
 
 export async function addOrRemoveReaction(

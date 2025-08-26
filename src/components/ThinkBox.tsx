@@ -46,22 +46,22 @@ function StreamingText({ stream, finished }: StreamingTextProps) {
 
 export interface ThinkBoxProps {
   thoughtChunks?: string[] // For streaming (live messages)
-  thoughtContent?: string // For complete content (past messages)
+  thought?: string // For complete content (past messages)
   finished: boolean
   honchoQuery: string
-  honchoResponse: string
+  honcho: string
   pdfQuery: string
-  pdfResponse: string
+  pdf: string
 }
 
 export default function ThinkBox({
   thoughtChunks,
-  thoughtContent,
+  thought,
   finished,
   honchoQuery,
-  honchoResponse,
+  honcho,
   pdfQuery,
-  pdfResponse,
+  pdf,
 }: ThinkBoxProps) {
   const [scope, animate] = useAnimate()
   const contentRef = useRef<HTMLDivElement>(null)
@@ -142,11 +142,11 @@ export default function ThinkBox({
   useEffect(() => {
     if (
       ((thoughtChunks && thoughtChunks.length > 0) ||
-        thoughtContent ||
+        thought ||
         honchoQuery ||
-        honchoResponse ||
+        honcho ||
         pdfQuery ||
-        pdfResponse) &&
+        pdf) &&
       !hasContentAnimated
     ) {
       setHasContentAnimated(true)
@@ -154,11 +154,11 @@ export default function ThinkBox({
     }
   }, [
     thoughtChunks,
-    thoughtContent,
+    thought,
     honchoQuery,
-    honchoResponse,
+    honcho,
     pdfQuery,
-    pdfResponse,
+    pdf,
     hasContentAnimated,
     runContentAnimation,
   ])
@@ -253,11 +253,11 @@ export default function ThinkBox({
         }}
         transition={{ duration: 0.5, ease: 'easeInOut' }}
       >
-        {((thoughtChunks && thoughtChunks.length > 0) || thoughtContent) && (
+        {((thoughtChunks && thoughtChunks.length > 0) || thought) && (
           <div className="mb-4">
-            {thoughtContent ? (
+            {thought ? (
               // For past messages, show complete content without animation
-              <div>{thoughtContent}</div>
+              <div>{thought}</div>
             ) : (
               // For streaming messages, use animated text
               <StreamingText stream={thoughtChunks || []} finished={finished} />
@@ -265,26 +265,26 @@ export default function ThinkBox({
           </div>
         )}
         {((honchoQuery && honchoQuery !== 'None') ||
-          (honchoResponse && honchoResponse !== 'None') ||
+          (honcho && honcho !== 'None') ||
           (pdfQuery && pdfQuery !== 'None') ||
-          (pdfResponse && pdfResponse !== 'None')) && (
+          (pdf && pdf !== 'None')) && (
           <div
             className={`flex w-full flex-col gap-6 ${
               (pdfQuery && pdfQuery !== 'None') ||
-              (pdfResponse && pdfResponse !== 'None')
+              (pdf && pdf !== 'None')
                 ? 'md:flex-row'
                 : ''
             }`}
           >
             {/* Honcho Column */}
             {((honchoQuery && honchoQuery !== 'None') ||
-              (honchoResponse && honchoResponse !== 'None')) && (
+              (honcho && honcho !== 'None')) && (
               <div className="min-w-[220px] flex-1">
                 <div className="mb-2 flex items-center gap-1 text-muted-foreground text-sm">
                   <Search className="h-4 w-4" />
                   <span className="font-semibold">Honcho</span>
                 </div>
-                {honchoQuery && honchoResponse ? (
+                {honchoQuery && honcho ? (
                   <div className="relative flex flex-col items-stretch">
                     <div className="z-10 mb-3 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                       {honchoQuery}
@@ -295,7 +295,7 @@ export default function ThinkBox({
                       style={{ transform: 'translateX(-50%)' }}
                     ></div>
                     <div className="z-10 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
-                      {honchoResponse}
+                      {honcho}
                     </div>
                   </div>
                 ) : (
@@ -305,9 +305,9 @@ export default function ThinkBox({
                         {honchoQuery}
                       </div>
                     )}
-                    {honchoResponse && (
+                    {honcho && (
                       <div className="whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
-                        {honchoResponse}
+                        {honcho}
                       </div>
                     )}
                   </>
@@ -317,13 +317,13 @@ export default function ThinkBox({
 
             {/* PDF Column - only show if there's PDF content */}
             {((pdfQuery && pdfQuery !== 'None') ||
-              (pdfResponse && pdfResponse !== 'None')) && (
+              (pdf && pdf !== 'None')) && (
               <div className="min-w-[220px] flex-1">
                 <div className="mb-2 flex items-center gap-1 text-muted-foreground text-sm">
                   <Search className="h-4 w-4" />
                   <span className="font-semibold">PDF</span>
                 </div>
-                {pdfQuery && pdfResponse ? (
+                {pdfQuery && pdf ? (
                   <div className="relative flex flex-col items-stretch">
                     <div className="z-10 mb-3 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
                       {pdfQuery}
@@ -334,7 +334,7 @@ export default function ThinkBox({
                       style={{ transform: 'translateX(-50%)' }}
                     ></div>
                     <div className="z-10 whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
-                      {pdfResponse}
+                      {pdf}
                     </div>
                   </div>
                 ) : (
@@ -344,9 +344,9 @@ export default function ThinkBox({
                         {pdfQuery}
                       </div>
                     )}
-                    {pdfResponse && (
+                    {pdf && (
                       <div className="whitespace-pre-line rounded-xl bg-muted p-4 text-base text-foreground">
-                        {pdfResponse}
+                        {pdf}
                       </div>
                     )}
                   </>

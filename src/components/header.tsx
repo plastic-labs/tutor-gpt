@@ -4,10 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { DarkModeSwitch } from 'react-toggle-dark-mode'
-import bloomIcon from '@/public/bloom_icon_large.jpg'
+import bloomIcon from '../@/public/bloom_icon_large.jpg'
 import { departureMono } from '@/utils/fonts'
-// import lightBanner from '@/public/bloom2x1.svg';
-// import darkBanner from '@/public/bloom2x1dark.svg';
 
 export function Header() {
   // const { theme, setTheme } = useTheme();

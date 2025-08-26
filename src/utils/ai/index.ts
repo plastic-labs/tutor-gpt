@@ -8,6 +8,7 @@ import { buildResponsePrompt, buildThoughtPrompt } from '@/utils/ai/prompts'
 import { formatStreamChunk } from '@/utils/ai/stream'
 import { validateUser } from '@/utils/ai/validation'
 import { honcho } from '@/utils/honcho'
+import log from '@/utils/logging'
 import { collectionChat } from '@/utils/pdfChat'
 import type { ChatCallProps } from './types'
 
@@ -46,6 +47,8 @@ export async function* respond({
       collectionId: existingCollectionId,
     } = await fetchConversationHistory(conversationId, userId)
 
+    log('error', 'building thought prompt')
+
     // Generate thought
     const thoughtPrompt = buildThoughtPrompt(
       messageHistory,
@@ -55,6 +58,7 @@ export async function* respond({
       message,
       Boolean(fileContent || existingCollectionId)
     )
+    log('error', 'starting thought generation')
     const { textStream: thoughtStream } = streamText({
       messages: thoughtPrompt,
       metadata: {
@@ -127,6 +131,8 @@ export async function* respond({
       }
     }
 
+    log('error', 'starting honcho generation')
+
     const [honchoContent, { pdfContent, collectionId }] = await Promise.all([
       // HONCHO STUFF
       (async () => {
@@ -170,6 +176,8 @@ export async function* respond({
         finished: true,
       })
     }
+
+    log('error', 'starting response generation')
 
     // Generate final response
     const responsePrompt = buildResponsePrompt(

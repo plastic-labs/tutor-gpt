@@ -47,8 +47,7 @@ export default async function Home() {
     <>
       <CookieConsentBanner />
       <Chat
-        initialUserId={user.id}
-        initialEmail={user.email}
+        user={user}
         initialConversations={conversations}
         initialMessages={initialMessages}
         initialConversationId={initialConversationId}

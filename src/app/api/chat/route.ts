@@ -3,6 +3,7 @@ import { respond } from '@/utils/ai/index'
 import { stream } from '@/utils/ai/stream'
 import { checkChatRateLimit } from '@/utils/arcjet'
 import { parsePDF } from '@/utils/parsePdf'
+import log from '@/utils/logging'
 
 interface RateLimitResult {
   remaining?: number
@@ -25,6 +26,7 @@ export const maxDuration = 300 // TODO: increase when fluid compute turns on
 export const dynamic = 'force-dynamic' // always run dynamically
 
 export async function POST(req: NextRequest) {
+  log('error', 'Starting Chat')
   try {
     const rateLimitResult = await checkChatRateLimit(req)
 
@@ -79,6 +81,8 @@ export async function POST(req: NextRequest) {
         return new NextResponse('Unsupported file type', { status: 400 })
       }
     }
+
+    log('error', 'Starting Response Loop')
 
     // Create response with rate limit headers
     const response = new Response(
