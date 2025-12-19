@@ -46,7 +46,7 @@
     "langfuse-vercel": "^3.35.2",
     "lucide-react": "^0.508.0",
     "motion": "^12.10.1",
-    "next": "15.1.7",
+    "next": "15.1.11",
     "next-themes": "^0.4.4",
     "openai": "^4.85.1",
     "posthog-js": "^1.240.6",
