@@ -1,7 +1,8 @@
 {
   "name": "tutor-gpt",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
+  "workspaces": ["packages/*"],
   "scripts": {
     "dev": "SENTRY_SUPPRESS_TURBOPACK_WARNING=1 next dev --turbopack",
     "build": "next build",
@@ -109,10 +110,8 @@
     "semi": true,
     "singleQuote": true
   },
-  "pnpm": {
-    "overrides": {
-      "@types/react": "19.0.10",
-      "@types/react-dom": "19.0.4"
-    }
+  "overrides": {
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.4"
   }
 }

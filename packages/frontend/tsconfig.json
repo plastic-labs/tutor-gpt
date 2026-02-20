@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@bloom/shared": ["../shared/src"],
+      "@bloom/shared/*": ["../shared/src/*"],
+      "@bloom/backend": ["../backend/src"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "../shared/src/**/*.ts", "../backend/src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
