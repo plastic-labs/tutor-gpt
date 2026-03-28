@@ -46,7 +46,8 @@ The project also makes use of several third party services
 
 - [Honcho](https://honcho.dev) for identity modeling and personalization
 - [Supabase](https://supabase.com) for user authentication and database
-- [Openrouter](https://openrouter.ai) for LLM integration
+- [Openrouter](https://openrouter.ai) for LLM integration (default)
+- [MiniMax](https://www.minimax.io) for LLM integration (alternative provider)
 - [PostHog](https://posthog.com) for analytics
 - [Stripe](https://stripe.com) for payments
 
@@ -81,9 +82,27 @@ Tutor-GPT webui. A `.env.template` file is provided to get started quickly.
 **LLM**
 
 - `AI_API_KEY` — The API key for the inference provider
-- `AI_PROVIDER` — The name of the LLM inference provider
+- `AI_PROVIDER` — The name of the LLM inference provider (e.g. `openrouter`, `minimax`)
 - `AI_BASE_URL` — An OpenAI compatible API endpoint for LLM inference
 - `MODEL` — The LLM model to use for generating responses.
+
+Built-in provider presets automatically configure the base URL and default model
+when you set `AI_PROVIDER`. Currently supported presets:
+
+| Provider | `AI_PROVIDER` | Default Model | Base URL |
+|---|---|---|---|
+| OpenRouter | `openrouter` | `gpt-3.5-turbo` | `https://openrouter.ai/api/v1` |
+| MiniMax | `minimax` | `MiniMax-M2.7` | `https://api.minimax.io/v1` |
+
+To use **MiniMax** as your LLM provider:
+
+```env
+AI_PROVIDER=minimax
+AI_API_KEY=your-minimax-api-key
+# MODEL=MiniMax-M2.7-highspeed  # optional: faster variant
+```
+
+Any OpenAI-compatible provider can also be used by setting `AI_BASE_URL` directly.
 
 **Mistral**
 
