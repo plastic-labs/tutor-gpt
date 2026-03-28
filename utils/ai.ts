@@ -17,21 +17,56 @@ export interface Message {
   content: string;
 }
 
+/**
+ * Provider presets with default base URLs and models.
+ * Users can override any setting via environment variables.
+ */
+export const PROVIDER_PRESETS: Record<
+  string,
+  { baseURL: string; defaultModel: string; headers?: Record<string, string> }
+> = {
+  openrouter: {
+    baseURL: 'https://openrouter.ai/api/v1',
+    defaultModel: 'gpt-3.5-turbo',
+    headers: {
+      'HTTP-Referer': 'https://chat.bloombot.ai',
+      'X-Title': 'Bloombot',
+    },
+  },
+  minimax: {
+    baseURL: 'https://api.minimax.io/v1',
+    defaultModel: 'MiniMax-M2.7',
+  },
+};
+
 const AI_PROVIDER = process.env.AI_PROVIDER || 'openrouter';
 const AI_API_KEY = process.env.AI_API_KEY;
-const AI_BASE_URL = process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1';
-const MODEL = process.env.MODEL || 'gpt-3.5-turbo';
+const preset = PROVIDER_PRESETS[AI_PROVIDER];
+const AI_BASE_URL =
+  process.env.AI_BASE_URL || preset?.baseURL || 'https://openrouter.ai/api/v1';
+const MODEL = process.env.MODEL || preset?.defaultModel || 'gpt-3.5-turbo';
 const SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'dev';
 const SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'local';
+
+/**
+ * Clamp temperature to (0, 1] for providers like MiniMax that reject 0.
+ */
+export function clampTemperature(
+  provider: string,
+  temperature?: number
+): number | undefined {
+  if (temperature === undefined) return undefined;
+  if (provider === 'minimax') {
+    return Math.max(0.01, Math.min(temperature, 1));
+  }
+  return temperature;
+}
 
 const provider = createOpenAICompatible({
   name: AI_PROVIDER,
   apiKey: AI_API_KEY,
   baseURL: AI_BASE_URL,
-  headers: {
-    'HTTP-Referer': 'https://chat.bloombot.ai',
-    'X-Title': 'Bloombot',
-  },
+  headers: preset?.headers ?? {},
 });
 
 export async function getUserData() {
@@ -85,6 +120,9 @@ export function streamText(
   const result = streamTextAi({
     ...params,
     model: provider(MODEL),
+    ...(params.temperature !== undefined && {
+      temperature: clampTemperature(AI_PROVIDER, params.temperature),
+    }),
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -95,11 +133,19 @@ export function streamText(
         tags: [params.metadata.type],
       },
     },
-    providerOptions: {
-      openrouter: {
-        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+    ...(AI_PROVIDER === 'openrouter' && {
+      providerOptions: {
+        openrouter: {
+          order: [
+            'DeepInfra',
+            'Hyperbolic',
+            'Fireworks',
+            'Together',
+            'Lambda',
+          ],
+        },
       },
-    },
+    }),
   });
 
   return result;
@@ -121,6 +167,9 @@ export function streamObject<OBJECT>(
   const result = streamObjectAi({
     ...params,
     model: provider(MODEL),
+    ...(params.temperature !== undefined && {
+      temperature: clampTemperature(AI_PROVIDER, params.temperature),
+    }),
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -131,11 +180,19 @@ export function streamObject<OBJECT>(
         tags: [params.metadata.type],
       },
     },
-    providerOptions: {
-      openrouter: {
-        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+    ...(AI_PROVIDER === 'openrouter' && {
+      providerOptions: {
+        openrouter: {
+          order: [
+            'DeepInfra',
+            'Hyperbolic',
+            'Fireworks',
+            'Together',
+            'Lambda',
+          ],
+        },
       },
-    },
+    }),
   });
 
   return result;
@@ -163,6 +220,9 @@ export async function createCompletion(
     model: provider(MODEL),
     messages,
     ...parameters,
+    ...(parameters?.temperature !== undefined && {
+      temperature: clampTemperature(AI_PROVIDER, parameters.temperature),
+    }),
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -173,11 +233,19 @@ export async function createCompletion(
         tags: [metadata.type],
       },
     },
-    providerOptions: {
-      openrouter: {
-        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+    ...(AI_PROVIDER === 'openrouter' && {
+      providerOptions: {
+        openrouter: {
+          order: [
+            'DeepInfra',
+            'Hyperbolic',
+            'Fireworks',
+            'Together',
+            'Lambda',
+          ],
+        },
       },
-    },
+    }),
   });
 
   return result.text;
@@ -198,6 +266,9 @@ export function generateText(
   const result = generateTextAi({
     ...params,
     model: provider(MODEL),
+    ...(params.temperature !== undefined && {
+      temperature: clampTemperature(AI_PROVIDER, params.temperature),
+    }),
     experimental_telemetry: {
       isEnabled: true,
       metadata: {
@@ -208,11 +279,19 @@ export function generateText(
         tags: [params.metadata.type],
       },
     },
-    providerOptions: {
-      openrouter: {
-        order: ['DeepInfra', 'Hyperbolic', 'Fireworks', 'Together', 'Lambda'],
+    ...(AI_PROVIDER === 'openrouter' && {
+      providerOptions: {
+        openrouter: {
+          order: [
+            'DeepInfra',
+            'Hyperbolic',
+            'Fireworks',
+            'Together',
+            'Lambda',
+          ],
+        },
       },
-    },
+    }),
   });
 
   return result;
