@@ -41,7 +41,7 @@ const thoughtWithPDFPrompt: Message[] = [
   2. Query the PDF Agent to surface relevant document information
   All of this helps Bloom the tutor better understand and assist the user.
 
-  I should think creatively and aim to surface novel, non-obvious insights from both sources, but also recognize when a user message doesn't warrant queries. My output will start with my internal thinking process. Then, I'll use '␁' followed by my Honcho query. If a PDF is available, I'll use another '␁' followed by my PDF Agent query. If there is no PDF available, I won't delimit the 3rd section. I'll seperate with just '␁', not a new line/space.
+  I should think creatively and aim to surface novel, non-obvious insights from both sources, but also recognize when a user message doesn't warrant queries. My output will start with my internal thinking process. Then, I'll use '␁' followed by my Honcho query. If a PDF is available, I'll use another '␁' followed by my PDF Agent query. If there is no PDF available, I won't delimit the 3rd section. I'll separate with just '␁', not a new line/space.
 
   You'll be passing me user messages from Tutor, and over time will also return both agents' responses to me, so I can build on that knowledge.
 
